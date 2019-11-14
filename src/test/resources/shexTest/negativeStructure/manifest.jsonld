@@ -1,0 +1,115 @@
+{
+  "@context": [
+    {
+      "@base": "https://raw.githubusercontent.com/shexSpec/shexTest/master/negativeStructure/manifest"
+    },
+    "../context.jsonld"
+  ],
+  "@graph": [
+    {
+      "@id": "",
+      "@type": "mf:Manifest",
+      "rdfs:comment": "ShEx negative structure tests",
+      "entries": [
+        {
+          "@id": "#1MissingRef",
+          "@type": "sht:NegativeStructure",
+          "name": "1MissingRef",
+          "status": "mf:proposed",
+          "shex": "1MissingRef.shex"
+        },
+        {
+          "@id": "#1focusMissingRefdot",
+          "@type": "sht:NegativeStructure",
+          "name": "1focusMissingRefdot",
+          "status": "mf:proposed",
+          "shex": "1focusMissingRefdot.shex"
+        },
+        {
+          "@id": "#1focusRefANDSelfdot",
+          "@type": "sht:NegativeStructure",
+          "name": "1focusRefANDSelfdot",
+          "status": "mf:proposed",
+          "shex": "1focusRefANDSelfdot.shex"
+        },
+        {
+          "@id": "#includeSimpleShape",
+          "@type": "sht:NegativeStructure",
+          "name": "includeSimpleShape",
+          "status": "mf:proposed",
+          "shex": "includeSimpleShape.shex"
+        },
+        {
+          "@id": "#includeNonSimpleShape",
+          "@type": "sht:NegativeStructure",
+          "name": "includeNonSimpleShape",
+          "status": "mf:proposed",
+          "shex": "includeNonSimpleShape.shex"
+        },
+        {
+          "@id": "#includeExpressionNotFound",
+          "@type": "sht:NegativeStructure",
+          "name": "includeExpressionNotFound",
+          "status": "mf:proposed",
+          "shex": "includeExpressionNotFound.shex"
+        },
+        {
+          "@id": "#1ShapeProductionCollision",
+          "@type": "sht:NegativeStructure",
+          "name": "1ShapeProductionCollision",
+          "status": "mf:proposed",
+          "shex": "1ShapeProductionCollision.shex"
+        },
+        {
+          "@id": "#Cycle1Negation1",
+          "@type": "sht:NegativeStructure",
+          "name": "Cycle1Negation1",
+          "status": "mf:proposed",
+          "shex": "Cycle1Negation1.shex"
+        },
+        {
+          "@id": "#Cycle1Negation2",
+          "@type": "sht:NegativeStructure",
+          "name": "Cycle1Negation2",
+          "status": "mf:proposed",
+          "shex": "Cycle1Negation2.shex"
+        },
+        {
+          "@id": "#Cycle1Negation3",
+          "@type": "sht:NegativeStructure",
+          "name": "Cycle1Negation3",
+          "status": "mf:proposed",
+          "shex": "Cycle1Negation3.shex"
+        },
+        {
+          "@id": "#TwoNegation",
+          "@type": "sht:NegativeStructure",
+          "name": "TwoNegation",
+          "status": "mf:proposed",
+          "shex": "TwoNegation.shex"
+        },
+        {
+          "@id": "#TwoNegation2",
+          "@type": "sht:NegativeStructure",
+          "name": "TwoNegation2",
+          "status": "mf:proposed",
+          "shex": "TwoNegation2.shex"
+        },
+        {
+          "@id": "#Cycle2Negation",
+          "@type": "sht:NegativeStructure",
+          "name": "Cycle2Negation",
+          "status": "mf:proposed",
+          "shex": "Cycle2Negation.shex"
+        },
+        {
+          "@id": "#Cycle2Extra",
+          "@type": "sht:NegativeStructure",
+          "name": "Cycle2Extra",
+          "status": "mf:proposed",
+          "shex": "Cycle2Extra.shex"
+        }
+      ]
+    }
+  ]
+}
