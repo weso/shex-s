@@ -1,6 +1,6 @@
 // Local dependencies
-lazy val srdfVersion           = "0.1.38"
-lazy val sutilsVersion         = "0.1.44"
+lazy val srdfVersion           = "0.1.39"
+lazy val utilsVersion          = "0.1.50"
 
 // Dependency versions
 lazy val antlrVersion          = "4.7.1"
@@ -46,13 +46,16 @@ lazy val logbackClassic    = "ch.qos.logback"             % "logback-classic"   
 lazy val jenaArq           = "org.apache.jena"            % "jena-arq"             % jenaVersion
 lazy val jenaFuseki        = "org.apache.jena"            % "jena-fuseki-main"     % jenaVersion
 lazy val rdf4j_runtime     = "org.eclipse.rdf4j"          % "rdf4j-runtime"        % rdf4jVersion
+
+// WESO components
 lazy val srdf              = "es.weso"                    % "srdf_2.13"            % srdfVersion
 lazy val srdfJena          = "es.weso"                    % "srdfjena_2.13"        % srdfVersion
 lazy val srdf4j            = "es.weso"                    % "srdf4j_2.13"          % srdfVersion
-lazy val utils             = "es.weso"                     % "utils_2.13"          % srdfVersion
-lazy val typing            = "es.weso"                    % "typing_2.13"          % sutilsVersion
-lazy val validating        = "es.weso"                    % "validating_2.13"      % sutilsVersion
-lazy val sutils            = "es.weso"                    % "sutils_2.13"          % sutilsVersion
+lazy val utils             = "es.weso"                    % "utils_2.13"           % utilsVersion
+lazy val typing            = "es.weso"                    % "typing_2.13"          % utilsVersion
+lazy val validating        = "es.weso"                    % "validating_2.13"      % utilsVersion
+lazy val sutils            = "es.weso"                    % "sutils_2.13"          % utilsVersion
+lazy val utilsTest         = "es.weso"                    % "utilstest_2.13"       % utilsVersion
 
 lazy val scalaLogging      = "com.typesafe.scala-logging" %% "scala-logging"       % loggingVersion
 lazy val scallop           = "org.rogach"                 %% "scallop"             % scallopVersion
@@ -127,8 +130,9 @@ lazy val shex = project
       scalacheck % Test, 
       typing,
       sutils % "test -> test; compile -> compile",
+      utilsTest % Test,
       validating,
-        srdf,    
+      srdf,    
       srdfJena % Test,
       srdf4j % Test
     )
@@ -159,8 +163,8 @@ lazy val shex = project
     testOptions in CompatTest := Seq(Tests.Filter(compatFilter)),
   )
   .dependsOn(
-    shex
-  )
+    shex,
+    )
   .settings(
     libraryDependencies ++= Seq(
       typesafeConfig % Test,
@@ -171,6 +175,8 @@ lazy val shex = project
       circeParser,
       scalaTest % Test,
       scalacheck % Test, 
+      sutils % "test -> test; compile -> compile",
+      utilsTest % Test,
       srdf,    
       srdfJena,
       srdf4j % Test
@@ -188,6 +194,7 @@ lazy val shapeMaps = project
     libraryDependencies ++= Seq(
       srdf,
       sutils,
+      utils,
       srdfJena % Test,
       sext % Test,
       scalaLogging,
@@ -207,36 +214,18 @@ lazy val rbe = project
   .settings(commonSettings, publishSettings)
   .settings(
     libraryDependencies ++= Seq(
-      validating,typing,
+      validating,
+      typing,
       simulacrum,
       catsCore,
       catsKernel,
       catsMacros,
       scalacheck % Test,
-      srdfJena % Test
-      )
-  )
-
-lazy val utilsTest = project
-  .in(file("modules/utilsTest"))
-  .disablePlugins(RevolverPlugin)
-  .settings(commonSettings, publishSettings)
-  .settings(
-    libraryDependencies ++= Seq(
-      circeCore,
-      circeGeneric,
-      circeParser,
-      catsCore,
-      catsKernel,
-      catsMacros,
-      diffsonCirce,
-      xercesImpl,
-      commonsText,
-      scalaTest
+      srdfJena % Test,
+      utils,
+      scalaLogging
     )
   )
-
-
 
   /* ********************************************************
  ******************** Grouped Settings ********************
@@ -281,7 +270,7 @@ lazy val compilationSettings = Seq(
     "-Xlint",
     "-Yrangepos",
     "-Ywarn-dead-code",                  // Warn when dead code is identified.
-    "-Xfatal-warnings",
+    // "-Xfatal-warnings",
     "-Ywarn-extra-implicit",             // Warn when more than one implicit parameter section is defined.
     "-Ymacro-annotations"
   )

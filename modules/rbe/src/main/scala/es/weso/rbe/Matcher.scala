@@ -63,7 +63,7 @@ trait Matcher[Edge, Node, Label, Evidence] extends CheckerCats {
   runCheck(check)(c0)(e0)(o0)
  } */
 
-  /**
+  /*
    * Runs a checker and discards log and checkInfo
    */
   /*def runValue[A](schema: Schema_, graph: Graph_, check: Check[A]): Either[Err,A] =

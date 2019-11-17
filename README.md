@@ -1,27 +1,19 @@
-# SHaclEX
+# ShEx-s
 
-Scala implementation of SHEX and SHACL.
+Scala implementation of SHEX.
 
-This project contains an implementation of
-[SHACL](http://w3c.github.io/data-shapes/shacl/) and
-[ShEx](http://www.shex.io)
+This project contains an implementation of [ShEx](http://www.shex.io).
 
-[![Build Status](https://travis-ci.org/weso/shaclex.svg?branch=master)](https://travis-ci.org/labra/shaclex)
-[![Codacy Badge](https://api.codacy.com/project/badge/grade/f87bd2ebcfa94dce89e2a981ff13decd)](https://www.codacy.com/app/jelabra/shaclex)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1214239.svg)](https://doi.org/10.5281/zenodo.1214239)
+[![Build Status](https://travis-ci.org/weso/shex-s.svg?branch=master)](https://travis-ci.org/weso/shex-s)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/d421668975834528bf562ca81bff4433)](https://www.codacy.com/gh/weso/shex-s?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=weso/shex-s&amp;utm_campaign=Badge_Grade)
 
 ## Introduction
 
-This project contains an implementation of [SHACL](https://www.w3.org/TR/shacl/) and [ShEx](http://shex.io/).
-
-Both are implemented in Scala using the same underlying mechanism using a purely functional approach.
-
-The library handles RDF using a 
-[simple RDF library](https://github.com/weso/srdf) 
-which has 2 implementations,
+This project contains a Scala implementation of [ShEx](http://shex.io/). The library handles RDF using a 
+[simple RDF library](https://github.com/weso/srdf), which has 2 implementations,
 one using [Apache Jena](https://jena.apache.org/)
 and another one using [RDF4j](http://rdf4j.org/),
-this means that it is possible to use this library to validate RDF models from any of those RDF libraries, 
+this means that it is possible to use this library to validate RDF models from any of those RDF libraries,
 as well as from external SPARQL endpoints.
 
 ## Installation and compilation
@@ -29,71 +21,6 @@ as well as from external SPARQL endpoints.
 The project uses [sbt](http://www.scala-sbt.org/) for compilation as well as Java 1.8.
 
 * `sbt test` compiles and runs the tests
-
-## Usage
-
-Once compiled, the program can be run as a command line tool.
-It is possible to run the program inside `sbt` as:
-
-### Validating RDF data with SHACL 
-
-Example:
-
-```sh
-sbt "run --data examples/shacl/good1.ttl 
-         --engine ShaClex"
-```
-
-### Validating RDF with ShEx 
-
-Example:
-
-```sh
-sbt "run --engine=ShEx 
-         --schema examples/shex/good1.shex 
-         --schemaFormat ShExC 
-         --data examples/shex/good1.ttl"
-```
-
-### Validating RDF data through an SPARQL endpoint
-
-The following example validates RDF nodes from wikidata using [Gene-wiki ShEx](https://github.com/SuLab/Genewiki-ShEx):
-
-```sh
-sbt "run --endpoint=https://query.wikidata.org/sparql 
-         --schemaUrl=https://raw.githubusercontent.com/SuLab/Genewiki-ShEx/master/diseases/wikidata-disease-ontology.shex 
-         --shapeMap=examples/shex/wikidata/disease1.shapeMap 
-         --schemaFormat=ShExC 
-         --engine=ShEx 
-         --trigger=ShapeMap 
-         --showResult 
-         --resultFormat=JSON"
-```
-   
- 
-### Interactive mode with `sbt` 
-
-It is usually faster to run the `sbt` command, which opens the interactive `sbt` shell and inside that shell, execute 
-the different commands. 
-
-```sh
-$ sbt
-... several information about loading libraries
-sbt> run -d examples/shacl/good1.ttl --engine ShaClex  
-```
-
-### Binary mode
-
-The fastest way to run Shaclex is to compile the code and generate a binary. 
-The following command:
-
-```sh
-$ sbt universal:packageBin
-...generates the file...
-target/universal/shaclex-N.N.N.zip
-```
-
-which contains the compressed binary code.
 
 ## Implementation details
 
@@ -105,16 +32,6 @@ which contains the compressed binary code.
 
 ## Compatibility tests
 
-The current implementation passes all [shacl-core tests](https://w3c.github.io/data-shapes/data-shapes-test-suite/). 
- In order to generate the EARL report, run: 
- 
-```
-$ sbt 
-[...]
-sbt:shaclex> project shacl 
-sbt:shacl> testOnly es.weso.shacl.report.ReportGeneratorCompatTest
-```
- 
 We also aim to pass the [ShEx test-suite](https://github.com/shexSpec/shexTest).
 
 In order to run the shex test-suite and generate the EARL report, you can do the following:
@@ -126,24 +43,10 @@ sbt:shaclex> project shex
 sbt:shex> compat:test
 ```
 
-## Convert between Schema formats
-
-Shaclex can be used to convert between different schemas. 
-The following example shows how to convert between ShExC to ShExJ:
-
-```
-$ sbt "run --schema examples/shex/good1.shex 
-           --schemaFormat ShExC
-           --outSchemaFormat ShExJ
-           --showSchema"
-```
-
 ## More information
 
-* The aim of Shaclex is to support both ShEx and SHACL and to provide conversions between both languages. 
-  More information about both languages can be read in the [Validating RDF data](http://book.validatingrdf.com) written by the authors.
 * An online demo based on this library is available at [http://rdfshape.weso.es](http://rdfshape.weso.es).
-* Another online demo based on this library customized for Wikidata is available at [http://wikidata.weso.es](http://wikidata.weso.es).
+* Another online demo based on this library customized for Wikidata is available at [http://wikishape.weso.es](http://wikishape.weso.es).
 * This project was based on [ShExcala](http://labra.github.io/ShExcala/) which was focused on Shape Expressions only.
 
 ## Author & contributors
