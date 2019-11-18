@@ -561,7 +561,7 @@ case class Validator(schema: Schema,
           t <- {
             if (constraint.card.contains(values.size)) {
               val (notPassed, passed) =
-                values.map(v => (v, checkNodeShapeExprBasic(v, se, rdf))).partitionMap(mapFun)
+                setPartitionMap(values.map(v => (v, checkNodeShapeExprBasic(v, se, rdf))))(mapFun)
               // println(s"checkValuesConstraint: \nPassed: $passed\nNot passed: $notPassed")
               if (notPassed.isEmpty) {
                 addEvidence(attempt.nodeShape, s"${node.show} passed ${constraint.show} for path ${path.show}")
@@ -571,6 +571,12 @@ case class Validator(schema: Schema,
         }
     } yield t
    }
+  }
+
+  // TODO: This implementation can be replaced by ls.paritionMap(f) in scala 2.13
+  private def setPartitionMap[A,A1,A2](ls: Set[A])(f: A => Either[A1,A2]): (Set[A1], Set[A2]) = {
+    val (left, right) = ls.map(f).partition(_.isLeft)
+    (left.map(_.asInstanceOf[Left[A1, _]].value), right.map(_.asInstanceOf[Right[_, A2]].value))
   }
 
   private def mapFun(v: (RDFNode,Either[String,String])

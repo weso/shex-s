@@ -31,7 +31,7 @@ object NormalizedShape {
                      path: Path,
                      constraint: Constraint
                     ): Map[Path,Vector[Constraint]] =
-    m.updated(path, m.get(path).fold(Vector(constraint))(_.appended(constraint)))
+    m.updated(path, m.get(path).fold(Vector(constraint))(_ :+ constraint))
 
   private def normalizeTripleExpr(te: TripleExpr,
                                   cs: Map[Path,Vector[Constraint]],

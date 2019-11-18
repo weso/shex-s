@@ -1,6 +1,10 @@
+lazy val scala212 = "2.12.10"
+lazy val scala213 = "2.13.0"
+lazy val supportedScalaVersions = List(scala212, scala213)
+
 // Local dependencies
-lazy val srdfVersion           = "0.1.39"
-lazy val utilsVersion          = "0.1.50"
+lazy val srdfVersion           = "0.1.43"
+lazy val utilsVersion          = "0.1.56"
 
 // Dependency versions
 lazy val antlrVersion          = "4.7.1"
@@ -48,14 +52,13 @@ lazy val jenaFuseki        = "org.apache.jena"            % "jena-fuseki-main"  
 lazy val rdf4j_runtime     = "org.eclipse.rdf4j"          % "rdf4j-runtime"        % rdf4jVersion
 
 // WESO components
-lazy val srdf              = "es.weso"                    % "srdf_2.13"            % srdfVersion
-lazy val srdfJena          = "es.weso"                    % "srdfjena_2.13"        % srdfVersion
-lazy val srdf4j            = "es.weso"                    % "srdf4j_2.13"          % srdfVersion
-lazy val utils             = "es.weso"                    % "utils_2.13"           % utilsVersion
-lazy val typing            = "es.weso"                    % "typing_2.13"          % utilsVersion
-lazy val validating        = "es.weso"                    % "validating_2.13"      % utilsVersion
-lazy val sutils            = "es.weso"                    % "sutils_2.13"          % utilsVersion
-lazy val utilsTest         = "es.weso"                    % "utilstest_2.13"       % utilsVersion
+lazy val srdf              = "es.weso"                    %% "srdf"            % srdfVersion
+lazy val srdfJena          = "es.weso"                    %% "srdfjena"        % srdfVersion
+lazy val srdf4j            = "es.weso"                    %% "srdf4j"          % srdfVersion
+lazy val utils             = "es.weso"                    %% "utils"           % utilsVersion
+lazy val typing            = "es.weso"                    %% "typing"          % utilsVersion
+lazy val validating        = "es.weso"                    %% "validating"      % utilsVersion
+lazy val utilsTest         = "es.weso"                    %% "utilstest"       % utilsVersion
 
 lazy val scalaLogging      = "com.typesafe.scala-logging" %% "scala-logging"       % loggingVersion
 lazy val scallop           = "org.rogach"                 %% "scallop"             % scallopVersion
@@ -68,7 +71,7 @@ lazy val selenium          = "org.seleniumhq.selenium"    % "selenium-java"     
 lazy val sext              = "com.github.nikita-volkov"   % "sext"                 % sextVersion
 lazy val typesafeConfig    = "com.typesafe"               % "config"               % typesafeConfigVersion
 lazy val xercesImpl        = "xerces"                     % "xercesImpl"           % xercesVersion
-lazy val simulacrum        = "org.typelevel" %% "simulacrum"     % simulacrumVersion
+lazy val simulacrum        = "org.typelevel"              %% "simulacrum"          % simulacrumVersion
 
 
 lazy val shex_s = project
@@ -92,8 +95,10 @@ lazy val shex_s = project
     ),
     cancelable in Global      := true,
     fork                      := true,
-    parallelExecution in Test := false,
-    ThisBuild / turbo := true
+//    parallelExecution in Test := false,
+    ThisBuild / turbo := true,
+    crossScalaVersions := Nil,
+    publish / skip := true,
   )
 
 lazy val CompatTest = config("compat") extend (Test) describedAs("Tests that check compatibility (some may fail)")
@@ -106,6 +111,7 @@ lazy val shex = project
   .disablePlugins(RevolverPlugin)
   .configs(CompatTest)
   .settings(
+    crossScalaVersions := supportedScalaVersions,
     commonSettings,
     publishSettings,
     antlrSettings("es.weso.shex.parser"),
@@ -129,7 +135,7 @@ lazy val shex = project
       scalaTest % Test,
       scalacheck % Test, 
       typing,
-      sutils % "test -> test; compile -> compile",
+      utils % "test -> test; compile -> compile",
       utilsTest % Test,
       validating,
       srdf,    
@@ -143,11 +149,13 @@ lazy val shex = project
   .disablePlugins(RevolverPlugin)
   .settings(commonSettings, publishSettings)
   .settings(
+    crossScalaVersions := supportedScalaVersions,
     libraryDependencies ++= Seq(
       catsCore,
       catsKernel,
       catsMacros,
-      jgraphtCore
+      jgraphtCore,
+      utils
     )
   )
 
@@ -156,6 +164,7 @@ lazy val shex = project
   .disablePlugins(RevolverPlugin)
   .configs(CompatTest)
   .settings(
+    crossScalaVersions := supportedScalaVersions,
     commonSettings,
     publishSettings,
     inConfig(CompatTest)(Defaults.testTasks),
@@ -175,7 +184,7 @@ lazy val shex = project
       circeParser,
       scalaTest % Test,
       scalacheck % Test, 
-      sutils % "test -> test; compile -> compile",
+      utils % "test -> test; compile -> compile",
       utilsTest % Test,
       srdf,    
       srdfJena,
@@ -191,9 +200,9 @@ lazy val shapeMaps = project
   .settings(commonSettings, publishSettings, antlrSettings("es.weso.shapeMaps.parser"))
   .dependsOn()
   .settings(
+    crossScalaVersions := supportedScalaVersions,
     libraryDependencies ++= Seq(
       srdf,
-      sutils,
       utils,
       srdfJena % Test,
       sext % Test,
@@ -207,13 +216,26 @@ lazy val shapeMaps = project
       )
   )
 
+def macroDependencies(scalaVersion: String) =
+  CrossVersion.partialVersion(scalaVersion) match {
+    case Some((2, minor)) if minor < 13 =>
+      Seq(
+        compilerPlugin(("org.scalamacros" %% "paradise" % "2.1.1").cross(CrossVersion.patch))
+      )
+    case _ => Seq()
+  }
+
 lazy val rbe = project
   .in(file("modules/rbe"))
   .disablePlugins(RevolverPlugin)
   .dependsOn()
-  .settings(commonSettings, publishSettings)
   .settings(
+    commonSettings, publishSettings
+  )
+  .settings(
+    crossScalaVersions := supportedScalaVersions,
     libraryDependencies ++= Seq(
+  //    compilerPlugin(("org.typelevel" %% "kind-projector" % kindProjectorVersion).cross(CrossVersion.full)),
       validating,
       typing,
       simulacrum,
@@ -224,7 +246,7 @@ lazy val rbe = project
       srdfJena % Test,
       utils,
       scalaLogging
-    )
+    ) ++ macroDependencies(scalaVersion.value)
   )
 
   /* ********************************************************
@@ -272,10 +294,24 @@ lazy val compilationSettings = Seq(
     "-Ywarn-dead-code",                  // Warn when dead code is identified.
     // "-Xfatal-warnings",
     "-Ywarn-extra-implicit",             // Warn when more than one implicit parameter section is defined.
-    "-Ymacro-annotations"
+  ) ++ (if (priorTo2_13(scalaVersion.value))
+  Seq(
+    "-Yno-adapted-args",
+    "-Xfuture"
   )
+else
+  Seq(
+    "-Ymacro-annotations"
+  ))
+
   // format: on
 )
+
+def priorTo2_13(scalaVersion: String): Boolean =
+  CrossVersion.partialVersion(scalaVersion) match {
+    case Some((2, minor)) if minor < 13 => true
+    case _                              => false
+  }
 
 lazy val wixSettings = Seq(
   wixProductId        := "39b564d5-d381-4282-ada9-87244c76e14b",

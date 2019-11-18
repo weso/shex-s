@@ -6,7 +6,7 @@ import org.jgrapht.alg.connectivity._
 import org.jgrapht.alg.interfaces.StrongConnectivityAlgorithm
 import org.jgrapht.graph._
 
-import scala.jdk.CollectionConverters._
+import es.weso.utils.internal.CollectionCompat.CollectionConverters._
 
 case class DepGraphJGraphT[Node]() extends DepGraph[Node] {
 

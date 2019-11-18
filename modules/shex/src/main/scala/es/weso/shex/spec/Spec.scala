@@ -19,6 +19,7 @@ import Check._
 import com.typesafe.scalalogging.LazyLogging
 import es.weso.shex.validator.Arc
 import es.weso.utils.{LogInfo, SetUtils}
+import es.weso.utils.internal.CollectionCompat._
 
 object Spec extends LazyLogging {
   def logInfo(str: String, incr: Int):Unit = LogInfo(str, incr)
@@ -363,11 +364,11 @@ object Spec extends LazyLogging {
                                  nodesPrefixMap: PrefixMap,
                                  shapesPrefixMap: PrefixMap
                                 ): ResultShapeMap = {
-    val resultMap: Map[RDFNode,Map[ShapeMapLabel,ShapeMapInfo]] =
-      typing.m.view.mapValues(valueMap =>
-        valueMap.view.mapValues(info => cnvInfo(info)
-        ).toMap
+    val resultMap: Map[RDFNode,Map[ShapeMapLabel,ShapeMapInfo]] = {
+      mapValues(typing.m)(valueMap =>
+        mapValues(valueMap)(info => cnvInfo(info)).toMap
       ).toMap
+    }
     ResultShapeMap(resultMap, nodesPrefixMap, shapesPrefixMap)
   }
 
