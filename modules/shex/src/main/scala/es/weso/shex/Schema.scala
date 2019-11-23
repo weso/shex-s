@@ -159,7 +159,9 @@ case class Schema(id: IRI,
 
  private def checkShapeLabel(lbl: ShapeLabel): Either[String, Unit] = for {
    se <- getShape(lbl)
+   _ <- { println(s"Label ${lbl.toString}. ShapeExpr: ${se.toString}"); Right(())}
    refs <- se.getShapeRefs(this).map(getShape(_)).sequence
+   _ <- { println(s"Refs ${refs.toString}"); Right(())}
   } yield {
     // println(s"Label: $lbl, refs: ${se.getShapeRefs(this).mkString(",")}")
     // println(s"References: ${refs.mkString(",")}")
@@ -168,7 +170,7 @@ case class Schema(id: IRI,
 
   private lazy val checkBadShapeLabels: Either[String,Unit] = for {
     shapesMap <- eitherResolvedShapesMap
-    //_ <- { println(s"shapesMap: $shapesMap"); Right(())}
+    _ <- { println(s"shapesMap: $shapesMap"); Right(())}
     _ <- shapesMap.keySet.toList.map(lbl => checkShapeLabel(lbl)).sequence
   } yield (()) 
 
@@ -185,7 +187,9 @@ case class Schema(id: IRI,
 
   lazy val wellFormed: Either[String,Unit] = for {
     _ <- checkOddNegCycles
+    _ <- { println(s"Passed checkOddNegCycles..."); Right(())}
     _ <- checkBadShapeLabels
+    _ <- { println(s"Passed checkBadShapeLabels..."); Right(())}
   } yield (())
 
   def relativize(maybeBase: Option[IRI]): Schema = maybeBase match {

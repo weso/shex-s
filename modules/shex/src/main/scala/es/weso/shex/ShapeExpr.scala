@@ -19,8 +19,7 @@ sealed trait ShapeExpr extends Product with Serializable {
   def paths(schema: Schema): Either[String,List[Path]]
   def addAnnotations(as: List[Annotation]): ShapeExpr
   def addSemActs(as: List[SemAct]): ShapeExpr
-  def getShapeRefs(schema: Schema): List[ShapeLabel]
-
+  
   def relativize(base: IRI): ShapeExpr
 
   def hasNoReference(schema:Schema): Boolean = getShapeRefs(schema).isEmpty
@@ -34,6 +33,24 @@ sealed trait ShapeExpr extends Product with Serializable {
     case _:ShapeNot => false
     case _:ShapeRef => false
   }
+
+  def getShapeRefs(schema: Schema): List[ShapeLabel] = 
+   List() /* TODO: Finish the following code...
+   getShapeRefsVisited(schema, List())
+
+  private[shex] def getShapeRefsVisited(schema: Schema, visited: List[ShapeLabel]): List[ShapeLabel] =
+   this match {
+    case s: Shape => 
+      s.expression.map(lbl => 
+        if (visited contains lbl) visited else getShapeRefsVisited(schema, visited :+ lbl)).getOrElse(List())
+    case _:NodeConstraint => List()
+    case _:ShapeExternal => List()
+    case s:ShapeOr => s.shapeExprs.map(_.getShapeRefs(schema, visited)).flatten
+    case s:ShapeAnd => s.shapeExprs.map(_.getShapeRefs(schema, visited)).flatten
+    case s:ShapeNot => s.shapeExpr.getShapeRefs(schema, visited)
+    case s:ShapeRef => List(s.reference)
+  } */
+
 }
 
 object ShapeExpr {
@@ -58,8 +75,6 @@ case class ShapeOr(id: Option[ShapeLabel],
   override def addSemActs(as: List[SemAct]): ShapeExpr = {
     this.copy(actions = maybeAddList(actions,as))
   }
-
-  override def getShapeRefs(schema: Schema) = shapeExprs.map(_.getShapeRefs(schema)).flatten
 
   override def relativize(base: IRI): ShapeOr = ShapeOr(
     id.map(_.relativize(base)),
@@ -90,7 +105,6 @@ case class ShapeAnd(id: Option[ShapeLabel],
   override def addSemActs(as: List[SemAct]): ShapeExpr = {
     this.copy(actions = maybeAddList(actions,as))
   }
-  override def getShapeRefs(schema: Schema) = shapeExprs.map(_.getShapeRefs(schema)).flatten
 
   override def relativize(base: IRI): ShapeAnd = ShapeAnd(
     id.map(_.relativize(base)),
@@ -122,7 +136,6 @@ case class ShapeNot(id: Option[ShapeLabel],
   override def addSemActs(as: List[SemAct]): ShapeExpr = {
     this.copy(actions = maybeAddList(actions,as))
   }
-  override def getShapeRefs (schema: Schema)= shapeExpr.getShapeRefs(schema)
 
   override def relativize(base: IRI): ShapeNot = ShapeNot(
     id.map(_.relativize(base)),
@@ -159,8 +172,6 @@ case class NodeConstraint(
   override def addSemActs(as: List[SemAct]): NodeConstraint = {
     this.copy(actions = maybeAddList(actions,as))
   }
-
-  override def getShapeRefs(s:Schema): List[Nothing] = List()
 
   override def relativize(base: IRI): NodeConstraint =
     NodeConstraint(
@@ -308,8 +319,6 @@ case class Shape(
     this.copy(actions = maybeAddList(actions,as))
   }
 
-  override def getShapeRefs(schema: Schema): List[ShapeLabel] = expression.map(_.getShapeRefs(schema)).getOrElse(List())
-
   override def relativize(base: IRI): Shape =
     Shape(
       id.map(_.relativize(base)),
@@ -366,8 +375,7 @@ case class ShapeRef(reference: ShapeLabel,
   override def addSemActs(as: List[SemAct]): ShapeExpr = {
     this.copy(actions = maybeAddList(actions,as))
   }
-  override def getShapeRefs(s: Schema) = List(reference)
-
+  
   override def relativize(base: IRI): ShapeRef =
     ShapeRef(
       reference.relativize(base),
@@ -390,7 +398,7 @@ case class ShapeExternal(id: Option[ShapeLabel],
   override def addSemActs(as: List[SemAct]): ShapeExpr = {
     this.copy(actions = maybeAddList(actions,as))
   }
-  override def getShapeRefs (schema: Schema) =  List()
+  
 
   override def relativize(base: IRI): ShapeExternal =
     ShapeExternal(

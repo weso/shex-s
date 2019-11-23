@@ -1,10 +1,11 @@
 lazy val scala212 = "2.12.10"
-lazy val scala213 = "2.13.0"
+lazy val scala213 = "2.13.1"
 lazy val supportedScalaVersions = List(scala212, scala213)
 
 // Local dependencies
 lazy val srdfVersion           = "0.1.43"
-lazy val utilsVersion          = "0.1.56"
+lazy val utilsVersion          = "0.1.59"
+lazy val documentVersion       = "0.0.3"
 
 // Dependency versions
 lazy val antlrVersion          = "4.7.1"
@@ -52,6 +53,7 @@ lazy val jenaFuseki        = "org.apache.jena"            % "jena-fuseki-main"  
 lazy val rdf4j_runtime     = "org.eclipse.rdf4j"          % "rdf4j-runtime"        % rdf4jVersion
 
 // WESO components
+lazy val document          = "es.weso"                    %% "document"        % documentVersion
 lazy val srdf              = "es.weso"                    %% "srdf"            % srdfVersion
 lazy val srdfJena          = "es.weso"                    %% "srdfjena"        % srdfVersion
 lazy val srdf4j            = "es.weso"                    %% "srdf4j"          % srdfVersion
@@ -135,6 +137,7 @@ lazy val shex = project
       scalaTest % Test,
       scalacheck % Test, 
       typing,
+      document,
       utils % "test -> test; compile -> compile",
       utilsTest % Test,
       validating,

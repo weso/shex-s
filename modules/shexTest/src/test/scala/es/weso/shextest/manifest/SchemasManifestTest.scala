@@ -16,8 +16,8 @@ import cats.syntax.either._
 class SchemasManifestTest extends ValidateManifest {
 
   val nameIfSingle: Option[String] =
-     None
-     // Some("TwoNegation_pass")
+     // None
+     Some("_all")
 
   val conf: Config = ConfigFactory.load()
   val shexFolder = conf.getString("schemasFolder")
@@ -31,6 +31,7 @@ class SchemasManifestTest extends ValidateManifest {
         for (e <- mf.entries) {
           if (nameIfSingle == None || nameIfSingle.getOrElse("") === e.name) {
             it(s"Should pass test ${e.name}") {
+              println(s"Testing: ${e.name}")
               e match {
                 case r: RepresentationTest => {
                   val schemaUri = mkLocal(r.shex, schemasBase, shexFolderURI)
@@ -39,8 +40,12 @@ class SchemasManifestTest extends ValidateManifest {
                     schemaStr      <- derefUri(schemaUri)
                     jsonStr        <- derefUri(jsonUri)
                     schema         <- Schema.fromString(schemaStr, "SHEXC", None)
-                    _              <- schema.wellFormed
+                    _ <- { println(s"Schema: ${schema}"); Right(()) }
+                    _ <- { println(s"Checking if it is well formed..."); Right(()) }
+                    b              <- schema.wellFormed
+                    _ <- { println(s"Schema well formed?: ${b.toString}"); Right(()) }
                     expectedSchema <- decode[Schema](jsonStr).leftMap(_.getMessage)
+                    _ <- { println(s"Expected schema: ${expectedSchema}"); Right(()) }
                     _ <- if (CompareSchemas.compareSchemas(schema, expectedSchema)) Right(())
                     else Left(s"Schemas are different. Parsed:\n${schema}\n-----Expected:\n${expectedSchema}")
                     json <- parse(jsonStr).leftMap(e => s"Error parsing Expected JSON schema: ${e.getMessage}")

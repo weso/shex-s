@@ -23,6 +23,19 @@ class PathsTest extends FunSpec with Matchers with EitherValues {
       shouldMatchPaths(shexStr,b,List(p,q,r))
   }
 
+  describe(s"Calculates paths of a shape with a label that refers to itself") {
+    val shexStr =
+      """
+        |prefix : <http://example.org/>
+        |:A { $<lbl> (&<lbl>; :p .) }
+        |""".stripMargin
+
+    val ex = IRI("http://example.org/")
+    val p = Direct(ex + "p")
+    val a = ex + "A"
+    shouldMatchPaths(shexStr,a,List(p))
+}
+
   def shouldMatchPaths(strSchema: String, shapeLabel: IRI, paths: List[Path]) = {
     it(s"Should calculate paths of shape $shapeLabel and return $paths") {
       val shapeLbl = IRILabel(shapeLabel)
