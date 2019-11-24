@@ -1,6 +1,6 @@
 lazy val scala212 = "2.12.10"
 lazy val scala213 = "2.13.1"
-lazy val supportedScalaVersions = List(scala212, scala213)
+lazy val supportedScalaVersions = List(scala213, scala212)
 
 // Local dependencies
 lazy val srdfVersion           = "0.1.43"
@@ -77,7 +77,7 @@ lazy val xercesImpl        = "xerces"                     % "xercesImpl"        
 lazy val simulacrum        = "org.typelevel"              %% "simulacrum"          % simulacrumVersion
 
 
-lazy val shex_s_root = project
+lazy val shexsRoot = project
   .in(file("."))
   .enablePlugins(ScalaUnidocPlugin, SbtNativePackager, WindowsPlugin, JavaAppPackaging, LauncherJarPlugin)
   .disablePlugins(RevolverPlugin)
@@ -87,7 +87,6 @@ lazy val shex_s_root = project
 //  )
   .settings(commonSettings, packagingSettings, publishSettings, ghPagesSettings, wixSettings)
   .aggregate(depGraphs, shex, shexTest, rbe, shapeMaps)
-  .dependsOn(depGraphs, shex, shexTest, rbe, shapeMaps)
   .settings(
     unidocProjectFilter in (ScalaUnidoc, unidoc) := inAnyProject -- inProjects(noDocProjects: _*),
     libraryDependencies ++= Seq(
@@ -104,7 +103,8 @@ lazy val shex_s_root = project
     fork                      := true,
 //    parallelExecution in Test := false,
     ThisBuild / turbo := true,
-    crossScalaVersions := Nil,
+    crossScalaVersions := supportedScalaVersions,
+//    crossScalaVersions := Nil,
     publish / skip := true,
   )
 
@@ -278,10 +278,10 @@ lazy val sharedDependencies = Seq(
 )
 
 lazy val packagingSettings = Seq(
-  mainClass in Compile        := Some("es.weso.shaclex.Main"),
-  mainClass in assembly       := Some("es.weso.shaclex.Main"),
+  mainClass in Compile        := Some("es.weso.shexs.Main"),
+  mainClass in assembly       := Some("es.weso.shexs.Main"),
   test in assembly            := {},
-  assemblyJarName in assembly := "shaclex.jar",
+  assemblyJarName in assembly := "shex-s.jar",
   packageSummary in Linux     := name.value,
   packageSummary in Windows   := name.value,
   packageDescription          := name.value

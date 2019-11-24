@@ -7,6 +7,7 @@ import es.weso.rdf.nodes.IRI
 import es.weso.shapeMaps.{IRILabel, ShapeMapLabel}
 import es.weso.shex.Schema
 import org.scalatest._
+import es.weso.utils.internal.CollectionCompat._
 
 class CheckTest extends FunSpec with Matchers with EitherValues {
 

@@ -1,3 +1,4 @@
+package es.weso.shexs
 import cats.effect._
 import cats.syntax.all._
 import scala.concurrent.duration._
