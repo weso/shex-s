@@ -87,6 +87,7 @@ lazy val shexsRoot = project
 //  )
   .settings(commonSettings, packagingSettings, publishSettings, ghPagesSettings, wixSettings)
   .aggregate(depGraphs, shex, shexTest, rbe, shapeMaps)
+  .dependsOn(shexTest)
   .settings(
     unidocProjectFilter in (ScalaUnidoc, unidoc) := inAnyProject -- inProjects(noDocProjects: _*),
     libraryDependencies ++= Seq(
@@ -192,6 +193,7 @@ lazy val shex = project
       circeParser,
       scalaTest % Test,
       scalacheck % Test, 
+      catsEffect,
       utils % "test -> test; compile -> compile",
       utilsTest % Test,
       srdf,    
