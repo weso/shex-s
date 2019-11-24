@@ -16,8 +16,8 @@ import cats.syntax.either._
 class SchemasManifestTest extends ValidateManifest {
 
   val nameIfSingle: Option[String] =
-     // None
-     Some("_all")
+     None
+     // Some("_all")
 
   val conf: Config = ConfigFactory.load()
   val shexFolder = conf.getString("schemasFolder")
@@ -42,8 +42,8 @@ class SchemasManifestTest extends ValidateManifest {
                     schema         <- Schema.fromString(schemaStr, "SHEXC", None)
                     _ <- { println(s"Schema: ${schema}"); Right(()) }
                     _ <- { println(s"Checking if it is well formed..."); Right(()) }
-                    b              <- schema.wellFormed
-                    _ <- { println(s"Schema well formed?: ${b.toString}"); Right(()) }
+                    // b              <- schema.wellFormed
+                    // _ <- { println(s"Schema well formed?: ${b.toString}"); Right(()) }
                     expectedSchema <- decode[Schema](jsonStr).leftMap(_.getMessage)
                     _ <- { println(s"Expected schema: ${expectedSchema}"); Right(()) }
                     _ <- if (CompareSchemas.compareSchemas(schema, expectedSchema)) Right(())

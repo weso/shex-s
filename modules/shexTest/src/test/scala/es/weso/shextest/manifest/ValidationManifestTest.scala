@@ -21,7 +21,7 @@ import io.circe.parser._
 import io.circe.syntax._
 
 
-class ValidationManifestCompatTest extends ValidateManifest {
+class ValidationManifestTest extends ValidateManifest {
 
   // If the following variable is None, it runs all tests
   // Otherwise, it runs only the test whose name is equal to the value of this variable

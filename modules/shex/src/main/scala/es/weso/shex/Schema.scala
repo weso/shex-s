@@ -160,13 +160,13 @@ case class Schema(id: IRI,
  private def checkShapeLabel(lbl: ShapeLabel): Either[String, Unit] = for {
    se <- getShape(lbl)
    _ <- { println(s"Label ${lbl.toString}. ShapeExpr: ${se.toString}"); Right(())}
-   refs <- se.getShapeRefs(this).map(getShape(_)).sequence
+   refs <- se.getShapeRefs(this)
    _ <- { println(s"Refs ${refs.toString}"); Right(())}
   } yield {
     // println(s"Label: $lbl, refs: ${se.getShapeRefs(this).mkString(",")}")
     // println(s"References: ${refs.mkString(",")}")
     ()
-  } 
+  }
 
   private lazy val checkBadShapeLabels: Either[String,Unit] = for {
     shapesMap <- eitherResolvedShapesMap

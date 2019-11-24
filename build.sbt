@@ -76,7 +76,7 @@ lazy val xercesImpl        = "xerces"                     % "xercesImpl"        
 lazy val simulacrum        = "org.typelevel"              %% "simulacrum"          % simulacrumVersion
 
 
-lazy val shex_s = project
+lazy val shex_sRoot = project
   .in(file("."))
   .enablePlugins(ScalaUnidocPlugin, SbtNativePackager, WindowsPlugin, JavaAppPackaging, LauncherJarPlugin)
   .disablePlugins(RevolverPlugin)
