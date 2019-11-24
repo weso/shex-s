@@ -25,7 +25,9 @@ sealed trait ShapeExpr extends Product with Serializable {
 
   def relativize(base: IRI): ShapeExpr
 
-  def hasNoReference(schema: Schema): Boolean = getShapeRefs(schema).isEmpty
+  def hasNoReference(schema: Schema): Boolean = { 
+    getShapeRefs(schema).fold(e => false, _.isEmpty)
+  }
 
   def isSimple(schema: Schema): Boolean = this match {
     case _: Shape          => false
@@ -38,9 +40,9 @@ sealed trait ShapeExpr extends Product with Serializable {
   }
 
   /**
-   * Return the labels that are referenced in a shape expression
-   * This method can use useful to detect if a shape doesn't refer to non-existing labels
-   */
+    * Return the labels that are referenced in a shape expression
+    * This method can use useful to detect if a shape doesn't refer to non-existing labels
+    */
   def getShapeRefs(schema: Schema): Either[String, List[ShapeLabel]] = {
     type State = List[ShapeExpr]
     type S[A]  = StateT[Id, State, A]
@@ -282,6 +284,18 @@ object NodeConstraint {
 
   def xsFacets(facets: List[XsFacet]): NodeConstraint =
     NodeConstraint.empty.copy(xsFacets = facets)
+
+  def iri: NodeConstraint =
+    NodeConstraint.empty.copy(nodeKind = Some(IRIKind))
+
+  def literal: NodeConstraint =
+    NodeConstraint.empty.copy(nodeKind = Some(LiteralKind))
+
+  def bNode: NodeConstraint =
+    NodeConstraint.empty.copy(nodeKind = Some(BNodeKind))
+
+  def nonLiteral: NodeConstraint =
+    NodeConstraint.empty.copy(nodeKind = Some(NonLiteralKind))
 
 }
 
