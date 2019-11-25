@@ -3,7 +3,7 @@ lazy val scala213 = "2.13.1"
 lazy val supportedScalaVersions = List(scala213, scala212)
 
 // Local dependencies
-lazy val srdfVersion           = "0.1.43"
+lazy val srdfVersion           = "0.1.47"
 lazy val utilsVersion          = "0.1.59"
 lazy val documentVersion       = "0.0.3"
 
@@ -140,6 +140,7 @@ lazy val shex = project
       circeCore,
       circeGeneric,
       circeParser,
+      catsEffect,
       scalaTest % Test,
       scalacheck % Test, 
       typing,

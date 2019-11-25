@@ -12,16 +12,6 @@ sealed trait TripleExpr {
   def predicates(schema:Schema): List[IRI] =
     paths(schema).collect { case i: Direct => i.pred }
 
-  def getShapeRefs(schema: Schema): Either[String, List[ShapeLabel]] = this match {
-    case e: EachOf => e.expressions.map(_.getShapeRefs(schema)).sequence.map(_.flatten)
-    case o: OneOf => o.expressions.map(_.getShapeRefs(schema)).sequence.map(_.flatten)
-    case i: Inclusion => ???
-    case tc: TripleConstraint => 
-      tc.valueExpr.fold(List[ShapeLabel]().asRight[String])(se => se.getShapeRefs(schema)) 
-    
-    case e: Expr => List[ShapeLabel]().asRight[String]
-  }
-
   def relativize(base: IRI): TripleExpr
 
   def paths(schema: Schema): List[Path] = getPaths(schema, this).getOrElse(List())
@@ -165,9 +155,6 @@ case class TripleConstraint(
     optMin = optMin.map(x => Math.min(x - 1,0)),
     optMax = optMax.map(_.decreaseCard)
   )
-
-  override def getShapeRefs(schema: Schema): Either[String, List[ShapeLabel]] = 
-     ??? // valueExpr.map(_.getShapeRefs(schema)).sequence  // .map(_.flatten)
 
   override def relativize(base: IRI): TripleConstraint =
     TripleConstraint(

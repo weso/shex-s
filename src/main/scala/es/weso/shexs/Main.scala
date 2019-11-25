@@ -48,7 +48,7 @@ object Main {
   }
 
  private def runManifest(manifest: String): EitherT[IO,String,Unit] = for {
-  manifest <- RDF2Manifest.read(manifest,"Turtle",None, true)
+  manifest <- RDF2Manifest.readIO(manifest,"Turtle",None, true)
   _ <- EitherT.liftF(IO(println(s"Manifest read!")))
  } yield ()
  

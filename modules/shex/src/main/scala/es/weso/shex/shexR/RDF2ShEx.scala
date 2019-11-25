@@ -7,7 +7,9 @@ import es.weso.rdf.PREFIXES._
 import es.weso.shex.shexR.PREFIXES._
 import es.weso.rdf.operations.Comparisons._
 import es.weso.rdf.nodes._
-
+import es.weso.rdf.parser._
+import cats.data.EitherT
+import cats.effect._
 
 /* Parses RDF into SHEx.
  * The parser follows ShExR definition: https://github.com/shexSpec/shexTest/blob/master/doc/ShExR.shex
@@ -15,7 +17,7 @@ import es.weso.rdf.nodes._
 trait RDF2ShEx extends RDFParser with LazyLogging {
 
   val initialNode = BNode("internalNode")
-  def getSchema(rdf: RDFReader): Either[String, Schema] = for {
+  def getSchema(rdf: RDFReader): EitherT[IO, String, Schema] = for {
     schemaNodes <- rdf.triplesWithPredicateObject(`rdf:type`, sx_Schema) // .map(_.subj).toList
     cfg = Config(initialNode,rdf)
     schemas <- 
