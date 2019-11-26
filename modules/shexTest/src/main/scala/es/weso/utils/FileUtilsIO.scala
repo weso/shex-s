@@ -1,9 +1,6 @@
 package es.weso.utils
 import cats.data.EitherT
-import cats.implicits._
 import cats.effect._
-import scala.io._
-import java.io._
 import es.weso.utils.FileUtils
 
 object FileUtilsIO {

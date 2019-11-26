@@ -6,45 +6,43 @@ import es.weso.rdf.nodes.IRI
 // import es.weso.shapeMaps.ShapeMap
 import es.weso.utils.FileUtils
 import org.scalatest._
-
 import scala.util.{Either, Left, Right, Try}
+import cats.data.EitherT
+import cats.effect.IO
+import cats.implicits._
 
-trait ValidateManifest extends FunSpec with Matchers with TryValues with OptionValues {
+trait RunManifest {
+  def runManifest(name: String, folder: String, parentFolder: String, withEntry: (Entry,String,String) => EitherT[IO,String,(String,Boolean)]): EitherT[IO, String, List[(String,Boolean)]] = {
+    val parentFolderURI = Try {Paths.get(parentFolder).normalize.toUri.toString }.getOrElse("")
+    val manifestFolder = s"$parentFolder/$folder"
+    val fileName = s"$manifestFolder/$name.ttl"
+    for {
+      mf <- RDF2Manifest.read(fileName, "TURTLE", Some(s"$parentFolderURI/$folder/"), true).leftMap(e => s"Error reading $fileName\nError: $e")
+      v <- processManifest(mf,name,manifestFolder, withEntry) 
+    } yield v
+  }
+
+  private def processManifest(m: ShExManifest, name: String, parentFolder: String, withEntry: (Entry,String,String) => EitherT[IO,String,(String,Boolean)]): EitherT[IO, String,List[(String,Boolean)]] = for {
+    vs1 <- m.includes.map { case (includeNode, manifest) =>
+        val folder = Try { Paths.get(includeNode.getLexicalForm).getParent.toString }.getOrElse("")
+        runManifest(includeNode.getLexicalForm, folder, parentFolder, withEntry)
+       }.sequence.map(_.flatten)
+     vs2 <- m.entries.map(withEntry(_,name,parentFolder)).sequence
+    } yield (vs1 ++ vs2)
+  }
+
+trait ValidateManifest extends FunSpec with Matchers with TryValues with OptionValues with RunManifest {
 
   def parseManifest(name: String,folder: String, parentFolder: String): Unit = {
     it(s"Should parse manifestTest $folder/$name") {
-      println(s"ParseManifest: $name, folder: $folder, parentFolder: $parentFolder")
-      val parentFolderURI = Try {Paths.get(parentFolder).normalize.toUri.toString }.getOrElse("")
-      println(s"ParentFolderUri: $parentFolderURI")
-      val manifestFolder = s"$parentFolder/$folder"
-      val fileName = s"$manifestFolder/$name.ttl"
-      RDF2Manifest.read(fileName, "TURTLE", Some(s"$parentFolderURI/$folder/"), true).value.unsafeRunSync match {
-        case Left(e) =>
-          fail(s"Error reading $fileName\nError: $e")
-        case Right(mf) => {
-          processManifest(mf,name,manifestFolder)
-        }
-      }
+      runManifest(name, folder, parentFolder, processEntry) 
     }
   }
 
-  def processManifest(m: ShExManifest, name: String, parentFolder: String): Unit = {
-    println(s"processManifest with ${name} and parent folder $parentFolder")
-    for ((includeNode, manifest) <- m.includes) {
-      println(s"Include: $includeNode")
-      val folder = Try { Paths.get(includeNode.getLexicalForm).getParent.toString }.getOrElse("")
-      // println(s"Include folder: parent: ${folder.getParent.toString}, fileName: ${folder.getFileName.toString}")
-      parseManifest(includeNode.getLexicalForm, folder, parentFolder)
-    }
-    for (e <- m.entries) {
-      processEntry(e, name, parentFolder)
-    }
-  }
-
-  def processEntry(e: es.weso.shextest.manifest.Entry, name: String, manifestFolder: String): Unit = e match {
+  def processEntry(e: es.weso.shextest.manifest.Entry, name: String, manifestFolder: String): EitherT[IO,String,(String,Boolean)] = e match {
     case r: RepresentationTest => {
       println(s"Entry: ${e}, name: $name")
-      ()
+      EitherT.pure[IO,String]((name,true))
     }
     case v: Validate => {
       val a = v.action
@@ -57,14 +55,14 @@ trait ValidateManifest extends FunSpec with Matchers with TryValues with OptionV
             (strRdf, strSchema, strShapeMap, strResultShapeMap)
        }
       r.fold(
-            e => info(s"Error: $e"),
+            e => EitherT.fromEither(Left(s"Error: $e")),
             v => {
               val (strRdf, strSchema, strShapeMap, strResultShapeMap) = v
-              shouldValidateWithShapeMap(strRdf, strSchema, strShapeMap, strResultShapeMap)
+              shouldValidateWithShapeMap(name,strRdf, strSchema, strShapeMap, strResultShapeMap)
             }
           )
        }
-    case _ => fail(s"Unsupported entry type: ${e.entryType}")
+    case _ => EitherT.fromEither(Left(s"Unsupported entry type: ${e.entryType}"))
   }
 
   def getContents(name: String, folder: String, value: Option[IRI]): Either[String,String] = value match {
@@ -72,20 +70,17 @@ trait ValidateManifest extends FunSpec with Matchers with TryValues with OptionV
     case Some(iri) => FileUtils.getContents(folder + "/" + iri.str).map(_.toString)
   }
 
-  def shouldValidateWithShapeMap(
-                                  rdfStr: String,
-                                  shexStr: String,
-                                  shapeMapStr: String,
-                                  expected: String): Unit = {
-    it(s"Should validate ${shexStr} with ${rdfStr} and ${shapeMapStr} and result $expected") {
-      val validate = for {
+  def shouldValidateWithShapeMap(name: String, 
+                                 rdfStr: String,
+                                 shexStr: String,
+                                 shapeMapStr: String,
+                                 expected: String): EitherT[IO,String,(String,Boolean)] = {
+    val validate = for {
         rdf <- RDFAsJenaModel.fromChars(rdfStr, "Turtle")
       } yield true
       validate match {
-        case Left(msg) => fail(s"Error: $msg")
-        case Right(v) => v should be(true)
+        case Left(msg) => EitherT.fromEither(s"Error processing RDF: $msg\nRDF=\n$rdfStr".asLeft[(String,Boolean)])
+        case Right(v) =>  EitherT.pure[IO,String]((name,v))
       }
     }
-  }
-
 }

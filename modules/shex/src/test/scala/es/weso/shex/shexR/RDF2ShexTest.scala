@@ -6,6 +6,7 @@ import es.weso.rdf.jena.RDFAsJenaModel
 import es.weso.rdf.nodes._
 import es.weso.shex.shexR.PREFIXES._
 import es.weso.rdf.PREFIXES._
+import es.weso.rdf.parser._
 
 
 class RDF2ShExTest extends FunSpec with Matchers with EitherValues with TryValues {
@@ -36,7 +37,7 @@ class RDF2ShExTest extends FunSpec with Matchers with EitherValues with TryValue
 
       val result = for {
         rdf <- RDFAsJenaModel.fromChars(str, "TURTLE", None)
-        schemas <- RDF2ShEx.rdf2Schema(rdf)
+        schemas <- RDF2ShEx.rdf2Schema(rdf).value.unsafeRunSync
       } yield schemas
 
       result match {
@@ -71,8 +72,8 @@ class RDF2ShExTest extends FunSpec with Matchers with EitherValues with TryValue
 
         val result = for {
           rdf <- RDFAsJenaModel.fromChars(str, "TURTLE", None)
-          cfg = rdf2Shex.Config(IRI("http://example.org/x"), rdf)
-          schemas <- rdf2Shex.opt(sx_start, rdf2Shex.iri).value.run(cfg) 
+          cfg = Config(IRI("http://example.org/x"), rdf)
+          schemas <- rdf2Shex.opt(sx_start, rdf2Shex.iri).value.run(cfg).unsafeRunSync
         } yield schemas
 
         result match {
@@ -95,8 +96,8 @@ class RDF2ShExTest extends FunSpec with Matchers with EitherValues with TryValue
 
         val result = for {
           rdf <- RDFAsJenaModel.fromChars(str, "TURTLE", None)
-          cfg = rdf2Shex.Config(IRI("http://example.org/x"), rdf)
-          schemas <- rdf2Shex.opt(sx_start, rdf2Shex.iri).value.run(cfg)
+          cfg = Config(IRI("http://example.org/x"), rdf)
+          schemas <- rdf2Shex.opt(sx_start, rdf2Shex.iri).value.run(cfg).unsafeRunSync
         } yield schemas
 
         result match {
@@ -131,7 +132,7 @@ class RDF2ShExTest extends FunSpec with Matchers with EitherValues with TryValue
          """.stripMargin
       val result = for {
         rdf <- RDFAsJenaModel.fromChars(rdfStr, "TURTLE", None)
-        schema <- RDF2ShEx.rdf2Schema(rdf)
+        schema <- RDF2ShEx.rdf2Schema(rdf).value.unsafeRunSync
       } yield schema
 
       val nc = NodeConstraint.datatype(`xsd:string`, List()).addId(v)
@@ -176,7 +177,7 @@ class RDF2ShExTest extends FunSpec with Matchers with EitherValues with TryValue
          """.stripMargin
       val result = for {
         rdf <- RDFAsJenaModel.fromChars(rdfStr, "TURTLE", None)
-        schema <- RDF2ShEx.rdf2Schema(rdf)
+        schema <- RDF2ShEx.rdf2Schema(rdf).value.unsafeRunSync
       } yield schema
 
       val nc = NodeConstraint.datatype(`xsd:string`, List()).addId(v)

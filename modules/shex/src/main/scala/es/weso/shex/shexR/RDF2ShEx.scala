@@ -17,17 +17,18 @@ import cats.effect._
 trait RDF2ShEx extends RDFParser with LazyLogging {
 
   val initialNode = BNode("internalNode")
-  def getSchema(rdf: RDFReader): EitherT[IO, String, Schema] = for {
-    schemaNodes <- rdf.triplesWithPredicateObject(`rdf:type`, sx_Schema) // .map(_.subj).toList
+
+  def getSchema(rdf: RDFReader): RDFParser[Schema] = for {
+    schemaNodes <- fromEither(rdf.triplesWithPredicateObject(`rdf:type`, sx_Schema)) // .map(_.subj).toList
     cfg = Config(initialNode,rdf)
     schemas <- 
-      parseNodes(schemaNodes.toList.map(_.subj), schema).value.run(cfg)
+      parseNodes(schemaNodes.toList.map(_.subj), schema)
     r <- schemas.length match {
-        case 0 => Right(Schema.empty)
-        case 1 => Right(schemas.head)
+        case 0 => parseOk(Schema.empty)
+        case 1 => parseOk(schemas.head)
         case _ => {
           logger.warn(s"More than one schema obtained when parsing RDF\n${rdf.serialize("TURTLE")}")
-          Right(schemas.head)
+          parseOk(schemas.head)
         }
       }
   } yield r
@@ -442,7 +443,9 @@ trait RDF2ShEx extends RDFParser with LazyLogging {
 
 object RDF2ShEx extends RDF2ShEx {
 
-  def rdf2Schema(rdf: RDFReader): Either[String, Schema] =
-    getSchema(rdf)
+  def rdf2Schema(rdf: RDFReader): EitherT[IO, String, Schema] = {
+    val cfg = Config(IRI("http://internal/"),rdf)
+    EitherT(getSchema(rdf).value.run(cfg))
+  }
 
 }

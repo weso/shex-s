@@ -27,7 +27,8 @@ object Main {
        _ <- eitherValue.fold(s => IO(println(s"Error: $s")), v => IO(println(s"End: $v")))
       } yield ()
     } else {
-      IO.sleep(1.second) *> IO(println("Hello world!"))
+      IO.sleep(1.second) *> 
+      IO(println("Hello world!"))
     }
   }
 
@@ -48,8 +49,8 @@ object Main {
   }
 
  private def runManifest(manifest: String): EitherT[IO,String,Unit] = for {
-  manifest <- RDF2Manifest.readIO(manifest,"Turtle",None, true)
-  _ <- EitherT.liftF(IO(println(s"Manifest read!")))
+  manifest <- RDF2Manifest.read(manifest,"Turtle",None, true)
+  _ <- EitherT.liftF(IO(println(s"Manifest read with ${manifest.entries.length} entries. Number of includes: ${manifest.includes.length}")))
  } yield ()
  
 

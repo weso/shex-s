@@ -6,7 +6,6 @@ import es.weso.rdf.jena.RDFAsJenaModel
 import es.weso.rdf.nodes._
 import es.weso.rdf.parser.RDFParser
 import es.weso.utils.FileUtilsIO._
-import es.weso.utils.FileUtils._
 import ManifestPrefixes._
 import cats.data._
 import cats.implicits._
@@ -240,34 +239,39 @@ class RDF2Manifest extends RDFParser with LazyLogging {
       for {
         is <- liftParser(irisFromPredicate(mf_include))
         result <- {
+          def parseIri(iri: IRI): ManifestParser[(IRI,Option[ShExManifest])] = 
+              if (ctx.visited contains iri) 
+                liftParser(parseFail(s"Iri $iri alread visited. Visited=${ctx.visited.map(_.toString).mkString(",")}"))
+              else 
+                local(ctx => ctx.copy(visited = iri +: ctx.visited), derefInclude(iri)) 
+                
           val ds: List[ManifestParser[(IRI, Option[ShExManifest])]] =
-            is.toList.map(iri => local(ctx => ctx.copy(visited = iri +: ctx.visited), derefInclude(iri, ctx.base, ctx.derefIncludes)))
+            is.toList.map(parseIri(_))
           ds.sequence
         }
       } yield result
     } else liftParser(parseOk(List()))
   } yield v
 
-  private def derefInclude(node: IRI, base: Option[IRI], derefIncludes: Boolean): ManifestParser[(IRI, Option[ShExManifest])] = node match {
-    case iri: IRI => if (derefIncludes) {
-        val iriResolved = base.fold(iri)(base => base.resolve(iri))
-        for {
-          rdf <- liftParser(derefRDF(iriResolved))
-          mfs <- parseManifest(iriResolved, rdf) 
-          manifest <- liftParser(checkListManifests(mfs))
-        } yield (iri, Some(manifest))
-      } else liftParser(ok((iri, None)))
-    case _ =>
-      liftParser(parseFail(s"Trying to deref an include from node $node which is not an IRI"))
-  }
+  private def derefInclude(node: IRI): ManifestParser[(IRI, Option[ShExManifest])] = for {
+    ctx <- getContext
+    pair <- node match {
+      case iri: IRI => if (ctx.derefIncludes) {
+          val iriResolved = ctx.base.fold(iri)(base => base.resolve(iri))
+          for {
+            rdf <- liftParser(derefRDF(iriResolved))
+            mfs <- parseManifest(iriResolved, rdf) 
+            manifest <- liftParser(checkListManifests(mfs))
+          } yield (iri, Some(manifest))
+        } else liftParser(ok((iri, None)))
+      case _ =>
+        liftParser(parseFail(s"Trying to deref an include from node $node which is not an IRI"))
+    }
+  } yield pair
 
   private def parseManifest(iri: IRI, rdf: RDFReader): ManifestParser[List[ShExManifest]] = for {
     ctx <- getContext
-    mfs <- if (ctx.visited contains iri) liftParser(parseFail(s"Loop including iri: $iri"))
-           else {
-             val newCtx = ManifestContext(base = Some(iri), ctx.derefIncludes, ctx.visited)
-             liftParser(withRdf(rdf, rdf2Manifest.run(newCtx)))
-           } 
+    mfs <- liftParser(withRdf(rdf, rdf2Manifest.run(ctx)))
   } yield mfs
 
   private def checkListManifests(mfs: List[ShExManifest]): RDFParser[ShExManifest] = 

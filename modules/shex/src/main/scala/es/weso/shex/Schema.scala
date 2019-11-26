@@ -8,7 +8,7 @@ import es.weso.rdf.nodes.{IRI, RDFNode}
 import es.weso.shex.shexR.{RDF2ShEx, ShEx2RDF}
 import es.weso.utils.UriUtils._
 import scala.io.Source
-import scala.util.{Either, Left, Right, Try}
+import scala.util._
 
 case class Schema(id: IRI,
                   prefixes: Option[PrefixMap],
@@ -293,7 +293,7 @@ object Schema {
         case Some(rdfReader) =>
          if (rdfDataFormats(rdfReader).contains(formatUpperCase)) for {
           rdf    <- rdfReader.fromString(cs, formatUpperCase, base)
-          schema <- RDF2ShEx.rdf2Schema(rdf)
+          schema <- RDF2ShEx.rdf2Schema(rdf).value.unsafeRunSync
          } yield schema
          else Left(s"Not implemented ShEx parser for format $format")
        }
