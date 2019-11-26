@@ -1,8 +1,11 @@
 package es.weso.shextest.manifest
 
+import java.net.URI
 import java.nio.file.Paths
 import es.weso.rdf.jena.RDFAsJenaModel
 import es.weso.rdf.nodes.IRI
+import es.weso.utils.UriUtils._
+import es.weso.shapeMaps.{BNodeLabel => BNodeMapLabel, IRILabel => IRIMapLabel, Start => StartMap, _}
 // import es.weso.shapeMaps.ShapeMap
 import es.weso.utils.FileUtils
 import org.scalatest._
@@ -98,6 +101,14 @@ trait ValidateManifest extends FunSpec with Matchers with TryValues with OptionV
         }
       )
     }
+    case v: ValidationTest => {
+      val base = Paths.get(".").toUri
+      v.action match {
+        case focusAction: FocusAction => validateFocusAction(focusAction,base,v,true)
+        case mr: MapResultAction => validateMapResult(mr,base,v)
+        case ma: ManifestAction => fail(s"Not implemented validate ManifestAction yet")
+      }
+    }
     case _ => EitherT.fromEither(Left(s"Unsupported entry type: ${e.entryType}"))
   }
 } else EitherT.pure(None)
@@ -189,4 +200,87 @@ case _ => fail(s"Unsupported entry type: ${e.entryType}")
       case Right(v)  => EitherT.pure[IO, String]((name, v))
     }
   }
+
+  /*
+  def validateFocusAction(fa: FocusAction,
+                          base: URI,
+                          v: ValidOrFailureTest,
+                          shouldValidate: Boolean
+                         ): Either[String, String] = {
+    val focus = fa.focus
+    val schemaUri = mkLocal(fa.schema,schemasBase,shexFolderURI)
+    val dataUri = mkLocal(fa.data,schemasBase,shexFolderURI)
+    for {
+      schemaStr <- derefUri(schemaUri)
+      dataStr <- derefUri(dataUri)
+      schema <- Schema.fromString(schemaStr, "SHEXC", Some(fa.schema))
+      data   <- RDFAsJenaModel.fromChars(dataStr, "TURTLE", Some(fa.data))
+      lbl = fa.shape match {
+        case None           => StartMap: ShapeMapLabel
+        case Some(i: IRI)   => IRIMapLabel(i)
+        case Some(b: BNode) => BNodeMapLabel(b)
+        case Some(other) => {
+          IRIMapLabel(IRI(s"UnknownLabel"))
+        }
+      }
+      ok <- if (v.traits contains sht_Greedy) {
+        Right(s"Greedy")
+      } else {
+        val shapeMap = FixedShapeMap(Map(focus -> Map(lbl -> Info())), data.getPrefixMap, schema.prefixMap)
+        for {
+          resultShapeMap <- Validator(schema, ExternalIRIResolver(fa.shapeExterns))
+            .validateShapeMap(data, shapeMap).toEitherS
+          ok <- if (resultShapeMap.getConformantShapes(focus) contains lbl)
+            if (shouldValidate) Right(s"Focus $focus conforms to $lbl as expected")
+            else Left(s"Focus $focus conforms to $lbl but should not" ++
+                      s"\nData: \n${dataStr}\nSchema: ${schemaStr}\n" ++
+                      s"${resultShapeMap.getInfo(focus, lbl)}\n" ++
+                      s"Schema: ${schema}\n" ++
+                      s"Data: ${data}")
+          else {
+            if (!shouldValidate) Right(s"Focus $focus does not conforms to $lbl as expected")
+            else Left(s"Focus $focus does not conform to $lbl but should" ++
+              s"\nData: \n${dataStr}\nSchema: ${schemaStr}\n" ++
+              s"${resultShapeMap.getInfo(focus, lbl)}\n" ++
+              s"Schema: ${schema}\n" ++
+              s"Data: ${data}")
+          }
+        } yield ok
+      }
+    } yield ok
+  }
+
+  def validateMapResult(mr: MapResultAction,
+                        base: URI,
+                        v: ValidOrFailureTest
+                       ): Either[String,String] = {
+    v.maybeResult match {
+      case None => Left(s"No result specified")
+      case Some(resultIRI) => {
+        val schemaUri         = mkLocal(mr.schema, validationBase, shexFolderURI)
+        val shapeMapUri       = mkLocal(mr.shapeMap, validationBase, shexFolderURI)
+        val resultMapUri      = mkLocal(resultIRI, validationBase, shexFolderURI)
+        val r: Either[String, String] = for {
+          schemaStr      <- derefUri(schemaUri)
+          resultMapStr  <- derefUri(resultMapUri)
+          smapStr       <- derefUri(shapeMapUri)
+          sm            <- ShapeMap.fromJson(smapStr)
+          schema        <- Schema.fromString(schemaStr, "SHEXC", None)
+          fixedShapeMap <- ShapeMap.fixShapeMap(sm, RDFAsJenaModel.empty, PrefixMap.empty, PrefixMap.empty)
+          dataUri = mkLocal(mr.data,schemasBase,shexFolderURI)
+          strData        <- derefUri(dataUri)
+          data           <- RDFAsJenaModel.fromChars(strData, "TURTLE", None)
+          resultShapeMap <- Validator(schema).validateShapeMap(data, fixedShapeMap).toEitherS
+          jsonResult     <- JsonResult.fromJsonString(resultMapStr)
+          result <- if (jsonResult.compare(resultShapeMap)) Right(s"Json results match resultShapeMap")
+          else
+            Left(
+              s"Json results are different. Expected: ${jsonResult.asJson.spaces2}\nObtained: ${resultShapeMap.toString}")
+        } yield result
+        r
+      }
+    }
+  } */
+
+  
 }
