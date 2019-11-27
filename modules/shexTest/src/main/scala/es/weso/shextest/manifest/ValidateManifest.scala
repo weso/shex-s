@@ -4,7 +4,6 @@ import java.net.URI
 import java.nio.file.Paths
 import es.weso.rdf.jena.RDFAsJenaModel
 import es.weso.rdf.nodes.IRI
-import es.weso.utils.UriUtils._
 import es.weso.shapeMaps.{BNodeLabel => BNodeMapLabel, IRILabel => IRIMapLabel, Start => StartMap, _}
 // import es.weso.shapeMaps.ShapeMap
 import es.weso.utils.FileUtils
@@ -22,6 +21,10 @@ import es.weso.shex.implicits.encoderShEx._
 import scala.io._
 import io.circe.parser._
 import io.circe.syntax._
+import es.weso.rdf._
+import es.weso.rdf.nodes._
+import ManifestPrefixes._
+
 
 trait RunManifest {
 
@@ -67,6 +70,8 @@ trait ValidateManifest extends FunSpec with Matchers with TryValues with OptionV
 
   def parseManifest(name: String, folder: String, parentFolder: String, nameIfSingle: Option[String]): Unit = {
     it(s"Should parse manifestTest $folder/$name") {
+
+    
       runManifest(name, folder, parentFolder, nameIfSingle, processEntryValidating)
     }
   }
@@ -78,6 +83,7 @@ trait ValidateManifest extends FunSpec with Matchers with TryValues with OptionV
       nameIfSingle: Option[String]
   ): EitherT[IO, String, Option[(String, Boolean)]] = 
   if (nameIfSingle == None || nameIfSingle.getOrElse("") == e.name) {
+   val folderURI = Paths.get(manifestFolder).normalize.toUri
    e match {
     case r: RepresentationTest => {
       println(s"Entry: ${e}, name: $name")
@@ -104,8 +110,8 @@ trait ValidateManifest extends FunSpec with Matchers with TryValues with OptionV
     case v: ValidationTest => {
       val base = Paths.get(".").toUri
       v.action match {
-        case focusAction: FocusAction => validateFocusAction(focusAction,base,v,true)
-        case mr: MapResultAction => validateMapResult(mr,base,v)
+        case focusAction: FocusAction => validateFocusAction(focusAction,base,v,true, name, folderURI)
+        case mr: MapResultAction => validateMapResult(mr,base,v,name,folderURI)
         case ma: ManifestAction => fail(s"Not implemented validate ManifestAction yet")
       }
     }
@@ -138,7 +144,7 @@ Schema.fromString(schemaStr, "SHEXC", None) match {
             case Left(err) => fail(s"Schemas are equal but error parsing Json $jsonStr")
             case Right(json) => {
               if (json.equals(schema.asJson)) {
-                ok(Some((name,true)))
+                ok(name,true)
               } else {
                 fail(
                   s"Json's are different\nSchema:${schema}\nJson generated: ${schema.asJson.spaces2}\nExpected: ${json.spaces2}")
@@ -177,8 +183,10 @@ case _ => fail(s"Unsupported entry type: ${e.entryType}")
 }
 } else EitherT.pure(None)
 
- def fail[A](msg: String): EitherT[IO,String,A] = EitherT.fromEither(Left(msg))
- def ok[A](x:A): EitherT[IO,String,A] = EitherT.pure(x)
+ private def fail[A](msg: String): EitherT[IO,String,A] = EitherT.fromEither(Left(msg))
+ private def ok[A](name: String, b: Boolean): EitherT[IO,String,Option[(String,Boolean)]] = EitherT.pure(Some((name,b)))
+ private def fromEither[A](e: Either[String,A]): EitherT[IO,String,A] = EitherT.fromEither(e)
+ private def info(msg: String): EitherT[IO, String, Unit] = EitherT.liftF(IO(println(msg)))
 
  def getContents(name: String, folder: String, value: Option[IRI]): Either[String, String] = value match {
     case None      => Left(s"No value for $name")
@@ -201,20 +209,23 @@ case _ => fail(s"Unsupported entry type: ${e.entryType}")
     }
   }
 
-  /*
+  
   def validateFocusAction(fa: FocusAction,
                           base: URI,
                           v: ValidOrFailureTest,
-                          shouldValidate: Boolean
-                         ): Either[String, String] = {
+                          shouldValidate: Boolean,
+                          name: String,
+                          folderURI: URI
+                         ): EitherT[IO, String, Option[(String, Boolean)]] = {
     val focus = fa.focus
-    val schemaUri = mkLocal(fa.schema,schemasBase,shexFolderURI)
-    val dataUri = mkLocal(fa.data,schemasBase,shexFolderURI)
+    val schemaUri = mkLocal(fa.schema,schemasBase,folderURI)
+    val dataUri = mkLocal(fa.data,schemasBase,folderURI)
     for {
-      schemaStr <- derefUri(schemaUri)
-      dataStr <- derefUri(dataUri)
-      schema <- Schema.fromString(schemaStr, "SHEXC", Some(fa.schema))
-      data   <- RDFAsJenaModel.fromChars(dataStr, "TURTLE", Some(fa.data))
+      _ <- info(s"Validating focusAction: $name")
+      schemaStr <- derefUriIO(schemaUri)
+      dataStr <- derefUriIO(dataUri)
+      schema <- fromEither(Schema.fromString(schemaStr, "SHEXC", Some(fa.schema)))
+      data   <- fromEither(RDFAsJenaModel.fromChars(dataStr, "TURTLE", Some(fa.data)))
       lbl = fa.shape match {
         case None           => StartMap: ShapeMapLabel
         case Some(i: IRI)   => IRIMapLabel(i)
@@ -224,63 +235,78 @@ case _ => fail(s"Unsupported entry type: ${e.entryType}")
         }
       }
       ok <- if (v.traits contains sht_Greedy) {
-        Right(s"Greedy")
+        ok(name,true)
       } else {
         val shapeMap = FixedShapeMap(Map(focus -> Map(lbl -> Info())), data.getPrefixMap, schema.prefixMap)
         for {
-          resultShapeMap <- Validator(schema, ExternalIRIResolver(fa.shapeExterns))
-            .validateShapeMap(data, shapeMap).toEitherS
-          ok <- if (resultShapeMap.getConformantShapes(focus) contains lbl)
-            if (shouldValidate) Right(s"Focus $focus conforms to $lbl as expected")
-            else Left(s"Focus $focus conforms to $lbl but should not" ++
+          resultShapeMap <- fromEither(Validator(schema, ExternalIRIResolver(fa.shapeExterns)).validateShapeMap(data, shapeMap).toEitherS)
+          ok <- if (resultShapeMap.getConformantShapes(focus) contains lbl) {
+            if (shouldValidate) ok(name,true)
+            else fail[Option[(String,Boolean)]](s"Focus $focus conforms to $lbl but should not" ++
                       s"\nData: \n${dataStr}\nSchema: ${schemaStr}\n" ++
                       s"${resultShapeMap.getInfo(focus, lbl)}\n" ++
                       s"Schema: ${schema}\n" ++
-                      s"Data: ${data}")
+                      s"Data: ${data}")  
+          }
           else {
-            if (!shouldValidate) Right(s"Focus $focus does not conforms to $lbl as expected")
-            else Left(s"Focus $focus does not conform to $lbl but should" ++
+            if (!shouldValidate) ok(name,true)
+            else fail[Option[(String,Boolean)]](s"Focus $focus does not conform to $lbl but should" ++
               s"\nData: \n${dataStr}\nSchema: ${schemaStr}\n" ++
               s"${resultShapeMap.getInfo(focus, lbl)}\n" ++
               s"Schema: ${schema}\n" ++
-              s"Data: ${data}")
-          }
+              s"Data: ${data}") 
+          } 
         } yield ok
       }
-    } yield ok
+    } yield ok 
   }
 
   def validateMapResult(mr: MapResultAction,
                         base: URI,
-                        v: ValidOrFailureTest
-                       ): Either[String,String] = {
+                        v: ValidOrFailureTest,
+                        name: String,
+                        folderURI: URI
+                       ): EitherT[IO,String,Option[(String,Boolean)]] = {
     v.maybeResult match {
-      case None => Left(s"No result specified")
+      case None => fail(s"No result specified")
       case Some(resultIRI) => {
-        val schemaUri         = mkLocal(mr.schema, validationBase, shexFolderURI)
-        val shapeMapUri       = mkLocal(mr.shapeMap, validationBase, shexFolderURI)
-        val resultMapUri      = mkLocal(resultIRI, validationBase, shexFolderURI)
-        val r: Either[String, String] = for {
-          schemaStr      <- derefUri(schemaUri)
-          resultMapStr  <- derefUri(resultMapUri)
-          smapStr       <- derefUri(shapeMapUri)
-          sm            <- ShapeMap.fromJson(smapStr)
-          schema        <- Schema.fromString(schemaStr, "SHEXC", None)
-          fixedShapeMap <- ShapeMap.fixShapeMap(sm, RDFAsJenaModel.empty, PrefixMap.empty, PrefixMap.empty)
-          dataUri = mkLocal(mr.data,schemasBase,shexFolderURI)
-          strData        <- derefUri(dataUri)
-          data           <- RDFAsJenaModel.fromChars(strData, "TURTLE", None)
-          resultShapeMap <- Validator(schema).validateShapeMap(data, fixedShapeMap).toEitherS
-          jsonResult     <- JsonResult.fromJsonString(resultMapStr)
-          result <- if (jsonResult.compare(resultShapeMap)) Right(s"Json results match resultShapeMap")
+        val schemaUri         = mkLocal(mr.schema, validationBase, folderURI)
+        val shapeMapUri       = mkLocal(mr.shapeMap, validationBase, folderURI)
+        val resultMapUri      = mkLocal(resultIRI, validationBase, folderURI)
+        val r: EitherT[IO,String,Option[(String, Boolean)]] = for {
+          _ <- info(s"Validating mapResult: $name")
+          schemaStr      <- derefUriIO(schemaUri)
+          resultMapStr  <- derefUriIO(resultMapUri)
+          smapStr       <- derefUriIO(shapeMapUri)
+          sm            <- fromEither(ShapeMap.fromJson(smapStr))
+          schema        <- fromEither(Schema.fromString(schemaStr, "SHEXC", None))
+          fixedShapeMap <- fromEither(ShapeMap.fixShapeMap(sm, RDFAsJenaModel.empty, PrefixMap.empty, PrefixMap.empty))
+          dataUri = mkLocal(mr.data,schemasBase,folderURI)
+          strData        <- derefUriIO(dataUri)
+          data           <- fromEither(RDFAsJenaModel.fromChars(strData, "TURTLE", None))
+          resultShapeMap <- fromEither(Validator(schema).validateShapeMap(data, fixedShapeMap).toEitherS)
+          jsonResult     <- fromEither(JsonResult.fromJsonString(resultMapStr))
+          result <- if (jsonResult.compare(resultShapeMap)) ok(name,true)
           else
-            Left(
+            fail(
               s"Json results are different. Expected: ${jsonResult.asJson.spaces2}\nObtained: ${resultShapeMap.toString}")
         } yield result
         r
       }
     }
-  } */
+  } 
+
+  def derefUriIO(uri: URI): EitherT[IO, String, String] = {
+    EitherT(IO(Either.fromTry(
+      Try{
+        val urlCon = uri.toURL.openConnection()
+        urlCon.setConnectTimeout(4000)
+        urlCon.setReadTimeout(2000)
+        val is = urlCon.getInputStream()
+        Source.fromInputStream(is).mkString
+      }
+    ).leftMap(e => s"derefUri($uri): Error: ${e.getMessage}")))
+  }
 
   
 }
