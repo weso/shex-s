@@ -217,7 +217,6 @@ object Schema {
     Schema(IRI(""),None, None, None, None, None, None, List())
 
   def fromIRI(i: IRI, base: Option[IRI]): Either[String, Schema] = {
-    println(s"fromIRI: $i")
     Try {
       val uri = i.uri
       if (uri.getScheme == "file") {
@@ -256,12 +255,10 @@ object Schema {
    val (ext,format) = pair
    val uri = if (ext == "") iri.uri
    else (iri + "." + ext).uri
-   val r = for {
+   for {
     str <- derefUri(uri)
     schema <- Schema.fromString(str,format,base,None)
    } yield schema
-   println(s"getSchemaExt($iri,$pair): $r")
-   r
   }
 
   /**

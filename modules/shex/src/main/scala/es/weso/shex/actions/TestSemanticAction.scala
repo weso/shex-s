@@ -23,11 +23,11 @@ object TestSemanticAction {
           case sExpr() => s"$node"
           case _ => str
         }
-        println(s)
+        // println(s)
         Left(s"TestSemanticAction: Fail expression: $s")
       }
       case str => {
-        println(s"TestSemanticAction: Does not match: $str")
+        // println(s"TestSemanticAction: Does not match: $str")
         Right(())
       }
     }
