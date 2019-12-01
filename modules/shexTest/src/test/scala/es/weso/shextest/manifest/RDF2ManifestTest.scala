@@ -11,22 +11,40 @@ class RDF2ManifestTest extends FunSpec with ValidateManifest {
 
   describe("RDF2Manifest schemas") {
     val validationFolder = conf.getString("testsFolder")
-    parseManifestValidating("manifest", "schemas", validationFolder, None)
-  }
-
-  describe("RDF2Manifest negativeStructure") {
-    val validationFolder = conf.getString("testsFolder")
-    parseManifestValidating("manifest", "negativeStructure", validationFolder, None)
-  }
+    parseManifest("manifest", "schemas", validationFolder, None,List(), false)
+  } 
 
   describe("RDF2Manifest negativeSyntax") {
     val validationFolder = conf.getString("testsFolder")
-    parseManifestValidating("manifest", "negativeSyntax", validationFolder, None)
+    parseManifest("manifest", 
+      "negativeSyntax", 
+      validationFolder, 
+      None, 
+      List("1unknowndatatypeMaxInclusive"),
+      true)
   } 
+
+  describe("RDF2Manifest negativeStructure") {
+    val validationFolder = conf.getString("testsFolder")
+    parseManifest("manifest", 
+     "negativeStructure", 
+     validationFolder, 
+     None, 
+     List("1MissingRef",
+      "1focusMissingRefdot", 
+      "includeExpressionNotFound", 
+      "Cycle1Negation1", 
+      "Cycle1Negation2", 
+      "Cycle1Negation3", 
+      "TwoNegation", 
+      "Cycle2Negation", 
+      "Cycle2Extra"
+     ), false)
+  }
 
   describe("RDF2Manifest validating") {
     val validationFolder = conf.getString("testsFolder")
-    parseManifestValidating("manifest", "validation", validationFolder, None)
-  } 
+    parseManifest("manifest", "validation", validationFolder, None, List(), false)
+  }  
   
 }

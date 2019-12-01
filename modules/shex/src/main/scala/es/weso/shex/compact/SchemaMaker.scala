@@ -297,27 +297,31 @@ class SchemaMaker extends ShExDocBaseVisitor[Any] with LazyLogging {
       case s: NodeConstraintLiteralContext =>
         for {
           xsFacets <- visitList(visitXsFacet, s.xsFacet())
+          _ <- checkFacets(xsFacets)
         } yield NodeConstraint.nodeKind(LiteralKind, xsFacets)
       case s: NodeConstraintNonLiteralContext =>
         for {
           nodeKind <- visitNonLiteralKind(s.nonLiteralKind())
           stringFacets <- visitList(visitStringFacet, s.stringFacet())
+          _ <- checkFacets(stringFacets)
         } yield NodeConstraint.nodeKind(nodeKind, stringFacets)
       case s: NodeConstraintDatatypeContext =>
         for {
           datatype <- visitDatatype(s.datatype())
           xsFacets <- visitList(visitXsFacet, s.xsFacet())
+          _ <- checkFacets(xsFacets)
         } yield NodeConstraint.datatype(datatype, xsFacets)
       case c: NodeConstraintValueSetContext =>
         for {
           vs <- visitValueSet(c.valueSet())
           xsFacets <- visitList(visitXsFacet, c.xsFacet())
+          _ <- checkFacets(xsFacets)
         } yield NodeConstraint.valueSet(vs, xsFacets)
 
       case c: NodeConstraintNumericFacetContext => for {
         facets <- visitList(visitNumericFacet, c.numericFacet)
-      } yield NodeConstraint.empty.copy(
-        xsFacets = facets)
+        _ <- checkFacets(facets)
+      } yield NodeConstraint.empty.copy(xsFacets = facets)
     }
   }
 
@@ -340,9 +344,12 @@ class SchemaMaker extends ShExDocBaseVisitor[Any] with LazyLogging {
       case s: LitNodeConstraintLiteralContext => for {
        nk <- visitNonLiteralKind(s.nonLiteralKind())
        sfs <- visitList(visitStringFacet,s.stringFacet)
+       _ <- checkFacets(sfs)
       } yield NodeConstraint.nodeKind(nk,sfs)
+
       case s: LitNodeConstraintStringFacetContext => for {
        sfs <- visitList(visitStringFacet,s.stringFacet)
+       _ <- checkFacets(sfs)
       } yield NodeConstraint.xsFacets(sfs)
     }
   }
@@ -871,11 +878,31 @@ class SchemaMaker extends ShExDocBaseVisitor[Any] with LazyLogging {
   }
   override def visitNodeConstraintLiteral(ctx: NodeConstraintLiteralContext): Builder[ShapeExpr] = for {
     facets <- visitList(visitXsFacet, ctx.xsFacet())
+    _ <- checkFacets(facets)
   } yield NodeConstraint.nodeKind(LiteralKind, facets)
+
+
+  // TODO: Check there are non repeated facets
+  def checkFacets(ls: List[XsFacet]): Builder[Unit] = {
+    case class Status(visited: List[XsFacet], errors: List[String])
+    val zero = Status(List(), List())
+    def cmb(facet: XsFacet, status: Status): Status = {
+      val sameTypeFacets = status.visited.filter(_.sameTypeAs(facet))
+      if (sameTypeFacets.isEmpty) status.copy(visited = facet +: status.visited)
+      else status.copy(
+        errors = 
+         s"Facets with same type as ${facet.toString}. ${sameTypeFacets.map(_.toString).mkString(",")}" +: status.errors)
+    }
+    val result = ls.foldRight(zero)(cmb)
+    if (result.errors.isEmpty) ok(())
+    else err(s"Error checking facets: ${result.errors.mkString("\n")}")
+  }
+    // ok(())
 
   override def visitNodeConstraintNonLiteral(ctx: NodeConstraintNonLiteralContext): Builder[ShapeExpr] = for {
     nk <- visitNonLiteralKind(ctx.nonLiteralKind())
     facets <- visitList(visitStringFacet, ctx.stringFacet())
+    _ <- checkFacets(facets)
   } yield NodeConstraint.nodeKind(nk, facets)
 
   override def visitNonLiteralKind(ctx: NonLiteralKindContext): Builder[NodeKind] = {

@@ -28,7 +28,12 @@ import ManifestPrefixes._
 trait RunManifest {
 
   case class Result(name: String, isOk: Boolean, reason: String)
-  case class EntryParam(entry: es.weso.shextest.manifest.Entry, name: String, parentFolder: String, nameIfSingle: Option[String])
+  case class EntryParam(entry: es.weso.shextest.manifest.Entry, 
+    name: String, 
+    parentFolder: String, 
+    nameIfSingle: Option[String], 
+    ignoreList: List[String]
+    )
   type EntryProcess = EntryParam => EitherT[IO, String, Option[Result]]
 
   def runManifest(
@@ -36,6 +41,7 @@ trait RunManifest {
       folder: String,
       parentFolder: String,
       nameIfSingle: Option[String],
+      ignoreList: List[String],
       withEntry: EntryProcess
   ): EitherT[IO, String, List[Result]] = {
     val parentFolderURI = Try { Paths.get(parentFolder).normalize.toUri.toString }.getOrElse("")
@@ -45,7 +51,7 @@ trait RunManifest {
       mf <- RDF2Manifest
         .read(fileName, "TURTLE", Some(s"$parentFolderURI/$folder/"), true)
         .leftMap(e => s"Error reading $fileName\nError: $e")
-      v <- processManifest(mf, name, manifestFolder, nameIfSingle, withEntry)
+      v <- processManifest(mf, name, manifestFolder, nameIfSingle, ignoreList, withEntry)
     } yield v
   }
 
@@ -54,6 +60,7 @@ trait RunManifest {
       name: String,
       parentFolder: String,
       nameIfSingle: Option[String],
+      ignoreList: List[String],
       withEntry: EntryProcess
   ): EitherT[IO, String, List[Result]] =
     for {
@@ -61,40 +68,19 @@ trait RunManifest {
         .map {
           case (includeNode, manifest) =>
             val folder = Try { Paths.get(includeNode.getLexicalForm).getParent.toString }.getOrElse("")
-            runManifest(includeNode.getLexicalForm, folder, parentFolder, nameIfSingle, withEntry)
+            runManifest(includeNode.getLexicalForm, folder, parentFolder, nameIfSingle, ignoreList,withEntry)
         }
         .sequence
         .map(_.flatten)
-      vs2 <- m.entries.map(e => withEntry(EntryParam(e, name, parentFolder, nameIfSingle))).sequence
+      vs2 <- m.entries.map(e => withEntry(EntryParam(e, name, parentFolder, nameIfSingle, ignoreList))).sequence
     } yield (vs1 ++ vs2.flatten[Result])
 }
 
 trait ValidateManifest extends FunSpec with Matchers with TryValues with OptionValues with RunManifest {
 
   def showFailed(vs: List[Result], withReason: Boolean): String = {
-    val failed = vs.filter(_.isOk == false )
-    if (failed.length == 0) 
-      "No failed tests"
-    else 
-      failed.map(f => s"${f.name}${if (withReason) s": ${f.reason}" else ""}").mkString("\n") ++
-      s"\nNumber of failed tests: ${failed.length}\n" 
-  }
-
-  def parseManifestValidating(
-      name: String,
-      folder: String,
-      parentFolder: String,
-      nameIfSingle: Option[String]
-  ): Unit = {
-    it(s"Should parse manifestTest $folder/$name") {
-      val r = runManifest(name, folder, parentFolder, nameIfSingle, processEntryValidating)
-      r.value.unsafeRunSync.fold(e => {
-        val currentFolder = new java.io.File(".").getCanonicalPath
-        fail(s"Error: $e\nCurrent folder: $currentFolder")
-    }, vs => {
-        info(s"Number of tests run: ${vs.length}\n${showFailed(vs,true)}")
-      })
-    }
+      vs.map(f => s"${f.name}${if (withReason) s": ${f.reason}" else ""}").mkString("\n") ++
+      s"\nNumber of failed tests: ${vs.length}" 
   }
 
   def parseManifest(
@@ -102,57 +88,31 @@ trait ValidateManifest extends FunSpec with Matchers with TryValues with OptionV
       folder: String,
       parentFolder: String,
       nameIfSingle: Option[String],
-      processEntry: EntryParam => EitherT[IO, String, Option[Result]]
+      ignoreList: List[String],
+      verbose: Boolean
   ): Unit = {
     it(s"Should parse manifestTest $folder/$name") {
-      val r = runManifest(name, folder, parentFolder, nameIfSingle, processEntry)
-      r.value.unsafeRunSync.fold(e => fail(s"Error: $e"), vs => {
-        info(s"Number of tests run: ${vs.length}")
-        info(s"Failed tests: ${showFailed(vs,false)}")
-      })
+      val r = runManifest(name, folder, parentFolder, nameIfSingle, ignoreList, processEntryValidating)
+      r.value.unsafeRunSync.fold(e => {
+        val currentFolder = new java.io.File(".").getCanonicalPath
+        fail(s"Error: $e\nCurrent folder: $currentFolder")
+    }, vs => {
+      val failed = vs.filter(_.isOk == false )
+      if (failed.length == 0) 
+        info(s"No failures. Number of tests run: ${vs.length}\nIgnored list: ${ignoreList.mkString(",")}")
+      else
+       fail(s"Failed tests: ${showFailed(failed,verbose)}/${vs.length}")
+    })
     }
   }
 
-/*  def processEntry: EntryProcess = ep => 
-    if (ep.nameIfSingle == None || ep.nameIfSingle.getOrElse("") == ep.entry.name) {
-      val folderURI = Paths.get(ep.parantFolder).normalize.toUri
-      e match {
-        case r: RepresentationTest => {
-          println(s"Entry: ${ep.entry}, name: ${ep.name}")
-          EitherT.pure[IO, String](Some(Result(ep.name, true, "passed representation test")))
-        }
-        case v: Validate => {
-          val a = v.action
-          val r = for {
-            strRdf            <- getContents("data", ep.parantFolder, a.data)
-            strSchema         <- getContents("schema", ep.parentFolder, a.schema)
-            strShapeMap       <- getContents("shapeMap", ep.parentFolder, a.shapeMap)
-            strResultShapeMap <- getContents("resultShapeMap", ep.parentFolder, a.resultShapeMap)
-          } yield {
-            (strRdf, strSchema, strShapeMap, strResultShapeMap)
-          }
-          r.fold(
-            e => EitherT.fromEither(Left(s"Error: $e")),
-            v => {
-              val (strRdf, strSchema, strShapeMap, strResultShapeMap) = v
-              shouldValidateWithShapeMap(name, strRdf, strSchema, strShapeMap, strResultShapeMap).map(Some(_))
-            }
-          )
-        }
-        case v: ValidationTest => {
-          val base = Paths.get(".").toUri
-          v.action match {
-            case focusAction: FocusAction => validateFocusAction(focusAction, base, v, true, name, folderURI)
-            case mr: MapResultAction      => validateMapResult(mr, base, v, name, folderURI)
-            case ma: ManifestAction       => fail(s"Not implemented validate ManifestAction yet")
-          }
-        }
-        case _ => EitherT.fromEither(Left(s"Unsupported entry type: ${e.entryType}"))
-      }
-    } else EitherT.pure(None)
-*/
   def processEntryValidating: EntryProcess = ep => {
-    if (ep.nameIfSingle == None || ep.nameIfSingle.getOrElse("") == ep.entry.name) {
+    if (ep.nameIfSingle == None || 
+        ep.nameIfSingle.getOrElse("") == ep.entry.name
+    ) {
+      if (ep.ignoreList contains(ep.entry.name)) {
+        result(ep.entry.name, true, s"Ignored ${ep.entry.name}")        
+      } else {
       val folderURI = Paths.get(ep.parentFolder).normalize.toUri
       val base = Paths.get(".").toUri
        
@@ -169,64 +129,17 @@ trait ValidateManifest extends FunSpec with Matchers with TryValues with OptionV
         case v: ValidationFailure => {
           v.action match {
             case focusAction: FocusAction => validateFocusAction(focusAction, base, v, false, v.name, folderURI)
-            case mr: MapResultAction      => result(v.name, false, s"Not implemented validationFailure MapResultAction yet")
+            case mr: MapResultAction      => validateMapResult(mr, base, v, v.name, folderURI)
             case ma: ManifestAction       => result(v.name, false, s"Not implemented validationFailure ManifestAction yet")
           }
         }
-       
-        case r: RepresentationTest => {
-          val manifestFolderURI = Paths.get(ep.parentFolder).normalize.toUri
-          val resolvedJson      = mkLocal(r.json, schemasBase, manifestFolderURI) // IRI(shexFolderURI).resolve(r.json).uri
-          val resolvedShEx      = mkLocal(r.shex, schemasBase, manifestFolderURI) // IRI(shexFolderURI).resolve(r.shex).uri
-          val jsonStr   = Source.fromURI(resolvedJson)("UTF-8").mkString
-          val schemaStr = Source.fromURI(resolvedShEx)("UTF-8").mkString
-          Schema.fromString(schemaStr, "SHEXC", None) match {
-            case Right(schema) => {
-              decode[Schema](jsonStr) match {
-                case Left(err) => result(r.name,false,s"Error parsing Json ${r.json}: $err")
-                case Right(expectedSchema) =>
-                  if (CompareSchemas.compareSchemas(schema, expectedSchema)) {
-                    parse(jsonStr) match {
-                      case Left(err) => result(r.name, false,s"Schemas are equal but error parsing Json $jsonStr")
-                      case Right(json) => {
-                        if (json.equals(schema.asJson)) {
-                          result(r.name, true, "JSONs are equal")
-                        } else {
-                          result(r.name,false,
-                            s"Json's are different\nSchema:${schema}\nJson generated: ${schema.asJson.spaces2}\nExpected: ${json.spaces2}"
-                          )
-                        }
-                      }
-                    }
-                  } else {
-                    result(r.name, false, s"Schemas are different. Parsed:\n${schema}\n-----Expected:\n${expectedSchema}")
-                  }
-              }
-            }
-            case Left(e) => result(r.name,false, s"Error parsing Schema: ${r.shex}: $e")
-          }
-        }
 
-/*        case v: Validate => {
-          val a = v.action
-          val r = for {
-            strRdf            <- getContents("data", ep.parentFolder, a.data)
-            strSchema         <- getContents("schema", ep.parentFolder, a.schema)
-            strShapeMap       <- getContents("shapeMap", ep.parentFolder, a.shapeMap)
-            strResultShapeMap <- getContents("resultShapeMap", ep.parentFolder, a.resultShapeMap)
-          } yield {
-            (strRdf, strSchema, strShapeMap, strResultShapeMap)
-          }
-          r.fold(
-            e => testFail(s"Error: $e"),
-            v => {
-              val (strRdf, strSchema, strShapeMap, strResultShapeMap) = v
-              shouldValidateWithShapeMap(ep.name, strRdf, strSchema, strShapeMap, strResultShapeMap).map(Some(_))
-            }
-          )
-        } */
+        case v: NegativeSyntax => negativeSyntax(v, folderURI)
+        case v: NegativeStructure => negativeStructure(v,folderURI)
+        case r: RepresentationTest => representationTest(r, folderURI)
         case other => result(other.name,false, s"Unsupported type of entry: ${ep.entry}")
       }
+     }
     } else EitherT.pure(None)
   }
 
@@ -241,21 +154,38 @@ trait ValidateManifest extends FunSpec with Matchers with TryValues with OptionV
     case Some(iri) => FileUtils.getContents(folder + "/" + iri.str).map(_.toString)
   }
 
-/*  def shouldValidateWithShapeMap(
-      name: String,
-      rdfStr: String,
-      shexStr: String,
-      shapeMapStr: String,
-      expected: String
-  ): EitherT[IO, String, Result] = {
-    val validate = for {
-      rdf <- RDFAsJenaModel.fromChars(rdfStr, "Turtle")
-    } yield true
-    validate match {
-      case Left(msg) => EitherT.fromEither(s"Error processing RDF: $msg\nRDF=\n$rdfStr".asLeft[(String, Boolean)])
-      case Right(v)  => EitherT.pure[IO, String]((name, v))
+
+  def representationTest(r: RepresentationTest, folderURI: URI): EitherT[IO, String, Option[Result]] = {
+    val resolvedJson      = mkLocal(r.json, schemasBase, folderURI) // IRI(shexFolderURI).resolve(r.json).uri
+    val resolvedShEx      = mkLocal(r.shex, schemasBase, folderURI) // IRI(shexFolderURI).resolve(r.shex).uri
+    val jsonStr   = Source.fromURI(resolvedJson)("UTF-8").mkString
+    val schemaStr = Source.fromURI(resolvedShEx)("UTF-8").mkString
+    Schema.fromString(schemaStr, "SHEXC", None) match {
+      case Right(schema) => {
+        decode[Schema](jsonStr) match {
+          case Left(err) => result(r.name,false,s"Error parsing Json ${r.json}: $err")
+          case Right(expectedSchema) =>
+            if (CompareSchemas.compareSchemas(schema, expectedSchema)) {
+              parse(jsonStr) match {
+                case Left(err) => result(r.name, false,s"Schemas are equal but error parsing Json $jsonStr")
+                case Right(json) => {
+                  if (json.equals(schema.asJson)) {
+                    result(r.name, true, "JSONs are equal")
+                  } else {
+                    result(r.name,false,
+                      s"Json's are different\nSchema:${schema}\nJson generated: ${schema.asJson.spaces2}\nExpected: ${json.spaces2}"
+                    )
+                  }
+                }
+              }
+            } else {
+              result(r.name, false, s"Schemas are different. Parsed:\n${schema}\n-----Expected:\n${expectedSchema}")
+            }
+        }
+      }
+      case Left(e) => result(r.name,false, s"Error parsing Schema: ${r.shex}: $e")
     }
-  } */
+  }
 
   def validateFocusAction(
       fa: FocusAction,
@@ -333,24 +263,47 @@ trait ValidateManifest extends FunSpec with Matchers with TryValues with OptionV
           schemaStr     <- derefUriIO(schemaUri)
           resultMapStr  <- derefUriIO(resultMapUri)
           smapStr       <- derefUriIO(shapeMapUri)
-          sm            <- fromEither(ShapeMap.fromJson(smapStr))
-          schema        <- fromEither(Schema.fromString(schemaStr, "SHEXC", None))
-          fixedShapeMap <- fromEither(ShapeMap.fixShapeMap(sm, RDFAsJenaModel.empty, PrefixMap.empty, PrefixMap.empty))
+          sm            <- fromEither(ShapeMap.fromJson(smapStr).leftMap(s => s"Error parsing shapeMap: $s\nShapeMap:\n$smapStr"))
+          schema        <- fromEither(Schema.fromString(schemaStr, "SHEXC", None).leftMap(s => s"Error parsing schema: $s\nSchemaStr:\n $schemaStr"))
+          fixedShapeMap <- fromEither(ShapeMap.fixShapeMap(sm, RDFAsJenaModel.empty, PrefixMap.empty, PrefixMap.empty).leftMap(s => s"Error fixing shape map: $s\nShapeMap: $sm"))
           dataUri = mkLocal(mr.data, schemasBase, folderURI)
           strData        <- derefUriIO(dataUri)
-          data           <- fromEither(RDFAsJenaModel.fromChars(strData, "TURTLE", None))
-          resultShapeMap <- fromEither(Validator(schema).validateShapeMap(data, fixedShapeMap).toEitherS)
-          jsonResult     <- fromEither(JsonResult.fromJsonString(resultMapStr))
+          data           <- RDFAsJenaModel.fromStringIO(strData, "TURTLE", None)
+          resultShapeMap <- fromEither(Validator(schema).validateShapeMap(data, fixedShapeMap).toEitherS.leftMap(s => s"Error validating: $s"))
+          jsonResult     <- fromEither(JsonResult.fromJsonString(resultMapStr).leftMap(s => s"Error parsing JSON result: $s"))
           result <- if (jsonResult.compare(resultShapeMap)) result(name, true, "Json results match")
-          else
-            result(name,false,
-              s"Json results are different. Expected: ${jsonResult.asJson.spaces2}\nObtained: ${resultShapeMap.toString}"
-            )
+                    else result(name,false, s"Json results are different. Expected: ${jsonResult.asJson.spaces2}\nObtained: ${resultShapeMap.toString}")
         } yield result
         r
       }
     }
   }
+
+  def negativeSyntax(ns: NegativeSyntax, folderURI: URI): EitherT[IO,String, Option[Result]] = {
+    val schemaUri    = mkLocal(ns.shex, negativeSyntaxBase, folderURI)
+    val r: EitherT[IO, String, Option[Result]] = for {
+      schemaStr     <- derefUriIO(schemaUri)
+      result        <- Schema.fromString(schemaStr, "SHEXC", None).
+                       fold(s => result(ns.name, true, s),
+                        schema => result(ns.name, false, s"Parsed OK with ${schema} but should have negative syntax. String: \n${schemaStr}")
+                       )
+    } yield result
+    r
+  }
+
+  def negativeStructure(ns: NegativeStructure, folderURI: URI): EitherT[IO,String, Option[Result]] = {
+    val schemaUri    = mkLocal(ns.shex, negativeSyntaxBase, folderURI)
+    val r: EitherT[IO, String, Option[Result]] = for {
+      schemaStr     <- derefUriIO(schemaUri)
+      schema        <- fromEither(Schema.fromString(schemaStr, "SHEXC", None).leftMap(e => s"Error reading schema $e\nSchema string:\n${schemaStr}"))
+      result        <- schema.wellFormed.
+                       fold(s => result(ns.name, false, s"Schema parsed ok but is not well formed: $s\nSchema string:\n${schemaStr}"),
+                        schema => result(ns.name, true, s"Schema is well formed")
+                       )
+    } yield result
+    r
+  }
+
 
   def derefUriIO(uri: URI): EitherT[IO, String, String] = {
     EitherT(
