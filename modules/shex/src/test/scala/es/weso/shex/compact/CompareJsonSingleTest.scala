@@ -21,8 +21,13 @@ class CompareJsonSingleTest extends FunSpec with JsonTest with Matchers with Eit
   val conf: Config = ConfigFactory.load()
   val schemasFolder = conf.getString("schemasFolder")
 
+  private def splitExtension(str: String): (String, String) = {
+    val splits = str.split('.')
+    (splits.init.mkString("."), splits.last)
+  }
+
   describe(s"Parsing single File $name") {
-    val file: File = getFileFromFolderWithExt(schemasFolder, name, "shex")
+    val file: File = getFileFromFolderWithExt(schemasFolder, name, "shex").unsafeRunSync()
     it(s"Should read Schema from file ${file.getName}") {
       val str = Source.fromFile(file)("UTF-8").mkString
       Schema.fromString(str) match {

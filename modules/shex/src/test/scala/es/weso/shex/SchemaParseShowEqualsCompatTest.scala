@@ -13,6 +13,8 @@ import es.weso.shex.implicits.showShEx._
 import es.weso.utils.FileUtils._
 import io.circe.syntax._
 import org.scalatest._
+import cats.data.EitherT
+import cats.effect._
 
 class SchemaParseShowEqualsCompatTest extends FunSpec with JsonTest with Matchers with EitherValues with OptionValues {
 
@@ -28,12 +30,12 @@ class SchemaParseShowEqualsCompatTest extends FunSpec with JsonTest with Matcher
     "representationTests"
   )
 
-  def getSchemaFiles(schemasDir: String): List[File] = {
+  def getSchemaFiles(schemasDir: String): IO[List[File]] = {
     getFilesFromFolderWithExt(schemasDir, "shex", ignoreFiles)
   }
 
   describe("Parse Schema -> convert to Schema and parse again -> check both json representations") {
-    for (file <- getSchemaFiles(schemasFolder)) {
+    for (file <- getSchemaFiles(schemasFolder).unsafeRunSync) {
       if (nameIfSingle == None || nameIfSingle.getOrElse("").equals(file.getName)) {
         it(s"Should process Schema from file ${file.getName}") {
           parseSchemaEncodeJsonEqualsJson(file)
@@ -45,16 +47,16 @@ class SchemaParseShowEqualsCompatTest extends FunSpec with JsonTest with Matcher
   def parseSchemaEncodeJsonEqualsJson(file: File): Unit = {
     for {
       strSchema <- getContents(file)
-      schema <- Schema.fromString(strSchema).leftMap(e => s"Error obtainning Schema from string: $e\nString:\n${strSchema}")
+      schema <- EitherT.fromEither[IO](Schema.fromString(strSchema).leftMap(e => s"Error obtainning Schema from string: $e\nString:\n${strSchema}"))
       jsonEncoded = schema.asJson
-      schemaShown <- Schema.serialize(schema,"ShExC",None, RDFAsJenaModel.empty)
+      schemaShown <- EitherT.fromEither[IO](Schema.serialize(schema,"ShExC",None, RDFAsJenaModel.empty))
 //      _ <- { println(s"SchemaShown: $schemaShown"); Right(()) }
-      newSchemaParsed <- Schema.fromString(schemaShown).leftMap(e =>
-        s"Error parsing schema serialized: $e\nSchema serialized: \n$schemaShown\nOriginal schema:\n$strSchema\nInternal schema: ${schema}")
+      newSchemaParsed <- EitherT.fromEither[IO](Schema.fromString(schemaShown).leftMap(e =>
+        s"Error parsing schema serialized: $e\nSchema serialized: \n$schemaShown\nOriginal schema:\n$strSchema\nInternal schema: ${schema}"))
       jsonNew  = newSchemaParsed.asJson
-      check <- if (jsonEncoded.equals(jsonNew)) Right(())
+      check <- if (jsonEncoded.equals(jsonNew)) EitherT.pure[IO,String](())
       else
-        Left(
+        EitherT.leftT[IO,Unit](
           s"Jsons and different: Diff=${jsonDiff(jsonNew, jsonEncoded)}\nJson expected:\n${jsonNew.show}\nEncoded:\n${jsonEncoded.show}\nSchema:${schema.show}")
     } yield ()
   }.fold(e => fail(e), s => {})

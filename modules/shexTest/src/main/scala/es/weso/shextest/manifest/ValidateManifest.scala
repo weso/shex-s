@@ -149,8 +149,8 @@ trait ValidateManifest extends FunSpec with Matchers with TryValues with OptionV
   private def fromEither[A](e: Either[String, A]): EitherT[IO, String, A] = EitherT.fromEither(e)
   // private def testInfo(msg: String): EitherT[IO, String, Unit] = EitherT.liftF(IO(println(msg)))
 
-  def getContents(name: String, folder: String, value: Option[IRI]): Either[String, String] = value match {
-    case None      => Left(s"No value for $name")
+  def getContents(name: String, folder: String, value: Option[IRI]): EitherT[IO, String, String] = value match {
+    case None      => EitherT.fromEither[IO](s"No value for $name".asLeft)
     case Some(iri) => FileUtils.getContents(folder + "/" + iri.str).map(_.toString)
   }
 

@@ -2,7 +2,7 @@ package es.weso.shex.compact
 import org.scalatest._
 import com.typesafe.config._
 import es.weso.utils.FileUtils._
-
+import cats.effect._
 import scala.io._
 import java.io.File
 
@@ -19,12 +19,12 @@ class CompactSyntaxLocalTest extends FunSpec with Matchers with EitherValues {
 
   lazy val ignoreFiles: List[String] = List()
 
-  def getShExFiles(schemasDir: String): List[File] = {
+  def getShExFiles(schemasDir: String): IO[List[File]] = {
     getFilesFromFolderWithExt(schemasDir, "shex", ignoreFiles)
   }
 
   describe("Parsing ShEx files") {
-    for (file <- getShExFiles(shexLocalFolder)) {
+    for (file <- getShExFiles(shexLocalFolder).unsafeRunSync) {
       it(s"Should read Schema from file ${file.getName}") {
         val str = Source.fromFile(file)("UTF-8").mkString
         // checkParseDeparse(str)

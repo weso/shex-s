@@ -8,6 +8,7 @@ import es.weso.shex.implicits.encoderShEx._
 import es.weso.shex.implicits.showShEx._
 import es.weso.utils.json._
 import es.weso.utils.FileUtils._
+import cats.effect._
 
 class ShExJsonTest extends FunSpec with JsonTest with Matchers with EitherValues {
 
@@ -16,12 +17,12 @@ class ShExJsonTest extends FunSpec with JsonTest with Matchers with EitherValues
 
   val ignoreFiles = List("coverage", "representationTests")
 
-  def getJsonFiles(schemasDir: String): List[File] = {
+  def getJsonFiles(schemasDir: String): IO[List[File]] = {
     getFilesFromFolderWithExt(schemasDir, "json", ignoreFiles)
   }
 
   describe("Parsing Schemas from Json") {
-    for (file <- getJsonFiles(schemasFolder)) {
+    for (file <- getJsonFiles(schemasFolder).unsafeRunSync()) {
       it(s"Should read Schema from file ${file.getName}") {
         val str = Source.fromFile(file)("UTF-8").mkString
         decodeJsonSchemaEncodeEquals[Schema](str)

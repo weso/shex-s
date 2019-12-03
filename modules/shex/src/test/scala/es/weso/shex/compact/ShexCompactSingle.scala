@@ -7,7 +7,8 @@ import scala.io._
 import es.weso.utils.json._
 import es.weso.utils.FileUtils._
 import es.weso.shex._
-
+import cats.effect._
+import cats.implicits._
 
 class ShexCompactSingle extends FunSpec with JsonTest with Matchers with EitherValues {
 
@@ -19,13 +20,12 @@ class ShexCompactSingle extends FunSpec with JsonTest with Matchers with EitherV
   val files: List[String] =
     List("1val1vExprRefOR3")
 
-  def getCompactFiles(schemasDir: String): List[File] = {
-    for (name <- files)
-      yield getFileFromFolderWithExt(schemasDir, name, "shex")
+  def getCompactFiles(schemasDir: String): IO[List[File]] = {
+    files.map(getFileFromFolderWithExt(schemasDir, _, "shex")).sequence
   }
 
   describe("Parsing Schemas from ShEx") {
-    for (file <- getCompactFiles(schemasFolder)) {
+    for (file <- getCompactFiles(schemasFolder).unsafeRunSync()) {
       it(s"Should read Schema from file ${file.getName}") {
         val str = Source.fromFile(file)("UTF-8").mkString
         Schema.fromString(str, "SHEXC", None) match {

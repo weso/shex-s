@@ -2,6 +2,7 @@ package es.weso.shex.compact
 import java.io.File
 
 import com.typesafe.config.{Config, ConfigFactory}
+import cats.effect._
 import es.weso.shex._
 import es.weso.shex.implicits.encoderShEx._
 import es.weso.utils.FileUtils._
@@ -23,14 +24,14 @@ class CompareJsonTest extends FunSpec with JsonTest with Matchers with EitherVal
     "_all"
   )
 
-  def getCompactFiles(schemasDir: String): List[File] = {
+  def getCompactFiles(schemasDir: String): IO[List[File]] = {
     getFilesFromFolderWithExt(schemasDir, "shex", ignoreFiles)
   }
 
   // We ignore this test because it is already executed in SchemasManifestTest which runs all the tests from the manifest file
   ignore("Parsing Schemas from ShEx") {
     var failedNames = List[String]()
-    for (file <- getCompactFiles(schemasFolder)) {
+    for (file <- getCompactFiles(schemasFolder).unsafeRunSync) {
       it(s"Should read Schema from file ${file.getName}") {
         val str = Source.fromFile(file)("UTF-8").mkString
         Schema.fromString(str) match {

@@ -12,7 +12,9 @@ import es.weso.utils.json.JsonCompare.jsonDiff
 import es.weso.utils.json._
 import io.circe.parser.parse
 import io.circe.syntax._
+import cats.data.EitherT
 import org.scalatest._
+import cats.effect._
 
 class SchemaEncodeJsonEqualsJsonTest extends FunSpec with JsonTest with Matchers with EitherValues {
 
@@ -29,12 +31,12 @@ class SchemaEncodeJsonEqualsJsonTest extends FunSpec with JsonTest with Matchers
     "openopen1dotOr1dotclose"
   )
 
-  def getSchemaFiles(schemasDir: String): List[File] = {
+  def getSchemaFiles(schemasDir: String): IO[List[File]] = {
     getFilesFromFolderWithExt(schemasDir, "shex", ignoreFiles)
   }
 
   describe("Parsing Schemas from Json") {
-    for (file <- getSchemaFiles(schemasFolder)) {
+    for (file <- getSchemaFiles(schemasFolder).unsafeRunSync) {
       it(s"Should read Schema from file ${file.getName}") {
         parseSchemaEncodeJsonEqualsJson(file)
       }
@@ -46,13 +48,13 @@ class SchemaEncodeJsonEqualsJsonTest extends FunSpec with JsonTest with Matchers
       strSchema <- getContents(file)
       fileJson <- getFileFromFolderWithSameExt(file,".shex",".json")
       strJson <- getContents(fileJson)
-      jsonExpected <- parse(strJson.toString).leftMap(e => s"Error parsing $strJson: $e")
-      schema <- Schema.fromString(strSchema).leftMap(e => s"Error obtainning Schema from string: $e\nString:\n${strSchema}")
+      jsonExpected <- EitherT.fromEither[IO](parse(strJson.toString).leftMap(e => s"Error parsing $strJson: $e"))
+      schema <- EitherT.fromEither[IO](Schema.fromString(strSchema).leftMap(e => s"Error obtainning Schema from string: $e\nString:\n${strSchema}"))
       jsonEncoded = schema.asJson
-      check <- if (jsonEncoded.equals(jsonExpected)) Right(())
+      check <- if (jsonEncoded.equals(jsonExpected)) EitherT.pure[IO,String](())
       else
-        Left(
-          s"Jsons and different: Diff=${jsonDiff(jsonExpected, jsonEncoded)}\nJson expected:\n${jsonExpected.show}\nEncoded:\n${jsonEncoded.show}\nSchema:${schema.show}")
+      EitherT.leftT[IO,Unit](
+                  s"Jsons and different: Diff=${jsonDiff(jsonExpected, jsonEncoded)}\nJson expected:\n${jsonExpected.show}\nEncoded:\n${jsonEncoded.show}\nSchema:${schema.show}")
     } yield check
   }.fold(e => fail(e), s => {})
 

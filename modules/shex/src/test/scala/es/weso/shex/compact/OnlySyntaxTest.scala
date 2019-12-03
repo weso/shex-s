@@ -8,6 +8,7 @@ import es.weso.shex._
 import es.weso.utils.FileUtils._
 import org.scalatest.{EitherValues, FunSpec, Matchers}
 import scala.io._
+import cats.effect._
 
 class OnlySyntaxTest extends FunSpec with JsonTest with Matchers with EitherValues {
 
@@ -16,12 +17,12 @@ class OnlySyntaxTest extends FunSpec with JsonTest with Matchers with EitherValu
 
   val ignoreFiles = List("coverage")
 
-  def getCompactFiles(schemasDir: String): List[File] = {
+  def getCompactFiles(schemasDir: String): IO[List[File]] = {
     getFilesFromFolderWithExt(schemasDir, "shex", ignoreFiles)
   }
 
   describe("Parsing Schemas from ShEx") {
-    for (file <- getCompactFiles(schemasFolder)) {
+    for (file <- getCompactFiles(schemasFolder).unsafeRunSync) {
       it(s"Should read Schema from file ${file.getName}") {
         val str = Source.fromFile(file)("UTF-8").mkString
         Schema.fromString(str) match {

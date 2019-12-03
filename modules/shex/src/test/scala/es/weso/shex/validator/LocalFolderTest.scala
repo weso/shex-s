@@ -4,6 +4,7 @@ import java.io.File
 
 import com.typesafe.config.{Config, ConfigFactory}
 import es.weso.utils.FileUtils.getFilesFromFolderWithExt
+import cats.effect._
 import org.scalatest._
 
 class LocalFolderTest extends FunSpec with Matchers with EitherValues {
@@ -13,7 +14,7 @@ class LocalFolderTest extends FunSpec with Matchers with EitherValues {
 
   val ignoreFiles = List("coverage")
 
-  def getJsonFiles(schemasDir: String): List[File] = {
+  def getJsonFiles(schemasDir: String): IO[List[File]] = {
     getFilesFromFolderWithExt(schemasDir, "json", ignoreFiles)
   }
 
