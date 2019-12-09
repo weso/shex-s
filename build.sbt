@@ -95,7 +95,6 @@ lazy val shexsRoot = project
       catsKernel,
       catsMacros,
       catsEffect,
-      logbackClassic,
       scalaLogging,
       scallop,
       typesafeConfig,
