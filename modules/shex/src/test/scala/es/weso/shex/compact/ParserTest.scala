@@ -3,9 +3,11 @@ package es.weso.shex.compact
 import es.weso.utils.json.JsonTest
 import es.weso.rdf.nodes.IRI
 import es.weso.shex._
-import org.scalatest.{EitherValues, FunSpec, Matchers}
+import org.scalatest.EitherValues
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
-class ParserTest extends FunSpec with JsonTest with Matchers with EitherValues {
+class ParserTest extends AnyFunSpec with JsonTest with Matchers with EitherValues {
 
   describe("ShEx Parser test") {
 

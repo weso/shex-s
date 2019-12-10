@@ -3,8 +3,10 @@ package es.weso.rbe.interval
 import es.weso.collection.Bag
 import es.weso.rbe.Rbe
 import org.scalatest._
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
-trait BagMatchers extends FunSpec with Matchers {
+trait BagMatchers extends AnyFunSpec with Matchers {
   def matchBag[A](rbe: Rbe[A], bag: Bag[A], open: Boolean = true) = {
     it(s"${rbe} should match ${bag}. Open: $open") {
       val checker = IntervalChecker(rbe)

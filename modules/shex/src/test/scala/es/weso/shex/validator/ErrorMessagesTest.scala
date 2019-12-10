@@ -5,8 +5,10 @@ import es.weso.rdf.nodes.{IRI, RDFNode}
 import es.weso.shapeMaps.{ShapeMap, ShapeMapLabel, IRILabel}
 import es.weso.shex.Schema
 import org.scalatest._
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
-class ErrorMessagesTest extends FunSpec with Matchers with EitherValues {
+class ErrorMessagesTest extends AnyFunSpec with Matchers with EitherValues {
 
   describe("Error messages test") {
     it(s"Should generate good error message") {

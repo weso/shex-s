@@ -6,8 +6,10 @@ import es.weso.shex.Schema
 import org.scalatest._
 
 import scala.util._
+import org.scalatest.funspec.AnyFunSpecLike
+import org.scalatest.matchers.should.Matchers
 
-trait ShouldValidateShapeMap extends FunSpecLike with Matchers {
+trait ShouldValidateShapeMap extends AnyFunSpecLike with Matchers {
 
 
   def shouldValidateWithShapeMap(

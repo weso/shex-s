@@ -2,8 +2,10 @@ package es.weso.shex
 import org.scalatest._
 import es.weso.rdf.nodes._
 import es.weso.rdf._
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
-class shexDiffTest extends FunSpec with Matchers with EitherValues {
+class shexDiffTest extends AnyFunSpec with Matchers with EitherValues {
 
   describe("shexDiff") {
     it("should calculate diffs of base values") {

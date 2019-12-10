@@ -2,9 +2,11 @@ package es.weso.collection
 
 import org.scalatest._
 import org.scalatestplus.scalacheck._
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 class BagTest
-  extends FunSpec
+  extends AnyFunSpec
   with Matchers
   with Checkers {
 

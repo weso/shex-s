@@ -1,9 +1,11 @@
 package es.weso.depgraphs
 
 import org.scalatest._
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 class DepGraphTest
-  extends FunSpec
+  extends AnyFunSpec
   with Matchers
   with EitherValues {
 

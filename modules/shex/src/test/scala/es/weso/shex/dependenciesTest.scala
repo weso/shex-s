@@ -3,8 +3,10 @@ package es.weso.shex
 import es.weso.depgraphs.{DepGraph, Neg, Pos, PosNeg}
 import es.weso.rdf.nodes._
 import org.scalatest._
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
-class dependenciesTest extends FunSpec with Matchers with EitherValues {
+class dependenciesTest extends AnyFunSpec with Matchers with EitherValues {
 
   // Some common values
   val e = "http://example.org/"

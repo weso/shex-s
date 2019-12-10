@@ -7,9 +7,11 @@ import es.weso.rdf.nodes._
 import es.weso.shex.shexR.PREFIXES._
 import es.weso.rdf.PREFIXES._
 import es.weso.rdf.parser._
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 
-class RDF2ShExTest extends FunSpec with Matchers with EitherValues with TryValues {
+class RDF2ShExTest extends AnyFunSpec with Matchers with EitherValues with TryValues {
   val rdf2Shex = new RDF2ShEx {}
 
   describe("Simple schema") {

@@ -3,8 +3,10 @@ package es.weso.shapeMaps
 import es.weso.rdf.jena.RDFAsJenaModel
 import es.weso.rdf.nodes._
 import org.scalatest._
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
-class ResultShapeMapTest extends FunSpec with Matchers with TryValues with OptionValues {
+class ResultShapeMapTest extends AnyFunSpec with Matchers with TryValues with OptionValues {
 
 /*  describe("ResultShapeMaps") {
     val rdfStr =

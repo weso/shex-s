@@ -2,8 +2,10 @@ package es.weso.shex
 
 import es.weso.rdf.nodes._
 import org.scalatest._
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
-class PathsTest extends FunSpec with Matchers with EitherValues {
+class PathsTest extends AnyFunSpec with Matchers with EitherValues {
 
   describe(s"Calculates paths of a shape") {
       val shexStr =

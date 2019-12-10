@@ -4,8 +4,10 @@ import es.weso.utils.json.JsonCompare
 import es.weso.rdf._
 import es.weso.rdf.nodes._
 import org.scalatest._
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
-class ShapeMapJsonTest extends FunSpec with Matchers with TryValues with OptionValues {
+class ShapeMapJsonTest extends AnyFunSpec with Matchers with TryValues with OptionValues {
 
   describe(s"Parse Json shapemaps") {
     it("can parse Json example") {

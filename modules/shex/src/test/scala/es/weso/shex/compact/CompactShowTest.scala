@@ -3,8 +3,10 @@ package es.weso.shex.compact
 import cats.implicits._
 import es.weso.shex.Schema
 import org.scalatest._
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
-class CompactShowTest extends FunSpec with Matchers with EitherValues {
+class CompactShowTest extends AnyFunSpec with Matchers with EitherValues {
 
   describe(s"Compact show test") {
    shouldShowAndParse(

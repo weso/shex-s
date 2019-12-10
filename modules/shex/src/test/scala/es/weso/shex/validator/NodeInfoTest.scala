@@ -4,8 +4,10 @@ import es.weso.rdf.nodes._
 import org.scalatest._
 import es.weso.rdf.PREFIXES._
 import es.weso.rdf.jena.RDFAsJenaModel
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
-class NodeInfoTest extends FunSpec with Matchers with EitherValues {
+class NodeInfoTest extends AnyFunSpec with Matchers with EitherValues {
   val rdf = RDFAsJenaModel.empty
 
   describe("totalDigits") {

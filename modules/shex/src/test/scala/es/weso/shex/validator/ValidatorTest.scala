@@ -5,8 +5,10 @@ import es.weso.rdf.jena._
 import es.weso.rdf.nodes._
 import es.weso.shex._
 import org.scalatest._
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
-class ValidatorTest extends FunSpec with Matchers with EitherValues {
+class ValidatorTest extends AnyFunSpec with Matchers with EitherValues {
 
   describe("ShEx validator") {
     val shapeLabel = IRILabel(IRI("http://example.org/S"))

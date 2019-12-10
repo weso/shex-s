@@ -4,8 +4,10 @@ import es.weso.rdf.jena._
 import es.weso.shapeMaps.ShapeMap
 import es.weso.shex._
 import org.scalatest._
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
-class ExprTest extends FunSpec with Matchers with EitherValues {
+class ExprTest extends AnyFunSpec with Matchers with EitherValues {
 
   describe(s"Parsing exprs") {
     ignore("should parse a simple as") {
