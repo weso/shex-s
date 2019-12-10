@@ -4,8 +4,10 @@ import org.scalatest._
 import org.scalatestplus.scalacheck._
 
 import scala.collection.SortedMap
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
-class SortedMapBagTest extends FunSpec with Matchers with Checkers {
+class SortedMapBagTest extends AnyFunSpec with Matchers with Checkers {
 
   describe("A SortedMap Bag") {
     it("Should add one element and have multiplicity 1") {
