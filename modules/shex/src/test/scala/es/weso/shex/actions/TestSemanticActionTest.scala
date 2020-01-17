@@ -3,8 +3,10 @@ package es.weso.shex.actions
 import es.weso.rdf.jena.RDFAsJenaModel
 import es.weso.rdf.nodes.IRI
 import org.scalatest._
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
-class TestSemanticActionTest extends FunSpec with Matchers with EitherValues {
+class TestSemanticActionTest extends AnyFunSpec with Matchers with EitherValues {
 
   describe(s"Test of TestSemanticAction processor") {
     it(s"Should run print code") {

@@ -4,8 +4,10 @@ import es.weso.rdf.nodes._
 import es.weso.shex._
 import es.weso.shex.validator.Table.CTable
 import org.scalatest._
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
-class CTableTest extends FunSpec with Matchers with EitherValues {
+class CTableTest extends AnyFunSpec with Matchers with EitherValues {
   describe(s"CTable") {
     it(s"Should generate CTable") {
       val ex = "http://example.org/"
