@@ -8,8 +8,10 @@ import cats.effect._
 import org.scalatest._
 
 import scala.util._
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
-class ShapeMapValidator_RDF4jTest extends FunSpec with Matchers with EitherValues {
+class ShapeMapValidator_RDF4jTest extends AnyFunSpec with Matchers with EitherValues {
 
   describe("Simple Shape") {
     val shexStr =
