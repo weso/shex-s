@@ -5,8 +5,10 @@ import es.weso.rdf.nodes._
 import es.weso.shapeMaps._
 import es.weso.shex.{IRILabel => ShExIriLabel, _}
 import org.scalatest._
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
-class SpecTest extends FunSpec with Matchers with EitherValues {
+class SpecTest extends AnyFunSpec with Matchers with EitherValues {
   val x = IRI(s"http://example.org/x")
   val p = IRI(s"http://example.org/p")
   val q = IRI(s"http://example.org/q")

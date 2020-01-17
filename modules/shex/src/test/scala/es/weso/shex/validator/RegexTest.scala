@@ -3,8 +3,10 @@ import es.weso.rdf.jena.RDFAsJenaModel
 import org.scalatest._
 
 import scala.util.matching.Regex
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
-class RegexTest extends FunSpec with Matchers with EitherValues {
+class RegexTest extends AnyFunSpec with Matchers with EitherValues {
   val rdf = RDFAsJenaModel.empty
 
   describe(s"Regex test") {
