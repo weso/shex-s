@@ -1,10 +1,10 @@
 package es.weso.rbe
 
-import org.scalatest._
+import org.scalatest.matchers.should.Matchers
 import es.weso.collection._
-import org.scalatestplus.scalacheck._
+import org.scalatest.funspec.AnyFunSpec
 
-class RbeTest extends FunSpec with Matchers with ScalaCheckDrivenPropertyChecks {
+class RbeTest extends AnyFunSpec with Matchers {
 
   describe("Symbols") {
     val rbe = Or(And(Symbol("a", 1, 3), Symbol("b", 1, 1)), Symbol("b", 2, 3))
