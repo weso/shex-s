@@ -3,8 +3,10 @@ package es.weso.shex
 import es.weso.rdf.nodes._
 import es.weso.shex.normalized.{Constraint, NormalizedShape}
 import org.scalatest._
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
-class NormalizeShapeTest extends FunSpec with Matchers with EitherValues {
+class NormalizeShapeTest extends AnyFunSpec with Matchers with EitherValues {
 
   describe(s"Normalize shape with IRI") {
     val shexStr =
