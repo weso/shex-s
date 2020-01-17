@@ -1,12 +1,9 @@
 package es.weso.collection
 
-import org.scalatest._
-import org.scalatestplus.scalacheck._
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
-class BagTest
-  extends FunSpec
-  with Matchers
-  with Checkers {
+class BagTest extends AnyFunSpec with Matchers {
 
   describe("A Bag") {
 
@@ -41,8 +38,8 @@ class BagTest
     }
 
     it("should calculate delta") {
-      val bag = Bag.toBag(List(1, 1, 2, 2, 3))
-      val delta = Bag.delta(Seq(1, 2), bag)
+      val bag      = Bag.toBag(List(1, 1, 2, 2, 3))
+      val delta    = Bag.delta(Seq(1, 2), bag)
       val expected = Bag.toBag(List(1, 1, 2, 2))
       delta should be(expected)
     }
@@ -76,7 +73,7 @@ class BagTest
       )
     }
 
-*/
+   */
   }
 
 }

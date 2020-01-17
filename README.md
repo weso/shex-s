@@ -58,7 +58,7 @@ Contributors:
 
 * [Eric Prud'hommeaux](https://www.w3.org/People/Eric/)
 * [Bogdan Roman](https://github.com/bogdanromanx)
-* [Toni Cebrían](http://www.tonicebrian.com/)
+* [Toni Cebrián](http://www.tonicebrian.com/)
 * [Andrew Berezovskyi](https://github.com/berezovskyi)
 
 ## Adopters
