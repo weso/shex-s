@@ -11,11 +11,13 @@ import es.weso.utils.FileUtils._
 import es.weso.utils.json.{JsonCompare, JsonTest}
 import io.circe.parser._
 import io.circe.syntax._
-import org.scalatest.{EitherValues, FunSpec, Matchers}
+import org.scalatest.EitherValues
 
 import scala.io._
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
-class CompareJsonSingleTest extends FunSpec with JsonTest with Matchers with EitherValues {
+class CompareJsonSingleTest extends AnyFunSpec with JsonTest with Matchers with EitherValues {
 
   val name = "1val1emptylanguageStemMinuslanguage3"
   val conf: Config = ConfigFactory.load()

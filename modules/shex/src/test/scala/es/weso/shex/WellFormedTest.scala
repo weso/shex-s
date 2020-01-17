@@ -1,7 +1,9 @@
 package es.weso.shex
 import org.scalatest._
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
-class WellFormedTest extends FunSpec with Matchers with EitherValues {
+class WellFormedTest extends AnyFunSpec with Matchers with EitherValues {
 
   describe(s"WellFormedTest") {
 

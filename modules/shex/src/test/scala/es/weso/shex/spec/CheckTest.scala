@@ -8,8 +8,10 @@ import es.weso.shapeMaps.{IRILabel, ShapeMapLabel}
 import es.weso.shex.Schema
 import org.scalatest._
 import es.weso.utils.internal.CollectionCompat._
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
-class CheckTest extends FunSpec with Matchers with EitherValues {
+class CheckTest extends AnyFunSpec with Matchers with EitherValues {
 
   val emptyEnv = Env(Schema.empty,TypingMap.empty,RDFAsJenaModel.empty)
 
