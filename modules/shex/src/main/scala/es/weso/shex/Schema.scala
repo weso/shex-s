@@ -9,6 +9,7 @@ import es.weso.shex.shexR.{RDF2ShEx, ShEx2RDF}
 import es.weso.utils.UriUtils._
 import scala.io.Source
 import scala.util._
+import cats.effect.IO
 
 case class Schema(id: IRI,
                   prefixes: Option[PrefixMap],
@@ -18,27 +19,17 @@ case class Schema(id: IRI,
                   shapes: Option[List[ShapeExpr]],
                   tripleExprMap: Option[Map[ShapeLabel,TripleExpr]],
                   imports: List[IRI]
-                 ) {
+                 ) extends AbstractSchema {
 
   def addShape(se: ShapeExpr): Schema = this.copy(shapes = addToOptionList(se,shapes))
 
-  private def addToOptionList[A](x: A, maybeLs: Option[List[A]]): Option[List[A]] = maybeLs match {
-    case None => Some(List(x))
-    case Some(xs) => Some(x :: xs)
-  }
+  def getTripleExpr(lbl: ShapeLabel): Either[String,TripleExpr] = 
+    tripleExprMap match {
+      case None => Left(s"Cannot find $lbl with an empty tripleExpr map")
+      case Some(m) => m.get(lbl).toRight(s"Not found $lbl in map $m")
+    }
 
-  def getTripleExpr(lbl: ShapeLabel): Either[String,TripleExpr] = for {
-   maybeTem <- eitherResolvedTripleExprMap
-   te <- maybeTem match {
-     case None => Left(s"Not found $lbl because there is no tripleExpr map")
-     case Some(tem) => tem.get(lbl) match {
-       case None => Left(s"Not found label $lbl in tripleExprMap. Available labels: ${tem.keySet.mkString(",")}")
-       case Some(te) => Right(te)
-     }
-   }
-  } yield te
-
-  def resolveShapeLabel(l: ShapeLabel): Either[String, IRI] = l match {
+  def shapeLabel2Iri(l: ShapeLabel): Either[String, IRI] = l match {
     case IRILabel(iri) => Right(iri)
     case _ => Left(s"Label $l can't be converted to IRI")
   }
@@ -47,63 +38,14 @@ case class Schema(id: IRI,
     prefixes.getOrElse(PrefixMap.empty)
 
   def getTripleExprMap(): Map[ShapeLabel, TripleExpr] =
-    eitherResolvedTripleExprMap match {
+     tripleExprMap.getOrElse(Map())
+    /*eitherResolvedTripleExprMap match {
       case Right(tem) => tem.getOrElse(Map())
       case Left(e) => {
         println(s"Error: $e")
         Map()
-      }
-  }
-
-  lazy val localShapesMap: Map[ShapeLabel,ShapeExpr] = {
-    shapes match {
-      case None => Map()
-      case Some(ls) => {
-        ls.collect{ case s if s.id.isDefined => (s.id.get, s)}.toMap
-      }
-    }
-  }
-
-  lazy val eitherMapsImported: Either[String,MapsToImport] = {
-    closureImports(imports, List(id), MapsToImport(localShapesMap,tripleExprMap))
-  }
-
-  lazy val eitherResolvedShapesMap: Either[String,Map[ShapeLabel,ShapeExpr]] = {
-    eitherMapsImported.map(_.shapesExpr)
-  }
-
-  lazy val eitherResolvedTripleExprMap: Either[String,Option[Map[ShapeLabel,TripleExpr]]] = {
-    eitherMapsImported.map(_.maybeTripleExprs)
-  }
-
-
-  case class MapsToImport(shapesExpr: Map[ShapeLabel,ShapeExpr], maybeTripleExprs: Option[Map[ShapeLabel,TripleExpr]]) {
-    def merge(schema: Schema): MapsToImport = {
-      this.copy(
-        shapesExpr = schema.localShapesMap ++ shapesExpr,
-        maybeTripleExprs = schema.tripleExprMap match {
-          case None => maybeTripleExprs
-          case Some(otherTripleExprsMap) => maybeTripleExprs match {
-            case None => Some(otherTripleExprsMap)
-            case Some(tripleExprsMap) => Some(otherTripleExprsMap ++ tripleExprsMap)
-          }
-       }
-      )
-    }
-  }
-
-  // TODO: make the following method tailrecursive
-  private def closureImports(imports: List[IRI],
-                             visited: List[IRI],
-                             current: MapsToImport
-                            ): Either[String, MapsToImport] = imports match {
-    case Nil => Right(current)
-    case (i::is) => if (visited contains i) closureImports(is,visited,current)
-    else for {
-      schema <- Schema.fromIRI(i,base)
-      sm <- closureImports(is ++ schema.imports, i :: visited, current.merge(schema))
-    } yield sm
-  }
+      } } */
+  
 
   def addId(i: IRI): Schema = this.copy(id = i)
 
@@ -116,22 +58,26 @@ case class Schema(id: IRI,
   def getShape(label: ShapeLabel): Either[String,ShapeExpr] = for {
     sm <- eitherResolvedShapesMap
     se <- sm.get(label) match {
-      case None => Left(s"Not found $label in schema. Available labels: ${sm.keySet.mkString}")
-      case Some(se) => Right(se)
+      case None => err(s"Not found $label in schema. Available labels: ${sm.keySet.mkString}")
+      case Some(se) => ok(se)
     }
   } yield se
 
+  def err[A](msg: String): IO[A] = IO.raiseError(new RuntimeException(msg))
+  def ok[A](x:A): IO[A] = IO.pure(x)
+  
   lazy val localShapes: List[ShapeExpr] = shapes.getOrElse(List())
 
-  lazy val shapeList: List[ShapeExpr] = // shapes.getOrElse(List())
-   eitherResolvedShapesMap.fold(_ => localShapes,
-     sm => sm.values.toList)
+  lazy val shapeList: List[ShapeExpr] = shapes.getOrElse(List())
+   /* eitherResolvedShapesMap.fold(_ => localShapes,
+     sm => sm.values.toList) */
 
-  def labels: List[ShapeLabel] = {
+  def labels: List[ShapeLabel] = localShapes.map(_.id).flatten
+  /*{
     eitherResolvedShapesMap.fold(
       e => localShapes.map(_.id).flatten,
       sm => sm.keySet.toList)
-  }
+  } */
 
   def addTripleExprMap(te: Map[ShapeLabel,TripleExpr]): Schema =
     this.copy(tripleExprMap = Some(te))
@@ -206,6 +152,11 @@ case class Schema(id: IRI,
     )
   }
 
+  private def addToOptionList[A](x: A, maybeLs: Option[List[A]]): Option[List[A]] = maybeLs match {
+    case None => Some(List(x))
+    case Some(xs) => Some(x :: xs)
+  }
+
 }
 
 
@@ -216,7 +167,7 @@ object Schema {
   def empty: Schema =
     Schema(IRI(""),None, None, None, None, None, None, List())
 
-  def fromIRI(i: IRI, base: Option[IRI]): Either[String, Schema] = {
+  def fromIRI(i: IRI, base: Option[IRI]): IO[Schema] = {
     Try {
       val uri = i.uri
       if (uri.getScheme == "file") {
@@ -246,12 +197,12 @@ object Schema {
     }.fold(exc => Left(s"Error obtaining schema from IRI($i):${exc.getMessage}"), identity)
   }
 
-  private def getSchemaWithExts(iri: IRI, exts: List[(String,String)], base: Option[IRI] ): Either[String, Schema] = exts match {
+  private def getSchemaWithExts(iri: IRI, exts: List[(String,String)], base: Option[IRI] ): IO[Schema] = exts match {
     case (e :: es) => getSchemaExt(iri,e,base) orElse getSchemaWithExts(iri,es,base)
     case Nil => Left(s"Can not obtain schema from iri: $iri")
   }
 
-  private def getSchemaExt(iri: IRI, pair: (String,String), base: Option[IRI]): Either[String,Schema] = {
+  private def getSchemaExt(iri: IRI, pair: (String,String), base: Option[IRI]): IO[Schema] = {
    val (ext,format) = pair
    val uri = if (ext == "") iri.uri
    else (iri + "." + ext).uri
@@ -273,7 +224,7 @@ object Schema {
                  format: String = "ShExC",
                  base: Option[IRI] = None,
                  maybeRDFReader: Option[RDFReader] = None
-                ): Either[String, Schema] = {
+                ): IO[Schema] = {
     val formatUpperCase = format.toUpperCase
     formatUpperCase match {
       case "SHEXC" => {
@@ -286,31 +237,34 @@ object Schema {
         decode[Schema](cs.toString).leftMap(_.getMessage)
       }
       case _ => maybeRDFReader match {
-        case None => Left(s"Not implemented ShEx parser for format $format and no rdfReader provided")
+        case None => err(s"Not implemented ShEx parser for format $format and no rdfReader provided")
         case Some(rdfReader) =>
          if (rdfDataFormats(rdfReader).contains(formatUpperCase)) for {
           rdf    <- rdfReader.fromString(cs, formatUpperCase, base)
           schema <- RDF2ShEx.rdf2Schema(rdf).value.unsafeRunSync
          } yield schema
-         else Left(s"Not implemented ShEx parser for format $format")
+         else err(s"Not implemented ShEx parser for format $format")
        }
     }
   }
+
+  def err[A](msg:String): IO[A] = IO.raiseError(new RuntimeException(msg))
+
   def serialize(schema: Schema,
                 format: String,
                 base: Option[IRI],
-                rdfBuilder: RDFBuilder): Either[String,String] = {
+                rdfBuilder: RDFBuilder): IO[String] = {
     val formatUpperCase = format.toUpperCase
     val relativeSchema = schema.relativize(base)
     formatUpperCase match {
       case "SHEXC" => {
         import compact.CompactShow._
-        Right(showSchema(relativeSchema))
+        IO.pure(showSchema(relativeSchema))
       }
       case "SHEXJ" => {
         import io.circe.syntax._
         import es.weso.shex.implicits.encoderShEx._
-        Right(relativeSchema.asJson.spaces2)
+        IO.pure(relativeSchema.asJson.spaces2)
       }
       case _ if (rdfDataFormats(rdfBuilder).contains(formatUpperCase)) => {
         val rdf = ShEx2RDF(relativeSchema, None, rdfBuilder.empty)
@@ -320,5 +274,7 @@ object Schema {
         Left(s"Not implemented conversion to $format. Schema: $schema")
     }
   }
+
+  def resolveSchema: IO[ResolvedSchema] = ???
 
 }

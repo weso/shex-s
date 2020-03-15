@@ -300,16 +300,17 @@ object Spec extends LazyLogging {
   def matchesInclusion(matched: Set[Arc], i: Inclusion): Check[Boolean] =
     unimplemented(s"matchesInclusion $i")
 
+  // TODO: Change signature to work with streams  
   def neighs(n: RDFNode): Check[Set[Arc]] = for {
     rdf <- getRDF
-    outTriples <- fromEither(rdf.triplesWithSubject(n))
+    outTriples <- fromStream(rdf.triplesWithSubject(n))
     outArcs = outTriples.map(t => Arc(Direct(t.pred),t.obj))
-    inTriples <- fromEither(rdf.triplesWithObject(n))
+    inTriples <- fromStream(rdf.triplesWithObject(n))
     inArcs = inTriples.map(t => Arc(Inverse(t.pred),t.obj))
   } yield {
     val allArcs = outArcs ++ inArcs
     logInfo(s"neighs($n): ${allArcs.map(_.show).mkString(",")}",0)
-    allArcs
+    allArcs.toSet
   }
 
   def satisfies2(n: RDFNode, nc: NodeConstraint): Check[Boolean] = nodeSatisfies(n,nc)

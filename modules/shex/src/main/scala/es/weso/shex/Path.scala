@@ -2,6 +2,8 @@ package es.weso.shex
 import cats._
 import es.weso.rdf.{PrefixMap, RDFReader}
 import es.weso.rdf.nodes.{IRI, RDFNode}
+import cats.effect._
+import fs2.Stream
 
 sealed trait Path {
  def isDirect: Boolean
@@ -14,22 +16,22 @@ sealed trait Path {
    case Inverse(iri) => s"^${prefixMap.qualifyIRI(iri)}"
  }
 
- def getValues(node: RDFNode, rdf: RDFReader): Either[String, Set[RDFNode]]
+ def getValues(node: RDFNode, rdf: RDFReader): Stream[IO,RDFNode]
 }
 
 case class Direct(pred: IRI) extends Path {
  val isDirect = true
 
-  override def getValues(node: RDFNode, rdf: RDFReader): Either[String, Set[RDFNode]] =
-    rdf.triplesWithSubjectPredicate(node, pred).map(_.map(_.obj))
+  override def getValues(node: RDFNode, rdf: RDFReader): Stream[IO,RDFNode] =
+    rdf.triplesWithSubjectPredicate(node, pred).map(_.obj)
 
 }
 
 case class Inverse(pred: IRI) extends Path {
  val isDirect = false
 
- override def getValues(node: RDFNode, rdf: RDFReader): Either[String, Set[RDFNode]] =
-  rdf.triplesWithPredicateObject(pred, node).map(_.map(_.subj))
+ override def getValues(node: RDFNode, rdf: RDFReader): Stream[IO,RDFNode] =
+  rdf.triplesWithPredicateObject(pred, node).map(_.subj)
 
 }
 

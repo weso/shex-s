@@ -4,19 +4,21 @@ import es.weso.rdf.nodes.{IRI, RDFNode}
 import es.weso.rdf.path.SHACLPath
 import io.circe._
 import io.circe.syntax._
+import fs2.Stream
+import cats.effect.IO
 import es.weso.utils.json.DecoderUtils._
 import es.weso.rdf.{PrefixMap, RDFReader}
 
 
 abstract class NodeSelector {
-  def select(rdf: RDFReader): Either[String,Set[RDFNode]]
+  def select(rdf: RDFReader): Stream[IO,RDFNode]
 
   def relativize(base: IRI): NodeSelector
 }
 
 case class RDFNodeSelector(node: RDFNode) extends NodeSelector {
-  override def select(rdf: RDFReader): Either[String,Set[RDFNode]] =
-    Right(Set(node))
+  override def select(rdf: RDFReader): Stream[IO, RDFNode] =
+    Stream.emit(node)
 
   override def relativize(base: IRI): NodeSelector =
     RDFNodeSelector(node.relativize(base))
@@ -28,13 +30,13 @@ case class TriplePattern(
   subjectPattern: Pattern,
   path: SHACLPath,
   objectPattern: Pattern) extends NodeSelector {
-  override def select(rdf: RDFReader): Either[String,Set[RDFNode]] =
+  override def select(rdf: RDFReader): Stream[IO,RDFNode] =
     (subjectPattern, path, objectPattern) match {
-      case (Focus,p,WildCard) => rdf.nodesWithPath(p).map(_.map(_._1))
+      case (Focus,p,WildCard) => rdf.nodesWithPath(p).map(_._1)
       case (Focus,p,NodePattern(obj)) => rdf.subjectsWithPath(p,obj)
-      case (WildCard,p,Focus) => rdf.nodesWithPath(p).map(_.map(_._2))
+      case (WildCard,p,Focus) => rdf.nodesWithPath(p).map(_._2)
       case (NodePattern(subj),p,Focus) =>  rdf.objectsWithPath(subj, p)
-      case _ => Left(s"Strange triple pattern in node selector: $this")
+      case _ => Stream.raiseError[IO](new Exception(s"Strange triple pattern in node selector: $this"))
     }
 
   override def relativize(base: IRI): NodeSelector =
@@ -45,25 +47,12 @@ case class TriplePattern(
 }
 
 case class SparqlSelector(query: String) extends NodeSelector {
-  override def select(rdf: RDFReader): Either[String,Set[RDFNode]] = {
-    rdf.querySelect(query) match {
-      case Left(str) => Left(str)
-      case Right(result) => {
-        val zero: Either[String,List[RDFNode]] = Right(List())
-        def combine(current: Either[String,List[RDFNode]], next: Map[String,RDFNode]): Either[String,List[RDFNode]] = {
-          current match {
-            case Left(msg) => Left(msg)
-            case Right(nodes) => if (next.size == 1) {
-              val resultNode = next.map(_._2).head
-              Right(resultNode :: nodes)
-            } else {
-              Left(s"Result of query has more than one value: $next")
-            }
-          }
-        }
-        result.foldLeft(zero)(combine).map(_.toSet)
-      }
-    }
+  override def select(rdf: RDFReader): Stream[IO,RDFNode] = {
+    def map2Ls(m : Map[String,RDFNode]): RDFNode = if (m.size == 1) {
+      m.map(_._2).head
+    } else 
+      throw new RuntimeException(s"Result of query has more than one value: $m")
+    rdf.querySelect(query).map(map2Ls)
   }
 
   override def relativize(base: IRI): SparqlSelector = this
@@ -71,8 +60,8 @@ case class SparqlSelector(query: String) extends NodeSelector {
 }
 
 case class GenericSelector(iri: IRI, param: String) extends NodeSelector {
-  override def select(rdf: RDFReader): Either[String, Set[RDFNode]] = {
-    Left(s"Not implemented GenericSelector($iri, $param)")
+  override def select(rdf: RDFReader): Stream[IO,RDFNode] = {
+    Stream.raiseError[IO](new RuntimeException(s"Not implemented GenericSelector($iri, $param)"))
   }
 
   override def relativize(base: IRI) = this

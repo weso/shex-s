@@ -5,6 +5,7 @@ import es.weso.rdf.nodes._
 import es.weso.rdf.jena.RDFAsJenaModel
 import es.weso.rdf._
 import es.weso.rdf.path.PredicatePath
+import cats.effect.IO
 
 class ShapeMapTest extends FunSpec with Matchers with TryValues with OptionValues {
 
@@ -167,11 +168,21 @@ class ShapeMapTest extends FunSpec with Matchers with TryValues with OptionValue
                    rdfStr, ":x@:S,:t@:S"
     )
 
+    def either2IO[A](e: Either[String,A]): IO[A] = e.fold(s => IO.raiseError(new RuntimeException(s)), IO(_))
 
     def shouldFixAs(shapeMapStr: String, rdfStr: String, expectedStr: String): Unit = {
       val shapesPrefixMap = PrefixMap.empty.addPrefix("", IRI("http://example.org/"))
       it(s"should fix $shapeMapStr and obtain $expectedStr") {
-        RDFAsJenaModel.fromChars(rdfStr, "TURTLE") match {
+        val v: IO[(ShapeMap,ShapeMap)] = for {
+          rdf <- RDFAsJenaModel.fromString(rdfStr,"TURTLE")
+          shapeMap <- either2IO(Parser.parse(shapeMapStr, None, rdf.getPrefixMap, shapesPrefixMap))
+          expected <- either2IO(Parser.parse(expectedStr, None, rdf.getPrefixMap, shapesPrefixMap))
+          obtained <- ShapeMap.fixShapeMap(shapeMap, rdf, rdf.getPrefixMap, shapesPrefixMap)
+        } yield (obtained,expected)
+        val (expected,obtained) = v.unsafeRunSync
+        obtained.associations should contain theSameElementsAs (expected.associations)
+        
+        /* RDFAsJenaModel.fromChars(rdfStr, "TURTLE") match {
           case Left(e) => fail(s"Error parsing $rdfStr")
           case Right(rdf) => {
             val result = for {
@@ -186,8 +197,9 @@ class ShapeMapTest extends FunSpec with Matchers with TryValues with OptionValue
             }
           }
         }
-      }
-    }
+      } */
+    } 
+   }
   }
 
   describe("Show and parse shapeMaps") {
@@ -206,7 +218,7 @@ class ShapeMapTest extends FunSpec with Matchers with TryValues with OptionValue
     def shouldShowAndParse(shapeMapStr: String, rdfStr: String): Unit = {
       val shapesPrefixMap = PrefixMap.empty.addPrefix("", IRI("http://example.org/"))
       it(s"Should show and parse $shapeMapStr") {
-        RDFAsJenaModel.fromChars(rdfStr, "TURTLE") match {
+        /*RDFAsJenaModel.fromChars(rdfStr, "TURTLE") match {
           case Left(e) => fail(s"Error parsing $rdfStr")
           case Right(rdf) => {
             Parser.parse(shapeMapStr, None, rdf.getPrefixMap, shapesPrefixMap) match {
@@ -216,8 +228,16 @@ class ShapeMapTest extends FunSpec with Matchers with TryValues with OptionValue
                 case Right(shownShapeMap) => shapeMap should be(shownShapeMap)
               }
             }
-          }
-        }
+          } 
+        } */
+        val rdf = RDFAsJenaModel.fromChars(rdfStr, "TURTLE").unsafeRunSync()
+        Parser.parse(shapeMapStr, None, rdf.getPrefixMap, shapesPrefixMap) match {
+              case Left(msg) => fail(s"Error parsing ${shapeMapStr}: ${msg}")
+              case Right(shapeMap) => Parser.parse(shapeMap.toString, None, rdf.getPrefixMap, shapesPrefixMap) match {
+                case Left(msg) => fail(s"Error parsing shown shapeMap ${shapeMap.toString} of ${shapeMapStr}: ${msg}")
+                case Right(shownShapeMap) => shapeMap should be(shownShapeMap)
+              }
+            }
       }
     }
   }

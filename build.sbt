@@ -3,15 +3,15 @@ lazy val scala213 = "2.13.1"
 lazy val supportedScalaVersions = List(scala213, scala212)
 
 // Local dependencies
-lazy val srdfVersion           = "0.1.53"
-lazy val utilsVersion          = "0.1.62"
-lazy val documentVersion       = "0.0.3"
+lazy val srdfVersion           = "0.1.57"
+lazy val utilsVersion          = "0.1.65"
+lazy val documentVersion       = "0.0.8"
 
 // Dependency versions
 lazy val antlrVersion          = "4.7.1"
 lazy val catsVersion           = "2.0.0"
 lazy val commonsTextVersion    = "1.8"
-lazy val circeVersion          = "0.12.0-RC3"
+lazy val circeVersion          = "0.12.3"
 lazy val diffsonVersion        = "4.0.0"
 // lazy val effVersion            = "4.6.1"
 lazy val jenaVersion           = "3.13.1"
@@ -293,12 +293,14 @@ lazy val packagingSettings = Seq(
 lazy val compilationSettings = Seq(
   // scalaVersion := "2.13.1",
   // format: off
+  javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
   scalacOptions ++= Seq(
     "-deprecation",                      // Emit warning and location for usages of deprecated APIs.
     "-encoding", "utf-8",                // Specify character encoding used by source files.
     "-explaintypes",                     // Explain type errors in more detail.
     "-feature",                          // Emit warning and location for usages of features that should be imported explicitly.  "-encoding", "UTF-8",
     "-language:_",
+    "-target:jvm-1.8",
     "-unchecked",                        // Enable additional warnings where generated code depends on assumptions.
     "-Xlint",
     "-Yrangepos",

@@ -12,6 +12,7 @@ import es.weso.rdf.PREFIXES._
 import es.weso.rdf.path._
 import scala.io.Source
 import scala.util.Try
+import cats.effect.IO
 
 abstract class ShapeMap {
   val associations: List[Association]
@@ -31,11 +32,10 @@ abstract class ShapeMap {
   override def toString = Show[ShapeMap].show(this)
 
   def serialize(format: String, base: Option[IRI] = None): Either[String,String] = {
-    format.toUpperCase match {
-      case "JSON" => Right(this.toJson.spaces2)
-      case "COMPACT" => Right(this.relativize(base).toString)
-      case _ => Left(s"ShapeMap.serialize: Unsupported format $format, Available formats = ${ShapeMap.availableFormats}")
-    }
+    ShapeMapFormat.fromString(format).map(_ match {
+      case Compact => this.relativize(base).toString
+      case JsonShapeMapFormat => this.toJson.spaces2
+    })
   }
 
   def relativize(base: Option[IRI]): ShapeMap
@@ -44,7 +44,7 @@ abstract class ShapeMap {
 
 object ShapeMap {
 
-  def availableFormats: List[String] = List("COMPACT", "JSON")
+  def availableFormats: List[String] = ShapeMapFormat.availableFormatNames
   def empty: ShapeMap = FixedShapeMap.empty
   def fromURI(uri: String,
               format: String,
@@ -93,9 +93,9 @@ object ShapeMap {
     str: String,
     base: Option[IRI],
     rdf: RDFReader,
-    shapesPrefixMap: PrefixMap = PrefixMap.empty): Either[String, ResultShapeMap] = for {
-    queryMap <- {
-      Parser.parse(str, base, rdf.getPrefixMap, shapesPrefixMap)
+    shapesPrefixMap: PrefixMap = PrefixMap.empty): IO[ResultShapeMap] = for {
+    queryMap <- IO {
+      Parser.parse(str, base, rdf.getPrefixMap, shapesPrefixMap).fold(e => throw new RuntimeException(s"Error parsing as ShapeMap str:$str\nError: $e"), identity)
     }
     fixMap <- {
       fixShapeMap(queryMap, rdf, rdf.getPrefixMap, shapesPrefixMap) }
@@ -109,9 +109,9 @@ object ShapeMap {
     shapeMap: ShapeMap,
     rdf: RDFReader,
     nodesPrefixMap: PrefixMap,
-    shapesPrefixMap: PrefixMap): Either[String, FixedShapeMap] = {
+    shapesPrefixMap: PrefixMap): IO[FixedShapeMap] = {
 
-    val empty: Either[String, FixedShapeMap] = Right(
+    val empty: IO[FixedShapeMap] = IO.pure(
       FixedShapeMap.empty.
         addNodesPrefixMap(nodesPrefixMap).
         addShapesPrefixMap(shapesPrefixMap)
@@ -119,17 +119,21 @@ object ShapeMap {
 
     def addNode(a: Association)(
       node: RDFNode,
-      current: Either[String, FixedShapeMap]
-    ): Either[String, FixedShapeMap] = for {
+      current: IO[FixedShapeMap]
+    ): IO[FixedShapeMap] = for {
       fixed <- current
-      newShapeMap <- fixed.addAssociation(Association(RDFNodeSelector(node), a.shape, a.info))
+      newShapeMap <- IO {
+        fixed.addAssociation(Association(
+          RDFNodeSelector(node), a.shape, a.info)
+        ).fold(e => throw new RuntimeException(s"Error adding association: $a to $fixed"), identity)
+      }
     } yield newShapeMap
 
     def combine(a: Association,
-                current: Either[String, FixedShapeMap]
-               ): Either[String, FixedShapeMap] = {
+                current: IO[FixedShapeMap]
+               ): IO[FixedShapeMap] = {
       for {
-        nodes <- a.node.select(rdf)
+        nodes <- a.node.select(rdf).compile.toList
         r <- nodes.foldRight(current)(addNode(a))
       } yield r
     }
