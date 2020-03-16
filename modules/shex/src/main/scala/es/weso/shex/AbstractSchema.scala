@@ -18,11 +18,14 @@ abstract class AbstractSchema {
   def startActs: Option[List[SemAct]]
   def start: Option[ShapeExpr]
   def shapes: Option[List[ShapeExpr]]
-  def tripleExprMap: Option[Map[ShapeLabel,TripleExpr]]
+  def optTripleExprMap: Option[Map[ShapeLabel,TripleExpr]]
   def imports: List[IRI]
   def addShape(se: ShapeExpr): Schema 
+  
   def getTripleExpr(lbl: ShapeLabel): Either[String,TripleExpr] 
-  def prefixMap: PrefixMap = prefixes.getOrElse(PrefixMap.empty)
+  def getShape(lbl: ShapeLabel): Either[String,ShapeExpr]
+
+  lazy val prefixMap: PrefixMap = prefixes.getOrElse(PrefixMap.empty)
 
   lazy val shapesMap: Map[ShapeLabel,ShapeExpr] = {
     shapes match {
@@ -32,6 +35,9 @@ abstract class AbstractSchema {
       }
     }
   }
+
+  def tripleExprMap: Map[ShapeLabel, TripleExpr] = optTripleExprMap.getOrElse(Map())
+
 
 }
 

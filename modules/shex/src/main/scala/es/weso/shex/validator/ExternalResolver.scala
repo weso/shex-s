@@ -21,7 +21,7 @@ case class ExternalIRIResolver(maybeIri: Option[IRI]) extends ExternalResolver {
                             as: Option[List[Annotation]]
                            ): IO[ShapeExpr] = for {
    schema <- ioSchema
-   se <- schema.getShape(label)
+   se <- schema.getShape(label).fold(e => IO.raiseError(new RuntimeException(e)), IO(_))
   } yield se
 
 }

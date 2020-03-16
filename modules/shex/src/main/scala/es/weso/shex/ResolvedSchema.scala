@@ -1,13 +1,9 @@
 package es.weso.shex
 
-import java.nio.file.{Files, Paths}
+import cats._
 import cats.implicits._
-import es.weso.depgraphs.DepGraph
-import es.weso.rdf.{PrefixMap, RDFBuilder, RDFReader}
-import es.weso.rdf.nodes.{IRI, RDFNode}
-import es.weso.shex.shexR.{RDF2ShEx, ShEx2RDF}
-import es.weso.utils.UriUtils._
-import scala.io.Source
+import es.weso.rdf._
+import es.weso.rdf.nodes._
 import scala.util._
 import cats.effect.IO
 
@@ -26,30 +22,52 @@ case class ResolvedSchema(
  def maybeTripleExprMap = source.tripleExprMap
  def imports = source.imports
  
+ override def getShape(sl: ShapeLabel): Either[String, ShapeExpr] = ???
+
+ override def getTripleExpr(sl: ShapeLabel): Either[String, TripleExpr] = ???
 }
 
 object ResolvedSchema {
 
-  /**
+ private case class MapsImported(
+  shapeExprMaps: Map[ShapeLabel,(ShapeExpr,Option[IRI])], 
+  tripleExprMaps: Map[ShapeLabel,(TripleExpr,Option[IRI])]
+) {
+ def merge(schema: Schema, iri: IRI): MapsImported = {
+   this.copy(
+      shapeExprMaps = cnvMap(schema.shapesMap, addIri[ShapeExpr](iri)) ++ shapeExprMaps,
+      tripleExprMaps = cnvMap(schema.tripleExprMap, addIri[TripleExpr](iri)) ++ tripleExprMaps
+     ) 
+  } 
+ }
+
+ // TODO: I think this can be easier with cats instances but I am not sure now how to invoke it
+ private def cnvMap[A,K,B](m: Map[K,A], f: A => B): Map[K,B] = m.map { case(k,a) => (k,f(a)) } 
+
+ private def addNone[A,B](v: A): (A, Option[B]) = (v,None)
+ private def addIri[A](iri: IRI)(v: A): (A,Option[IRI]) = (v,Some(iri))
+
+ /**
     * Resolves import declarations in schema
     * @param schema
     * @return a resolved schema
     */
-  def resolve(schema: Schema): IO[ResolvedSchema] = for {
-    mapsImported <- closureImports(schema.imports, List(schema.id), MapsToImport(schema.shapesMap,schema.tripleExprMap))
-  } yield 
+  def resolve(schema: Schema, base: Option[IRI]): IO[ResolvedSchema] = for {
+    mapsImported <- closureImports(
+      schema.imports, 
+      List(schema.id), 
+      MapsImported(
+        cnvMap(schema.shapesMap, addNone[ShapeExpr,IRI]),
+        cnvMap(schema.tripleExprMap,addNone[TripleExpr,IRI])
+        ),
+      base  
+     )
+  } yield ResolvedSchema(
+    source = schema, 
+    resolvedMapShapeExprs = mapsImported.shapeExprMaps,
+    resolvedMapTripleExprs = mapsImported.tripleExprMaps
+  )
 
-  lazy val ioMapsImported: IO[MapsToImport] = {
-    closureImports(imports, List(id), MapsToImport(localShapesMap,tripleExprMap))
-  }
-
-  lazy val eitherResolvedShapesMap: IO[Map[ShapeLabel,ShapeExpr]] = {
-    ioMapsImported.map(_.shapesExpr)
-  }
-
-  lazy val eitherResolvedTripleExprMap: IO[Option[Map[ShapeLabel,TripleExpr]]] = {
-    ioMapsImported.map(_.maybeTripleExprs)
-  }
 
 
   // TODO: make the following method tailrecursive
@@ -62,26 +80,9 @@ object ResolvedSchema {
     case (i::is) => if (visited contains i) closureImports(is,visited,current,base)
     else for {
       schema <- Schema.fromIRI(i,base)
-      sm <- closureImports(is ++ schema.imports, i :: visited, current.merge(schema),base)
+      sm <- closureImports(is ++ schema.imports, i :: visited, current.merge(schema,i),base)
     } yield sm
   }
 
-  case class MapsImported(
-    shapeExprMaps: Map[ShapeLabel,(ShapeExpr,Option[IRI])], 
-    tripleExprMaps: Map[ShapeLabel,(TripleExpr,Option[IRI])]
-   ) {
-    def merge(schema: Schema, iri: IRI): MapsImported = {
-      this.copy(
-        shapesExpr = schema.localShapesMap ++ shapesExpr,
-        maybeTripleExprs = schema.tripleExprMap match {
-          case None => maybeTripleExprs
-          case Some(otherTripleExprsMap) => maybeTripleExprs match {
-            case None => Some(otherTripleExprsMap)
-            case Some(tripleExprsMap) => Some(otherTripleExprsMap ++ tripleExprsMap)
-          }
-       }
-      )
-    } 
-  }
 
 }

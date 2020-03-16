@@ -6,7 +6,6 @@ import es.weso.depgraphs.DepGraph
 import es.weso.rdf.{PrefixMap, RDFBuilder, RDFReader}
 import es.weso.rdf.nodes.{IRI, RDFNode}
 import es.weso.shex.shexR.{RDF2ShEx, ShEx2RDF}
-import es.weso.utils.UriUtils._
 import scala.io.Source
 import scala.util._
 import cats.effect.IO
@@ -17,14 +16,14 @@ case class Schema(id: IRI,
                   startActs: Option[List[SemAct]],
                   start: Option[ShapeExpr],
                   shapes: Option[List[ShapeExpr]],
-                  tripleExprMap: Option[Map[ShapeLabel,TripleExpr]],
+                  opttripleExprMap: Option[Map[ShapeLabel,TripleExpr]],
                   imports: List[IRI]
                  ) extends AbstractSchema {
 
   def addShape(se: ShapeExpr): Schema = this.copy(shapes = addToOptionList(se,shapes))
 
   def getTripleExpr(lbl: ShapeLabel): Either[String,TripleExpr] = 
-    tripleExprMap match {
+    optTripleExprMap match {
       case None => Left(s"Cannot find $lbl with an empty tripleExpr map")
       case Some(m) => m.get(lbl).toRight(s"Not found $lbl in map $m")
     }
@@ -37,15 +36,8 @@ case class Schema(id: IRI,
   lazy val prefixMap: PrefixMap =
     prefixes.getOrElse(PrefixMap.empty)
 
-  def getTripleExprMap(): Map[ShapeLabel, TripleExpr] =
-     tripleExprMap.getOrElse(Map())
-    /*eitherResolvedTripleExprMap match {
-      case Right(tem) => tem.getOrElse(Map())
-      case Left(e) => {
-        println(s"Error: $e")
-        Map()
-      } } */
-  
+  lazy val tripleExprMap: Map[ShapeLabel, TripleExpr] =
+     optTripleExprMap.getOrElse(Map())
 
   def addId(i: IRI): Schema = this.copy(id = i)
 
@@ -56,10 +48,9 @@ case class Schema(id: IRI,
     prefixMap.qualify(label.toRDFNode)
 
   def getShape(label: ShapeLabel): Either[String,ShapeExpr] = for {
-    sm <- eitherResolvedShapesMap
-    se <- sm.get(label) match {
-      case None => err(s"Not found $label in schema. Available labels: ${sm.keySet.mkString}")
-      case Some(se) => ok(se)
+    se <- shapesMap.get(label) match {
+      case None => s"Not found $label in schema. Available labels: ${shapesMap.keySet.mkString}".asLeft[ShapeExpr]
+      case Some(se) => se.asRight[String]
     }
   } yield se
 
@@ -80,7 +71,7 @@ case class Schema(id: IRI,
   } */
 
   def addTripleExprMap(te: Map[ShapeLabel,TripleExpr]): Schema =
-    this.copy(tripleExprMap = Some(te))
+    this.copy(opttripleExprMap = Some(te))
 
   def oddNegCycles: Either[String,Set[Set[(ShapeLabel,ShapeLabel)]]] =
     Dependencies.oddNegCycles(this)
@@ -115,7 +106,6 @@ case class Schema(id: IRI,
   }
 
   private lazy val checkBadShapeLabels: Either[String,Unit] = for {
-    shapesMap <- eitherResolvedShapesMap
     _ <- { println(s"shapesMap: $shapesMap"); Right(())}
     _ <- shapesMap.keySet.toList.map(lbl => checkShapeLabel(lbl)).sequence
   } yield (()) 
@@ -147,7 +137,7 @@ case class Schema(id: IRI,
       startActs,
       start.map(_.relativize(baseIri)),
       shapes.map(_.map(_.relativize(baseIri))),
-      tripleExprMap,
+      optTripleExprMap,
       imports
     )
   }
@@ -168,13 +158,12 @@ object Schema {
     Schema(IRI(""),None, None, None, None, None, None, List())
 
   def fromIRI(i: IRI, base: Option[IRI]): IO[Schema] = {
-    Try {
-      val uri = i.uri
-      if (uri.getScheme == "file") {
+    val uri = i.uri
+    if (uri.getScheme == "file") {
         if (Files.exists(Paths.get(i.uri))) {
             val str = Source.fromURI(uri).mkString
             fromString(str, "ShExC", Some(i)).map(schema => schema.addId(i))
-        } else {
+    } else {
           val iriShEx = i + ".shex"
           if (Files.exists(Paths.get((iriShEx).uri))) {
             val str = Source.fromURI(iriShEx.uri).mkString
@@ -187,19 +176,18 @@ object Schema {
            }
            else {
             println(s"File $i does not exist")
-            Left(s"File $i does not exist")
+            err(s"File $i does not exist")
            }
         }}}
       else
        for {
          schema <- getSchemaWithExts(i, List(("","ShExC"),("shex","ShExC"), ("json", "JSON")),base)
        } yield schema.addId(i)
-    }.fold(exc => Left(s"Error obtaining schema from IRI($i):${exc.getMessage}"), identity)
   }
 
   private def getSchemaWithExts(iri: IRI, exts: List[(String,String)], base: Option[IRI] ): IO[Schema] = exts match {
     case (e :: es) => getSchemaExt(iri,e,base) orElse getSchemaWithExts(iri,es,base)
-    case Nil => Left(s"Can not obtain schema from iri: $iri")
+    case Nil => err(s"Can not obtain schema from iri: $iri")
   }
 
   private def getSchemaExt(iri: IRI, pair: (String,String), base: Option[IRI]): IO[Schema] = {
@@ -211,6 +199,19 @@ object Schema {
     schema <- Schema.fromString(str,format,base,None)
    } yield schema
   }
+
+  import java.net.URI
+
+  def derefUri(uri: URI): IO[String] = {
+    Try {
+        val urlCon = uri.toURL.openConnection()
+        urlCon.setConnectTimeout(4000)
+        urlCon.setReadTimeout(2000)
+        val is = urlCon.getInputStream()
+        Source.fromInputStream(is).mkString
+    }.fold(e => IO.raiseError(e), IO(_))
+  }
+
 
   /**
   * Reads a Schema from a char sequence
@@ -229,19 +230,20 @@ object Schema {
     formatUpperCase match {
       case "SHEXC" => {
         import compact.Parser.parseSchema
-        parseSchema(cs.toString, base)
+        parseSchema(cs.toString, base).fold(e => err(e), ok)
       }
       case "SHEXJ" => {
         import io.circe.parser._
         import es.weso.shex.implicits.decoderShEx._
-        decode[Schema](cs.toString).leftMap(_.getMessage)
+        decode[Schema](cs.toString).leftMap(_.getMessage).fold(e => err(e), ok)
       }
       case _ => maybeRDFReader match {
         case None => err(s"Not implemented ShEx parser for format $format and no rdfReader provided")
         case Some(rdfReader) =>
          if (rdfDataFormats(rdfReader).contains(formatUpperCase)) for {
           rdf    <- rdfReader.fromString(cs, formatUpperCase, base)
-          schema <- RDF2ShEx.rdf2Schema(rdf).value.unsafeRunSync
+          eitherSchema <- RDF2ShEx.rdf2Schema(rdf).value
+          schema <- eitherSchema.fold(e => err(e), ok)
          } yield schema
          else err(s"Not implemented ShEx parser for format $format")
        }
@@ -249,6 +251,7 @@ object Schema {
   }
 
   def err[A](msg:String): IO[A] = IO.raiseError(new RuntimeException(msg))
+  def ok[A](v:A): IO[A] = IO.pure(v)
 
   def serialize(schema: Schema,
                 format: String,
@@ -266,12 +269,13 @@ object Schema {
         import es.weso.shex.implicits.encoderShEx._
         IO.pure(relativeSchema.asJson.spaces2)
       }
-      case _ if (rdfDataFormats(rdfBuilder).contains(formatUpperCase)) => {
-        val rdf = ShEx2RDF(relativeSchema, None, rdfBuilder.empty)
-        rdf.serialize(formatUpperCase, base)
-      }
+      case _ if (rdfDataFormats(rdfBuilder).contains(formatUpperCase)) => for {
+        empty <- rdfBuilder.empty
+        rdf <- ShEx2RDF(relativeSchema, None, empty)
+        str <- rdf.serialize(formatUpperCase, base)
+      } yield str
       case _ =>
-        Left(s"Not implemented conversion to $format. Schema: $schema")
+        err(s"Not implemented conversion to $format. Schema: $schema")
     }
   }
 

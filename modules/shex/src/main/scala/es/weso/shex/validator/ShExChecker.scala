@@ -1,12 +1,14 @@
 package es.weso.shex.validator
 
 import cats._
+import cats.data._
 import cats.implicits._
 import es.weso.checking.CheckerCats
 import es.weso.rdf.RDFReader
 import es.weso.rdf.nodes.IRI
 import es.weso.shex.validator.Action._
 import es.weso.shex.validator.Context._
+import cats.effect.IO
 
 object ShExChecker extends CheckerCats {
 
@@ -27,6 +29,8 @@ object ShExChecker extends CheckerCats {
 
   def fromEitherString[A](e: Either[String,A]): Check[A] =
     fromEither(e.leftMap(ShExError.msgErr(_)))
+
+  def fromEitherIOS[A](e: EitherT[IO,String,A]): Check[A] = ???
 
   def checkCond(
                  condition: Boolean,
@@ -89,9 +93,11 @@ object ShExChecker extends CheckerCats {
 
   def runCheck[A: Show](
     c: Check[A],
-    rdf: RDFReader): CheckResult[ShExError, A, Log] = {
+    rdf: RDFReader): IO[CheckResult[ShExError, A, Log]] = {
     val initial: Context = Monoid[Context].empty
-    CheckResult(run(c)(rdf)(initial))
+    for {
+      result <- run(c)(rdf)(initial)
+    } yield CheckResult(result)
   }
 
 /*  def runCheckWithTyping[A: Show](
