@@ -3,6 +3,7 @@ package es.weso.shex.validator
 import cats._
 import data._
 import implicits._
+import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
 import es.weso.shex._
 import es.weso.rdf._
@@ -16,10 +17,12 @@ import es.weso.shex.implicits.showShEx._
 import es.weso.rdf.PREFIXES._
 import es.weso.shex.validator.Table._
 import ShExChecker._
+import es.weso.rdf.triples.RDFTriple
 import es.weso.shapeMaps.{BNodeLabel => BNodeMapLabel, IRILabel => IRIMapLabel, Start => StartMapLabel, _}
 import es.weso.shex.actions.TestSemanticAction
 import es.weso.shex.normalized._
-
+import scala.collection.immutable._
+import es.weso.utils.internal.CollectionCompat.LazyList
 import Function.tupled
 
 /**
@@ -62,7 +65,7 @@ case class Validator(schema: Schema,
 
   private[validator] def getTargetNodeDeclarations(rdf: RDFReader): Check[List[(RDFNode, ShapeLabel)]] =
       for {
-        ts <- fromEitherString(rdf.triplesWithPredicate(`sh:targetNode`))
+        ts <- fromStream(rdf.triplesWithPredicate(`sh:targetNode`))
         r  <- checkAll(ts.map(t => (t.obj, mkShapeLabel(t.subj))).toList.map(checkPair2nd))
       } yield r
 
@@ -232,7 +235,7 @@ case class Validator(schema: Schema,
             case None        =>
               errStr(s"No label in external shape")
             case Some(label) =>
-              fromEitherString(externalResolver.getShapeExpr(label, se.annotations))
+              fromIO(externalResolver.getShapeExpr(label, se.annotations))
           }
           newAttempt = Attempt(NodeShape(node,ShapeType(externalShape,se.id,schema)),attempt.path)
           t <- checkNodeShapeExpr(newAttempt,node,externalShape)
@@ -320,12 +323,13 @@ case class Validator(schema: Schema,
 
   private[validator] def checkDatatype(attempt: Attempt, node: RDFNode)(datatype: IRI): CheckTyping = for {
     rdf <- getRDF
-    check <- rdf.checkDatatype(node, datatype) match {
-      case Left(s) => errStr(s"${attempt.show}\n${node.show} does not have datatype ${datatype.show}\nDetails: $s")
-      case Right(false) => errStr(s"${attempt.show}\n${node.show} does not have datatype ${datatype.show}")
-      case Right(true) => addEvidence(attempt.nodeShape, s"${node.show} has datatype ${datatype.show}")
+    check <- fromIO(rdf.checkDatatype(node, datatype)) 
+    r <- check match {
+      // case Left(s) => errStr(s"${attempt.show}\n${node.show} does not have datatype ${datatype.show}\nDetails: $s")
+      case false => errStr(s"${attempt.show}\n${node.show} does not have datatype ${datatype.show}")
+      case true => addEvidence(attempt.nodeShape, s"${node.show} has datatype ${datatype.show}")
     }
-  } yield check
+  } yield r
 
   private[validator] def checkXsFacets(attempt: Attempt, node: RDFNode)(xsFacets: List[XsFacet]): CheckTyping = {
     if (xsFacets.isEmpty) getTyping
@@ -518,8 +522,8 @@ case class Validator(schema: Schema,
 
   private def getExistingPredicates(node: RDFNode): Check[Set[IRI]] = for {
     rdf <- getRDF
-    ps <- fromEitherString(rdf.triplesWithSubject(node))
-  } yield ps.map(_.pred)
+    ps <- fromStream(rdf.triplesWithSubject(node))
+  } yield ps.toSet[RDFTriple].map(_.pred)
 
   // Returns the list of paths that are different from a given list
   private def extraPreds(node: RDFNode, preds: Set[IRI]): Check[Set[IRI]] = for {
@@ -533,8 +537,8 @@ case class Validator(schema: Schema,
 
   private def getValuesPath(node: RDFNode, path: Path): Check[Set[RDFNode]] = for {
     rdf <- getRDF
-    nodes <- fromEitherString(path.getValues(node,rdf))
-  } yield nodes
+    nodes <- fromStream(path.getValues(node,rdf))
+  } yield nodes.toSet
 
   // We assume that the shape has no reference to other shapes
   private def checkValuesConstraint(values: Set[RDFNode], constraint: Constraint, node: RDFNode, path: Path, attempt: Attempt): CheckTyping = {
@@ -591,7 +595,7 @@ case class Validator(schema: Schema,
   private def checkNodeShapeExprBasic(node: RDFNode,
                                       se: ShapeExpr,
                                       rdf: RDFReader
-                                     ): Either[String,String] =
+                                     ): EitherT[IO,String,String] =
   se match {
     case sa: ShapeAnd => cmb(sa.shapeExprs.map(checkNodeShapeExprBasic(node,_, rdf)))
     case so: ShapeOr => cmb(so.shapeExprs.map(checkNodeShapeExprBasic(node,_, rdf)))
@@ -808,9 +812,9 @@ case class Validator(schema: Schema,
   private[validator] def getNeighs(node: RDFNode): Check[Neighs] =
   for {
     rdf <- getRDF
-    outTriples <- fromEitherString(rdf.triplesWithSubject(node))
+    outTriples <- fromStream(rdf.triplesWithSubject(node))
     outgoing = outTriples.map(t => Arc(Direct(t.pred), t.obj)).toList
-    inTriples <- fromEitherString(rdf.triplesWithObject(node))
+    inTriples <- fromStream(rdf.triplesWithObject(node))
     incoming = inTriples.map(t => Arc(Inverse(t.pred), t.subj)).toList
   } yield {
     val neighs = outgoing ++ incoming
@@ -818,13 +822,13 @@ case class Validator(schema: Schema,
   }
 
   private[validator] def getNeighPaths(node: RDFNode, paths: List[Path]): Check[Neighs] = {
-    val outgoingPredicates = paths.collect { case Direct(p) => p }
+    val outgoingPredicates = LazyList(paths.collect { case Direct(p) => p })
     for {
       rdf        <- getRDF
-      outTriples <- fromEitherString(rdf.triplesWithSubjectPredicates(node, outgoingPredicates))
+      outTriples <- fromStream(rdf.triplesWithSubjectPredicates(node, outgoingPredicates))
       // _ <- { println(s"getNeighPaths\ntriplesWithSubjectPredicates($node, $outgoingPredicates): Outtriples: $outTriples\nRDF: ${rdf.serialize("TURTLE")}\nNode: $node\nPreds:$outgoingPredicates"); ok(()) }
       outgoing = outTriples.map(t => Arc(Direct(t.pred), t.obj)).toList
-      inTriples <- fromEitherString(rdf.triplesWithObject(node))
+      inTriples <- fromStream(rdf.triplesWithObject(node))
       incoming = inTriples.map(t => Arc(Inverse(t.pred), t.subj)).toList
     } yield {
       val neighs = outgoing ++ incoming
@@ -834,10 +838,10 @@ case class Validator(schema: Schema,
 
   private[validator] def getNotAllowedPredicates(node: RDFNode, paths: List[Path]): Check[Set[IRI]] = for {
     rdf <- getRDF
-    ts <- fromEitherString(rdf.triplesWithSubject(node))
+    ts <- fromStream(rdf.triplesWithSubject(node))
   } yield {
     val allowedPreds = paths.collect { case Direct(p) => p }
-    ts.collect {
+    ts.toSet[RDFTriple].collect {
       case s if !(allowedPreds contains s.pred) => s.pred
     }
   }

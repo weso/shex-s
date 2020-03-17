@@ -9,6 +9,7 @@ import es.weso.rdf.nodes.IRI
 import es.weso.shex.validator.Action._
 import es.weso.shex.validator.Context._
 import cats.effect.IO
+import fs2.Stream
 
 object ShExChecker extends CheckerCats {
 
@@ -30,7 +31,16 @@ object ShExChecker extends CheckerCats {
   def fromEitherString[A](e: Either[String,A]): Check[A] =
     fromEither(e.leftMap(ShExError.msgErr(_)))
 
-  def fromEitherIOS[A](e: EitherT[IO,String,A]): Check[A] = ???
+  def fromStream[A](s: Stream[IO,A]): Check[List[A]] = fromIO(s.compile.toList)
+
+  def fromEitherIOS[A](e: EitherT[IO,String,A]): Check[A] = {
+    val ea: Check[Either[String,A]] = EitherT.liftF(WriterT.liftF(ReaderT.liftF(ReaderT.liftF(e.value))))
+    for {
+      either <- ea
+      r <- either.fold(errStr(_), ok)
+    } yield r
+  }
+
 
   def checkCond(
                  condition: Boolean,

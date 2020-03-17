@@ -5,15 +5,18 @@ import es.weso.rdf.RDFReader
 import es.weso.rdf.nodes._
 import es.weso.rdf.operations.Comparisons._
 import es.weso.shex._
-import es.weso.shex.validator.ShExChecker._
 import es.weso.utils.RegEx
 import es.weso.shex.implicits.showShEx._
 import cats._
-import cats.data._ 
+import data._
 import cats.implicits._
 import cats.effect.IO
+import ShExChecker._
 
-case class FacetChecker(schema: Schema, rdf: RDFReader) extends ShowValidator(schema) with LazyLogging {
+case class FacetChecker(
+  schema: Schema, 
+  rdf: RDFReader
+  ) extends ShowValidator(schema) with LazyLogging {
 
   def checkFacets(attempt: Attempt, node: RDFNode)(facets: List[XsFacet]): CheckTyping =
     for {
@@ -21,25 +24,42 @@ case class FacetChecker(schema: Schema, rdf: RDFReader) extends ShowValidator(sc
       t  <- combineTypings(ts)
     } yield t
 
-  private def checkFacet(attempt: Attempt, node: RDFNode)(facet: XsFacet): CheckTyping = 
-     fromEitherIOS(facetChecker(node, facet).map(addEvidence(attempt.nodeShape, _)))
-  /*for {
-    v <- fromEitherIOS(facetChecker(node, facet))
-    r <- v.fold(errStr, addEvidence(attempt.nodeShape, _))
-  } yield r */
+    
+  private def checkFacet(attempt: Attempt, node: RDFNode)(facet: XsFacet): CheckTyping = for {
+    s <- fromEitherIOS(facetChecker(node, facet))
+    t <- addEvidence(attempt.nodeShape, s)
+  } yield t
 
-  def facetsChecker(node: RDFNode, facets: List[XsFacet]): EitherT[IO,String, String] = ???
-  /* {
-    val (passed, failed) = facets.map(facetChecker(node, _)).partition(_.isRight)
-    if (failed.isEmpty) {
-      Right(s"$node passed facets: ${passed.map(_.show).mkString(",")}")
-    } else {
-      Left(s"""$node failed to pass facets ${facets.map(_.show).mkString(",")}
-           |Failed facets: ${failed.map(_.left).mkString("\n")}
-           |Passed facets: ${passed.mkString("\n")}
-           |""".stripMargin)
+  
+  def facetsChecker(node: RDFNode, facets: List[XsFacet]): EitherT[IO,String, String] = { 
+    def cnv(pairs: (List[String], List[String])): Either[String,String] = {
+      val (passed,failed) = pairs
+      if (failed.isEmpty) {
+        Right(s"$node passed facets: ${passed.map(_.show).mkString(",")}")
+      } else {
+        Left(s"""$node failed to pass facets ${facets.map(_.show).mkString(",")}
+                |Failed facets: ${failed.mkString("\n")}
+                |Passed facets: ${passed.mkString("\n")}
+                |""".stripMargin)
+      }
     }
-  } */
+    val vs: List[EitherT[IO,String,String]] = facets.map(facetChecker(node, _))
+    val ps: IO[(List[String], List[String])] = partitionEitherIOS(vs) // .flatMap(cnv(_))
+    val v : IO[Either[String,String]] = ps.map(cnv(_))
+    EitherT.apply(v)
+  }
+
+  private def partitionEitherIOS[A,B](vs: List[EitherT[IO,A,B]]): IO[(List[A], List[B])] = {
+    val zero: IO[(List[A],List[B])] = IO((List(),List()))
+    def cmb(next: IO[(List[A],List[B])], c: EitherT[IO,A,B]): IO[(List[A], List[B])] = for {
+      pairs <- next
+      e <- c.value
+    } yield {
+      val (as, bs) = pairs
+      e.fold(a => (a::as, bs), b => (as,b::bs))
+    }
+    vs.foldLeft(zero)(cmb)
+  }
 
   private def facetChecker(node: RDFNode, facet: XsFacet): EitherT[IO, String, String] = {
     facet match {
