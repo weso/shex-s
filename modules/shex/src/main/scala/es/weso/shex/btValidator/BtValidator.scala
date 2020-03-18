@@ -9,6 +9,8 @@ import es.weso.shapeMaps._
 import es.weso.shex._
 import es.weso.typing.Typing
 
+import cats.effect.IO
+import fs2.Stream
 /**
   * Backtracking validator
   */
@@ -18,7 +20,7 @@ object BtValidator {
 
   case class Env(rdf: RDFReader, schema: Schema, typing: ShapeTyping, table: VarTable)
 
-  type ReaderEnv[A] = ReaderT[Id,Env,A]
+  type ReaderEnv[A] = ReaderT[IO,Env,A]
   type Check[A] = EitherT[ReaderEnv,ShExErr, A]
 
   def getRDF: Check[RDFReader] = {
@@ -35,6 +37,11 @@ object BtValidator {
     val r: ReaderEnv[Env] = ReaderT.ask
     EitherT.liftF[ReaderEnv,ShExErr,ShapeTyping](r.map(_.typing))
   }
+
+  def fromStream[A](s: Stream[IO,A]): Check[List[A]] = fromIO(s.compile.toList)
+  def fromIO[A](io: IO[A]): Check[A] = EitherT.liftF(Kleisli.liftF(io))
+
+
 
   def getVarTable: Check[VarTable] = {
     val r: ReaderEnv[Env] = ReaderT.ask
@@ -73,7 +80,8 @@ object BtValidator {
     if (tc.direct) {
       for {
         rdf <- getRDF
-        triples <- fromEither(rdf.triplesWithSubjectPredicate(node, tc.predicate))
+        triples <- fromStream(rdf.triplesWithSubjectPredicate(node, tc.predicate))
+        // triples <- fromEither()
         typing <- getTyping
         table <- getVarTable
       } yield {
@@ -88,7 +96,7 @@ object BtValidator {
 
   def runCheck[A](rdf: RDFReader, schema: Schema, c: Check[A]): Either[ShExErr,A] = {
     val env = Env(rdf,schema,Typing.empty,Monoid[VarTable].empty)
-    c.value.run(env)
+    c.value.run(env).unsafeRunSync()
   }
 
 }

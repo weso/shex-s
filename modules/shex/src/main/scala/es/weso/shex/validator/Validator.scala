@@ -24,6 +24,8 @@ import es.weso.shex.normalized._
 import scala.collection.immutable._
 import es.weso.utils.internal.CollectionCompat.LazyList
 import Function.tupled
+import es.weso.utils.eitherios.EitherIOUtils._
+import es.weso.utils.CommonUtils._
 
 /**
  * ShEx validator
@@ -107,11 +109,8 @@ case class Validator(schema: Schema,
           errStr(s"Cannot check $node agains undefined status")
     }
 
-  private def mkLabel(label: ShapeMapLabel): ShapeLabel = label match {
-    case StartMapLabel => Start
-    case IRIMapLabel(iri) => IRILabel(iri)
-    case BNodeMapLabel(b) => BNodeLabel(b)
-  }
+  private def mkLabel(label: ShapeMapLabel): ShapeLabel = 
+    ShapeLabel.fromShapeMapLabel(label)
 
   private def checkNotConformant(node: RDFNode,
                                  label: ShapeLabel,
@@ -551,46 +550,46 @@ case class Validator(schema: Schema,
           for {
             rdf <- getRDF
             t <- {
-              val (passed, notPassed) = values.map(checkNodeShapeExprBasic(_, se, rdf)).partition(_.isRight)
-              if (card.contains(passed.size)) {
-                addEvidence(attempt.nodeShape, s"Number of values for ${node.show} with ${path.show} that satisfy ${constraint.shape} = ${passed.size} matches cardinality ${constraint.card}")
-              } else {
-                err(ErrCardinalityWithExtra(attempt, node, path, passed.size, notPassed.size, card))
-              }
-            }
+              val rs: List[EitherT[IO,String,String]] = values.toList.map(checkNodeShapeExprBasic(_, se, rdf))
+              val doPartition: Check[(List[String],List[String])] = fromIO(partitionEitherIOS(rs))
+              val p: Check[ShapeTyping] = for {
+               partition <- doPartition
+               (passed,notPassed) = partition
+               t <- if (card.contains(passed.size)) {
+                  addEvidence(attempt.nodeShape, 
+                    s"Number of values for ${node.show} with ${path.show} that satisfy ${constraint.shape} = ${passed.size} matches cardinality ${constraint.card}")
+               } else {
+                  err(ErrCardinalityWithExtra(attempt, node, path, passed.size, notPassed.size, card))
+               }
+              } yield t
+              p
+            } 
           } yield t
         }
         else for {
           rdf <- getRDF
-          t <- {
-            if (constraint.card.contains(values.size)) {
-              val (notPassed, passed) =
-                setPartitionMap(values.map(v => (v, checkNodeShapeExprBasic(v, se, rdf))))(mapFun)
-              // println(s"checkValuesConstraint: \nPassed: $passed\nNot passed: $notPassed")
-              if (notPassed.isEmpty) {
+          t <- if (constraint.card.contains(values.size)) {
+            val rs: List[EitherT[IO,(RDFNode,String),(RDFNode,String)]] = 
+              f(values.toList.map(v => (v, checkNodeShapeExprBasic(v, se, rdf))))
+            val doPartition: Check[(List[(RDFNode,String)],List[(RDFNode,String)])] = 
+              fromIO(partitionEitherIOS(rs))
+            val ct: Check[ShapeTyping] = for {
+              partition <- doPartition
+              (passed,notPassed) = partition
+/*              val (notPassed, passed) =
+                setPartitionMap(values.map(v => (v, checkNodeShapeExprBasic(v, se, rdf))))(mapFun) */
+              newt <- if (notPassed.isEmpty) {
                 addEvidence(attempt.nodeShape, s"${node.show} passed ${constraint.show} for path ${path.show}")
               } else
-                err(ValuesNotPassed(attempt, node, path, passed.size, notPassed))
-            } else err(ErrCardinality(attempt, node, path, values.size, card))
-        }
+                err(ValuesNotPassed(attempt, node, path, passed.size, notPassed.toSet))
+            } yield newt
+            ct
+           } else err(ErrCardinality(attempt, node, path, values.size, card))
     } yield t
    }
   }
 
-  // TODO: This implementation can be replaced by ls.paritionMap(f) in scala 2.13
-  private def setPartitionMap[A,A1,A2](ls: Set[A])(f: A => Either[A1,A2]): (Set[A1], Set[A2]) = {
-    val (left, right) = ls.map(f).partition(_.isLeft)
-    (left.map(_.asInstanceOf[Left[A1, _]].value), right.map(_.asInstanceOf[Right[_, A2]].value))
-  }
-
-  private def mapFun(v: (RDFNode,Either[String,String])
-                    ): Either[(RDFNode,String), (RDFNode,String)] = {
-    val (node, either) = v
-    either match {
-      case Left(s) => Left((node,s))
-      case Right(s) => Right((node,s))
-    }
-  }
+  private def f[A,B,C](v: List[(A,EitherT[IO,B,C])]): List[EitherT[IO,(A,B),(A,C)]] = ???
 
   private def checkNodeShapeExprBasic(node: RDFNode,
                                       se: ShapeExpr,
@@ -601,18 +600,23 @@ case class Validator(schema: Schema,
     case so: ShapeOr => cmb(so.shapeExprs.map(checkNodeShapeExprBasic(node,_, rdf)))
     case sn: ShapeNot =>
       if (checkNodeShapeExprBasic(node,sn.shapeExpr,rdf).isLeft)
-        s"Passes negation".asRight[String]
-      else s"Doesn't pass negation".asLeft[String]
-    case _: ShapeRef => Left("Internal error. A normalized ShapeExpr cannot have references ")
-    case s: Shape if s.isEmpty => Right(s"$node matches empty shape")
+        mkOk(s"Passes negation")
+      else mkErr(s"Doesn't pass negation")
+    case _: ShapeRef => mkErr("Internal error. A normalized ShapeExpr cannot have references ")
+    case s: Shape if s.isEmpty => mkOk(s"$node matches empty shape")
     case s: Shape =>
       // checkShapeBase(Attempt(NodeShape(node, ShapeType(s,s.id, schema)),None), node, s)
-      Left(s"Not implemented yet")
-    case _: ShapeExternal => Left(s"Still don't know what to do with external shapes")
+      mkErr(s"Not implemented yet")
+    case _: ShapeExternal => mkErr(s"Still don't know what to do with external shapes")
     case nk: NodeConstraint => NodeConstraintChecker(schema,rdf).nodeConstraintChecker(node,nk)
   }
 
-  private def cmb(els: List[Either[String,String]]): Either[String,String] = {
+  private def mkErr(s:String): EitherT[IO,String,String] = 
+    EitherT.fromEither(s.asLeft[String])
+
+  private def mkOk(s:String): EitherT[IO,String,String] = EitherT.pure(s)  
+
+  private def cmb(els: List[EitherT[IO,String,String]]): EitherT[IO,String,String] = {
     els.sequence.map(_.mkString("\n"))
   }
 

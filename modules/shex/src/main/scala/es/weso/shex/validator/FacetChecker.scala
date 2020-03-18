@@ -12,6 +12,7 @@ import data._
 import cats.implicits._
 import cats.effect.IO
 import ShExChecker._
+import es.weso.utils.eitherios.EitherIOUtils._
 
 case class FacetChecker(
   schema: Schema, 
@@ -43,22 +44,10 @@ case class FacetChecker(
                 |""".stripMargin)
       }
     }
-    val vs: List[EitherT[IO,String,String]] = facets.map(facetChecker(node, _))
-    val ps: IO[(List[String], List[String])] = partitionEitherIOS(vs) // .flatMap(cnv(_))
+    val ps: IO[(List[String], List[String])] = 
+      partitionEitherIOS(facets.map(facetChecker(node, _))) 
     val v : IO[Either[String,String]] = ps.map(cnv(_))
     EitherT.apply(v)
-  }
-
-  private def partitionEitherIOS[A,B](vs: List[EitherT[IO,A,B]]): IO[(List[A], List[B])] = {
-    val zero: IO[(List[A],List[B])] = IO((List(),List()))
-    def cmb(next: IO[(List[A],List[B])], c: EitherT[IO,A,B]): IO[(List[A], List[B])] = for {
-      pairs <- next
-      e <- c.value
-    } yield {
-      val (as, bs) = pairs
-      e.fold(a => (a::as, bs), b => (as,b::bs))
-    }
-    vs.foldLeft(zero)(cmb)
   }
 
   private def facetChecker(node: RDFNode, facet: XsFacet): EitherT[IO, String, String] = {
