@@ -10,7 +10,7 @@ import es.weso.shex._
 import cats.effect.IO
 
 
-case class NodeConstraintChecker(schema: Schema, rdf: RDFReader)
+case class NodeConstraintChecker(schema: AbstractSchema, rdf: RDFReader)
   extends ShowValidator(schema) with LazyLogging {
 
   def nodeConstraintChecker(value: RDFNode, nk: NodeConstraint

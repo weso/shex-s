@@ -29,6 +29,6 @@ case class ExternalIRIResolver(maybeIri: Option[IRI]) extends ExternalResolver {
 case object NoAction extends ExternalResolver {
   override def getShapeExpr(label: ShapeLabel,
                             as: Option[List[Annotation]]
-                           ): Either[String,ShapeExpr] =
-    Left(s"NoAction resolver can't obtain external shape expression from label: $label")
+                           ): IO[ShapeExpr] =
+    IO.raiseError(new RuntimeException(s"NoAction resolver can't obtain external shape expression from label: $label"))
 }

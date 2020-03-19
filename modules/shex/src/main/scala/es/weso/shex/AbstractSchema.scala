@@ -20,7 +20,7 @@ abstract class AbstractSchema {
   def shapes: Option[List[ShapeExpr]]
   def optTripleExprMap: Option[Map[ShapeLabel,TripleExpr]]
   def imports: List[IRI]
-  def addShape(se: ShapeExpr): Schema 
+  // def addShape(se: ShapeExpr): Schema 
   
   def getTripleExpr(lbl: ShapeLabel): Either[String,TripleExpr] 
   def getShape(lbl: ShapeLabel): Either[String,ShapeExpr]
@@ -36,8 +36,16 @@ abstract class AbstractSchema {
     }
   }
 
-  def tripleExprMap: Map[ShapeLabel, TripleExpr] = optTripleExprMap.getOrElse(Map())
+  lazy val tripleExprMap: Map[ShapeLabel, TripleExpr] =
+     optTripleExprMap.getOrElse(Map())
 
+  def qualify(node: RDFNode): String =
+    prefixMap.qualify(node)
+
+  def qualify(label: ShapeLabel): String =
+    prefixMap.qualify(label.toRDFNode)
+
+  def labels: List[ShapeLabel] = shapesMap.keySet.toList
 
 }
 

@@ -17,4 +17,12 @@ object EitherIOUtils {
     vs.foldLeft(zero)(cmb)
  }
 
+ def injectPairLs[A,B,C](v: List[(A,EitherT[IO,B,C])]): List[EitherT[IO,(A,B),(A,C)]] = {
+   v.map(pair => {
+     val (a,e) = pair
+     e.bimap(x => (a,x), y => (a,y))
+   })
+
+ }
+
 }

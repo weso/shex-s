@@ -16,7 +16,7 @@ case class Schema(id: IRI,
                   startActs: Option[List[SemAct]],
                   start: Option[ShapeExpr],
                   shapes: Option[List[ShapeExpr]],
-                  opttripleExprMap: Option[Map[ShapeLabel,TripleExpr]],
+                  optTripleExprMap: Option[Map[ShapeLabel,TripleExpr]],
                   imports: List[IRI]
                  ) extends AbstractSchema {
 
@@ -33,19 +33,7 @@ case class Schema(id: IRI,
     case _ => Left(s"Label $l can't be converted to IRI")
   }
 
-  lazy val prefixMap: PrefixMap =
-    prefixes.getOrElse(PrefixMap.empty)
-
-  lazy val tripleExprMap: Map[ShapeLabel, TripleExpr] =
-     optTripleExprMap.getOrElse(Map())
-
   def addId(i: IRI): Schema = this.copy(id = i)
-
-  def qualify(node: RDFNode): String =
-    prefixMap.qualify(node)
-
-  def qualify(label: ShapeLabel): String =
-    prefixMap.qualify(label.toRDFNode)
 
   def getShape(label: ShapeLabel): Either[String,ShapeExpr] = for {
     se <- shapesMap.get(label) match {
@@ -63,15 +51,10 @@ case class Schema(id: IRI,
    /* eitherResolvedShapesMap.fold(_ => localShapes,
      sm => sm.values.toList) */
 
-  def labels: List[ShapeLabel] = localShapes.map(_.id).flatten
-  /*{
-    eitherResolvedShapesMap.fold(
-      e => localShapes.map(_.id).flatten,
-      sm => sm.keySet.toList)
-  } */
+  override def labels: List[ShapeLabel] = localShapes.map(_.id).flatten
 
   def addTripleExprMap(te: Map[ShapeLabel,TripleExpr]): Schema =
-    this.copy(opttripleExprMap = Some(te))
+    this.copy(optTripleExprMap = Some(te))
 
   def oddNegCycles: Either[String,Set[Set[(ShapeLabel,ShapeLabel)]]] =
     Dependencies.oddNegCycles(this)

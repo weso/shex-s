@@ -53,7 +53,7 @@ class SchemaMaker extends ShExDocBaseVisitor[Any] with LazyLogging {
         startActs = startActions,
         start = start,
         shapes = if (!shapeMap.isEmpty) Some(shapesMap2List(shapeMap)) else None,
-        tripleExprMap = if (!tripleExprMap.isEmpty) Some(tripleExprMap) else None,
+        optTripleExprMap = if (!tripleExprMap.isEmpty) Some(tripleExprMap) else None,
         imports = importIRIs
       )
     }

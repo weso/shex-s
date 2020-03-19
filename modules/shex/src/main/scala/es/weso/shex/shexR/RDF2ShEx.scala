@@ -442,7 +442,7 @@ trait RDF2ShEx extends RDFParser with LazyLogging {
   private def valueSetValueList1Plus: RDFParser[List[ValueSetValue]] =
     list1Plus(valueSetValue)
 
-  def fromIO[A](io: IO[A]): RDFParser[A] = liftIO(io)
+  // def fromIO[A](io: IO[A]): RDFParser[A] = liftIO(io)
 
   def fromStream[A](s: Stream[IO,A]): RDFParser[List[A]] = 
     fromIO(s.compile.toList)

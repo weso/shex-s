@@ -15,7 +15,7 @@ case class NormalizedShape(slots: Map[Path, Vector[Constraint]], closed: Boolean
 
 object NormalizedShape {
 
-  def fromShape(shape: Shape, schema: Schema): Either[String, NormalizedShape] = {
+  def fromShape(shape: Shape, schema: AbstractSchema): Either[String, NormalizedShape] = {
     val empty: Map[Path, Vector[Constraint]] = Map()
     for {
       cs <- shape.expression.fold(empty.asRight[String])(
@@ -35,7 +35,7 @@ object NormalizedShape {
       te: TripleExpr,
       cs: Map[Path, Vector[Constraint]],
       extraPaths: List[Path],
-      schema: Schema
+      schema: AbstractSchema
   ): Either[String, Map[Path, Vector[Constraint]]] = {
     te match {
       case _: Expr      => Left(s"Contains an expr")

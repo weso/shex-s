@@ -20,7 +20,7 @@ case class FlatShape(slots: Map[Path, Constraint],
 
 object FlatShape {
 
-  def fromShape(shape: Shape, schema: Schema): Either[String, FlatShape] = {
+  def fromShape(shape: Shape, schema: AbstractSchema): Either[String, FlatShape] = {
       val empty: Map[Path,Constraint] = Map()
       for {
         cs <- shape.expression.fold(
@@ -33,7 +33,7 @@ object FlatShape {
     private def flattenTripleExpr(te: TripleExpr,
                                   cs: Map[Path,Constraint],
                                   extraPaths: List[Path],
-                                  schema: Schema
+                                  schema: AbstractSchema
                                  ): Either[String,Map[Path,Constraint]] = te match {
       case _: Expr => Left(s"Contains an expr")
       case _: Inclusion => Left(s"Contains an inclusion")

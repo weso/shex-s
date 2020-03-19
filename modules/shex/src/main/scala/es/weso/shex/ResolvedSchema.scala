@@ -7,10 +7,17 @@ import es.weso.rdf.nodes._
 import scala.util._
 import cats.effect.IO
 
+/**
+  * Represents a schema with all the imports resolved
+  *
+  * @param source
+  * @param resolvedMapShapeExprs
+  * @param resolvedMapTripleExprs
+  */
 case class ResolvedSchema(
   source: Schema,
-  resolvedMapShapeExprs: Map[ShapeLabel, (ShapeExpr,Option[IRI])],
-  resolvedMapTripleExprs: Map[ShapeLabel, (TripleExpr, Option[IRI])],
+  resolvedMapShapeExprs: Map[ShapeLabel, ResolvedShapeExpr],
+  resolvedMapTripleExprs: Map[ShapeLabel, ResolvedTripleExpr],
   ) extends AbstractSchema {
   
  def id = source.id
@@ -22,30 +29,34 @@ case class ResolvedSchema(
  def maybeTripleExprMap = source.tripleExprMap
  def imports = source.imports
  
- override def getShape(sl: ShapeLabel): Either[String, ShapeExpr] = ???
+ override def getShape(sl: ShapeLabel): Either[String, ShapeExpr] = 
+  resolvedMapShapeExprs.get(sl).toRight(s"Not found $sl").map(_.se) 
 
- override def getTripleExpr(sl: ShapeLabel): Either[String, TripleExpr] = ???
+ override def getTripleExpr(sl: ShapeLabel): Either[String, TripleExpr] = 
+  resolvedMapTripleExprs.get(sl).toRight(s"Not found $sl").map(_.te) 
+
+ // override def addShape(se: ShapeExpr): es.weso.shex.Schema = ???
+ // override def labels: List[ShapeLabel] = ???
+ lazy val optTripleExprMap: Option[Map[ShapeLabel,TripleExpr]] = Some(resolvedMapTripleExprs.mapValues(_.te))
+
 }
 
 object ResolvedSchema {
 
  private case class MapsImported(
-  shapeExprMaps: Map[ShapeLabel,(ShapeExpr,Option[IRI])], 
-  tripleExprMaps: Map[ShapeLabel,(TripleExpr,Option[IRI])]
+  shapeExprMaps: Map[ShapeLabel,ResolvedShapeExpr],
+  tripleExprMaps: Map[ShapeLabel,ResolvedTripleExpr]
 ) {
  def merge(schema: Schema, iri: IRI): MapsImported = {
    this.copy(
-      shapeExprMaps = cnvMap(schema.shapesMap, addIri[ShapeExpr](iri)) ++ shapeExprMaps,
-      tripleExprMaps = cnvMap(schema.tripleExprMap, addIri[TripleExpr](iri)) ++ tripleExprMaps
+      shapeExprMaps = cnvMap(schema.shapesMap, (v: ShapeExpr) => ResolvedShapeExpr(v,iri)) ++ shapeExprMaps,
+      tripleExprMaps = cnvMap(schema.tripleExprMap, (v: TripleExpr) => ResolvedTripleExpr(v,iri)) ++ tripleExprMaps
      ) 
   } 
  }
 
  // TODO: I think this can be easier with cats instances but I am not sure now how to invoke it
  private def cnvMap[A,K,B](m: Map[K,A], f: A => B): Map[K,B] = m.map { case(k,a) => (k,f(a)) } 
-
- private def addNone[A,B](v: A): (A, Option[B]) = (v,None)
- private def addIri[A](iri: IRI)(v: A): (A,Option[IRI]) = (v,Some(iri))
 
  /**
     * Resolves import declarations in schema
@@ -57,8 +68,8 @@ object ResolvedSchema {
       schema.imports, 
       List(schema.id), 
       MapsImported(
-        cnvMap(schema.shapesMap, addNone[ShapeExpr,IRI]),
-        cnvMap(schema.tripleExprMap,addNone[TripleExpr,IRI])
+        cnvMap(schema.shapesMap, (v: ShapeExpr) => ResolvedShapeExpr(v)),
+        cnvMap(schema.tripleExprMap, (v: TripleExpr) => ResolvedTripleExpr(v))
         ),
       base  
      )
@@ -84,5 +95,11 @@ object ResolvedSchema {
     } yield sm
   }
 
+  def empty: ResolvedSchema = ResolvedSchema(
+    source = Schema.empty, 
+    resolvedMapShapeExprs = Map(),
+    resolvedMapTripleExprs = Map()
+  )
 
 }
+

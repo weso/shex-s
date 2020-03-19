@@ -14,9 +14,9 @@ sealed trait TripleExpr {
 
   def relativize(base: IRI): TripleExpr
 
-  def paths(schema: Schema): List[Path] = getPaths(schema, this).getOrElse(List())
+  def paths(schema: AbstractSchema): List[Path] = getPaths(schema, this).getOrElse(List())
 
-  private def getPaths(schema: Schema, te: TripleExpr): Either[String,List[Path]] = {
+  private def getPaths(schema: AbstractSchema, te: TripleExpr): Either[String,List[Path]] = {
 
    /* We use a state monad to handle the list of visited triple expressions in case 
       a triple expr refers to itself */

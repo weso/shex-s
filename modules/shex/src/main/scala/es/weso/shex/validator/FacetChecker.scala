@@ -15,7 +15,7 @@ import ShExChecker._
 import es.weso.utils.eitherios.EitherIOUtils._
 
 case class FacetChecker(
-  schema: Schema, 
+  schema: AbstractSchema, 
   rdf: RDFReader
   ) extends ShowValidator(schema) with LazyLogging {
 

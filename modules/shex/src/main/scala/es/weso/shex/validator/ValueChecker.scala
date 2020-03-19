@@ -8,7 +8,7 @@ import es.weso.shex._
 import es.weso.shex.validator.ShExChecker._
 import ShExError._
 
-case class ValueChecker(schema: Schema)
+case class ValueChecker(schema: AbstractSchema)
   extends ShowValidator(schema) with LazyLogging {
 
   def checkValue(
