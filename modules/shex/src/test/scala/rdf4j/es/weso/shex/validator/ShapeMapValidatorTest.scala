@@ -6,6 +6,8 @@ import es.weso.shex._
 import cats.data.EitherT
 import cats.effect._
 import org.scalatest._
+import es.weso.utils.eitherios.EitherIOUtils._
+import es.weso.shex.ResolvedSchema
 
 import scala.util._
 
@@ -242,14 +244,16 @@ class ShapeMapValidator_RDF4jTest extends FunSpec with Matchers with EitherValue
     it(s"Should validate ${shexStr} with ${rdfStr} and ${shapeMapStr} and result $expected") {
       val validate = for {
         rdf <- RDFAsRDF4jModel.fromChars(rdfStr, "Turtle")
-        shex <- EitherT.fromEither[IO](Schema.fromString(shexStr, "ShExC", None))
-        shapeMap <- EitherT.fromEither[IO](ShapeMap.fromCompact(shapeMapStr, shex.base, rdf.getPrefixMap, shex.prefixMap))
-        fixedShapeMap <- EitherT.fromEither[IO](ShapeMap.fixShapeMap(shapeMap, rdf, rdf.getPrefixMap, shex.prefixMap))
-        result <- EitherT.fromEither[IO](Validator.validate(shex, fixedShapeMap, rdf))
-        expectedShapeMap <- EitherT.fromEither[IO](ShapeMap.parseResultMap(expected, None, rdf, shex.prefixMap))
-        compare <- EitherT.fromEither[IO](result.compareWith(expectedShapeMap))
+        shex <- Schema.fromString(shexStr, "ShExC", None)
+        shapeMap <- eitherStr2IO(ShapeMap.fromCompact(shapeMapStr, shex.base, rdf.getPrefixMap, shex.prefixMap))
+        fixedShapeMap <- ShapeMap.fixShapeMap(shapeMap, rdf, rdf.getPrefixMap, shex.prefixMap)
+        resolved <- ResolvedSchema.resolve(shex,None)
+        result <- Validator.validate(resolved, fixedShapeMap, rdf)
+        expectedShapeMap <- ShapeMap.parseResultMap(expected, None, rdf, shex.prefixMap)
+        resultShapeMap <- result.toResultShapeMap
+        compare <- eitherStr2IO(resultShapeMap.compareWith(expectedShapeMap))
       } yield compare
-      validate.value.unsafeRunSync match {
+      validate.attempt.unsafeRunSync match {
         case Left(msg) => fail(s"Error: $msg")
         case Right(v) => v should be(true)
       }

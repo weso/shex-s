@@ -1,7 +1,8 @@
 package es.weso.utils.eitherios
-
-import cats.effect.IO
+import cats._
 import cats.data._
+import implicits._
+import cats.effect.IO
 
 object EitherIOUtils {
 
@@ -22,7 +23,15 @@ object EitherIOUtils {
      val (a,e) = pair
      e.bimap(x => (a,x), y => (a,y))
    })
-
  }
 
+ def eitherStr2IO[A](e: Either[String,A]): IO[A] = 
+    MonadError[IO,Throwable].rethrow(IO(e.leftMap(new Exception(_))))
+
+
+ def eitherT2io[A,B](e: EitherT[IO,A,B]): IO[B] = 
+    e.value.flatMap(_.fold(
+      err => IO.raiseError(new RuntimeException(s"Error: ${err.toString}")),
+      IO.pure(_)
+    ))
 }

@@ -4,8 +4,9 @@ import es.weso.rdf.nodes.IRI
 import es.weso.shapeMaps.ShapeMap
 import es.weso.shex.Schema
 import org.scalatest._
-
 import scala.util._
+import es.weso.utils.eitherios.EitherIOUtils._
+import es.weso.shex.ResolvedSchema
 
 trait ShouldValidateShapeMap extends FunSpecLike with Matchers {
 
@@ -20,19 +21,23 @@ trait ShouldValidateShapeMap extends FunSpecLike with Matchers {
         rdf <- RDFAsJenaModel.fromChars(rdfStr, "Turtle",None)
         shex <- Schema.fromString(shexStr, "ShExC", Some(IRI("")))
         shapeMap <- {
-          ShapeMap.fromCompact(shapeMapStr, shex.base, rdf.getPrefixMap, shex.prefixMap)
+          eitherStr2IO(ShapeMap.fromCompact(shapeMapStr, shex.base, rdf.getPrefixMap, shex.prefixMap))
         }
         fixedShapeMap <- ShapeMap.fixShapeMap(shapeMap, rdf, rdf.getPrefixMap, shex.prefixMap)
-        result <- Validator.validate(shex, fixedShapeMap, rdf)
+        resolved <- ResolvedSchema.resolve(shex,Some(IRI("")))
+        result <- Validator.validate(resolved, fixedShapeMap, rdf)
+        resultShapeMap <- result.toResultShapeMap
         expectedShapeMap <- ShapeMap.parseResultMap(expected, shex.base, rdf, shex.prefixMap)
-        _ <- { info(s"Expected shapeMap parsed: $expectedShapeMap"); Right(())}
-        compare <- result.compareWith(expectedShapeMap)
+        // _ <- { info(s"Expected shapeMap parsed: $expectedShapeMap"); Right(())}
+        compare <- eitherStr2IO(resultShapeMap.compareWith(expectedShapeMap))
       } yield compare
-      validate match {
+      validate.attempt.unsafeRunSync match {
         case Left(msg) => fail(s"Error: $msg")
         case Right(v) => v should be(true)
       }
     }
   }
+
+
 
 }

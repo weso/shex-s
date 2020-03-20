@@ -5,6 +5,8 @@ import es.weso.rdf.nodes._
 import es.weso.shapeMaps._
 import es.weso.shex.{IRILabel => ShExIriLabel, _}
 import org.scalatest._
+import es.weso.utils.eitherios.EitherIOUtils._
+
 
 class SpecTest extends FunSpec with Matchers with EitherValues {
   val x = IRI(s"http://example.org/x")
@@ -17,7 +19,7 @@ class SpecTest extends FunSpec with Matchers with EitherValues {
   val slbl = IRILabel(s)
   val lbl = ShExIriLabel(IRI(s"http://example.org/lbl"))
   val lbl2 = ShExIriLabel(IRI(s"http://example.org/lbl2"))
-  val emptyEnv = Env(Schema.empty, TypingMap.empty, RDFAsJenaModel.empty)
+//  val emptyEnv = Env(Schema.empty, TypingMap.empty, RDFAsJenaModel.empty)
 
 /*  describe(s"getMatchables") {
 
@@ -189,15 +191,15 @@ class SpecTest extends FunSpec with Matchers with EitherValues {
         val r = for {
           rdf <- RDFAsJenaModel.fromChars(strRDF, "Turtle", None)
           schema <- Schema.fromString(strSchema, "ShExC", None)
-          shapeMap <- ShapeMap.fromString(strShapeMap, "Compact", None, rdf.getPrefixMap, schema.prefixMap)
+          shapeMap <- eitherStr2IO(ShapeMap.fromString(strShapeMap, "Compact", None, rdf.getPrefixMap, schema.prefixMap))
           fixedShapeMap <- ShapeMap.fixShapeMap(shapeMap, rdf, rdf.getPrefixMap, schema.prefixMap)
-          shapeTyping <- Check.runCheck(Env(schema, TypingMap.empty, rdf), Spec.checkShapeMap(rdf, fixedShapeMap))
+          shapeTyping <- eitherT2io(Check.runCheck(Env(schema, TypingMap.empty, rdf), Spec.checkShapeMap(rdf, fixedShapeMap)))
           result = Spec.shapeTyping2ResultShapeMap(shapeTyping,rdf.getPrefixMap,schema.prefixMap)
           expectedShapeMap <- ShapeMap.parseResultMap(strExpectedShapeMap, None, rdf, schema.prefixMap)
-          compare <- result.compareWith(expectedShapeMap)
+          compare <- eitherStr2IO(result.compareWith(expectedShapeMap))
         } yield compare
 
-        r.fold(
+        r.attempt.unsafeRunSync.fold(
           e => fail(s"Error $e"),
           comparison => comparison should be (true)
         )
