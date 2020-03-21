@@ -3,6 +3,9 @@ package es.weso.shex.compact
 import cats.implicits._
 import es.weso.shex.Schema
 import org.scalatest._
+import cats.data._ 
+import cats.effect.IO
+import cats.implicits._
 
 class CompactShowTest extends FunSpec with Matchers with EitherValues {
 
@@ -15,19 +18,20 @@ class CompactShowTest extends FunSpec with Matchers with EitherValues {
 
   def shouldShowAndParse(shexStr: String): Unit = {
     it(s"Should show/parse $shexStr") {
-    val result = for {
-      shExSchema <- Schema.fromString(shexStr)
+    val result: EitherT[IO,String,Boolean] = for {
+      shExSchema <- EitherT.liftF(Schema.fromString(shexStr))
       serialized = CompactShow.showSchema(shExSchema)
-      schemaFromSerialized <- Schema
-          .fromString(serialized)
-          .leftMap(e => s"Error reading serialized schema: $e\nSerialized:\n$serialized")
-      b <- shouldBeEqualSchemas(shExSchema, schemaFromSerialized)
+      schemaFromSerialized <- EitherT.liftF(Schema.fromString(serialized)).leftMap((e:String) => s"Error reading serialized schema: $e\nSerialized:\n$serialized")
+      b <- EitherT.fromEither[IO](shouldBeEqualSchemas(shExSchema, schemaFromSerialized).asRight)
     } yield b
-    result.fold(e => fail(s"$e"), v => v should be(true))
+    result.value.unsafeRunSync.fold(
+      e => fail(s"$e"), 
+      (v: Boolean) => v should be(true)
+      )
     }
   }
 
-  def shouldBeEqualSchemas(s1: Schema, s2: Schema): Either[String, Boolean] =
-    if (s1 === s2) Right(true)
-    else Right(false)
+  def shouldBeEqualSchemas(s1: Schema, s2: Schema): Boolean =
+    if (s1 === s2) true
+    else false
 }

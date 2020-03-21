@@ -34,7 +34,7 @@ class CompareJsonTest extends FunSpec with JsonTest with Matchers with EitherVal
     for (file <- getCompactFiles(schemasFolder).unsafeRunSync) {
       it(s"Should read Schema from file ${file.getName}") {
         val str = Source.fromFile(file)("UTF-8").mkString
-        Schema.fromString(str) match {
+        Schema.fromString(str).attempt.unsafeRunSync match {
           case Right(schema) => {
             val (name, ext) = splitExtension(file.getName)
             val jsonFile = schemasFolder + "/" + name + ".json"

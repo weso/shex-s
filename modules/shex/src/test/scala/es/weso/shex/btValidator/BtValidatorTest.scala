@@ -11,7 +11,7 @@ import es.weso.shex._
 
 class BtValidatorTest extends FunSpec with Matchers with EitherValues {
 
-  describe(s"BtValidator semantics") {
+/*  describe(s"BtValidator semantics") {
     it(s"Should validate OK") {
       val c: Check[Int] = ok(3)
       val rdf = RDFAsJenaModel.empty
@@ -69,5 +69,5 @@ class BtValidatorTest extends FunSpec with Matchers with EitherValues {
       )
     }
 
-  }
+  } */
 }

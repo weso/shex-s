@@ -3,6 +3,8 @@ package es.weso.shex
 import es.weso.rdf.nodes._
 import es.weso.shex.normalized.{Constraint, NormalizedShape}
 import org.scalatest._
+import cats.effect.IO
+import cats.data.EitherT
 
 class NormalizeShapeTest extends FunSpec with Matchers with EitherValues {
 
@@ -143,14 +145,14 @@ class NormalizeShapeTest extends FunSpec with Matchers with EitherValues {
     it(s"Should normalize $shapeLabel and return $ns") {
       val shapeLbl = IRILabel(shapeLabel)
       val result = for {
-        schema <- Schema.fromString(strSchema)
-        shape  <- schema.getShape(shapeLbl)
-        normalized <- shape match {
+        schema <- EitherT.liftF(Schema.fromString(strSchema))
+        shape  <- EitherT.fromEither[IO](schema.getShape(shapeLbl))
+        normalized <- EitherT.fromEither[IO](shape match {
           case s: Shape => s.normalized(Schema.empty)
           case _        => Left(s"$shape is not a plain shape")
-        }
+        })
       } yield normalized
-      result.fold(e => fail(s"Error: $e"), n => n should be(ns))
+      result.value.unsafeRunSync.fold(e => fail(s"Error: $e"), n => n should be(ns))
     }
   }
 
@@ -158,14 +160,14 @@ class NormalizeShapeTest extends FunSpec with Matchers with EitherValues {
     it(s"Should not normalize $shapeLabel") {
       val shapeLbl = IRILabel(shapeLabel)
       val result = for {
-        schema <- Schema.fromString(strSchema)
-        shape  <- schema.getShape(shapeLbl)
-        normalized <- shape match {
+        schema <- EitherT.liftF(Schema.fromString(strSchema))
+        shape  <- EitherT.fromEither[IO](schema.getShape(shapeLbl))
+        normalized <- EitherT.fromEither[IO](shape match {
           case s: Shape => s.normalized(Schema.empty)
           case _        => Left(s"$shape is not a plain shape")
-        }
+        })
       } yield normalized
-      result.fold(
+      result.value.unsafeRunSync.fold(
         e => info(s"Could not normalize shape with error $e as expected"),
         n => fail(s"It was able to normalize shape and return $n but it should have failed")
       )

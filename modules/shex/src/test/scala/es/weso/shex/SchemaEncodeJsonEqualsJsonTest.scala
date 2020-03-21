@@ -49,7 +49,7 @@ class SchemaEncodeJsonEqualsJsonTest extends FunSpec with JsonTest with Matchers
       fileJson <- getFileFromFolderWithSameExt(file,".shex",".json")
       strJson <- getContents(fileJson)
       jsonExpected <- EitherT.fromEither[IO](parse(strJson.toString).leftMap(e => s"Error parsing $strJson: $e"))
-      schema <- EitherT.fromEither[IO](Schema.fromString(strSchema).leftMap(e => s"Error obtainning Schema from string: $e\nString:\n${strSchema}"))
+      schema <- EitherT.liftF(Schema.fromString(strSchema)).leftMap((e: String) => s"Error obtainning Schema from string: $e\nString:\n${strSchema}")
       jsonEncoded = schema.asJson
       check <- if (jsonEncoded.equals(jsonExpected)) EitherT.pure[IO,String](())
       else

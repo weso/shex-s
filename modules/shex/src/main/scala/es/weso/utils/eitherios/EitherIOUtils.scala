@@ -34,4 +34,5 @@ object EitherIOUtils {
       err => IO.raiseError(new RuntimeException(s"Error: ${err.toString}")),
       IO.pure(_)
     ))
+
 }

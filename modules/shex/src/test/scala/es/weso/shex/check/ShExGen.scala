@@ -54,6 +54,7 @@ object ShExSpec extends Properties("ShEx") {
       2 -> literalGen
     )
 
+/*    
   lazy val rdfTripleGen: Gen[RDFTriple] = for {
     subj <- Gen.frequency(1 -> iriGen, 1 -> bnodeGen)
     pred <- iriGen
@@ -84,7 +85,7 @@ object ShExSpec extends Properties("ShEx") {
     }}
     r.isRight
    }
-  }
+  } */
 
 
 }

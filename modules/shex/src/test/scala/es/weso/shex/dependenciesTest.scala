@@ -3,6 +3,11 @@ package es.weso.shex
 import es.weso.depgraphs.{DepGraph, Neg, Pos, PosNeg}
 import es.weso.rdf.nodes._
 import org.scalatest._
+import es.weso.utils.eitherios.EitherIOUtils._
+import cats.data.EitherT
+import cats._
+import cats.implicits._
+import cats.effect.IO
 
 class dependenciesTest extends FunSpec with Matchers with EitherValues {
 
@@ -18,24 +23,14 @@ class dependenciesTest extends FunSpec with Matchers with EitherValues {
     def depGraphTest(schema: String, expectedGraph: Set[(ShapeLabel, Set[(PosNeg, ShapeLabel)])]): Unit = {
       it(s"should check that dependency graph of $schema matches $expectedGraph") {
         val expectedDepGraph = DepGraph.makeGraph(expectedGraph)
-        Schema.fromString(schema, "SHEXC",None) match {
-          case Left(e) => fail(s"Error $e parsing $schema")
-          case Right(schema) => {
-            schema.depGraph match {
-              case Left(msg) => fail(s"Error $msg calculating dependency graph")
-              case Right(depGraph) => {
-                depGraph.isomorphicWith(expectedDepGraph) match {
-                  case Left(msg) => {
-                    info(s"DepGraph obtained: ${depGraph.showEdges()}")
-                    info(s"DepGraph expected: ${expectedDepGraph.showEdges()}")
-                    fail(s"Graphs are not isomorphic: $msg")
-                  }
-                  case Right(()) => info(s"Graphs are isomorphic")
-                }
-              }
-            }
-          }
-        }
+        val v: EitherT[IO, String, (Schema, DepGraph[ShapeLabel])] = for {
+          schema <- EitherT.liftF(Schema.fromString(schema, "SHEXC",None))
+          depGraph <- EitherT.fromEither[IO](schema.depGraph) 
+          iso <- EitherT.fromEither[IO](depGraph.isomorphicWith(expectedDepGraph))
+        } yield (schema,depGraph)
+        v.value.unsafeRunSync.fold(s => fail(s"Error: $s"), ps => {
+          info(s"Dependency passes: $ps")
+        })
       }
     }
 
@@ -86,32 +81,21 @@ class dependenciesTest extends FunSpec with Matchers with EitherValues {
 
     def negCyclesTest(schemaStr: String, negCyclesLabels: Set[Set[(ShapeLabel,ShapeLabel)]]): Unit = {
       it(s"should check that negCycles of schema: \n$schemaStr are:\n$negCyclesLabels") {
-        Schema.fromString(schemaStr, "SHEXC", None) match {
-          case Left(e) => fail(s"Error $e parsing $schemaStr")
-          case Right(schema) => {
-            schema.oddNegCycles match {
-              case Left(msg) => fail(s"Error $msg calculating negative cycles of $schema")
-              case Right(cycles) =>
-                (negCyclesLabels.isEmpty, cycles.isEmpty) match {
-                  case (true, true) => info("No odd neg cycles as expected")
-                  case (true, false) => {
-                    //                val showCycles = cycles.map(_.map(_.id.map(_.toString).getOrElse("?")))
-                    val graphStr = schema.depGraph.map(_.showEdges()).getOrElse("<empty>")
-                    info(s"Dependency graph = ${graphStr}")
-                    fail(s"Expected no negCycles but found neg cycles: \n$cycles")
-                  }
-                  case (false, true) => {
-                    val graphStr = schema.depGraph.map(_.showEdges()).getOrElse("<empty>")
-                    info(s"Dependency graph = ${graphStr}")
-                    fail(s"Expected negCycles to be \n$negCyclesLabels\n but found no neg cycles")
-                  }
-                  case (false, false) => {
-                    cycles should contain theSameElementsAs (negCyclesLabels)
-                  }
-                }
-            }
+        val r : EitherT[IO,String, (Set[Set[(ShapeLabel,ShapeLabel)]], String)] = for {
+          schema <- EitherT.liftF(Schema.fromString(schemaStr, "SHEXC", None)).leftMap( (s:String) => s"Error $s parsing $schemaStr")
+          cycles <- EitherT.fromEither[IO](schema.oddNegCycles).leftMap(s => s"Error $s calculating negCycles of $schemaStr")
+          graphStr = schema.depGraph.map(_.showEdges()).getOrElse("<empty>")
+        } yield (cycles, graphStr)
+
+        r.value.unsafeRunSync.fold(msg => fail(msg), pair => {
+          val (cycles, graphStr) = pair
+          (negCyclesLabels.isEmpty, cycles.isEmpty) match {
+            case (false,false) => info("No odd neg cycles as expected")
+            case (true,false) => fail(s"Dependency graph = ${graphStr}\nExpected no negCycles but found neg cycles: \n$cycles")
+            case (false,true) => fail(s"Dependency graph = ${graphStr}\nExpected negCycles to be \n${negCyclesLabels} but found neg cycles")
+            case (true,true) => cycles should contain theSameElementsAs (negCyclesLabels)
           }
-        }
+        })
       }
     }
 

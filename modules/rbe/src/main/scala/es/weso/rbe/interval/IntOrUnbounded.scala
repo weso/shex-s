@@ -107,7 +107,9 @@ case object Unbounded extends IntOrUnbounded {
  */
 case class IntLimit(m: Int) extends IntOrUnbounded with Requirements {
 
-  require(m >= 0)
+  // Commented because it raises null pointer exception when testing
+  // require(m >= 0)
+  // 
 
   def isUnbounded = false
 

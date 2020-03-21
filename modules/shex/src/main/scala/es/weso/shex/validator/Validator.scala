@@ -901,7 +901,7 @@ case class Validator(schema: ResolvedSchema, externalResolver: ExternalResolver 
     r <- runCheck(chk, rdf)
   } yield cnvResult(r, rdf)
 
-  private def cnvResult(r: CheckResult[ShExError, ShapeTyping, Log], rdf: RDFReader): Result = Result(
+  private def cnvResult(r: CheckResult[ShExError, ShapeTyping, Log], rdf: RDFReader): Result = Result (
     for {
       shapeTyping <- r.toEither
       result      <- shapeTyping.toShapeMap(rdf.getPrefixMap, schema.prefixMap).leftMap(StringError(_))

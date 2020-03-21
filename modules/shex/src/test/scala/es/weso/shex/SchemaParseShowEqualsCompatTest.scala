@@ -47,12 +47,13 @@ class SchemaParseShowEqualsCompatTest extends FunSpec with JsonTest with Matcher
   def parseSchemaEncodeJsonEqualsJson(file: File): Unit = {
     for {
       strSchema <- getContents(file)
-      schema <- EitherT.fromEither[IO](Schema.fromString(strSchema).leftMap(e => s"Error obtainning Schema from string: $e\nString:\n${strSchema}"))
+      schema <- EitherT.liftF(Schema.fromString(strSchema)).leftMap((e: String) => s"Error obtainning Schema from string: $e\nString:\n${strSchema}")
       jsonEncoded = schema.asJson
-      schemaShown <- EitherT.fromEither[IO](Schema.serialize(schema,"ShExC",None, RDFAsJenaModel.empty))
+      rdf <- EitherT.liftF(RDFAsJenaModel.empty)
+      schemaShown <- EitherT.liftF(Schema.serialize(schema,"ShExC",None, rdf))
 //      _ <- { println(s"SchemaShown: $schemaShown"); Right(()) }
-      newSchemaParsed <- EitherT.fromEither[IO](Schema.fromString(schemaShown).leftMap(e =>
-        s"Error parsing schema serialized: $e\nSchema serialized: \n$schemaShown\nOriginal schema:\n$strSchema\nInternal schema: ${schema}"))
+      newSchemaParsed <- EitherT.liftF(Schema.fromString(schemaShown)).leftMap((e:String) =>
+        s"Error parsing schema serialized: $e\nSchema serialized: \n$schemaShown\nOriginal schema:\n$strSchema\nInternal schema: ${schema}")
       jsonNew  = newSchemaParsed.asJson
       check <- if (jsonEncoded.equals(jsonNew)) EitherT.pure[IO,String](())
       else
