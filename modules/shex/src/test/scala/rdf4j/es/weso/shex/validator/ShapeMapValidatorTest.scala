@@ -34,7 +34,7 @@ class ShapeMapValidator_RDF4jTest extends FunSpec with Matchers with EitherValue
     shouldValidateWithShapeMap(rdfStr, shexStr, "23@:CanVote", "23@:CanVote")
   }
 
-  describe("Recursive shape") {
+/*  describe("Recursive shape") {
     val shexStr =
       """
         |prefix : <http://example.org/>
@@ -235,7 +235,9 @@ class ShapeMapValidator_RDF4jTest extends FunSpec with Matchers with EitherValue
          |""".stripMargin
 
     shouldValidateWithShapeMap(rdfStr, shexStr, ":a@<A>", ":a@<http://base.org/A>")
-  }
+  } */
+
+  
   def shouldValidateWithShapeMap(
     rdfStr: String,
     shexStr: String,
