@@ -11,7 +11,10 @@ import es.weso.shex.implicits.decoderShEx._
 import es.weso.shex.implicits.encoderShEx._
 import Utils._
 import es.weso.utils.UriUtils._
-import cats.syntax.either._
+import cats._
+import cats.data._
+import cats.effect.IO
+import cats.implicits._
 
 class SchemasManifestTest extends ValidateManifest {
 
@@ -29,30 +32,29 @@ class SchemasManifestTest extends ValidateManifest {
     r.fold(e => fail(s"Error reading manifest: $e"),
       mf => {
         for (e <- mf.entries) {
-          if (nameIfSingle == None || nameIfSingle.getOrElse("") === e.name) {
+          if (nameIfSingle == None || nameIfSingle.getOrElse("") == e.name) {
             it(s"Should pass test ${e.name}") {
               println(s"Testing: ${e.name}")
               e match {
                 case r: RepresentationTest => {
                   val schemaUri = mkLocal(r.shex, schemasBase, shexFolderURI)
                   val jsonUri   = mkLocal(r.json, schemasBase, shexFolderURI)
-                  val either: Either[String, String] = for {
-                    schemaStr      <- derefUri(schemaUri)
-                    jsonStr        <- derefUri(jsonUri)
-                    schema         <- Schema.fromString(schemaStr, "SHEXC", None)
-                    _ <- { println(s"Schema: ${schema}"); Right(()) }
-                    _ <- { println(s"Checking if it is well formed..."); Right(()) }
+                  val either: EitherT[IO, String, String] = for {
+                    schemaStr      <- derefUriIO(schemaUri)
+                    jsonStr        <- derefUriIO(jsonUri)
+                    schema         <- fromIO(Schema.fromString(schemaStr, "SHEXC", None))
+                    _ <- fromIO (IO { println(s"Schema: ${schema}") })
+                    _ <- fromIO (IO { println(s"Checking if it is well formed...") })
                     // b              <- schema.wellFormed
                     // _ <- { println(s"Schema well formed?: ${b.toString}"); Right(()) }
-                    expectedSchema <- decode[Schema](jsonStr).leftMap(_.getMessage)
-                    _ <- { println(s"Expected schema: ${expectedSchema}"); Right(()) }
-                    _ <- if (CompareSchemas.compareSchemas(schema, expectedSchema)) Right(())
-                    else Left(s"Schemas are different. Parsed:\n${schema}\n-----Expected:\n${expectedSchema}")
-                    json <- parse(jsonStr).leftMap(e => s"Error parsing Expected JSON schema: ${e.getMessage}")
-                    check <- if (json.equals(schema.asJson)) Right(s"Schemas are equal")
-                    else
-                      Left(
-                        s"Json's are different\nSchema:${schema}\nJson generated: ${schema.asJson.spaces2}\nExpected: ${json.spaces2}")
+
+                    expectedSchema <- fromEitherS(decode[Schema](jsonStr).leftMap(_.getMessage()))
+                    _ <- fromIO (IO { println(s"Expected schema: ${expectedSchema}") })
+                    _ <- if (CompareSchemas.compareSchemas(schema, expectedSchema)) ok("Schemas are ")
+                         else err(s"Schemas are different. Parsed:\n${schema}\n-----Expected:\n${expectedSchema}")
+                    json <- fromEitherS(parse(jsonStr).leftMap(_.message))
+                    check <- if (json.equals(schema.asJson)) ok(s"Schemas are equal")
+                             else err(s"Json's are different\nSchema:${schema}\nJson generated: ${schema.asJson.spaces2}\nExpected: ${json.spaces2}")
                   } yield check
                   either.fold(e => fail(s"Error: $e"), msg => info(msg))
                 }

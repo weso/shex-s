@@ -146,6 +146,7 @@ trait ValidateManifest extends FunSpec with Matchers with TryValues with OptionV
 //  private def testFail[A](msg: String): EitherT[IO, String, A] = EitherT.fromEither(Left(msg))
   private def result[A](name: String, isOk: Boolean, reason: String): EitherT[IO, String, Option[Result]] =
     EitherT.pure(Some(Result(name, isOk, reason)))
+
   private def fromEither[A](e: Either[String, A]): EitherT[IO, String, A] = EitherT.fromEither(e)
   // private def testInfo(msg: String): EitherT[IO, String, Unit] = EitherT.liftF(IO(println(msg)))
 
@@ -154,15 +155,43 @@ trait ValidateManifest extends FunSpec with Matchers with TryValues with OptionV
     case Some(iri) => FileUtils.getContents(folder + "/" + iri.str).map(_.toString)
   }
 
+  def eq(s1: String, s2: String): Boolean = s1 == s2
 
-  def representationTest(r: RepresentationTest, folderURI: URI): EitherT[IO, String, Option[Result]] = {
-    val resolvedJson      = mkLocal(r.json, schemasBase, folderURI) // IRI(shexFolderURI).resolve(r.json).uri
-    val resolvedShEx      = mkLocal(r.shex, schemasBase, folderURI) // IRI(shexFolderURI).resolve(r.shex).uri
-    val jsonStr   = Source.fromURI(resolvedJson)("UTF-8").mkString
-    val schemaStr = Source.fromURI(resolvedShEx)("UTF-8").mkString
-    Schema.fromString(schemaStr, "SHEXC", None) match {
+  def err(msg: String): EitherT[IO, String, String] = EitherT.fromEither(msg.asLeft[String])
+  def ok(msg: String): EitherT[IO, String, String] = EitherT.fromEither(msg.asRight[String])
+  def fromEitherS[A](e: Either[String,A]): EitherT[IO,String,A] = EitherT.fromEither(e)
+  def fromIO[A](io: IO[A]): EitherT[IO,String,A] = EitherT.liftF(io)
+
+
+  def representationTest(repTest: RepresentationTest, folderURI: URI): EitherT[IO, String, Option[Result]] = {
+    val resolvedJson      = mkLocal(repTest.json, schemasBase, folderURI) // IRI(shexFolderURI).resolve(r.json).uri
+    val resolvedShEx      = mkLocal(repTest.shex, schemasBase, folderURI) // IRI(shexFolderURI).resolve(r.shex).uri
+    val r: EitherT[IO,String, Option[Result]] = for {
+     jsonStr <- derefUriIO(resolvedJson)
+     schemaStr <- derefUriIO(resolvedShEx)
+     schema <- EitherT.liftF(Schema.fromString(schemaStr, "SHEXC", None))
+     expectedSchema <- fromEither(decode[Schema](jsonStr).leftMap(e => e.toString))
+     r <- if (CompareSchemas.compareSchemas(schema, expectedSchema)) {
+       parse(jsonStr) match {
+         case Left(err) => result(repTest.name, false,s"Schemas are equal but error parsing Json $jsonStr")
+         case Right(json) => {
+           if (json.equals(schema.asJson)) {
+             result(repTest.name, true, "JSONs are equal")
+           } else {
+             result(repTest.name, false,
+               s"Json's are different\nSchema:${schema}\nJson generated: ${schema.asJson.spaces2}\nExpected: ${json.spaces2}"
+             )
+           }
+         }
+       }
+     } else {
+       result(repTest.name, false, s"Schemas are different. Parsed:\n${schema}\n-----Expected:\n${expectedSchema}")
+     }
+    } yield r
+    r
+/*     match {
       case Right(schema) => {
-        decode[Schema](jsonStr) match {
+         match {
           case Left(err) => result(r.name,false,s"Error parsing Json ${r.json}: $err")
           case Right(expectedSchema) =>
             if (CompareSchemas.compareSchemas(schema, expectedSchema)) {
@@ -184,7 +213,7 @@ trait ValidateManifest extends FunSpec with Matchers with TryValues with OptionV
         }
       }
       case Left(e) => result(r.name,false, s"Error parsing Schema: ${r.shex}: $e")
-    }
+    } */
   }
 
   def validateFocusAction(
@@ -202,8 +231,8 @@ trait ValidateManifest extends FunSpec with Matchers with TryValues with OptionV
       //_         <- testInfo(s"Validating focusAction: $name")
       schemaStr <- derefUriIO(schemaUri)
       dataStr   <- derefUriIO(dataUri)
-      schema    <- fromEither(Schema.fromString(schemaStr, "SHEXC", Some(fa.schema)))
-      data      <- fromEither(RDFAsJenaModel.fromChars(dataStr, "TURTLE", Some(fa.data)))
+      schema    <- EitherT.liftF(Schema.fromString(schemaStr, "SHEXC", Some(fa.schema)))
+      data      <- EitherT.liftF(RDFAsJenaModel.fromChars(dataStr, "TURTLE", Some(fa.data)))
       lbl = fa.shape match {
         case None           => StartMap: ShapeMapLabel
         case Some(i: IRI)   => IRIMapLabel(i)
@@ -217,9 +246,9 @@ trait ValidateManifest extends FunSpec with Matchers with TryValues with OptionV
       } else {
         val shapeMap = FixedShapeMap(Map(focus -> Map(lbl -> Info())), data.getPrefixMap, schema.prefixMap)
         for {
-          resultShapeMap <- fromEither(
-            Validator(schema, ExternalIRIResolver(fa.shapeExterns)).validateShapeMap(data, shapeMap).toEitherS
-          )
+          resolvedSchema <- EitherT.liftF(ResolvedSchema.resolve(schema, Some(fa.schema)))
+          resultVal <- EitherT.liftF(Validator(resolvedSchema, ExternalIRIResolver(fa.shapeExterns)).validateShapeMap(data, shapeMap))
+          resultShapeMap <- EitherT.liftF(resultVal.toResultShapeMap)
           ok <- if (resultShapeMap.getConformantShapes(focus) contains lbl) {
             if (shouldValidate) result(name, true, "Conformant shapes match")
             else
@@ -264,12 +293,15 @@ trait ValidateManifest extends FunSpec with Matchers with TryValues with OptionV
           resultMapStr  <- derefUriIO(resultMapUri)
           smapStr       <- derefUriIO(shapeMapUri)
           sm            <- fromEither(ShapeMap.fromJson(smapStr).leftMap(s => s"Error parsing shapeMap: $s\nShapeMap:\n$smapStr"))
-          schema        <- fromEither(Schema.fromString(schemaStr, "SHEXC", None).leftMap(s => s"Error parsing schema: $s\nSchemaStr:\n $schemaStr"))
-          fixedShapeMap <- fromEither(ShapeMap.fixShapeMap(sm, RDFAsJenaModel.empty, PrefixMap.empty, PrefixMap.empty).leftMap(s => s"Error fixing shape map: $s\nShapeMap: $sm"))
+          schema        <- EitherT.liftF(Schema.fromString(schemaStr, "SHEXC", None)).leftMap((s: String) => s"Error parsing schema: $s\nSchemaStr:\n $schemaStr")
+          resolvedSchema <- EitherT.liftF(ResolvedSchema.resolve(schema, None))
+          emptyRdf           <- EitherT.liftF(RDFAsJenaModel.empty)
+          fixedShapeMap <- EitherT.liftF(ShapeMap.fixShapeMap(sm, emptyRdf, PrefixMap.empty, PrefixMap.empty)).leftMap((s: String) => s"Error fixing shape map: $s\nShapeMap: $sm")
           dataUri = mkLocal(mr.data, schemasBase, folderURI)
           strData        <- derefUriIO(dataUri)
-          data           <- RDFAsJenaModel.fromStringIO(strData, "TURTLE", None)
-          resultShapeMap <- fromEither(Validator(schema).validateShapeMap(data, fixedShapeMap).toEitherS.leftMap(s => s"Error validating: $s"))
+          data           <- EitherT.liftF(RDFAsJenaModel.fromString(strData, "TURTLE", None))
+          resultVal <- EitherT.liftF(Validator(resolvedSchema).validateShapeMap(data, fixedShapeMap)).leftMap((s: String) => s"Error validating: $s")
+          resultShapeMap <- EitherT.liftF(resultVal.toResultShapeMap)
           jsonResult     <- fromEither(JsonResult.fromJsonString(resultMapStr).leftMap(s => s"Error parsing JSON result: $s"))
           result <- if (jsonResult.compare(resultShapeMap)) result(name, true, "Json results match")
                     else result(name,false, s"Json results are different. Expected: ${jsonResult.asJson.spaces2}\nObtained: ${resultShapeMap.toString}")
@@ -283,10 +315,10 @@ trait ValidateManifest extends FunSpec with Matchers with TryValues with OptionV
     val schemaUri    = mkLocal(ns.shex, negativeSyntaxBase, folderURI)
     val r: EitherT[IO, String, Option[Result]] = for {
       schemaStr     <- derefUriIO(schemaUri)
-      result        <- Schema.fromString(schemaStr, "SHEXC", None).
-                       fold(s => result(ns.name, true, s),
+      eitherSchema  <- EitherT.liftF(Schema.fromString(schemaStr, "SHEXC", None).attempt)
+      result <- eitherSchema.fold(s => result(ns.name, true, s.getMessage()),
                         schema => result(ns.name, false, s"Parsed OK with ${schema} but should have negative syntax. String: \n${schemaStr}")
-                       )
+                       ) 
     } yield result
     r
   }
@@ -295,7 +327,8 @@ trait ValidateManifest extends FunSpec with Matchers with TryValues with OptionV
     val schemaUri    = mkLocal(ns.shex, negativeSyntaxBase, folderURI)
     val r: EitherT[IO, String, Option[Result]] = for {
       schemaStr     <- derefUriIO(schemaUri)
-      schema        <- fromEither(Schema.fromString(schemaStr, "SHEXC", None).leftMap(e => s"Error reading schema $e\nSchema string:\n${schemaStr}"))
+      schema        <- EitherT.liftF(Schema.fromString(schemaStr, "SHEXC", None)
+                       ).leftMap((e: String) => s"Error reading schema $e\nSchema string:\n${schemaStr}")
       result        <- schema.wellFormed.
                        fold(s => result(ns.name, false, s"Schema parsed ok but is not well formed: $s\nSchema string:\n${schemaStr}"),
                         schema => result(ns.name, true, s"Schema is well formed")

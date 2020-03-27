@@ -21,7 +21,6 @@ import es.weso.rdf.triples.RDFTriple
 import es.weso.shapeMaps.{BNodeLabel => BNodeMapLabel, IRILabel => IRIMapLabel, Start => StartMapLabel, _}
 import es.weso.shex.actions.TestSemanticAction
 import es.weso.shex.normalized._
-import scala.collection.immutable._
 import es.weso.utils.internal.CollectionCompat._
 import Function.tupled
 import es.weso.utils.eitherios.EitherIOUtils._
@@ -912,7 +911,7 @@ case class Validator(schema: ResolvedSchema, externalResolver: ExternalResolver 
 
 object Validator {
 
-  def empty = Validator(schema = ResolvedSchema.empty)
+  def empty: Validator = Validator(schema = ResolvedSchema.empty)
 
 //  type Result[A] = Either[NonEmptyList[ShExError], List[(A, Evidences)]]
 

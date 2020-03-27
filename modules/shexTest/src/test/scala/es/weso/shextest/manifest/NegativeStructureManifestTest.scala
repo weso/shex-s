@@ -4,6 +4,8 @@ import java.nio.file.Paths
 import com.typesafe.config.{Config, ConfigFactory}
 import es.weso.shex._
 import scala.io._
+import cats.data.EitherT
+import cats.effect.IO
 
 class NegativeStructureManifestTest extends ValidateManifest {
 
@@ -40,16 +42,15 @@ class NegativeStructureManifestTest extends ValidateManifest {
                 case r: NegativeStructure => {
                   val fileName = Paths.get(r.shex.uri.getPath).getFileName.toString
                   val uri      = folderUri.resolve(fileName)
-                  val schemaStr = Source.fromURI(uri)("UTF-8").mkString
-                  Schema.fromString(schemaStr, "SHEXC", None) match {
-                    case Right(schema) => {
-                      schema.wellFormed match {
-                        case Right(str) => fail(s"Schema is well formed, but should not\nSchema: $schema\nMsg: $str")
-                        case Left(str) => info(s"Schema is not well formed: $str\nSchema: ${schema}")
-                      }
+                  val res: EitherT[IO, String, String] = for {
+                    schemaStr <- derefUriIO(uri)
+                    schema <- fromIO(Schema.fromString(schemaStr, "SHEXC", None))
+                    res <- schema.wellFormed match {
+                        case Right(str) => err(s"Schema is well formed, but should not\nSchema: $schema\nMsg: $str")
+                        case Left(str) => ok(s"Schema is not well formed: $str\nSchema: ${schema}")
                     }
-                    case Left(e) => fail(s"Faiiled to parse: $e")
-                  }
+                  } yield res
+                  res.value.unsafeRunSync.fold(s => fail(s"Error $s"), v => info(s"$v"))
                 }
               }
             }

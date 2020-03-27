@@ -24,11 +24,15 @@ class RDF2Manifest extends RDFParser with LazyLogging {
      Kleisli.local(fn)(parser)
   }
 
+/*  private def getSubjectsWithType(rdf: RDFReader, t: IRI): ManifestParser[List[RDFTriple]] = 
+    liftIO */
+
   private def rdf2Manifest: ManifestParser[List[ShExManifest]] = 
     for {
       ctx <- getContext
       rdf <- liftParser(getRDF)
-      candidates <- liftParser(fromEitherT(rdf.subjectsWithTypeIO(mf_Manifest)))
+      candidates <- liftParser(liftIO(rdf.subjectsWithType(mf_Manifest).compile.toList))
+      // candidates <- liftParser(fromEitherT(triples))
       _ <- liftParser(info(s"rdf2Manifest: candidates=${candidates.mkString(",")}"))
       nodes <- { 
         liftParser(parseNodes(candidates.toList, manifest.run(ctx)))
@@ -279,7 +283,8 @@ class RDF2Manifest extends RDFParser with LazyLogging {
     else parseFail(s"More than one manifests found: ${mfs} at iri $iri")
 
   private def derefRDF(iri: IRI): RDFParser[RDFReader] = 
-    fromEither(RDFAsJenaModel.fromURI(iri.getLexicalForm, "TURTLE", Some(iri)))
+    liftIO(RDFAsJenaModel.fromURI(iri.getLexicalForm, "TURTLE", Some(iri)))
+    
 
   private def parsePropertyList[A](pred: IRI, parser: RDFParser[A]): RDFParser[List[A]] =
     for {
@@ -287,14 +292,16 @@ class RDF2Manifest extends RDFParser with LazyLogging {
       vs <- parseNodes(ls, parser)
     } yield vs
 
+  private def errStr(e: String): Err = new RuntimeException(e)
+
   private def mapOptional[A, B](optA: Option[A], fn: A => Either[String, B]): RDFParser[Option[B]] = {
     optA match {
       case None => ok(None)
       case Some(x) => {
-        fromEither(fn(x).map(_.some))
+        fromEither(fn(x).leftMap(errStr(_)).map(_.some))
       }
     }
-  }
+  } 
 
   def oneOfPredicates(predicates: Seq[IRI]): RDFParser[IRI] = {
     val ps = predicates.map(iriFromPredicate(_))
@@ -377,7 +384,8 @@ object RDF2Manifest extends LazyLogging {
       mfs <- {
         val ctx = ManifestContext(iriBase,derefIncludes,List())
         val cfg = Config(n,rdf)
-        EitherT((new RDF2Manifest).rdf2Manifest.run(ctx).value.run(cfg))
+        val mm: EitherT[IO, String, List[ShExManifest]] = mkShExManifest(cfg,ctx)
+        mm
       }
       manifest <- if (mfs.size == 1) { 
         val r: EitherT[IO,String,ShExManifest] = EitherT.pure(mfs.head)
@@ -387,12 +395,16 @@ object RDF2Manifest extends LazyLogging {
     } yield manifest
   }
 
+  private def mkShExManifest(cfg: Config, ctx: ManifestContext): EitherT[IO,String, List[ShExManifest]] = {
+    val mm: IO[Either[Throwable,List[ShExManifest]]] = (new RDF2Manifest).rdf2Manifest.run(ctx).value.run(cfg)
+    EitherT(mm.map(_.leftMap(_.getMessage)))
+  }
 //  private def ok[A](x:A): EitherT[IO, String, A] = EitherT.pure(x)
 //  private def err[A](s: String): EitherT[IO,String,A] = EitherT.left[A](s)
 
   private def getRDF(cs: String, format: String, base: Option[String]): EitherT[IO, String, RDFReader] = {
-    val s = RDFAsJenaModel.fromChars(cs, format, base.map(IRI(_)))
-    EitherT.fromEither(s)
+    val s: IO[RDFReader] = RDFAsJenaModel.fromChars(cs, format, base.map(IRI(_)))
+    EitherT.liftF(s)
   }
 
 }

@@ -37,7 +37,7 @@ case class ResolvedSchema(
 
  // override def addShape(se: ShapeExpr): es.weso.shex.Schema = ???
  // override def labels: List[ShapeLabel] = ???
- lazy val optTripleExprMap: Option[Map[ShapeLabel,TripleExpr]] = Some(resolvedMapTripleExprs.mapValues(_.te))
+ lazy val optTripleExprMap: Option[Map[ShapeLabel,TripleExpr]] = Some(resolvedMapTripleExprs.mapValues(_.te).toMap)
 
 }
 

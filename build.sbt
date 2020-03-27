@@ -4,6 +4,7 @@ lazy val supportedScalaVersions = List(scala213, scala212)
 
 // Local dependencies
 lazy val srdfVersion           = "0.1.59"
+lazy val shapeMapsVersion      = "0.1.53"
 lazy val utilsVersion          = "0.1.67"
 lazy val documentVersion       = "0.0.8"
 
@@ -58,6 +59,7 @@ lazy val document          = "es.weso"                    %% "document"        %
 lazy val srdf              = "es.weso"                    %% "srdf"            % srdfVersion
 lazy val srdfJena          = "es.weso"                    %% "srdfjena"        % srdfVersion
 lazy val srdf4j            = "es.weso"                    %% "srdf4j"          % srdfVersion
+lazy val shapeMaps         = "es.weso"                    %% "shapemaps"       % shapeMapsVersion
 lazy val utils             = "es.weso"                    %% "utils"           % utilsVersion
 lazy val typing            = "es.weso"                    %% "typing"          % utilsVersion
 lazy val validating        = "es.weso"                    %% "validating"      % utilsVersion
@@ -86,8 +88,8 @@ lazy val shexsRoot = project
 //    buildInfoPackage := "es.weso.shaclex.buildinfo" 
 //  )
   .settings(commonSettings, packagingSettings, publishSettings, ghPagesSettings, wixSettings)
-  .aggregate(depGraphs, shex, shexTest, rbe, shapeMaps)
-  .dependsOn(depGraphs, shex, shexTest, rbe, shapeMaps)
+  .aggregate(depGraphs, shex, shexTest, rbe)
+  .dependsOn(depGraphs, shex, shexTest, rbe)
   .settings(
     unidocProjectFilter in (ScalaUnidoc, unidoc) := inAnyProject -- inProjects(noDocProjects: _*),
     libraryDependencies ++= Seq(
@@ -128,7 +130,6 @@ lazy val shex = project
     testOptions in CompatTest := Seq(Tests.Filter(compatFilter)),
   )
   .dependsOn(
-    shapeMaps,
     rbe,
     depGraphs
   )
@@ -148,7 +149,8 @@ lazy val shex = project
       utils % "test -> test; compile -> compile",
       utilsTest % Test,
       validating,
-      srdf,    
+      srdf,
+      shapeMaps,
       srdfJena % Test,
       srdf4j % Test
     )
@@ -197,34 +199,11 @@ lazy val shex = project
       catsEffect,
       utils % "test -> test; compile -> compile",
       utilsTest % Test,
-      srdf,    
+      srdf,
+      shapeMaps,
       srdfJena,
       srdf4j % Test
     )
-  )
-
-
-lazy val shapeMaps = project
-  .in(file("modules/shapeMaps"))
-  .enablePlugins(Antlr4Plugin)
-  .disablePlugins(RevolverPlugin)
-  .settings(commonSettings, publishSettings, antlrSettings("es.weso.shapeMaps.parser"))
-  .dependsOn()
-  .settings(
-    crossScalaVersions := supportedScalaVersions,
-    libraryDependencies ++= Seq(
-      srdf,
-      utils,
-      srdfJena % Test,
-      sext % Test,
-      scalaLogging,
-      catsCore,
-      catsKernel,
-      catsMacros,
-      circeCore,
-      circeGeneric,
-      circeParser
-      )
   )
 
 def macroDependencies(scalaVersion: String) =
