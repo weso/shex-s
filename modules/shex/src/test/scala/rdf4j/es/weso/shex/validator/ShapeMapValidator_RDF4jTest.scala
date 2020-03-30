@@ -3,15 +3,18 @@ package es.weso.shex.validator
 import es.weso.rdf.rdf4j._
 import es.weso.shapeMaps.ShapeMap
 import es.weso.shex._
-import cats.data.EitherT
-import cats.effect._
+// import cats.data.EitherT
+//import cats.effect._
 import org.scalatest._
+import org.scalatest.funspec._
+import org.scalatest.matchers.should._
+
 import es.weso.utils.eitherios.EitherIOUtils._
 import es.weso.shex.ResolvedSchema
 
 import scala.util._
 
-class ShapeMapValidator_RDF4jTest extends FunSpec with Matchers with EitherValues {
+class ShapeMapValidator_RDF4jTest extends AnyFunSpec with Matchers with EitherValues {
 
   describe("Simple Shape") {
     val shexStr =
@@ -34,7 +37,7 @@ class ShapeMapValidator_RDF4jTest extends FunSpec with Matchers with EitherValue
     shouldValidateWithShapeMap(rdfStr, shexStr, "23@:CanVote", "23@:CanVote")
   }
 
-/*  describe("Recursive shape") {
+  describe("Recursive shape") {
     val shexStr =
       """
         |prefix : <http://example.org/>
@@ -50,8 +53,8 @@ class ShapeMapValidator_RDF4jTest extends FunSpec with Matchers with EitherValue
     shouldValidateWithShapeMap(rdfStr, shexStr, ":a@:S", ":a@:S,:b@:S")
     shouldValidateWithShapeMap(rdfStr, shexStr, ":a@:S,:b@:S,:c@:S", ":a@:S,:b@:S,:c@:S")
     shouldValidateWithShapeMap(rdfStr, shexStr, ":a@:S,:b@:S,:c@:S,:d@:S", ":a@:S,:b@:S,:c@:S,:d@!:S")
-    shouldValidateWithShapeMap(rdfStr, shexStr, ":d@:S", ":d@!:S")
-  }
+    shouldValidateWithShapeMap(rdfStr, shexStr, ":d@:S", ":d@!:S") 
+  } 
 
   describe("Two recursive shapes") {
     val shexStr =
@@ -178,7 +181,7 @@ class ShapeMapValidator_RDF4jTest extends FunSpec with Matchers with EitherValue
     shouldValidateWithShapeMap(rdfStr, shexStr, ":a@:A,:b@:A", ":a@:A,:b@:A")
     shouldValidateWithShapeMap(rdfStr, shexStr, ":a@:A,:b@:A,:x@:A,:y@:A,:z@:A", ":a@:A,:b@:A,:x@!:A,:y@!:A,:z@!:A")
   }
-  describe("Closed list") {
+/*  describe("Closed list") {
     val shexStr =
       """
         |prefix : <http://example.org/>
@@ -237,12 +240,13 @@ class ShapeMapValidator_RDF4jTest extends FunSpec with Matchers with EitherValue
     shouldValidateWithShapeMap(rdfStr, shexStr, ":a@<A>", ":a@<http://base.org/A>")
   } */
 
-  
+
   def shouldValidateWithShapeMap(
     rdfStr: String,
     shexStr: String,
     shapeMapStr: String,
     expected: String): Unit = {
+      
     it(s"Should validate ${shexStr} with ${rdfStr} and ${shapeMapStr} and result $expected") {
       val validate = for {
         rdf <- RDFAsRDF4jModel.fromChars(rdfStr, "Turtle")

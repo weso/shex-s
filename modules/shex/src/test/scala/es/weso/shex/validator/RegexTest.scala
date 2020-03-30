@@ -1,10 +1,11 @@
 package es.weso.shex.validator
 import es.weso.rdf.jena.RDFAsJenaModel
 import org.scalatest._
-
+import org.scalatest.funspec._
+import org.scalatest.matchers.should._
 import scala.util.matching.Regex
 
-class RegexTest extends FunSpec with Matchers with EitherValues {
+class RegexTest extends AnyFunSpec with Matchers with EitherValues {
   val rdf = RDFAsJenaModel.empty
 
   describe(s"Regex test") {

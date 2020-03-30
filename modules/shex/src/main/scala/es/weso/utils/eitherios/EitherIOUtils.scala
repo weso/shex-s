@@ -28,11 +28,30 @@ object EitherIOUtils {
  def eitherStr2IO[A](e: Either[String,A]): IO[A] = 
     MonadError[IO,Throwable].rethrow(IO(e.leftMap(new Exception(_))))
 
+ def info_io(msg:String): IO[Unit] = IO {
+   println(msg)
+ }
 
- def eitherT2io[A,B](e: EitherT[IO,A,B]): IO[B] = 
+  def info_es(msg:String): Either[String,Unit] = {
+    println(msg) 
+    Right(())
+  }
+
+  def info_esio[F[_]:Applicative](msg:String): EitherT[F,String,Unit] = {
+    println(msg) 
+    EitherT.fromEither[F](Right(()))
+  }
+
+
+ def eitherT2io[A,B](e: EitherT[IO,A,B]): IO[Either[A,B]] = {
+   println(s"EitherT2io")
     e.value.flatMap(_.fold(
-      err => IO.raiseError(new RuntimeException(s"Error: ${err.toString}")),
-      IO.pure(_)
+      err => { 
+        println(s"Error: $err")
+        IO (Left(err))
+      },
+      (x:B) => IO (x.asRight)
     ))
+  }
 
 }
