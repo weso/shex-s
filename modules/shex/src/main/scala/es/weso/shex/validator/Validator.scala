@@ -24,6 +24,7 @@ import es.weso.shex.normalized._
 import es.weso.utils.internal.CollectionCompat._
 import Function.tupled
 import es.weso.utils.eitherios.EitherIOUtils._
+import fs2.Stream
 // import es.weso.utils.CommonUtils._
 
 /**
@@ -485,11 +486,9 @@ case class Validator(schema: ResolvedSchema, externalResolver: ExternalResolver 
         } yield typing
       case _ =>
         for {
-          paths <- {
-            getPaths(s)
-          }
-          neighs <- {
-            //println(s"Paths: $paths")
+          paths <- getPaths(s)  
+          neighs <- { 
+            println(s"getNeighPaths: node=$node\n Paths: \n$paths\n Attempt: ${attempt}\n Node: $node")
             getNeighPaths(node, paths)
           }
           typing <- {
@@ -849,14 +848,24 @@ case class Validator(schema: ResolvedSchema, externalResolver: ExternalResolver 
     val outgoingPredicates:LazyList[IRI] = paths.collect { case Direct(p) => p }.toLazyList
     for {
       rdf        <- getRDF
-      outTriples <- fromStream(rdf.triplesWithSubjectPredicates(node, outgoingPredicates))
-      // _ <- { println(s"getNeighPaths\ntriplesWithSubjectPredicates($node, $outgoingPredicates): Outtriples: $outTriples\nRDF: ${rdf.serialize("TURTLE")}\nNode: $node\nPreds:$outgoingPredicates"); ok(()) }
+       _ <- { println(s"getNeighPaths\ntriplesWithSubjectPredicates($node, $outgoingPredicates)"); ok(()) }
+      outTriples <- fromStream(getTriplesWithSubjectPredicates(rdf,node,outgoingPredicates))
+      //  _ <- { println(s"getNeighPaths\ntriplesWithSubjectPredicates($node, $outgoingPredicates): Outtriples: $outTriples\nRDF: ${rdf.serialize("TURTLE")}\nNode: $node\nPreds:$outgoingPredicates"); ok(()) }
       outgoing = outTriples.map(t => Arc(Direct(t.pred), t.obj)).toList
       inTriples <- fromStream(rdf.triplesWithObject(node))
       incoming = inTriples.map(t => Arc(Inverse(t.pred), t.subj)).toList
     } yield {
       val neighs = outgoing ++ incoming
       neighs
+    }
+  }
+
+  def getTriplesWithSubjectPredicates(rdf: RDFReader, node: RDFNode, preds: LazyList[IRI]): Stream[IO,RDFTriple] = {
+    println(s"GetTriplesWithSubjectPredicate...$node")
+    node match {
+      case _: IRI => rdf.triplesWithSubjectPredicates(node,preds)
+      case _: BNode => rdf.triplesWithSubjectPredicates(node,preds)
+      case _ => Stream()
     }
   }
 

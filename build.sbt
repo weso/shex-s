@@ -3,14 +3,15 @@ lazy val scala213 = "2.13.1"
 lazy val supportedScalaVersions = List(scala213, scala212)
 
 // Local dependencies
-lazy val srdfVersion           = "0.1.59"
-lazy val shapeMapsVersion      = "0.1.54"
+lazy val srdfVersion           = "0.1.63"
+lazy val shapeMapsVersion      = "0.1.56"
 lazy val utilsVersion          = "0.1.67"
 lazy val documentVersion       = "0.0.8"
 
 // Dependency versions
 lazy val antlrVersion          = "4.7.1"
-lazy val catsVersion           = "2.1.1"
+lazy val catsVersion           = "2.1.1"  
+lazy val catsEffectVersion     = "2.1.2"  
 lazy val commonsTextVersion    = "1.8"
 lazy val circeVersion          = "0.12.3"
 lazy val diffsonVersion        = "4.0.0"
@@ -41,7 +42,7 @@ lazy val antlr4            = "org.antlr"                  % "antlr4"            
 lazy val catsCore          = "org.typelevel"              %% "cats-core"           % catsVersion
 lazy val catsKernel        = "org.typelevel"              %% "cats-kernel"         % catsVersion
 lazy val catsMacros        = "org.typelevel"              %% "cats-macros"         % catsVersion
-lazy val catsEffect        = "org.typelevel"              %% "cats-effect"         % catsVersion
+lazy val catsEffect        = "org.typelevel"              %% "cats-effect"         % catsEffectVersion
 lazy val circeCore         = "io.circe"                   %% "circe-core"          % circeVersion
 lazy val circeGeneric      = "io.circe"                   %% "circe-generic"       % circeVersion
 lazy val circeParser       = "io.circe"                   %% "circe-parser"        % circeVersion
@@ -98,6 +99,7 @@ lazy val shexsRoot = project
       catsMacros,
       catsEffect,
       logbackClassic,
+      srdf,
       scalaLogging,
       scallop,
       typesafeConfig,
