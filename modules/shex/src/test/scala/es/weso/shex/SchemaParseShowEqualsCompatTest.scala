@@ -14,15 +14,9 @@ import es.weso.utils.FileUtils._
 import io.circe.syntax._
 import org.scalatest._
 import cats.data.EitherT
-<<<<<<< HEAD
 import cats.effect._
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-=======
-import cats.effect._
-import matchers.should._
-import funspec._
->>>>>>> issue57
 
 class SchemaParseShowEqualsCompatTest extends AnyFunSpec with JsonTest with Matchers with EitherValues with OptionValues {
 

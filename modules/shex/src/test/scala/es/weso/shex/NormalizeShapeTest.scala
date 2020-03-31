@@ -2,17 +2,11 @@ package es.weso.shex
 
 import es.weso.rdf.nodes._
 import es.weso.shex.normalized.{Constraint, NormalizedShape}
-<<<<<<< HEAD
 import org.scalatest._
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-=======
-import org.scalatest._
-import cats.effect.IO
-import cats.data.EitherT
-import matchers.should._
-import funspec._
->>>>>>> issue57
+import cats.data._ 
+import cats.effect._
 
 class NormalizeShapeTest extends AnyFunSpec with Matchers with EitherValues {
 

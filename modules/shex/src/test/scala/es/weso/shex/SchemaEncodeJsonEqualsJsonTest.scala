@@ -14,15 +14,9 @@ import io.circe.parser.parse
 import io.circe.syntax._
 import cats.data.EitherT
 import org.scalatest._
-<<<<<<< HEAD
 import cats.effect._
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-=======
-import cats.effect._
-import matchers.should._
-import funspec._
->>>>>>> issue57
 
 class SchemaEncodeJsonEqualsJsonTest extends AnyFunSpec with JsonTest with Matchers with EitherValues {
 

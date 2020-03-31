@@ -4,17 +4,9 @@ package es.weso.shex.validator
 import es.weso.rdf.jena._
 import es.weso.rdf.nodes._
 import es.weso.shex._
-<<<<<<< HEAD
 import org.scalatest._
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-=======
-import org.scalatest._
-// import cats.effect.IO
-import es.weso.shex.ResolvedSchema
-import matchers.should._
-import funspec._
->>>>>>> issue57
 
 class ValidatorTest extends AnyFunSpec with Matchers with EitherValues {
 

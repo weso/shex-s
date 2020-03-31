@@ -4,20 +4,12 @@ import es.weso.rdf.jena.RDFAsJenaModel
 import es.weso.rdf.nodes.{IRI, RDFNode}
 import es.weso.shapeMaps.{ShapeMap, ShapeMapLabel, IRILabel}
 import es.weso.shex.Schema
-<<<<<<< HEAD
 import org.scalatest._
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-
-=======
-import org.scalatest._
-import es.weso.utils.eitherios.EitherIOUtils._
 import es.weso.shex.ResolvedSchema
-import matchers.should._
-import funspec._
+import es.weso.utils.eitherios.EitherIOUtils._
 
-
->>>>>>> issue57
 class ErrorMessagesTest extends AnyFunSpec with Matchers with EitherValues {
 
   describe("Error messages test") {

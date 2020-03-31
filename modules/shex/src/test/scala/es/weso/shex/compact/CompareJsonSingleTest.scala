@@ -11,13 +11,7 @@ import es.weso.utils.FileUtils._
 import es.weso.utils.json.{JsonCompare, JsonTest}
 import io.circe.parser._
 import io.circe.syntax._
-<<<<<<< HEAD
 import org.scalatest.EitherValues
-=======
-import org.scalatest._
-import matchers.should._
-import funspec._
->>>>>>> issue57
 
 import scala.io._
 import org.scalatest.funspec.AnyFunSpec

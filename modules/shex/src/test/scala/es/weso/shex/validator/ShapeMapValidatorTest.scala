@@ -1,5 +1,15 @@
 package es.weso.shex.validator
 
+import es.weso.rdf.jena.RDFAsJenaModel
+import cats.data._
+import cats.effect._
+import es.weso.utils.IOUtils._
+import es.weso.shex.Schema
+import es.weso.shex.ResolvedSchema
+import es.weso.rdf.nodes.IRI
+import es.weso.rdf.triples.RDFTriple
+import es.weso.rdf.nodes.StringLiteral
+
 class ShapeMapValidatorTest extends ShouldValidateShapeMap {
 
   describe("Simple Shape") {
@@ -249,7 +259,65 @@ class ShapeMapValidatorTest extends ShouldValidateShapeMap {
          |""".stripMargin
 
     shouldValidateWithShapeMap(rdfStr, shexStr, ":a@<A>", ":a@<http://base.org/A>")
+  } 
+
+    describe("Example from book") {
+    val shexStr =
+      """
+        |PREFIX :       <http://example.org/>
+        |PREFIX schema: <http://schema.org/>
+        |PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+        |
+        |:User {
+        |  schema:name          xsd:string  ;
+        |  schema:birthDate     xsd:date?  ;
+        |  schema:gender        [ schema:Male schema:Female ] OR xsd:string ;
+        |  schema:knows         IRI @:User* ;
+        |}
+        |""".stripMargin
+    val rdfStr =
+      """|prefix schema: <http://schema.org/> 
+         |prefix :       <http://example.org/>
+         |
+         |:alice schema:name "Alice" ; 
+         |       schema:gender schema:Male .
+         |""".stripMargin
+
+    shouldValidateWithShapeMap(rdfStr, shexStr, ":alice@:User", ":alice@:User")
   }
 
+    describe("subject predicates") {
+      it(s"GetTriples") {
+        val rdfStr = """|prefix schema: <http://schema.org/> 
+         |prefix :       <http://example.org/>
+         |
+         |:alice schema:name "Alice" ; 
+         |       schema:gender schema:Male .
+         |""".stripMargin
 
+        val shexStr = """|PREFIX :       <http://example.org/>
+        |PREFIX schema: <http://schema.org/>
+        |PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+        |
+        |:User {
+        |  schema:name          xsd:string  ;
+        |  schema:birthDate     xsd:date?  ;
+        |  schema:gender        [ schema:Male schema:Female ] OR xsd:string ;
+        |  schema:knows         IRI @:User* ;
+        |}
+        |""".stripMargin
+
+    val alice = IRI("http://example.org/alice")
+    val preds = List(IRI("http://schema.org/name"))
+    val name = IRI("http://schema.org/name")
+    val expected = List(RDFTriple(alice,name,StringLiteral("Alice")))
+    val r : EitherT[IO,String, List[RDFTriple]]= for {
+      rdf <- io2es(RDFAsJenaModel.fromString(rdfStr,"TURTLE"))
+      schema <- io2es(Schema.fromString(shexStr))
+      resolved <- io2es(ResolvedSchema.resolve(schema,None))
+      ts <- io2es(Validator(resolved).getTriplesWithSubjectPredicates(rdf,alice,preds))
+    } yield ts
+    r.value.unsafeRunSync.fold(e => fail(e), vs => vs should contain theSameElementsAs(expected))
+  }
+}
 }

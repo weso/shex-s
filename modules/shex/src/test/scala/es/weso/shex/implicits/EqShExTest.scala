@@ -4,18 +4,10 @@ import es.weso.rdf.{Prefix, PrefixMap}
 import es.weso.rdf.nodes.IRI
 import es.weso.shex._
 import org.scalatest._
-<<<<<<< HEAD
 import cats.implicits._
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
-=======
-import cats.implicits._
-import matchers.should._
-import funspec._
-
-
->>>>>>> issue57
 class EqShExTest extends AnyFunSpec with Matchers with EitherValues {
   describe(s"Eq ShEx Schema") {
     it(s"Should compare single schemas ignoring namespaces") {

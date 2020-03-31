@@ -1,18 +1,10 @@
 package es.weso.shex
-<<<<<<< HEAD
 import org.scalatest._
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+import cats.data._ 
+import cats.effect._
 
-=======
-import org.scalatest._
-import cats.effect.IO
-import cats.data.EitherT
-import matchers.should._
-import funspec._
-
-
->>>>>>> issue57
 class WellFormedTest extends AnyFunSpec with Matchers with EitherValues {
 
   describe(s"WellFormedTest") {

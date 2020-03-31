@@ -33,7 +33,7 @@ case class ValidateFlatShape(validator: Validator) {
       }
     }
     for {
-      _ <- info(s"FlatShape:\n $s")
+      _ <- info(s"### FlatShape:\n $s")
       extra <- extraPreds(node, s.preds)
       _ <- info(s"Extra preds: $extra. Closed? ${s.closed}")
       // _ <- ok(extra)

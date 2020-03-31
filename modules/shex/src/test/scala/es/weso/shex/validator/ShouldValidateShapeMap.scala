@@ -4,20 +4,13 @@ import es.weso.rdf.nodes.IRI
 import es.weso.shapeMaps.ShapeMap
 import es.weso.shex.Schema
 import org.scalatest._
-<<<<<<< HEAD
-
 import scala.util._
 import org.scalatest.funspec.AnyFunSpecLike
 import org.scalatest.matchers.should.Matchers
-=======
-import org.scalatest.funspec.AnyFunSpecLike
-import org.scalatest.matchers.should._
-import scala.util._
-//import es.weso.utils.eitherios.EitherIOUtils._
-import es.weso.shex.ResolvedSchema
 import cats.data._ 
-import cats.effect.IO
->>>>>>> issue57
+import cats.effect._
+import es.weso.shex.ResolvedSchema
+
 
 trait ShouldValidateShapeMap extends AnyFunSpecLike with Matchers {
 

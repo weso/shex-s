@@ -3,16 +3,10 @@ package es.weso.shex.validator
 import es.weso.rdf.jena._
 import es.weso.shapeMaps.ShapeMap
 import es.weso.shex._
-<<<<<<< HEAD
 import org.scalatest._
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-=======
-import org.scalatest._
 import es.weso.utils.eitherios.EitherIOUtils._
-import matchers.should._
-import funspec._
->>>>>>> issue57
 
 class ExprTest extends AnyFunSpec with Matchers with EitherValues {
 

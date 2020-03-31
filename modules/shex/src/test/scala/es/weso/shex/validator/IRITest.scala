@@ -3,15 +3,9 @@ package es.weso.shex.validator
 import org.scalatest._
 import es.weso.rdf.jena.RDFAsJenaModel
 import es.weso.rdf.nodes.IRI
-<<<<<<< HEAD
 import es.weso.shex.Schema
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-=======
-import es.weso.shex.Schema
-import matchers.should._
-import funspec._
->>>>>>> issue57
 
 class IRITest extends AnyFunSpec with Matchers with EitherValues {
   val rdf = RDFAsJenaModel.empty

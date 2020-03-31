@@ -4,19 +4,11 @@ import es.weso.rdf.jena.RDFAsJenaModel
 import es.weso.rdf.nodes._
 import es.weso.shapeMaps._
 import es.weso.shex.{IRILabel => ShExIriLabel, _}
-<<<<<<< HEAD
 import org.scalatest._
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-=======
-import org.scalatest._
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should._
-// import es.weso.utils.eitherios.EitherIOUtils._
-import cats.data._
-// import cats.implicits._
-import cats.effect.IO
->>>>>>> issue57
+import cats.data._ 
+import cats.effect._
 
 class SpecTest extends AnyFunSpec with Matchers with EitherValues {
   val x = IRI(s"http://example.org/x")

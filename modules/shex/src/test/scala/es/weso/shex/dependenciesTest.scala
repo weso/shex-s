@@ -2,20 +2,11 @@ package es.weso.shex
 
 import es.weso.depgraphs.{DepGraph, Neg, Pos, PosNeg}
 import es.weso.rdf.nodes._
-<<<<<<< HEAD
 import org.scalatest._
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-=======
-import org.scalatest._
-//import es.weso.utils.eitherios.EitherIOUtils._
-import cats.data.EitherT
-// import cats._
-// import cats.implicits._
-import cats.effect.IO
-import matchers.should._
-import funspec._
->>>>>>> issue57
+import cats.data._ 
+import cats.effect._
 
 class dependenciesTest extends AnyFunSpec with Matchers with EitherValues {
 

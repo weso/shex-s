@@ -2,19 +2,11 @@ package es.weso.shex.compact
 
 import cats.implicits._
 import es.weso.shex.Schema
-<<<<<<< HEAD
 import org.scalatest._
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-=======
-import org.scalatest._
 import cats.data._ 
-import cats.effect.IO
-import cats.implicits._
-import matchers.should._
-import funspec._
-
->>>>>>> issue57
+import cats.effect._
 
 class CompactShowTest extends AnyFunSpec with Matchers with EitherValues {
 

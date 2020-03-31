@@ -3,15 +3,9 @@ package es.weso.shex.validator
 import es.weso.rdf.nodes._
 import es.weso.shex._
 import es.weso.shex.validator.Table.CTable
-<<<<<<< HEAD
 import org.scalatest._
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-=======
-import org.scalatest._
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should._
->>>>>>> issue57
 
 class CTableTest extends AnyFunSpec with Matchers with EitherValues {
   describe(s"CTable") {

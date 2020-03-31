@@ -8,14 +8,7 @@ import es.weso.shex._
 import es.weso.shex.implicits.decoderShEx._
 import es.weso.utils.FileUtils._
 import io.circe.parser._
-<<<<<<< HEAD
 import org.scalatest.EitherValues
-=======
-import org.scalatest._
-import matchers.should._
-import funspec._
-
->>>>>>> issue57
 import scala.io._
 import cats.effect._
 import org.scalatest.funspec.AnyFunSpec

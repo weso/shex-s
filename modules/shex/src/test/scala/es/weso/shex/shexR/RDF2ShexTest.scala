@@ -16,10 +16,6 @@ import org.scalatest.matchers.should.Matchers
 import cats.data._
 import cats.effect.IO
 
-<<<<<<< HEAD
-=======
-
->>>>>>> issue57
 class RDF2ShExTest extends AnyFunSpec with Matchers with EitherValues with TryValues {
   val rdf2Shex = new RDF2ShEx {}
 

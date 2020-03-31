@@ -8,27 +8,15 @@ import es.weso.shex.implicits.decoderShEx._
 import es.weso.utils.FileUtils._
 import io.circe.parser._
 import io.circe.syntax._
-<<<<<<< HEAD
 import org.scalatest.EitherValues
-=======
-import org.scalatest._
->>>>>>> issue57
 import es.weso.shex.implicits.encoderShEx._
 import cats.data.EitherT
 import cats.effect._
 import scala.io._
-<<<<<<< HEAD
 import cats.implicits._
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
-=======
-import cats.implicits._
-import matchers.should._
-import funspec._
-
-
->>>>>>> issue57
 class CompareSchemasSingleTest extends AnyFunSpec with JsonTest with Matchers with EitherValues {
 
   val name          = "1val1emptylanguageStem"

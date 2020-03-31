@@ -20,21 +20,12 @@ import es.weso.shextest.manifest.Utils._
 import es.weso.utils.FileUtils
 import io.circe.parser._
 import io.circe.syntax._
-<<<<<<< HEAD
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.{OptionValues, TryValues}
 import org.scalatest.matchers.should.Matchers
 
 import scala.io._
 import scala.util.{Either, Left, Right, Try}
-=======
-import es.weso.rdf._
-import es.weso.rdf.nodes._
-import ManifestPrefixes._
-import matchers.should._
-import funspec._
-
->>>>>>> issue57
 
 trait RunManifest {
 
@@ -169,7 +160,6 @@ trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with Opti
     case Some(iri) => FileUtils.getContents(folder + "/" + iri.str).map(_.toString)
   }
 
-<<<<<<< HEAD
   def representationTest(r: RepresentationTest, folderURI: URI): EitherT[IO, String, Option[Result]] = {
     val resolvedJson = mkLocal(r.json, schemasBase, folderURI) // IRI(shexFolderURI).resolve(r.json).uri
     val resolvedShEx = mkLocal(r.shex, schemasBase, folderURI) // IRI(shexFolderURI).resolve(r.shex).uri
@@ -179,46 +169,6 @@ trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with Opti
       case Right(schema) => {
         decode[Schema](jsonStr) match {
           case Left(err) => result(r.name, false, s"Error parsing Json ${r.json}: $err")
-=======
-  def eq(s1: String, s2: String): Boolean = s1 == s2
-
-  def err(msg: String): EitherT[IO, String, String] = EitherT.fromEither(msg.asLeft[String])
-  def ok(msg: String): EitherT[IO, String, String] = EitherT.fromEither(msg.asRight[String])
-  def fromEitherS[A](e: Either[String,A]): EitherT[IO,String,A] = EitherT.fromEither(e)
-  def fromIO[A](io: IO[A]): EitherT[IO,String,A] = EitherT.liftF(io)
-
-
-  def representationTest(repTest: RepresentationTest, folderURI: URI): EitherT[IO, String, Option[Result]] = {
-    val resolvedJson      = mkLocal(repTest.json, schemasBase, folderURI) // IRI(shexFolderURI).resolve(r.json).uri
-    val resolvedShEx      = mkLocal(repTest.shex, schemasBase, folderURI) // IRI(shexFolderURI).resolve(r.shex).uri
-    val r: EitherT[IO,String, Option[Result]] = for {
-     jsonStr <- derefUriIO(resolvedJson)
-     schemaStr <- derefUriIO(resolvedShEx)
-     schema <- EitherT.liftF(Schema.fromString(schemaStr, "SHEXC", None))
-     expectedSchema <- fromEither(decode[Schema](jsonStr).leftMap(e => e.toString))
-     r <- if (CompareSchemas.compareSchemas(schema, expectedSchema)) {
-       parse(jsonStr) match {
-         case Left(err) => result(repTest.name, false,s"Schemas are equal but error parsing Json $jsonStr")
-         case Right(json) => {
-           if (json.equals(schema.asJson)) {
-             result(repTest.name, true, "JSONs are equal")
-           } else {
-             result(repTest.name, false,
-               s"Json's are different\nSchema:${schema}\nJson generated: ${schema.asJson.spaces2}\nExpected: ${json.spaces2}"
-             )
-           }
-         }
-       }
-     } else {
-       result(repTest.name, false, s"Schemas are different. Parsed:\n${schema}\n-----Expected:\n${expectedSchema}")
-     }
-    } yield r
-    r
-/*     match {
-      case Right(schema) => {
-         match {
-          case Left(err) => result(r.name,false,s"Error parsing Json ${r.json}: $err")
->>>>>>> issue57
           case Right(expectedSchema) =>
             if (CompareSchemas.compareSchemas(schema, expectedSchema)) {
               parse(jsonStr) match {
@@ -240,13 +190,8 @@ trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with Opti
             }
         }
       }
-<<<<<<< HEAD
       case Left(e) => result(r.name, false, s"Error parsing Schema: ${r.shex}: $e")
     }
-=======
-      case Left(e) => result(r.name,false, s"Error parsing Schema: ${r.shex}: $e")
-    } */
->>>>>>> issue57
   }
 
   def validateFocusAction(
@@ -327,7 +272,6 @@ trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with Opti
         val resultMapUri = mkLocal(resultIRI, validationBase, folderURI)
         val r: EitherT[IO, String, Option[Result]] = for {
           //_             <- testInfo(s"Validating mapResult: $name")
-<<<<<<< HEAD
           schemaStr    <- derefUriIO(schemaUri)
           resultMapStr <- derefUriIO(resultMapUri)
           smapStr      <- derefUriIO(shapeMapUri)
@@ -351,22 +295,6 @@ trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with Opti
           jsonResult <- fromEither(
             JsonResult.fromJsonString(resultMapStr).leftMap(s => s"Error parsing JSON result: $s")
           )
-=======
-          schemaStr     <- derefUriIO(schemaUri)
-          resultMapStr  <- derefUriIO(resultMapUri)
-          smapStr       <- derefUriIO(shapeMapUri)
-          sm            <- fromEither(ShapeMap.fromJson(smapStr).leftMap(s => s"Error parsing shapeMap: $s\nShapeMap:\n$smapStr"))
-          schema        <- EitherT.liftF(Schema.fromString(schemaStr, "SHEXC", None)).leftMap((s: String) => s"Error parsing schema: $s\nSchemaStr:\n $schemaStr")
-          resolvedSchema <- EitherT.liftF(ResolvedSchema.resolve(schema, None))
-          emptyRdf           <- EitherT.liftF(RDFAsJenaModel.empty)
-          fixedShapeMap <- EitherT.liftF(ShapeMap.fixShapeMap(sm, emptyRdf, PrefixMap.empty, PrefixMap.empty)).leftMap((s: String) => s"Error fixing shape map: $s\nShapeMap: $sm")
-          dataUri = mkLocal(mr.data, schemasBase, folderURI)
-          strData        <- derefUriIO(dataUri)
-          data           <- EitherT.liftF(RDFAsJenaModel.fromString(strData, "TURTLE", None))
-          resultVal <- EitherT.liftF(Validator(resolvedSchema).validateShapeMap(data, fixedShapeMap)).leftMap((s: String) => s"Error validating: $s")
-          resultShapeMap <- EitherT.liftF(resultVal.toResultShapeMap)
-          jsonResult     <- fromEither(JsonResult.fromJsonString(resultMapStr).leftMap(s => s"Error parsing JSON result: $s"))
->>>>>>> issue57
           result <- if (jsonResult.compare(resultShapeMap)) result(name, true, "Json results match")
           else
             result(
@@ -383,7 +311,6 @@ trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with Opti
   def negativeSyntax(ns: NegativeSyntax, folderURI: URI): EitherT[IO, String, Option[Result]] = {
     val schemaUri = mkLocal(ns.shex, negativeSyntaxBase, folderURI)
     val r: EitherT[IO, String, Option[Result]] = for {
-<<<<<<< HEAD
       schemaStr <- derefUriIO(schemaUri)
       result <- Schema
         .fromString(schemaStr, "SHEXC", None)
@@ -392,13 +319,6 @@ trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with Opti
           schema =>
             result(ns.name, false, s"Parsed OK with ${schema} but should have negative syntax. String: \n${schemaStr}")
         )
-=======
-      schemaStr     <- derefUriIO(schemaUri)
-      eitherSchema  <- EitherT.liftF(Schema.fromString(schemaStr, "SHEXC", None).attempt)
-      result <- eitherSchema.fold(s => result(ns.name, true, s.getMessage()),
-                        schema => result(ns.name, false, s"Parsed OK with ${schema} but should have negative syntax. String: \n${schemaStr}")
-                       ) 
->>>>>>> issue57
     } yield result
     r
   }
@@ -406,7 +326,6 @@ trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with Opti
   def negativeStructure(ns: NegativeStructure, folderURI: URI): EitherT[IO, String, Option[Result]] = {
     val schemaUri = mkLocal(ns.shex, negativeSyntaxBase, folderURI)
     val r: EitherT[IO, String, Option[Result]] = for {
-<<<<<<< HEAD
       schemaStr <- derefUriIO(schemaUri)
       schema <- fromEither(
         Schema
@@ -417,15 +336,6 @@ trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with Opti
         s => result(ns.name, false, s"Schema parsed ok but is not well formed: $s\nSchema string:\n${schemaStr}"),
         schema => result(ns.name, true, s"Schema is well formed")
       )
-=======
-      schemaStr     <- derefUriIO(schemaUri)
-      schema        <- EitherT.liftF(Schema.fromString(schemaStr, "SHEXC", None)
-                       ).leftMap((e: String) => s"Error reading schema $e\nSchema string:\n${schemaStr}")
-      result        <- schema.wellFormed.
-                       fold(s => result(ns.name, false, s"Schema parsed ok but is not well formed: $s\nSchema string:\n${schemaStr}"),
-                        schema => result(ns.name, true, s"Schema is well formed")
-                       )
->>>>>>> issue57
     } yield result
     r
   }

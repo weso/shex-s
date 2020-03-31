@@ -8,15 +8,9 @@ import es.weso.utils.json._
 import es.weso.utils.FileUtils._
 import es.weso.shex._
 import cats.effect._
-<<<<<<< HEAD
 import cats.implicits._
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-=======
-import cats.implicits._
-import matchers.should._
-import funspec._
->>>>>>> issue57
 
 class ShexCompactSingle extends AnyFunSpec with JsonTest with Matchers with EitherValues {
 

@@ -3,22 +3,14 @@ package es.weso.shex.validator
 import es.weso.rdf.nodes._
 import org.scalatest._
 import es.weso.rdf.PREFIXES._
-<<<<<<< HEAD
 import es.weso.rdf.jena.RDFAsJenaModel
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-
-class NodeInfoTest extends AnyFunSpec with Matchers with EitherValues {
-  val rdf = RDFAsJenaModel.empty
-=======
-import es.weso.rdf._
+import es.weso.rdf.RDFReader
 import cats.effect.IO
-import es.weso.rdf.jena.RDFAsJenaModel
-import matchers.should._
-import funspec._
 
 class NodeInfoTest extends AnyFunSpec with Matchers with EitherValues {
->>>>>>> issue57
+  // val rdf = RDFAsJenaModel.empty
 
   describe("totalDigits") {
     it("Should calculate total digits of 3.14") {

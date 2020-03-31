@@ -6,23 +6,12 @@ import es.weso.rdf.jena.RDFAsJenaModel
 import es.weso.rdf.nodes.IRI
 import es.weso.shapeMaps.{IRILabel, ShapeMapLabel}
 import es.weso.shex.Schema
-<<<<<<< HEAD
 import org.scalatest._
 import es.weso.utils.internal.CollectionCompat._
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-
-class CheckTest extends AnyFunSpec with Matchers with EitherValues {
-=======
-import org.scalatest.EitherValues
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should._
-import es.weso.utils.internal.CollectionCompat._
-import cats.data._
-// import cats.implicits._
-
-import cats.effect.IO
->>>>>>> issue57
+import cats.data._ 
+import cats.effect._
 
 class CheckTest extends AnyFunSpec with Matchers with EitherValues {
 

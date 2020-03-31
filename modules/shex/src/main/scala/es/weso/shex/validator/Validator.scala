@@ -21,11 +21,12 @@ import es.weso.rdf.triples.RDFTriple
 import es.weso.shapeMaps.{BNodeLabel => BNodeMapLabel, IRILabel => IRIMapLabel, Start => StartMapLabel, _}
 import es.weso.shex.actions.TestSemanticAction
 // import es.weso.shex.normalized._
-import es.weso.utils.internal.CollectionCompat._
+//import es.weso.utils.internal.CollectionCompat._
 import Function.tupled
 //import es.weso.utils.eitherios.EitherIOUtils._
-import fs2.Stream
+//import fs2.Stream
 // import es.weso.utils.CommonUtils._
+
 
 /**
   * ShEx validator
@@ -208,7 +209,9 @@ case class Validator(schema: ResolvedSchema, externalResolver: ExternalResolver 
     } yield newTyping
   }
 
-  private[validator] def checkNodeShapeExpr(attempt: Attempt, node: RDFNode, s: ShapeExpr): CheckTyping = {
+  private[validator] def checkNodeShapeExpr(attempt: Attempt, node: RDFNode, s: ShapeExpr): CheckTyping = 
+  info(s"CheckNodeShapeExpr $node ") *>
+  {
     s match {
       case so: ShapeOr        => checkOr(attempt, node, so.shapeExprs)
       case sa: ShapeAnd       => checkAnd(attempt, node, sa.shapeExprs)
@@ -347,10 +350,11 @@ case class Validator(schema: ResolvedSchema, externalResolver: ExternalResolver 
   }
 
   private[validator] def checkShape(attempt: Attempt, node: RDFNode, s: Shape): CheckTyping =
-    s._extends match {
+    info(s"CheckShape $node") *>
+    (s._extends match {
       case None     => checkShapeBase(attempt, node, s)
       case Some(es) => checkShapeExtendLs(attempt, node, s, es)
-    }
+    })
 
   private[validator] def checkShapeExtendLs(
       attempt: Attempt,
@@ -477,6 +481,7 @@ case class Validator(schema: ResolvedSchema, externalResolver: ExternalResolver 
     fromEitherString(s.paths(schema).map(_.toList))
 
   private[validator] def checkShapeBase(attempt: Attempt, node: RDFNode, s: Shape): CheckTyping = {
+    info(s"CheckShapeBase $node FlatShape? ${s.isFlatShape(schema)}") *> {
     // println(s"checkShapeBase: $node, $s. Normalized?: ${s.isNormalized(schema)}")
     s match {
       case _ if s.isEmpty => addEvidence(attempt.nodeShape, s"Node $node matched empty shape")
@@ -488,17 +493,14 @@ case class Validator(schema: ResolvedSchema, externalResolver: ExternalResolver 
       case _ =>
         for {
           paths <- getPaths(s)  
-          neighs <- { 
-            // println(s"getNeighPaths: node=$node\n Paths: \n$paths\n Attempt: ${attempt}\n Node: $node")
-            getNeighPaths(node, paths)
-          }
-          typing <- {
-            //println(s"Neighs: $neighs")
-            checkNeighsShape(attempt, node, neighs, s)
-          }
+          _ <- info(s"getNeighPaths: node=${node.show}\n Paths: ${paths.map(_.show).mkString(",")}\n Attempt: ${attempt.show}\n")
+          neighs <- getNeighPaths(node, paths)
+          _ <- info(s"Neighs: $neighs")
+          typing <- checkNeighsShape(attempt, node, neighs, s)
         } yield typing
     }
   }
+}
 
   /* private[validator] def checkFlatShape(attempt: Attempt, node: RDFNode, s: FlatShape): CheckTyping = {
     val zero = getTyping
@@ -737,12 +739,14 @@ case class Validator(schema: ResolvedSchema, externalResolver: ExternalResolver 
     }
 
   private[validator] def getNeighPaths(node: RDFNode, paths: List[Path]): Check[Neighs] = {
-    val outgoingPredicates:LazyList[IRI] = paths.collect { case Direct(p) => p }.toLazyList
+    val outgoingPredicates = paths.collect { case Direct(p) => p }
     for {
       rdf        <- getRDF
-      // _ <- { println(s"getNeighPaths\ntriplesWithSubjectPredicates($node, $outgoingPredicates)"); ok(()) }
-      outTriples <- fromStream(getTriplesWithSubjectPredicates(rdf,node,outgoingPredicates))
-      //  _ <- { println(s"getNeighPaths\ntriplesWithSubjectPredicates($node, $outgoingPredicates): Outtriples: $outTriples\nRDF: ${rdf.serialize("TURTLE")}\nNode: $node\nPreds:$outgoingPredicates"); ok(()) }
+      _ <- info(s"getNeighPaths\ntriplesWithSubjectPredicates(${node.show}, OutgoingPreds = ${outgoingPredicates.map(_.show).mkString(",")})")
+      outTriples <- fromIO(getTriplesWithSubjectPredicates(rdf,node,outgoingPredicates))
+      _ <- info(s"getNeighPaths\ntriplesWithSubjectPredicates(${node.show}, ${outgoingPredicates.map(_.show).mkString(",")}): Outtriples: ${outTriples.map(_.show).mkString("|")}\nNode: $node\nPreds:$outgoingPredicates")
+      strRdf <- fromIO(rdf.serialize("TURTLE"))
+      _ <- info(s"RDF: ${strRdf}")
       outgoing = outTriples.map(t => Arc(Direct(t.pred), t.obj)).toList
       inTriples <- fromStream(rdf.triplesWithObject(node))
       incoming = inTriples.map(t => Arc(Inverse(t.pred), t.subj)).toList
@@ -752,14 +756,83 @@ case class Validator(schema: ResolvedSchema, externalResolver: ExternalResolver 
     }
   }
 
-  def getTriplesWithSubjectPredicates(rdf: RDFReader, node: RDFNode, preds: LazyList[IRI]): Stream[IO,RDFTriple] = {
-    // println(s"GetTriplesWithSubjectPredicate...$node")
+  def getTriplesWithSubjectPredicates(rdf: RDFReader, node: RDFNode, preds: List[IRI]): IO[List[RDFTriple]] = {
+    // println(s"GetTriplesWithSubjectPredicate...${node.show} \nPreds=${preds.map(_.show)}")
     node match {
-      case _: IRI => rdf.triplesWithSubjectPredicates(node,preds)
-      case _: BNode => rdf.triplesWithSubjectPredicates(node,preds)
-      case _ => Stream()
+      case _: IRI => { 
+       // println(s"IRI...$node")
+        val vs = triplesWithSubjectPredicates(node,preds,rdf)
+       // println(s"Triples obtained: ${vs.unsafeRunSync()}")
+       // println(s"Triples for node: ${rdf.triplesWithSubject(node).compile.toList.unsafeRunSync()}")
+       // println(s"Preds: $preds")
+        //preds.map(p => 
+        //  println(s"Triples for ${node.show}/${p.show}: ${rdf.triplesWithSubjectPredicate(node,p).compile.toList.unsafeRunSync()}")
+        //) 
+        vs
+      }
+      case _: BNode => triplesWithSubjectPredicates(node,preds,rdf)
+      case _ => { 
+        // println(s"Literal node? ${node}")
+        IO(List())
+      }
     }
   }
+
+  private def triplesWithSubjectPredicates(n: RDFNode, ps: List[IRI], rdf: RDFReader): IO[List[RDFTriple]] = {
+    // println(s"TriplesWithSubjectPredicates ${n.show}, ${ps.map(_.show).mkString(",")}")
+    val ss = mkSeq(ps, (p: IRI) => {
+      // println(s"TriplesWithSubjectPredicates ${n.show}/${p.show}")
+      val ts: IO[List[RDFTriple]] = rdf.triplesWithSubjectPredicate(n,p).compile.toList
+      // println(s"TriplesWithSubjectPredicates ${n.show}/${p.show} = ${ts.unsafeRunSync().map(_.show).mkString(",")}")
+      ts
+    })
+    ss
+  } 
+
+  private def mkSeq[A,B](vs: List[A], f: A => IO[List[B]]): IO[List[B]] = {
+    vs.traverse(f).map((_.flatten))
+  }
+
+/*  private def triplesWithSubjectPredicates(n: RDFNode, ps: List[IRI], rdf: RDFReader): Stream[IO,RDFTriple] = {
+    println(s"TriplesWithSubjectPredicates ${n.show}, ${ps.map(_.show).mkString(",")}")
+    val ss = mkSeq(ps, (p: IRI) => {
+      println(s"TriplesWithSubjectPredicates ${n.show}/${p.show}")
+      val ts = rdf.triplesWithSubjectPredicate(n,p)
+      println(s"TriplesWithSubjectPredicates ${n.show}/${p.show} = ${ts.compile.toList.unsafeRunSync().map(_.show).mkString(",")}")
+      ts
+    })
+    println(s"ss = ${ss.compile.toList.unsafeRunSync()}")
+    ss
+  } 
+
+
+  private def mkSeq[A,B](vs: List[A], f: A => Stream[IO,B]): Stream[IO,B] = {
+    vs.traverse(f).map(Stream.emits(_)).flatten
+  }
+
+
+
+  def getTriplesWithSubjectPredicates(rdf: RDFReader, node: RDFNode, preds: List[IRI]): Stream[IO,RDFTriple] = {
+    println(s"GetTriplesWithSubjectPredicate...${node.show} \nPreds=${preds.map(_.show)}")
+    node match {
+      case _: IRI => { 
+        println(s"IRI...$node")
+        val vs = triplesWithSubjectPredicates(node,preds,rdf)
+        println(s"Triples obtained: ${vs.compile.toList.unsafeRunSync()}")
+        println(s"Triples for node: ${rdf.triplesWithSubject(node).compile.toList.unsafeRunSync()}")
+        println(s"Preds: $preds")
+        preds.map(p => 
+          println(s"Triples for ${node.show}/${p.show}: ${rdf.triplesWithSubjectPredicate(node,p).compile.toList.unsafeRunSync()}")
+        ) 
+        vs
+      }
+      case _: BNode => triplesWithSubjectPredicates(node,preds,rdf)
+      case _ => { 
+        println(s"Literal node? ${node}")
+        Stream() 
+      }
+    }
+  } */
 
   private[validator] def getNotAllowedPredicates(node: RDFNode, paths: List[Path]): Check[Set[IRI]] =
     for {
