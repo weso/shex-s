@@ -1,15 +1,15 @@
 package es.weso.shex
 
-import java.nio.file.{Files, Paths}
-import cats.implicits._
-import es.weso.depgraphs.DepGraph
-import es.weso.rdf.{PrefixMap, RDFBuilder, RDFReader}
+//import java.nio.file.{Files, Paths}
+//import cats.implicits._
+//import es.weso.depgraphs.DepGraph
+import es.weso.rdf._
 import es.weso.rdf.nodes.{IRI, RDFNode}
-import es.weso.shex.shexR.{RDF2ShEx, ShEx2RDF}
-import es.weso.utils.UriUtils._
-import scala.io.Source
+//import es.weso.shex.shexR.{RDF2ShEx, ShEx2RDF}
+//import es.weso.utils.UriUtils._
+//import scala.io.Source
 import scala.util._
-import cats.effect.IO
+//import cats.effect.IO
 
 abstract class AbstractSchema { 
   def id: IRI

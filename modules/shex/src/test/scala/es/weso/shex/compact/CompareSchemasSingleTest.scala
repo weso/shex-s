@@ -8,14 +8,17 @@ import es.weso.shex.implicits.decoderShEx._
 import es.weso.utils.FileUtils._
 import io.circe.parser._
 import io.circe.syntax._
-import org.scalatest.{EitherValues, FunSpec, Matchers}
+import org.scalatest._
 import es.weso.shex.implicits.encoderShEx._
 import cats.data.EitherT
 import cats.effect._
 import scala.io._
 import cats.implicits._
+import matchers.should._
+import funspec._
 
-class CompareSchemasSingleTest extends FunSpec with JsonTest with Matchers with EitherValues {
+
+class CompareSchemasSingleTest extends AnyFunSpec with JsonTest with Matchers with EitherValues {
 
   val name          = "1val1emptylanguageStem"
   val conf: Config  = ConfigFactory.load()

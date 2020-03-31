@@ -3,13 +3,15 @@ package es.weso.shex
 import es.weso.depgraphs.{DepGraph, Neg, Pos, PosNeg}
 import es.weso.rdf.nodes._
 import org.scalatest._
-import es.weso.utils.eitherios.EitherIOUtils._
+//import es.weso.utils.eitherios.EitherIOUtils._
 import cats.data.EitherT
-import cats._
-import cats.implicits._
+// import cats._
+// import cats.implicits._
 import cats.effect.IO
+import matchers.should._
+import funspec._
 
-class dependenciesTest extends FunSpec with Matchers with EitherValues {
+class dependenciesTest extends AnyFunSpec with Matchers with EitherValues {
 
   // Some common values
   val e = "http://example.org/"

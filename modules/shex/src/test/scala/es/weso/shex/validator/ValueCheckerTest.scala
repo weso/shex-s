@@ -3,8 +3,11 @@ package es.weso.shex.validator
 import es.weso.rdf.nodes._
 import es.weso.shex._
 import org.scalatest._
+import matchers.should._
+import funspec._
 
-class ValueCheckerTest extends ValueChecker(Schema.empty) with FunSpecLike with Matchers with EitherValues {
+
+class ValueCheckerTest extends ValueChecker(Schema.empty) with AnyFunSpecLike with Matchers with EitherValues {
 
   describe("LanguageStem") {
     valueCheckerTest(LangLiteral("pepe", Lang("frc")),

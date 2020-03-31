@@ -5,8 +5,10 @@ import es.weso.rdf.nodes.IRI
 import org.scalatest._
 import cats.effect.IO
 import cats.data.EitherT
+import matchers.should._
+import funspec._
 
-class TestSemanticActionTest extends FunSpec with Matchers with EitherValues {
+class TestSemanticActionTest extends AnyFunSpec with Matchers with EitherValues {
 
   describe(s"Test of TestSemanticAction processor") {
     it(s"Should run print code") {

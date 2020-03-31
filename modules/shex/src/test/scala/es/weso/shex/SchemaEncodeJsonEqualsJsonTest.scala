@@ -15,8 +15,10 @@ import io.circe.syntax._
 import cats.data.EitherT
 import org.scalatest._
 import cats.effect._
+import matchers.should._
+import funspec._
 
-class SchemaEncodeJsonEqualsJsonTest extends FunSpec with JsonTest with Matchers with EitherValues {
+class SchemaEncodeJsonEqualsJsonTest extends AnyFunSpec with JsonTest with Matchers with EitherValues {
 
   val conf: Config = ConfigFactory.load()
   val schemasFolder = conf.getString("schemasFolder")

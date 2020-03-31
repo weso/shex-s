@@ -1,14 +1,16 @@
 package es.weso.shex.validator
 
-import es.weso.rdf.RDFReader
+// import es.weso.rdf.RDFReader
 import es.weso.rdf.jena._
 import es.weso.rdf.nodes._
 import es.weso.shex._
 import org.scalatest._
-import cats.effect.IO
+// import cats.effect.IO
 import es.weso.shex.ResolvedSchema
+import matchers.should._
+import funspec._
 
-class ValidatorTest extends FunSpec with Matchers with EitherValues {
+class ValidatorTest extends AnyFunSpec with Matchers with EitherValues {
 
   describe("ShEx validator") {
     val shapeLabel = IRILabel(IRI("http://example.org/S"))

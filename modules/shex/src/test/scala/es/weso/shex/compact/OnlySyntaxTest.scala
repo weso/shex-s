@@ -6,11 +6,14 @@ import com.typesafe.config.{Config, ConfigFactory}
 import es.weso.utils.json.JsonTest
 import es.weso.shex._
 import es.weso.utils.FileUtils._
-import org.scalatest.{EitherValues, FunSpec, Matchers}
+import org.scalatest._
 import scala.io._
 import cats.effect._
+import matchers.should._
+import funspec._
 
-class OnlySyntaxTest extends FunSpec with JsonTest with Matchers with EitherValues {
+
+class OnlySyntaxTest extends AnyFunSpec with JsonTest with Matchers with EitherValues {
 
   val conf: Config = ConfigFactory.load()
   val schemasFolder = conf.getString("schemasFolder")

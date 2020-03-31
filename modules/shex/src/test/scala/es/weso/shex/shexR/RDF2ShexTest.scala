@@ -2,8 +2,10 @@ package es.weso.shex.shexR
 
 import es.weso.shex._
 import org.scalatest._
+import matchers.should._
+import funspec._
 import es.weso.rdf.jena.RDFAsJenaModel
-import es.weso.rdf._
+//import es.weso.rdf._
 import es.weso.rdf.nodes._
 import es.weso.shex.shexR.PREFIXES._
 import es.weso.rdf.PREFIXES._
@@ -13,7 +15,7 @@ import cats.data._
 import cats.effect.IO
 
 
-class RDF2ShExTest extends FunSpec with Matchers with EitherValues with TryValues {
+class RDF2ShExTest extends AnyFunSpec with Matchers with EitherValues with TryValues {
   val rdf2Shex = new RDF2ShEx {}
 
   describe("Simple schema") {

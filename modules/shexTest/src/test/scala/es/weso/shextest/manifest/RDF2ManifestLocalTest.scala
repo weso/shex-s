@@ -4,8 +4,11 @@ package es.weso.shextest.manifest
 
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest._
+// import matchers.should._
+import funspec._
 
-class RDF2ManifestLocalTest extends FunSpec with ValidateManifest {
+
+class RDF2ManifestLocalTest extends AnyFunSpec with ValidateManifest {
 
   val conf: Config = ConfigFactory.load()
 

@@ -6,8 +6,11 @@ import org.scalatest._
 import cats.data._ 
 import cats.effect.IO
 import cats.implicits._
+import matchers.should._
+import funspec._
 
-class CompactShowTest extends FunSpec with Matchers with EitherValues {
+
+class CompactShowTest extends AnyFunSpec with Matchers with EitherValues {
 
   describe(s"Compact show test") {
    shouldShowAndParse(

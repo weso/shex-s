@@ -9,8 +9,11 @@ import es.weso.shex.implicits.showShEx._
 import es.weso.utils.json._
 import es.weso.utils.FileUtils._
 import cats.effect._
+import matchers.should._
+import funspec._
 
-class ShExJsonTest extends FunSpec with JsonTest with Matchers with EitherValues {
+
+class ShExJsonTest extends AnyFunSpec with JsonTest with Matchers with EitherValues {
 
   val conf: Config = ConfigFactory.load()
   val schemasFolder = conf.getString("schemasFolder")

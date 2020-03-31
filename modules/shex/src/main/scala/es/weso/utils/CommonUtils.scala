@@ -1,6 +1,6 @@
 package es.weso.utils
 
-import es.weso.rdf.nodes.RDFNode
+// import es.weso.rdf.nodes.RDFNode
 import scala.collection.immutable.Set
 
 object CommonUtils {

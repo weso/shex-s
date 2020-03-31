@@ -5,8 +5,11 @@ import es.weso.rdf.nodes.IRI
 import es.weso.shex._
 import org.scalatest._
 import cats.implicits._
+import matchers.should._
+import funspec._
 
-class EqShExTest extends FunSpec with Matchers with EitherValues {
+
+class EqShExTest extends AnyFunSpec with Matchers with EitherValues {
   describe(s"Eq ShEx Schema") {
     it(s"Should compare single schemas ignoring namespaces") {
       val s1 = Schema(IRI(""),None,None,None,None,None,None,List())

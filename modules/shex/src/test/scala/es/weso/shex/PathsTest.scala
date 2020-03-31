@@ -3,10 +3,13 @@ package es.weso.shex
 import es.weso.rdf.nodes._
 import org.scalatest._
 import cats.data._
-import cats.implicits._
+//import cats.implicits._
 import cats.effect.IO
+import matchers.should._
+import funspec._
 
-class PathsTest extends FunSpec with Matchers with EitherValues {
+
+class PathsTest extends AnyFunSpec with Matchers with EitherValues {
 
   describe(s"Calculates paths of a shape") {
       val shexStr =

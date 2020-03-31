@@ -24,6 +24,9 @@ import io.circe.syntax._
 import es.weso.rdf._
 import es.weso.rdf.nodes._
 import ManifestPrefixes._
+import matchers.should._
+import funspec._
+
 
 trait RunManifest {
 
@@ -76,7 +79,7 @@ trait RunManifest {
     } yield (vs1 ++ vs2.flatten[Result])
 }
 
-trait ValidateManifest extends FunSpec with Matchers with TryValues with OptionValues with RunManifest {
+trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with OptionValues with RunManifest {
 
   def showFailed(vs: List[Result], withReason: Boolean): String = {
       vs.map(f => s"${f.name}${if (withReason) s": ${f.reason}" else ""}").mkString("\n") ++

@@ -4,7 +4,7 @@ import java.nio.file.{Files, Paths}
 import cats.implicits._
 import es.weso.depgraphs.DepGraph
 import es.weso.rdf.{PrefixMap, RDFBuilder, RDFReader}
-import es.weso.rdf.nodes.{IRI, RDFNode}
+import es.weso.rdf.nodes._
 import es.weso.shex.shexR.{RDF2ShEx, ShEx2RDF}
 import scala.io.Source
 import scala.util._
@@ -79,9 +79,9 @@ case class Schema(id: IRI,
 
  private def checkShapeLabel(lbl: ShapeLabel): Either[String, Unit] = for {
    se <- getShape(lbl)
-   _ <- { println(s"Label ${lbl.toString}. ShapeExpr: ${se.toString}"); Right(())}
+   //_ <- { println(s"Label ${lbl.toString}. ShapeExpr: ${se.toString}"); Right(())}
    refs <- se.getShapeRefs(this)
-   _ <- { println(s"Refs ${refs.toString}"); Right(())}
+   //_ <- { println(s"Refs ${refs.toString}"); Right(())}
   } yield {
     // println(s"Label: $lbl, refs: ${se.getShapeRefs(this).mkString(",")}")
     // println(s"References: ${refs.mkString(",")}")
@@ -89,13 +89,13 @@ case class Schema(id: IRI,
   }
 
   private lazy val checkBadShapeLabels: Either[String,Unit] = for {
-    _ <- { println(s"shapesMap: $shapesMap"); Right(())}
+    //_ <- { println(s"shapesMap: $shapesMap"); Right(())}
     _ <- shapesMap.keySet.toList.map(lbl => checkShapeLabel(lbl)).sequence
   } yield (()) 
 
 
   private lazy val checkOddNegCycles: Either[String, Unit] = {
-    println(s"OddNegCycles: $oddNegCycles")
+    // println(s"OddNegCycles: $oddNegCycles")
     oddNegCycles match {
       case Left(e) => Left(e)
       case Right(cs) => if (cs.isEmpty) Right(())
@@ -106,9 +106,9 @@ case class Schema(id: IRI,
 
   lazy val wellFormed: Either[String,Unit] = for {
     _ <- checkOddNegCycles
-    _ <- { println(s"Passed checkOddNegCycles..."); Right(())}
+    //_ <- { println(s"Passed checkOddNegCycles..."); Right(())}
     _ <- checkBadShapeLabels
-    _ <- { println(s"Passed checkBadShapeLabels..."); Right(())}
+    //_ <- { println(s"Passed checkBadShapeLabels..."); Right(())}
   } yield (())
 
   def relativize(maybeBase: Option[IRI]): Schema = maybeBase match {
@@ -158,7 +158,7 @@ object Schema {
             fromString(str, "JSON", Some(i)).map(schema => schema.addId(i))
            }
            else {
-            println(s"File $i does not exist")
+            //println(s"File $i does not exist")
             err(s"File $i does not exist")
            }
         }}}

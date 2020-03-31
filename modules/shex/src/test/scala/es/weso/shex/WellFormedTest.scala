@@ -2,8 +2,11 @@ package es.weso.shex
 import org.scalatest._
 import cats.effect.IO
 import cats.data.EitherT
+import matchers.should._
+import funspec._
 
-class WellFormedTest extends FunSpec with Matchers with EitherValues {
+
+class WellFormedTest extends AnyFunSpec with Matchers with EitherValues {
 
   describe(s"WellFormedTest") {
 

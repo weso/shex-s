@@ -5,8 +5,10 @@ import es.weso.shex.normalized.{Constraint, NormalizedShape}
 import org.scalatest._
 import cats.effect.IO
 import cats.data.EitherT
+import matchers.should._
+import funspec._
 
-class NormalizeShapeTest extends FunSpec with Matchers with EitherValues {
+class NormalizeShapeTest extends AnyFunSpec with Matchers with EitherValues {
 
   describe(s"Normalize shape with IRI") {
     val shexStr =

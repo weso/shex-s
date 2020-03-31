@@ -4,8 +4,10 @@ import org.scalatest._
 import es.weso.rdf.jena.RDFAsJenaModel
 import es.weso.rdf.nodes.IRI
 import es.weso.shex.Schema
+import matchers.should._
+import funspec._
 
-class IRITest extends FunSpec with Matchers with EitherValues {
+class IRITest extends AnyFunSpec with Matchers with EitherValues {
   val rdf = RDFAsJenaModel.empty
 
   describe(s"Test IRI") {

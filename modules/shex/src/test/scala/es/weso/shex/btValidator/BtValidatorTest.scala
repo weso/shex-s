@@ -1,15 +1,17 @@
 package es.weso.shex.btValidator
 
 import org.scalatest._
-import BtValidator._
-import es.weso.rdf.jena.RDFAsJenaModel
-import es.weso.rdf.nodes.{IRI, RDFNode}
-import es.weso.rdf.triples.RDFTriple
-import es.weso.rdf.PREFIXES._
-import es.weso.shapeMaps.{IRILabel, ShapeMapLabel}
-import es.weso.shex._
+// import BtValidator._
+// import es.weso.rdf.jena.RDFAsJenaModel
+// import es.weso.rdf.nodes.{IRI, RDFNode}
+// import es.weso.rdf.triples.RDFTriple
+// import es.weso.rdf.PREFIXES._
+// import es.weso.shapeMaps.{IRILabel, ShapeMapLabel}
+// import es.weso.shex._
+import matchers.should._
+import funspec._
 
-class BtValidatorTest extends FunSpec with Matchers with EitherValues {
+class BtValidatorTest extends AnyFunSpec with Matchers with EitherValues {
 
 /*  describe(s"BtValidator semantics") {
     it(s"Should validate OK") {

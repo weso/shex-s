@@ -1,6 +1,6 @@
 package es.weso.shex.validator
 
-import cats._
+// import cats._
 import cats.data._
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging

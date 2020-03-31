@@ -23,7 +23,7 @@ case class Direct(pred: IRI) extends Path {
  val isDirect = true
 
   override def getValues(node: RDFNode, rdf: RDFReader): Stream[IO,RDFNode] = {
-    println(s"getValues of $node for pred $pred")
+    // println(s"getValues of $node for pred $pred")
     rdf.triplesWithSubjectPredicate(node, pred).map(_.obj)
   }
 

@@ -1,7 +1,9 @@
 package es.weso.shex
 import org.scalatest._
+import matchers.should._
+import funspec._
 
-class CardinalityTest extends FunSpec with Matchers with EitherValues {
+class CardinalityTest extends AnyFunSpec with Matchers with EitherValues {
 
   describe(s"Cardinality test") {
     checkBetween(2,1,IntMax(5))

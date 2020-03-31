@@ -11,8 +11,11 @@ import es.weso.shex.compact.CompactShow._
 import es.weso.shex.implicits.eqShEx._
 import cats._
 import es.weso.rdf.nodes.IRI
+import matchers.should._
+import funspec._
 
-class CompactSyntaxLocalTest extends FunSpec with Matchers with EitherValues {
+
+class CompactSyntaxLocalTest extends AnyFunSpec with Matchers with EitherValues {
 
   val conf: Config = ConfigFactory.load()
   val shexLocalFolder = conf.getString("shexLocalFolder")

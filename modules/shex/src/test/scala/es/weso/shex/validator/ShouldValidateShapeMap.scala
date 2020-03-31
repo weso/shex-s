@@ -22,7 +22,10 @@ trait ShouldValidateShapeMap extends AnyFunSpecLike with Matchers {
                                   expected: String): Unit = {
     it(s"Should validate shapeMap: ${shapeMapStr} and return: $expected\nUsing RDF: \n ${rdfStr}\nand schema:\n${shexStr}") {
 
-      def info(msg:String): EitherT[IO,String,Unit] = EitherT.liftF(IO(println(msg)))
+      def info(msg:String): EitherT[IO,String,Unit] = EitherT.liftF(
+        // IO(println(msg)
+        IO.pure(())
+      )
 
       val validate: EitherT[IO,String,Boolean] = for {
         rdf <- EitherT.liftF(RDFAsJenaModel.fromChars(rdfStr, "Turtle",None))

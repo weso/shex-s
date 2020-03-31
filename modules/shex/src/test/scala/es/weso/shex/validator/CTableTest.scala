@@ -40,9 +40,9 @@ class CTableTest extends AnyFunSpec with Matchers with EitherValues {
       val tripleExprMap : Map[ShapeLabel, TripleExpr] = Map(s -> te)
       val c0 = ConstraintRef(0)
       val c1 = ConstraintRef(1)
-      val cs = List(c0,c1)
+      val expected  = List(c0,c1)
 
-       shouldMakeCTable(te,extras,tripleExprMap,cs)
+       shouldMakeCTable(te,extras,tripleExprMap,expected)
     } 
 
     def shouldMakeCTable(te: TripleExpr, extras: List[IRI], teMap: Map[ShapeLabel,TripleExpr], symbols: List[ConstraintRef]): Unit = {

@@ -1,8 +1,8 @@
 package es.weso.shex
 
-import cats._
-import cats.implicits._
-import es.weso.rdf._
+//import cats._
+//import cats.implicits._
+//import es.weso.rdf._
 import es.weso.rdf.nodes._
 import scala.util._
 import cats.effect.IO

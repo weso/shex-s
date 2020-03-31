@@ -5,8 +5,10 @@ import es.weso.shapeMaps.ShapeMap
 import es.weso.shex._
 import org.scalatest._
 import es.weso.utils.eitherios.EitherIOUtils._
+import matchers.should._
+import funspec._
 
-class ExprTest extends FunSpec with Matchers with EitherValues {
+class ExprTest extends AnyFunSpec with Matchers with EitherValues {
 
   describe(s"Parsing exprs") {
     ignore("should parse a simple as") {

@@ -7,8 +7,11 @@ import es.weso.shex.Schema
 import org.scalatest._
 import es.weso.utils.eitherios.EitherIOUtils._
 import es.weso.shex.ResolvedSchema
+import matchers.should._
+import funspec._
 
-class ErrorMessagesTest extends FunSpec with Matchers with EitherValues {
+
+class ErrorMessagesTest extends AnyFunSpec with Matchers with EitherValues {
 
   describe("Error messages test") {
     it(s"Should generate good error message") {

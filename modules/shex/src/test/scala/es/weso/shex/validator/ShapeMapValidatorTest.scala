@@ -2,7 +2,7 @@ package es.weso.shex.validator
 
 class ShapeMapValidatorTest extends ShouldValidateShapeMap {
 
-/*  describe("Simple Shape") {
+  describe("Simple Shape") {
     val shexStr =
       """
         |prefix : <http://example.org/>
@@ -41,8 +41,8 @@ class ShapeMapValidatorTest extends ShouldValidateShapeMap {
     shouldValidateWithShapeMap(rdfStr, shexStr, ":a@:S,:b@:S,:c@:S,:d@:S", ":a@:S,:b@:S,:c@:S,:d@!:S")
     shouldValidateWithShapeMap(rdfStr, shexStr, ":d@:S", ":d@!:S")
   }
-*/
-/*  describe("Two recursive shapes") {
+
+  describe("Two recursive shapes") {
     val shexStr =
       """
         |prefix : <http://example.org/>
@@ -61,7 +61,7 @@ class ShapeMapValidatorTest extends ShouldValidateShapeMap {
   }
 
   // TODO: The following test fails...does the spec allow \d in regexes?
-  describe("Regular expressions") {
+  ignore("Regular expressions") {
     val shexStr =
       """
         |prefix : <http://example.org/>
@@ -74,7 +74,7 @@ class ShapeMapValidatorTest extends ShouldValidateShapeMap {
 
     shouldValidateWithShapeMap(rdfStr, shexStr, ":a@:A", ":a@:A")
   }
-*/
+
   describe("Shape with EXTRA") {
     val shexStr =
       """
@@ -90,12 +90,13 @@ class ShapeMapValidatorTest extends ShouldValidateShapeMap {
          |:bad :p 2 .
          |""".stripMargin
 
-    shouldValidateWithShapeMap(rdfStr, shexStr, ":a@:S", ":a@:S")
-  //  shouldValidateWithShapeMap(rdfStr, shexStr, ":a@:S,:b@:S", ":a@:S,:b@:S")
-  //  shouldValidateWithShapeMap(rdfStr, shexStr, ":a@:S,:b@:S,:bad@:S", ":a@:S,:b@:S,:bad@!:S")
+  shouldValidateWithShapeMap(rdfStr, shexStr, ":a@:S", ":a@:S")
+  shouldValidateWithShapeMap(rdfStr, shexStr, ":a@:S,:b@:S", ":a@:S,:b@:S")
+  shouldValidateWithShapeMap(rdfStr, shexStr, ":b@:S", ":b@:S")
+  shouldValidateWithShapeMap(rdfStr, shexStr, ":a@:S,:b@:S,:bad@:S", ":a@:S,:b@:S,:bad@!:S")
   }
 
-/*  describe("Shape with EXTRA and CLOSED") {
+  describe("Shape with EXTRA and CLOSED") {
     val shexStr =
       """
         |prefix : <http://example.org/>
@@ -113,8 +114,29 @@ class ShapeMapValidatorTest extends ShouldValidateShapeMap {
          |:bad1 :p 2 .
          |""".stripMargin
 
-    shouldValidateWithShapeMap(rdfStr, shexStr, ":a@:S,:b@:S,:bad1@:S", ":a@:S,:b@:S,:bad1@!:S")
+   shouldValidateWithShapeMap(rdfStr, shexStr, ":a@:S,:b@:S,:bad1@:S", ":a@:S,:b@:S,:bad1@!:S")
+   shouldValidateWithShapeMap(rdfStr, shexStr, ":a@:S", ":a@:S")
+  } 
+
+  describe("Shape with EXTRA and CLOSED") {
+    val shexStr =
+      """
+        |prefix : <http://example.org/>
+        |prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+        |
+        |:S CLOSED EXTRA :p {
+        | :p [ 1 2 ];
+        | :p [ 2 3 ]
+        |}
+      """.stripMargin
+    val rdfStr =
+      """|prefix : <http://example.org/>
+         |:a :p 1, 2 .
+         |""".stripMargin
+
+   shouldValidateWithShapeMap(rdfStr, shexStr, ":a@:S", ":a@:S")
   }
+
   describe("Shape with inverse arcs") {
     val shexStr =
       """
@@ -228,6 +250,6 @@ class ShapeMapValidatorTest extends ShouldValidateShapeMap {
 
     shouldValidateWithShapeMap(rdfStr, shexStr, ":a@<A>", ":a@<http://base.org/A>")
   }
-*/
+
 
 }

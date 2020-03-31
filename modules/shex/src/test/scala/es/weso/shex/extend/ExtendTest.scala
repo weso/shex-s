@@ -2,9 +2,12 @@ package es.weso.shex.extend
 
 import cats.syntax.either._
 import org.scalatest._
+import matchers.should._
+import funspec._
 
 
-class ExtendTest extends FunSpec with Extend with Matchers with EitherValues {
+
+class ExtendTest extends AnyFunSpec with Extend with Matchers with EitherValues {
   type Label = String
   case class Expr(es: List[Label])
   type Schema = Map[Label,Shape]

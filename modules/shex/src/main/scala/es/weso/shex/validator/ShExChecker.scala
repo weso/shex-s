@@ -41,6 +41,12 @@ object ShExChecker extends CheckerCats {
     } yield r
   }
 
+  def info(msg:String): Check[Unit] = {
+    fromIO(
+      IO.pure(())
+      // IO(println(s"$msg")))
+    )
+  }
 
   def checkCond(
                  condition: Boolean,

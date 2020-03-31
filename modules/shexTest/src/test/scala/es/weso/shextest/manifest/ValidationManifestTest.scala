@@ -1,7 +1,7 @@
 package es.weso.shextest.manifest
 
 import java.net.URI
-import es.weso.utils.UriUtils._
+//import es.weso.utils.UriUtils._
 import java.nio.file.Paths
 import com.typesafe.config.{Config, ConfigFactory}
 import es.weso.rdf.PrefixMap
@@ -11,17 +11,17 @@ import es.weso.shapeMaps.{BNodeLabel => BNodeMapLabel, IRILabel => IRIMapLabel, 
 import es.weso.shex._
 import es.weso.shex.validator.{ExternalIRIResolver, Validator}
 import es.weso.shapeMaps._
-import es.weso.shex.compact.CompareSchemas
+//import es.weso.shex.compact.CompareSchemas
 import es.weso.shextest.manifest.Utils._
-import es.weso.shex.implicits.decoderShEx._
-import es.weso.shex.implicits.encoderShEx._
-import cats._
+//import es.weso.shex.implicits.decoderShEx._
+//import es.weso.shex.implicits.encoderShEx._
+//import cats._
 import cats.data.EitherT
 import cats.implicits._
 import cats.effect.IO
 import ManifestPrefixes._
-import scala.io._
-import io.circe.parser._
+//import scala.io._
+//import io.circe.parser._
 import io.circe.syntax._
 
 

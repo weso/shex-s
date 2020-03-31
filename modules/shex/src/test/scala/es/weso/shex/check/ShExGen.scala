@@ -1,11 +1,11 @@
 package es.weso.shex.check
 
-import es.weso.rdf.RDFReader
-import es.weso.rdf.jena.{JenaMapper, RDFAsJenaModel}
+// import es.weso.rdf.RDFReader
+// import es.weso.rdf.jena.{JenaMapper, RDFAsJenaModel}
 import es.weso.rdf.nodes._
-import es.weso.rdf.triples.RDFTriple
+// import es.weso.rdf.triples.RDFTriple
 import org.scalacheck.{Arbitrary, Gen, Properties}
-import org.scalacheck.Prop.forAll
+// import org.scalacheck.Prop.forAll
 import org.scalacheck.Arbitrary.arbitrary
 
 object ShExSpec extends Properties("ShEx") {

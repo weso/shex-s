@@ -6,8 +6,10 @@ import es.weso.rdf.PREFIXES._
 import es.weso.rdf._
 import cats.effect.IO
 import es.weso.rdf.jena.RDFAsJenaModel
+import matchers.should._
+import funspec._
 
-class NodeInfoTest extends FunSpec with Matchers with EitherValues {
+class NodeInfoTest extends AnyFunSpec with Matchers with EitherValues {
 
   describe("totalDigits") {
     it("Should calculate total digits of 3.14") {

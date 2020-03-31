@@ -8,11 +8,14 @@ import es.weso.shex._
 import es.weso.shex.implicits.decoderShEx._
 import es.weso.utils.FileUtils._
 import io.circe.parser._
-import org.scalatest.{EitherValues, FunSpec, Matchers}
+import org.scalatest._
+import matchers.should._
+import funspec._
+
 import scala.io._
 import cats.effect._
 
-class CompareSchemasTest extends FunSpec with JsonTest with Matchers with EitherValues {
+class CompareSchemasTest extends AnyFunSpec with JsonTest with Matchers with EitherValues {
 
   val conf: Config = ConfigFactory.load()
   val schemasFolder = conf.getString("schemasFolder")

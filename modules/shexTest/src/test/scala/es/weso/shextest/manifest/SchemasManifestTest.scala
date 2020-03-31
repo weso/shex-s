@@ -10,8 +10,8 @@ import io.circe.syntax._
 import es.weso.shex.implicits.decoderShEx._
 import es.weso.shex.implicits.encoderShEx._
 import Utils._
-import es.weso.utils.UriUtils._
-import cats._
+// import es.weso.utils.UriUtils._
+//import cats._
 import cats.data._
 import cats.effect.IO
 import cats.implicits._

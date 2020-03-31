@@ -19,7 +19,7 @@ sealed trait ShapeExpr extends Product with Serializable {
     showShapeExpr(this, pm)
   }
 
-  def paths(schema: AbstractSchema): Either[String, List[Path]]
+  def paths(schema: AbstractSchema): Either[String, Set[Path]]
   def addAnnotations(as: List[Annotation]): ShapeExpr
   def addSemActs(as: List[SemAct]): ShapeExpr
 
@@ -135,8 +135,8 @@ case class ShapeOr(
 ) extends ShapeExpr {
   def addId(lbl: ShapeLabel) = this.copy(id = Some(lbl))
 
-  override def paths(schema: AbstractSchema): Either[String, List[Path]] =
-    sequence(shapeExprs.map(_.paths(schema))).map(_.flatten)
+  override def paths(schema: AbstractSchema): Either[String, Set[Path]] =
+    sequence(shapeExprs.map(_.paths(schema))).map(_.toSet.flatten)
 
   override def addAnnotations(as: List[Annotation]): ShapeExpr = {
     this.copy(annotations = maybeAddList(annotations, as))
@@ -167,8 +167,8 @@ case class ShapeAnd(
 ) extends ShapeExpr {
   def addId(lbl: ShapeLabel) = this.copy(id = Some(lbl))
 
-  override def paths(schema: AbstractSchema): Either[String, List[Path]] =
-    sequence(shapeExprs.map(_.paths(schema))).map(_.flatten)
+  override def paths(schema: AbstractSchema): Either[String, Set[Path]] =
+    sequence(shapeExprs.map(_.paths(schema))).map(_.toSet.flatten)
 
   override def addAnnotations(as: List[Annotation]): ShapeExpr = {
     this.copy(annotations = maybeAddList(annotations, as))
@@ -199,7 +199,7 @@ case class ShapeNot(
 ) extends ShapeExpr {
   def addId(lbl: ShapeLabel) = this.copy(id = Some(lbl))
 
-  override def paths(schema: AbstractSchema): Either[String, List[Path]] =
+  override def paths(schema: AbstractSchema): Either[String, Set[Path]] =
     shapeExpr.paths(schema)
 
   override def addAnnotations(as: List[Annotation]): ShapeExpr = {
@@ -236,7 +236,7 @@ case class NodeConstraint(
     this.copy(id = Some(lbl))
   }
 
-  override def paths(schema: AbstractSchema): Either[String, List[Path]] = Right(List())
+  override def paths(schema: AbstractSchema): Either[String, Set[Path]] = Right(Set())
 
   override def addAnnotations(as: List[Annotation]): NodeConstraint = {
     this.copy(annotations = maybeAddList(annotations, as))
@@ -365,15 +365,16 @@ case class Shape(
   /**
     * Return the paths that are mentioned in a shape
     * @param schema Schema to which the shape belongs, it is needed to resolve references to other shapes
-    * @return List of paths or error in case the shape is not well defined (may have bad references)
+    * @return Set of paths or error in case the shape is not well defined (may have bad references)
     */
-  def paths(schema: AbstractSchema): Either[String, List[Path]] = {
+  override def paths(schema: AbstractSchema): Either[String, Set[Path]] = {
     def getPath(s: ShapeExpr): Option[List[Path]] = s match {
-      case s: Shape => Some(s.expression.map(_.paths(schema)).getOrElse(List()))
+      case s: Shape => Some(s.expression.map(_.paths(schema).toList).getOrElse(List()))
       case _        => Some(List())
     }
     def combinePaths(p1: List[Path], p2: List[Path]): List[Path] = p1 ++ p2
-    extendCheckingVisited(this, schema.getShape(_), extend, combinePaths, getPath).map(_.getOrElse(List()))
+
+    extendCheckingVisited(this, schema.getShape(_), extend, combinePaths, getPath).map(_.getOrElse(List())).map(_.toSet)
   }
 
   def extendExpression(schema: Schema): Either[String, Option[TripleExpr]] = {
@@ -433,7 +434,7 @@ case class ShapeRef(reference: ShapeLabel, annotations: Option[List[Annotation]]
   def id                     = None
   def addId(lbl: ShapeLabel) = this
 
-  override def paths(schema: AbstractSchema): Either[String, List[Path]] =
+  override def paths(schema: AbstractSchema): Either[String, Set[Path]] =
     for {
       se <- schema.getShape(reference)
       ps <- se.paths(schema)
@@ -458,7 +459,7 @@ case class ShapeRef(reference: ShapeLabel, annotations: Option[List[Annotation]]
 case class ShapeExternal(id: Option[ShapeLabel], annotations: Option[List[Annotation]], actions: Option[List[SemAct]])
     extends ShapeExpr {
   def addId(lbl: ShapeLabel)                                     = this.copy(id = Some(lbl))
-  override def paths(schema: AbstractSchema): Either[String, List[Path]] = Right(List())
+  override def paths(schema: AbstractSchema): Either[String, Set[Path]] = Right(Set())
 
   override def addAnnotations(as: List[Annotation]): ShapeExpr = {
     this.copy(annotations = maybeAddList(annotations, as))
