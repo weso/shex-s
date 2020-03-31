@@ -3,15 +3,8 @@ package es.weso.shextest.manifest
 // import java.nio.file.Paths
 
 import com.typesafe.config.{Config, ConfigFactory}
-<<<<<<< HEAD
 import org.scalatest.funspec.AnyFunSpec
 
-=======
-import org.scalatest._
-import funspec._
-
-
->>>>>>> issue57
 class RDF2ManifestTest extends AnyFunSpec with ValidateManifest {
 
   val conf: Config = ConfigFactory.load()

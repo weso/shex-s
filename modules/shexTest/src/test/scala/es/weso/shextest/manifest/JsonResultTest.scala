@@ -5,18 +5,10 @@ import com.typesafe.config.{Config, ConfigFactory}
 import io.circe.parser._
 import io.circe.syntax._
 import org.scalatest._
-<<<<<<< HEAD
 import scala.io.Source
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
-=======
-import scala.io.Source
-import matchers.should._
-import funspec._
-
-
->>>>>>> issue57
 class JsonResultTest extends AnyFunSpec with Matchers with TryValues with OptionValues{
 
   val conf: Config = ConfigFactory.load()
