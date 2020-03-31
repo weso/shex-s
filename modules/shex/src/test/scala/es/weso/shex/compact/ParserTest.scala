@@ -3,9 +3,15 @@ package es.weso.shex.compact
 import es.weso.utils.json.JsonTest
 import es.weso.rdf.nodes.IRI
 import es.weso.shex._
+<<<<<<< HEAD
 import org.scalatest.EitherValues
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+=======
+import org.scalatest._
+import matchers.should._
+import funspec._
+>>>>>>> issue57
 
 class ParserTest extends AnyFunSpec with JsonTest with Matchers with EitherValues {
 

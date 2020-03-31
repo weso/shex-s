@@ -11,7 +11,13 @@ import es.weso.utils.FileUtils._
 import es.weso.utils.json.{JsonCompare, JsonTest}
 import io.circe.parser._
 import io.circe.syntax._
+<<<<<<< HEAD
 import org.scalatest.EitherValues
+=======
+import org.scalatest._
+import matchers.should._
+import funspec._
+>>>>>>> issue57
 
 import scala.io._
 import org.scalatest.funspec.AnyFunSpec
@@ -32,7 +38,7 @@ class CompareJsonSingleTest extends AnyFunSpec with JsonTest with Matchers with 
     val file: File = getFileFromFolderWithExt(schemasFolder, name, "shex").unsafeRunSync()
     it(s"Should read Schema from file ${file.getName}") {
       val str = Source.fromFile(file)("UTF-8").mkString
-      Schema.fromString(str) match {
+      Schema.fromString(str).attempt.unsafeRunSync match {
         case Right(schema) => {
           val (name, ext) = splitExtension(file.getName)
           val jsonFile = schemasFolder + "/" + name + ".json"

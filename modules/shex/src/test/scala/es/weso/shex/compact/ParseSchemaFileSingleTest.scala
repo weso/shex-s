@@ -6,10 +6,18 @@ import cats.data.EitherT
 import com.typesafe.config.{Config, ConfigFactory}
 import es.weso.utils.json.JsonTest
 import es.weso.utils.FileUtils._
+<<<<<<< HEAD
 import org.scalatest.EitherValues
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
+=======
+import org.scalatest._
+import matchers.should._
+import funspec._
+
+
+>>>>>>> issue57
 class ParseSchemaFileSingleTest extends AnyFunSpec with JsonTest with Matchers with EitherValues {
 
   val name = "1focusLength-dot"

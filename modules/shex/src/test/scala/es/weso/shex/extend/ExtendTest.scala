@@ -1,11 +1,20 @@
 package es.weso.shex.extend
 
 import cats.syntax.either._
+<<<<<<< HEAD
 import org.scalatest._
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
 
+=======
+import org.scalatest._
+import matchers.should._
+import funspec._
+
+
+
+>>>>>>> issue57
 class ExtendTest extends AnyFunSpec with Extend with Matchers with EitherValues {
   type Label = String
   case class Expr(es: List[Label])

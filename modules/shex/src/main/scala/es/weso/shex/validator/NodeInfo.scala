@@ -1,5 +1,6 @@
 package es.weso.shex.validator
 
+import cats.effect.IO
 import es.weso.rdf.nodes.{Literal, RDFNode}
 import es.weso.rdf.PREFIXES._
 import es.weso.rdf.RDFReader
@@ -13,7 +14,7 @@ object NodeInfo {
 
   /* This implementation leverages Xerces internal implementation of XML Schema datatypes */
   /* This is probably going too far and could be simplified */
-  def totalDigits(node: RDFNode, rdf: RDFReader): Either[String,Int] = {
+  def totalDigits(node: RDFNode, rdf: RDFReader): IO[Int] = {
     node match {
       case l: Literal => l.dataType match {
         case `xsd:decimal` |
@@ -42,43 +43,43 @@ object NodeInfo {
               decimalDV.getTotalDigits(resultInfo.actualValue)
             }
             t match {
-              case Failure(e) => Left(s"Error calculating totalDigits of $node: ${e.getMessage}")
-              case Success(n) => Right(n)
+              case Failure(e) => IO.raiseError(new RuntimeException(s"Error calculating totalDigits of $node: ${e.getMessage}"))
+              case Success(n) => IO(n)
             }
           }
         } yield td
-        case d => Left(s"TotalDigits can only be applied to xsd:decimal or derived datatypes, not to: $d")
+        case d => IO.raiseError(new RuntimeException(s"TotalDigits can only be applied to xsd:decimal or derived datatypes, not to: $d"))
       }
-      case _ => Left(s"TotalDigits facet can not be applied to non literal node: $node")
+      case _ => IO.raiseError(new RuntimeException(s"TotalDigits facet can not be applied to non literal node: $node"))
     }
   }
 
   /* This implementation leverages Xerces internal implementation of XML Schema datatypes */
   /* This is probably going too far and could be simplified */
-  def fractionDigits(node: RDFNode, rdf: RDFReader): Either[String,Int] = {
+  def fractionDigits(node: RDFNode, rdf: RDFReader): IO[Int] = {
     node match {
       case l: Literal =>
         l.dataType match {
-          case `xsd:decimal` | `xsd:integer` => {
-            rdf.checkDatatype(node,l.dataType).fold(
-              e => Left(s"Node $node has wrong datatype"),
-              _ => { val t = Try {
-              val context                       = new ValidationState
-              val decimalDV                     = new DecimalDV()
-              val typeDeclaration: XSSimpleType = SchemaDVFactory.getInstance.getBuiltInType("decimal")
-              val resultInfo                    = new ValidatedInfo
-              typeDeclaration.validate(node.getLexicalForm, context, resultInfo)
-              decimalDV.getFractionDigits(resultInfo.actualValue)
+          case `xsd:decimal` | `xsd:integer` => for {
+            b <- rdf.checkDatatype(node,l.dataType)
+            td <- {
+             val t = Try {
+               val context                       = new ValidationState
+               val decimalDV                     = new DecimalDV()
+               val typeDeclaration: XSSimpleType = SchemaDVFactory.getInstance.getBuiltInType("decimal")
+               val resultInfo                    = new ValidatedInfo
+               typeDeclaration.validate(node.getLexicalForm, context, resultInfo)
+               decimalDV.getFractionDigits(resultInfo.actualValue)
+             }
+             t match {
+               case Failure(e) => IO.raiseError(new RuntimeException(s"Error calculating fractionDigits of $node: ${e.getMessage}"))
+               case Success(n) => IO(n)
+             }
             }
-            t match {
-              case Failure(e) => Left(s"Error calculating fractionDigits of $node: ${e.getMessage}")
-              case Success(n) => Right(n)
-            }
-          })
-            }
-          case d => Left(s"FractionDigits can only be applied to xsd:decimal or derived datatypes, not to: $d")
+           } yield td
+          case d => IO.raiseError(new RuntimeException(s"FractionDigits can only be applied to xsd:decimal or derived datatypes, not to: $d"))
         }
-      case _ => Left(s"FractionDigits facet can not be applied to non literal node: $node")
+      case _ => IO.raiseError(new RuntimeException(s"FractionDigits facet can not be applied to non literal node: $node"))
     }
   }
 

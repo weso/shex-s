@@ -1,9 +1,15 @@
 package es.weso.shex
 import org.scalatest._
 import es.weso.rdf.nodes._
+<<<<<<< HEAD
 import es.weso.rdf._
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+=======
+import es.weso.rdf._
+import matchers.should._
+import funspec._
+>>>>>>> issue57
 
 class shexDiffTest extends AnyFunSpec with Matchers with EitherValues {
 

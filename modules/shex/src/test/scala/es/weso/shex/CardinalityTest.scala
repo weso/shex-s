@@ -1,7 +1,13 @@
 package es.weso.shex
+<<<<<<< HEAD
 import org.scalatest._
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+=======
+import org.scalatest._
+import matchers.should._
+import funspec._
+>>>>>>> issue57
 
 class CardinalityTest extends AnyFunSpec with Matchers with EitherValues {
 

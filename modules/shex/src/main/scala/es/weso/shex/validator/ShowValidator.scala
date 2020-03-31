@@ -4,7 +4,7 @@ import cats._
 import implicits._
 import es.weso.shex._
 
-class ShowValidator(schema: Schema) {
+class ShowValidator(schema: AbstractSchema) {
 
   implicit lazy val showIRI = new Show[IRI] {
     override def show(i: IRI): String = {

@@ -6,12 +6,22 @@ import com.typesafe.config.{Config, ConfigFactory}
 import es.weso.utils.json.JsonTest
 import es.weso.shex._
 import es.weso.utils.FileUtils._
+<<<<<<< HEAD
 import org.scalatest.EitherValues
 import scala.io._
 import cats.effect._
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
+=======
+import org.scalatest._
+import scala.io._
+import cats.effect._
+import matchers.should._
+import funspec._
+
+
+>>>>>>> issue57
 class OnlySyntaxTest extends AnyFunSpec with JsonTest with Matchers with EitherValues {
 
   val conf: Config = ConfigFactory.load()
@@ -27,7 +37,7 @@ class OnlySyntaxTest extends AnyFunSpec with JsonTest with Matchers with EitherV
     for (file <- getCompactFiles(schemasFolder).unsafeRunSync) {
       it(s"Should read Schema from file ${file.getName}") {
         val str = Source.fromFile(file)("UTF-8").mkString
-        Schema.fromString(str) match {
+        Schema.fromString(str).attempt.unsafeRunSync match {
           case Right(schema) => {
             val (name, ext) = splitExtension(file.getName)
             // TODO: Check that parsed file equals schema file

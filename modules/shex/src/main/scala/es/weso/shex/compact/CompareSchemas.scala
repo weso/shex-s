@@ -8,7 +8,7 @@ object CompareSchemas {
   type ShapeMap = Map[ShapeLabel, ShapeExpr]
   // Compare schemas ignoring namespaces or other minor differences like None vs Some(false)
   def compareSchemas(s1: Schema, s2: Schema): Boolean = {
-    compareShapesMaps(s1.localShapesMap, s2.localShapesMap)
+    compareShapesMaps(s1.shapesMap, s2.shapesMap)
   }
 
   def compareShapesMaps(s1: ShapeMap, s2: ShapeMap): Boolean = {

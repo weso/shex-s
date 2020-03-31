@@ -8,7 +8,14 @@ import es.weso.shex._
 import es.weso.shex.implicits.decoderShEx._
 import es.weso.utils.FileUtils._
 import io.circe.parser._
+<<<<<<< HEAD
 import org.scalatest.EitherValues
+=======
+import org.scalatest._
+import matchers.should._
+import funspec._
+
+>>>>>>> issue57
 import scala.io._
 import cats.effect._
 import org.scalatest.funspec.AnyFunSpec
@@ -29,7 +36,7 @@ class CompareSchemasTest extends AnyFunSpec with JsonTest with Matchers with Eit
     for (file <- getCompactFiles(schemasFolder).unsafeRunSync()) {
       it(s"Should read Schema from file ${file.getName}") {
         val str = Source.fromFile(file)("UTF-8").mkString
-        Schema.fromString(str, "SHEXC") match {
+        Schema.fromString(str, "SHEXC").attempt.unsafeRunSync match {
           case Right(schema) => {
             val (name, ext) = splitExtension(file.getName)
             val jsonFile = schemasFolder + "/" + name + ".json"

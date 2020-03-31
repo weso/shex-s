@@ -10,10 +10,18 @@ import es.weso.shex.compact.Parser._
 import es.weso.shex.compact.CompactShow._
 import es.weso.shex.implicits.eqShEx._
 import cats._
+<<<<<<< HEAD
 import es.weso.rdf.nodes.IRI
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
+=======
+import es.weso.rdf.nodes.IRI
+import matchers.should._
+import funspec._
+
+
+>>>>>>> issue57
 class CompactSyntaxLocalTest extends AnyFunSpec with Matchers with EitherValues {
 
   val conf: Config = ConfigFactory.load()

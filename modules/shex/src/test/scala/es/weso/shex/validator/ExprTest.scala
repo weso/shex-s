@@ -3,9 +3,16 @@ package es.weso.shex.validator
 import es.weso.rdf.jena._
 import es.weso.shapeMaps.ShapeMap
 import es.weso.shex._
+<<<<<<< HEAD
 import org.scalatest._
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+=======
+import org.scalatest._
+import es.weso.utils.eitherios.EitherIOUtils._
+import matchers.should._
+import funspec._
+>>>>>>> issue57
 
 class ExprTest extends AnyFunSpec with Matchers with EitherValues {
 
@@ -25,7 +32,9 @@ class ExprTest extends AnyFunSpec with Matchers with EitherValues {
         schema <- Schema.fromString(strSchema, "ShExC", None)
       } yield schema
 
-      eitherResult.fold(e => fail(s"Error: $e"), r => info(s"Parsed as $r"))
+      eitherResult.attempt.unsafeRunSync.fold(
+        e => fail(s"Error: $e"), 
+        r => info(s"Parsed as $r"))
     }
   }
 
@@ -64,18 +73,22 @@ class ExprTest extends AnyFunSpec with Matchers with EitherValues {
       val eitherResult = for {
         rdf <- RDFAsJenaModel.fromChars(strRdf,"TURTLE",None)
         schema <- Schema.fromString(strSchema,"ShExC",None)
-        shapeMap <- ShapeMap.fromString(strShapeMap,"Compact",None,rdf.getPrefixMap,schema.prefixMap)
+        shapeMap <- eitherStr2IO(ShapeMap.fromString(strShapeMap,"Compact",None,rdf.getPrefixMap,schema.prefixMap))
         fixedShapeMap <- ShapeMap.fixShapeMap(shapeMap,rdf,rdf.getPrefixMap,schema.prefixMap)
-        expectedShapeMap <- ShapeMap.fromString(strExpectedShapeMap,"Compact", None, rdf.getPrefixMap,schema.prefixMap)
-        result <- Validator.validate(schema,fixedShapeMap,rdf)
+        expectedShapeMap <- eitherStr2IO(ShapeMap.fromString(strExpectedShapeMap,"Compact", None, rdf.getPrefixMap,schema.prefixMap))
+        resolvedSchema <- ResolvedSchema.resolve(schema,None)
+        result <- Validator.validate(resolvedSchema,fixedShapeMap,rdf)
         expectedShapeMap <- ShapeMap.parseResultMap(strExpectedShapeMap, None, rdf, schema.prefixMap)
-        compare <- expectedShapeMap.compareWith(result)
+        resultShapeMap <- result.toResultShapeMap
+        compare <- eitherStr2IO(expectedShapeMap.compareWith(resultShapeMap))
       } yield result
 
-      eitherResult.fold(
+      eitherResult.attempt.unsafeRunSync.fold(
         e => fail(s"Error: $e"),
         r => info(s"Result: $r")
       )
     }
   }
+
+
 }

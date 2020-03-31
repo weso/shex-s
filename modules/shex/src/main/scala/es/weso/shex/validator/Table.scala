@@ -48,8 +48,11 @@ object Table extends LazyLogging {
     }
 
     private[validator] def neighs2Candidates(neighs: List[Arc]): List[Candidate] = {
-      neighs.map(arc =>
+      // println(s"neights2Candidates: Neighs=\n$neighs\n")
+      val rs = neighs.map(arc =>
         Candidate(arc, paths.get(arc.path).getOrElse(Set())))
+      // println(s"neights2Candidates, result candidates: ${rs.map(c => c.show).mkString("\n")}")        
+      rs  
     }
 
   }

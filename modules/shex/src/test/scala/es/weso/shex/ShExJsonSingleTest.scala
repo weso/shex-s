@@ -6,10 +6,18 @@ import scala.io._
 import es.weso.shex.implicits.decoderShEx._
 import es.weso.shex.implicits.encoderShEx._
 import es.weso.shex.implicits.showShEx._
+<<<<<<< HEAD
 import es.weso.utils.json._
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
+=======
+import es.weso.utils.json._
+import matchers.should._
+import funspec._
+
+
+>>>>>>> issue57
 class ShExJsonSingleTest extends AnyFunSpec with JsonTest with Matchers with EitherValues {
 
   val conf: Config = ConfigFactory.load()

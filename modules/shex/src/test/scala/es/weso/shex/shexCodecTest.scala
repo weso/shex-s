@@ -11,9 +11,15 @@ import io.circe.syntax._
 import io.circe.parser._
 import cats._
 import cats.implicits._
+<<<<<<< HEAD
 import es.weso.rdf.nodes._
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+=======
+import es.weso.rdf.nodes._
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should._
+>>>>>>> issue57
 
 class shexCodecTest extends AnyFunSpec with Matchers with EitherValues {
 

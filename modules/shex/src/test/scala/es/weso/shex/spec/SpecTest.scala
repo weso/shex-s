@@ -4,9 +4,19 @@ import es.weso.rdf.jena.RDFAsJenaModel
 import es.weso.rdf.nodes._
 import es.weso.shapeMaps._
 import es.weso.shex.{IRILabel => ShExIriLabel, _}
+<<<<<<< HEAD
 import org.scalatest._
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+=======
+import org.scalatest._
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should._
+// import es.weso.utils.eitherios.EitherIOUtils._
+import cats.data._
+// import cats.implicits._
+import cats.effect.IO
+>>>>>>> issue57
 
 class SpecTest extends AnyFunSpec with Matchers with EitherValues {
   val x = IRI(s"http://example.org/x")
@@ -19,7 +29,7 @@ class SpecTest extends AnyFunSpec with Matchers with EitherValues {
   val slbl = IRILabel(s)
   val lbl = ShExIriLabel(IRI(s"http://example.org/lbl"))
   val lbl2 = ShExIriLabel(IRI(s"http://example.org/lbl2"))
-  val emptyEnv = Env(Schema.empty, TypingMap.empty, RDFAsJenaModel.empty)
+//  val emptyEnv = Env(Schema.empty, TypingMap.empty, RDFAsJenaModel.empty)
 
 /*  describe(s"getMatchables") {
 
@@ -187,19 +197,25 @@ class SpecTest extends AnyFunSpec with Matchers with EitherValues {
   }
 
   def shouldValidateShapeMap(strRDF: String, strSchema: String, strShapeMap: String, strExpectedShapeMap: String): Unit = {
+
+    def info(msg:String): EitherT[IO,String,Unit] = EitherT.liftF(IO(println(msg)))
+
     it(s"Should validate RDF\n$strRDF\nSchema:\n$strSchema\nShapeMap:$strShapeMap\nExpected shape map: $strExpectedShapeMap") {
-        val r = for {
-          rdf <- RDFAsJenaModel.fromChars(strRDF, "Turtle", None)
-          schema <- Schema.fromString(strSchema, "ShExC", None)
-          shapeMap <- ShapeMap.fromString(strShapeMap, "Compact", None, rdf.getPrefixMap, schema.prefixMap)
-          fixedShapeMap <- ShapeMap.fixShapeMap(shapeMap, rdf, rdf.getPrefixMap, schema.prefixMap)
+        val r: EitherT[IO,String,Boolean] = for {
+          rdf <- EitherT.liftF(RDFAsJenaModel.fromChars(strRDF, "Turtle", None))
+          _ <- { info(s"RDF: $rdf") }
+          schema <- EitherT.liftF(Schema.fromString(strSchema, "ShExC", None))
+          _ <- { info(s"Schema: $schema") }
+          shapeMap <- EitherT.fromEither[IO](ShapeMap.fromString(strShapeMap, "Compact", None, rdf.getPrefixMap, schema.prefixMap))
+          _ <- { info(s"shapeMap: $shapeMap") }
+          fixedShapeMap <- EitherT.liftF(ShapeMap.fixShapeMap(shapeMap, rdf, rdf.getPrefixMap, schema.prefixMap))
           shapeTyping <- Check.runCheck(Env(schema, TypingMap.empty, rdf), Spec.checkShapeMap(rdf, fixedShapeMap))
           result = Spec.shapeTyping2ResultShapeMap(shapeTyping,rdf.getPrefixMap,schema.prefixMap)
-          expectedShapeMap <- ShapeMap.parseResultMap(strExpectedShapeMap, None, rdf, schema.prefixMap)
-          compare <- result.compareWith(expectedShapeMap)
+          expectedShapeMap <- EitherT.liftF(ShapeMap.parseResultMap(strExpectedShapeMap, None, rdf, schema.prefixMap))
+          compare <- EitherT.fromEither[IO](result.compareWith(expectedShapeMap))
         } yield compare
 
-        r.fold(
+        r.value.unsafeRunSync.fold(
           e => fail(s"Error $e"),
           comparison => comparison should be (true)
         )

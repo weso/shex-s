@@ -1,26 +1,27 @@
 package es.weso.shex.validator
 import es.weso.rdf.nodes.IRI
 import es.weso.shex.{Annotation, Schema, ShapeExpr, ShapeLabel}
+import cats.effect.IO
 
 sealed abstract class ExternalResolver {
   def getShapeExpr(label: ShapeLabel,
                    as: Option[List[Annotation]]
-                  ): Either[String, ShapeExpr]
+                  ): IO[ShapeExpr]
 }
 
 // TODO: Should we have a list of IRIs instead of a single one?
 case class ExternalIRIResolver(maybeIri: Option[IRI]) extends ExternalResolver {
 
-  lazy val eitherSchema: Either[String,Schema] = maybeIri match {
-    case None => Left(s"No IRI provided for ExternalIRI resolver")
+  lazy val ioSchema: IO[Schema] = maybeIri match {
+    case None => IO.raiseError(new RuntimeException(s"No IRI provided for ExternalIRI resolver"))
     case Some(iri) => Schema.fromIRI(iri,maybeIri)
   }
 
   override def getShapeExpr(label: ShapeLabel,
                             as: Option[List[Annotation]]
-                           ): Either[String,ShapeExpr] = for {
-   schema <- eitherSchema
-   se <- schema.getShape(label)
+                           ): IO[ShapeExpr] = for {
+   schema <- ioSchema
+   se <- schema.getShape(label).fold(e => IO.raiseError(new RuntimeException(e)), IO(_))
   } yield se
 
 }
@@ -28,6 +29,6 @@ case class ExternalIRIResolver(maybeIri: Option[IRI]) extends ExternalResolver {
 case object NoAction extends ExternalResolver {
   override def getShapeExpr(label: ShapeLabel,
                             as: Option[List[Annotation]]
-                           ): Either[String,ShapeExpr] =
-    Left(s"NoAction resolver can't obtain external shape expression from label: $label")
+                           ): IO[ShapeExpr] =
+    IO.raiseError(new RuntimeException(s"NoAction resolver can't obtain external shape expression from label: $label"))
 }
