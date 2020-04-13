@@ -8,14 +8,16 @@ import es.weso.shex.implicits.decoderShEx._
 import es.weso.utils.FileUtils._
 import io.circe.parser._
 import io.circe.syntax._
-import org.scalatest.{EitherValues, FunSpec, Matchers}
+import org.scalatest.EitherValues
 import es.weso.shex.implicits.encoderShEx._
 import cats.data.EitherT
 import cats.effect._
 import scala.io._
 import cats.implicits._
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
-class CompareSchemasSingleTest extends FunSpec with JsonTest with Matchers with EitherValues {
+class CompareSchemasSingleTest extends AnyFunSpec with JsonTest with Matchers with EitherValues {
 
   val name          = "1val1emptylanguageStem"
   val conf: Config  = ConfigFactory.load()
@@ -24,11 +26,12 @@ class CompareSchemasSingleTest extends FunSpec with JsonTest with Matchers with 
   describe(s"Parsing single File $name") {
     it(s"Should read Schema from file ${name}") {
 
-      val either = for {
+      val either: EitherT[IO,String,(Schema,File)] = for {
         file <- EitherT.liftF[IO,String,File](getFileFromFolderWithExt(schemasFolder, name, "shex"))
         str <- EitherT(IO(Source.fromFile(file)("UTF-8").mkString.asRight[String]))
-        schema <- EitherT.fromEither[IO](Schema.fromString(str))
+        schema <- EitherT.liftF(Schema.fromString(str))
       } yield (schema,file)
+
       either.value.unsafeRunSync match {
         case Right(pair) => {
           val (schema,file) = pair

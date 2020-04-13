@@ -5,8 +5,12 @@ import es.weso.rdf.nodes.{IRI, RDFNode}
 import es.weso.shapeMaps.{ShapeMap, ShapeMapLabel, IRILabel}
 import es.weso.shex.Schema
 import org.scalatest._
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import es.weso.shex.ResolvedSchema
+import es.weso.utils.eitherios.EitherIOUtils._
 
-class ErrorMessagesTest extends FunSpec with Matchers with EitherValues {
+class ErrorMessagesTest extends AnyFunSpec with Matchers with EitherValues {
 
   describe("Error messages test") {
     it(s"Should generate good error message") {
@@ -27,11 +31,13 @@ class ErrorMessagesTest extends FunSpec with Matchers with EitherValues {
       val eitherResult = for {
         rdf <- RDFAsJenaModel.fromChars(rdfStr,"TURTLE", None)
         shex <- Schema.fromString(shexStr,"SHEXC",None)
-        shapeMap <- ShapeMap.fromCompact(smapStr, None, rdf.getPrefixMap, shex.prefixMap)
+        shapeMap <- eitherStr2IO(ShapeMap.fromCompact(smapStr, None, rdf.getPrefixMap, shex.prefixMap))
         fixedShapeMap <- ShapeMap.fixShapeMap(shapeMap, rdf, rdf.getPrefixMap, shex.prefixMap)
-        result <- Validator.validate(shex, fixedShapeMap, rdf)
-      } yield result
-      eitherResult.fold(e =>
+        resolved <- ResolvedSchema.resolve(shex,None)
+        result <- Validator.validate(resolved, fixedShapeMap, rdf)
+        resultShapeMap <- result.toResultShapeMap
+      } yield resultShapeMap
+      eitherResult.attempt.unsafeRunSync.fold(e =>
         fail(s"Error: $e"),
         r => {
           r.resultMap.get(x).getOrElse(Map()).get(s).fold{

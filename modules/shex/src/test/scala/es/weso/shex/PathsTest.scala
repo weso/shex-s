@@ -2,8 +2,12 @@ package es.weso.shex
 
 import es.weso.rdf.nodes._
 import org.scalatest._
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import cats.data._ 
+import cats.effect._
 
-class PathsTest extends FunSpec with Matchers with EitherValues {
+class PathsTest extends AnyFunSpec with Matchers with EitherValues {
 
   describe(s"Calculates paths of a shape") {
       val shexStr =
@@ -40,11 +44,11 @@ class PathsTest extends FunSpec with Matchers with EitherValues {
     it(s"Should calculate paths of shape $shapeLabel and return $paths") {
       val shapeLbl = IRILabel(shapeLabel)
       val result = for {
-        schema <- Schema.fromString(strSchema)
-        shape <- schema.getShape(shapeLbl)
-        paths <- shape.paths(schema)
+        schema <- EitherT.liftF(Schema.fromString(strSchema))
+        shape <- EitherT.fromEither[IO](schema.getShape(shapeLbl))
+        paths <- EitherT.fromEither[IO](shape.paths(schema))
       } yield paths
-      result.fold(e => fail(s"Error: $e"),
+      result.value.unsafeRunSync.fold(e => fail(s"Error: $e"),
         ps => ps should contain theSameElementsAs (paths)
       )
     }

@@ -6,9 +6,11 @@ import cats.data.EitherT
 import com.typesafe.config.{Config, ConfigFactory}
 import es.weso.utils.json.JsonTest
 import es.weso.utils.FileUtils._
-import org.scalatest.{EitherValues, FunSpec, Matchers}
+import org.scalatest.EitherValues
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
-class ParseSchemaFileSingleTest extends FunSpec with JsonTest with Matchers with EitherValues {
+class ParseSchemaFileSingleTest extends AnyFunSpec with JsonTest with Matchers with EitherValues {
 
   val name = "1focusLength-dot"
   val conf: Config = ConfigFactory.load()

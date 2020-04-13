@@ -3,8 +3,14 @@ package es.weso.shex
 import es.weso.rdf.nodes._
 import es.weso.shex.normalized.{Constraint, NormalizedShape}
 import org.scalatest._
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import cats.data._ 
+import cats.implicits._
+import cats.effect._
+import NormalizedShape._
 
-class NormalizeShapeTest extends FunSpec with Matchers with EitherValues {
+class NormalizeShapeTest extends AnyFunSpec with Matchers with EitherValues {
 
   describe(s"Normalize shape with IRI") {
     val shexStr =
@@ -65,6 +71,35 @@ class NormalizeShapeTest extends FunSpec with Matchers with EitherValues {
       shexStr,
       a,
       NormalizedShape(Map(p -> Vector(Constraint(Some(iri), true, Cardinality(1, IntMax(1)), None, tc))), false)
+    )
+  }
+
+  describe(s"Normalize shape with EXTRA value set ") {
+    val shexStr =
+      """
+        |prefix : <http://example.org/>
+        |:S EXTRA :p { 
+        |  :p IRI ;
+        |  :q .
+        |}
+        |""".stripMargin
+
+    val ex                   = IRI("http://example.org/")
+    val p: Path              = Direct(ex + "p")
+    val q: Path              = Direct(ex + "q")
+    val a                    = ex + "S"
+    val iri                  = NodeConstraint.nodeKind(IRIKind, List())
+    val any                  = ShapeExpr.any
+    val tc1: TripleConstraint = TripleConstraint.valueExpr(ex + "p", iri)
+    val tc2: TripleConstraint = TripleConstraint.valueExpr(ex + "q", any)
+
+    shouldNormalizeShape(
+      shexStr,
+      a,
+      NormalizedShape(Map(
+        p -> Vector(Constraint(Some(iri), true, Cardinality(1, IntMax(1)), None, tc1)),
+        q -> Vector(Constraint(Some(any), false, Cardinality(1, IntMax(1)), None, tc2)),
+        ), false)
     )
   }
 
@@ -139,18 +174,21 @@ class NormalizeShapeTest extends FunSpec with Matchers with EitherValues {
    */
   }
 
-  def shouldNormalizeShape(strSchema: String, shapeLabel: IRI, ns: NormalizedShape): Unit = {
-    it(s"Should normalize $shapeLabel and return $ns") {
+  def shouldNormalizeShape(strSchema: String, shapeLabel: IRI, expected: NormalizedShape): Unit = {
+    it(s"Should normalize $shapeLabel and return ${expected.show}") {
       val shapeLbl = IRILabel(shapeLabel)
       val result = for {
-        schema <- Schema.fromString(strSchema)
-        shape  <- schema.getShape(shapeLbl)
-        normalized <- shape match {
+        schema <- EitherT.liftF(Schema.fromString(strSchema))
+        shape  <- EitherT.fromEither[IO](schema.getShape(shapeLbl))
+        normalized <- EitherT.fromEither[IO](shape match {
           case s: Shape => s.normalized(Schema.empty)
           case _        => Left(s"$shape is not a plain shape")
-        }
+        })
       } yield normalized
-      result.fold(e => fail(s"Error: $e"), n => n should be(ns))
+      result.value.unsafeRunSync.fold(e => fail(s"Error: $e"), n => 
+        if (n == expected) info(s"Normalized shapes are equal")
+        else fail(s"Normalize shape different from expected\nResult:\n${n.show}\nExpected\n${expected.show}\nResult\n${n}\nExpected:\n${expected}")
+      )
     }
   }
 
@@ -158,14 +196,14 @@ class NormalizeShapeTest extends FunSpec with Matchers with EitherValues {
     it(s"Should not normalize $shapeLabel") {
       val shapeLbl = IRILabel(shapeLabel)
       val result = for {
-        schema <- Schema.fromString(strSchema)
-        shape  <- schema.getShape(shapeLbl)
-        normalized <- shape match {
+        schema <- EitherT.liftF(Schema.fromString(strSchema))
+        shape  <- EitherT.fromEither[IO](schema.getShape(shapeLbl))
+        normalized <- EitherT.fromEither[IO](shape match {
           case s: Shape => s.normalized(Schema.empty)
           case _        => Left(s"$shape is not a plain shape")
-        }
+        })
       } yield normalized
-      result.fold(
+      result.value.unsafeRunSync.fold(
         e => info(s"Could not normalize shape with error $e as expected"),
         n => fail(s"It was able to normalize shape and return $n but it should have failed")
       )

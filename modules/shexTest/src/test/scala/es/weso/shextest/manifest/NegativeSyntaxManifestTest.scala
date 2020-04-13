@@ -4,7 +4,8 @@ import java.nio.file.Paths
 
 import com.typesafe.config.{Config, ConfigFactory}
 import es.weso.shex._
-import scala.io._
+import cats.effect.IO
+import cats.data._
 
 class NegativeSyntaxManifestTest extends ValidateManifest {
 
@@ -40,13 +41,14 @@ class NegativeSyntaxManifestTest extends ValidateManifest {
                 case r: NegativeSyntax => {
                   val fileName = Paths.get(r.shex.uri.getPath).getFileName.toString
                   val uri      = folderUri.resolve(fileName)
-                  val schemaStr = Source.fromURI(uri)("UTF-8").mkString
-                  Schema.fromString(schemaStr, "SHEXC", None) match {
-                    case Right(schema) => {
-                      fail(s"ShEx parsed OK but should fail. String:\n${schemaStr}\nParsed as:\n${schema}")
-                    }
-                    case Left(e) => info(s"Faiiled to parse as expected with message: $e")
-                  }
+                  val res : EitherT[IO,String,String]= for {
+                    schemaStr <- derefUriIO(uri)
+                    e <- fromIO(Schema.fromString(schemaStr, "SHEXC", None).attempt)
+                    v <- e.fold(
+                    err => ok(s"Error as expected"), 
+                    schema => err(s"ShEx parsed OK but should fail. String:\n${schemaStr}\nParsed as:\n${schema}"))
+                  } yield v
+                  res.value.unsafeRunSync.fold(fail(_), info(_))
                 }
               }
             }

@@ -6,8 +6,10 @@ import io.circe.parser._
 import io.circe.syntax._
 import org.scalatest._
 import scala.io.Source
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
-class JsonResultTest extends FunSpec with Matchers with TryValues with OptionValues{
+class JsonResultTest extends AnyFunSpec with Matchers with TryValues with OptionValues{
 
   val conf: Config = ConfigFactory.load()
   val shexFolder = conf.getString("validationFolder")

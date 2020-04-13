@@ -48,13 +48,17 @@ object Table extends LazyLogging {
     }
 
     private[validator] def neighs2Candidates(neighs: List[Arc]): List[Candidate] = {
-      neighs.map(arc =>
+      // println(s"neights2Candidates: Neighs=\n$neighs\n")
+      val rs = neighs.map(arc =>
         Candidate(arc, paths.get(arc.path).getOrElse(Set())))
+      // println(s"neights2Candidates, result candidates: ${rs.map(c => c.show).mkString("\n")}")        
+      rs  
     }
 
   }
 
   object CTable {
+
     def empty: CTable = CTable(Map(), Map(), 0)
 
     def simplify(rbe: Rbe_): Rbe_ = {
@@ -190,7 +194,13 @@ object Table extends LazyLogging {
         }
         cs.foldLeft(List[String]())(combine).mkString("\n")
       }
-      s"""Constraints:\n${showConstraints(table.constraints)}\nPaths: ${table.paths.toString}\n---endTable\n""".stripMargin
+     def showPaths(paths: PathsMap): String = 
+      paths.map {
+        case (path, cr) => s"${path.show}->${cr.map(_.show).mkString(",")}"
+      }.mkString(s"\n")
+
+      s"""Constraints:\n${showConstraints(table.constraints)}\nPaths:\n${showPaths(table.paths)}\n---endTable\n""".stripMargin
     }
+
   }
 }

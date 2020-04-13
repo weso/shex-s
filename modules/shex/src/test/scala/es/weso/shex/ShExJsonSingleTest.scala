@@ -7,8 +7,10 @@ import es.weso.shex.implicits.decoderShEx._
 import es.weso.shex.implicits.encoderShEx._
 import es.weso.shex.implicits.showShEx._
 import es.weso.utils.json._
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
-class ShExJsonSingleTest extends FunSpec with JsonTest with Matchers with EitherValues {
+class ShExJsonSingleTest extends AnyFunSpec with JsonTest with Matchers with EitherValues {
 
   val conf: Config = ConfigFactory.load()
   val schemasFolder = conf.getString("schemasFolder")

@@ -1,16 +1,20 @@
 package es.weso.shex.validator
 
+// import cats._
+import cats.data._
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import es.weso.rdf.RDFReader
 import es.weso.rdf.nodes.{IRI, RDFNode}
 import es.weso.shex._
+import cats.effect.IO
 
-case class NodeConstraintChecker(schema: Schema, rdf: RDFReader)
+
+case class NodeConstraintChecker(schema: AbstractSchema, rdf: RDFReader)
   extends ShowValidator(schema) with LazyLogging {
 
   def nodeConstraintChecker(value: RDFNode, nk: NodeConstraint
-                           ): Either[String, String] = {
+                           ): EitherT[IO,String, String] = {
    val rs = List(
       optCheck(nk.nodeKind, checkNodeKind(value)),
       optCheck(nk.values, checkValues(value)),
@@ -21,7 +25,7 @@ case class NodeConstraintChecker(schema: Schema, rdf: RDFReader)
    rs
   }
 
-  private def checkNodeKind(node: RDFNode)(nk: NodeKind): Either[String, String] =
+  private def checkNodeKind(node: RDFNode)(nk: NodeKind): EitherT[IO,String, String] =
    nk match {
         case IRIKind =>
           checkCond(node.isIRI, s"${node.show} is not an IRI", s"${node.show} is an IRI")
@@ -34,39 +38,42 @@ case class NodeConstraintChecker(schema: Schema, rdf: RDFReader)
           checkCond(node.isLiteral,s"${node.show} is not an Literal", s"${node.show} is a Literal")
   }
 
-  private def checkCond(cond: Boolean, msgTrue: String, msgFalse: String): Either[String, String] =
-    if (cond) msgTrue.asRight[String]
-    else msgFalse.asLeft[String]
+  private def checkCond(cond: Boolean, msgTrue: String, msgFalse: String): EitherT[IO,String, String] =
+    if (cond) EitherT.fromEither(msgTrue.asRight[String])
+    else EitherT.fromEither(msgFalse.asLeft[String])
 
-  private def checkValues(node: RDFNode)(values: List[ValueSetValue]): Either[String, String] = {
+  private def checkValues(node: RDFNode)(values: List[ValueSetValue]): EitherT[IO,String, String] = {
     val checker = ValueChecker(schema)
-    checkSome(values.map(v => checker.valueChecker(node,v)),
+    checkSome(values.map(v => EitherT.fromEither[IO](checker.valueChecker(node,v))),
       s"Node doesn't belong to ${values.mkString(",")}"
     )
   }
 
-  private def checkDatatype(node: RDFNode)(datatype: IRI): Either[String, String] =
-    rdf.checkDatatype(node, datatype) match {
-      case Left(s) => Left(s"${node.show} does not have datatype ${datatype.show}\nDetails: $s")
-      case Right(false) => Left(s"${node.show} does not have datatype ${datatype.show}")
-      case Right(true) => Right(s"${node.show} has datatype ${datatype.show}")
-  }
+  private def checkDatatype(node: RDFNode)(datatype: IRI): EitherT[IO,String, String] = 
+   EitherT(for {
+    b <- rdf.checkDatatype(node,datatype).attempt
+   } yield b.fold(s => s"Error trying to check if $node has datatype $datatype: ${s.getMessage()}".asLeft[String], 
+    v => if (v) {
+     Right(s"${node.show} has datatype ${datatype.show}")
+    } else {
+     Left(s"${node.show} doesn't have datatype ${datatype.show}")
+    })
+   )
 
-
-  private def checkXsFacets(node: RDFNode)(facets: List[XsFacet]): Either[String, String] =
-   if (facets.isEmpty) Right("")
+  private def checkXsFacets(node: RDFNode)(facets: List[XsFacet]): EitherT[IO,String, String] =
+   if (facets.isEmpty) EitherT.fromEither("".asRight[String])
    else {
     val r = FacetChecker(schema,rdf).facetsChecker(node,facets)
     // println(s"Result of facets checker: $r")
     r
   }
 
-  private def optCheck[A, B](c: Option[A], check: A => Either[String,String]): Either[String,String] =
-    c.fold("".asRight[String])(check(_))
+  private def optCheck[A, B](c: Option[A], check: A => EitherT[IO,String,String]): EitherT[IO,String,String] =
+    c.fold(EitherT.fromEither[IO]("".asRight[String]))(check(_))
 
-  def checkSome[A](cs: List[Either[String,String]], errorIfNone: String): Either[String,String] = {
-    lazy val z: Either[String,String] = Left(errorIfNone)
-    def comb(c1: Either[String,String], c2: Either[String,String]): Either[String,String] =
+  def checkSome[A](cs: List[EitherT[IO,String,String]], errorIfNone: String): EitherT[IO,String,String] = {
+    lazy val z: EitherT[IO,String,String] = EitherT.fromEither(Left(errorIfNone))
+    def comb(c1: EitherT[IO,String,String], c2: EitherT[IO,String,String]): EitherT[IO,String,String] =
       c1 orElse c2
     cs.foldRight(z)(comb)
   }

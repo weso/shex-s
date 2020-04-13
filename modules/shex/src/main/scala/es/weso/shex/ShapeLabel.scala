@@ -1,6 +1,7 @@
 package es.weso.shex
 import es.weso.shex.shexR.PREFIXES.{sx_start}
 import es.weso.rdf.nodes.{BNode, IRI, RDFNode}
+import es.weso.shapeMaps.{ Start => StartMapLabel, IRILabel => IRIMapLabel, BNodeLabel => BNodeMapLabel, _}
 
 abstract sealed trait ShapeLabel {
 
@@ -14,6 +15,7 @@ abstract sealed trait ShapeLabel {
     case IRILabel(iri) => IRILabel(iri.relativizeIRI(base))
     case other => other
   }
+
 
 }
 
@@ -32,5 +34,11 @@ object ShapeLabel {
     node <- RDFNode.fromString(str)
     label <- fromRDFNode(node)
   } yield label
+
+  def fromShapeMapLabel(sml: ShapeMapLabel): ShapeLabel = sml match {
+    case StartMapLabel => Start
+    case IRIMapLabel(iri) => IRILabel(iri)
+    case BNodeMapLabel(b) => BNodeLabel(b)
+  }
 
 }

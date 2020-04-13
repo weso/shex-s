@@ -9,14 +9,14 @@ import cats.implicits._
 sealed trait TripleExpr {
   def addId(label: ShapeLabel): TripleExpr
   def id: Option[ShapeLabel]
-  def predicates(schema:Schema): List[IRI] =
+  def predicates(schema:Schema): Set[IRI] =
     paths(schema).collect { case i: Direct => i.pred }
 
   def relativize(base: IRI): TripleExpr
 
-  def paths(schema: Schema): List[Path] = getPaths(schema, this).getOrElse(List())
+  def paths(schema: AbstractSchema): Set[Path] = getPaths(schema, this).getOrElse(Set())
 
-  private def getPaths(schema: Schema, te: TripleExpr): Either[String,List[Path]] = {
+  private def getPaths(schema: AbstractSchema, te: TripleExpr): Either[String,Set[Path]] = {
 
    /* We use a state monad to handle the list of visited triple expressions in case 
       a triple expr refers to itself */
@@ -32,10 +32,10 @@ sealed trait TripleExpr {
      _ <- EitherT.liftF(modifyS(f))
    } yield ()
    def ok[A](x:A): E[A] = EitherT.pure(x)
-   def empty: List[Path] = List()
+   def empty: Set[Path] = Set()
    def fromEither[A](e: Either[String,A]): E[A] = EitherT.fromEither(e)
 
-   def checkPaths(te: TripleExpr): E[List[Path]] = for {
+   def checkPaths(te: TripleExpr): E[Set[Path]] = for {
      s <- getState
      ps <- if (s.visited contains te) ok(empty)
            else for {
@@ -44,16 +44,16 @@ sealed trait TripleExpr {
            } yield v 
    } yield ps
 
-   def pathsAux(te: TripleExpr): E[List[Path]] = 
+   def pathsAux(te: TripleExpr): E[Set[Path]] = 
     te match {
-     case e: EachOf => e.expressions.map(checkPaths(_)).sequence.map(_.flatten)
-     case o: OneOf => o.expressions.map(checkPaths(_)).sequence.map(_.flatten)
+     case e: EachOf => e.expressions.map(checkPaths(_)).sequence.map(_.flatten.toSet)
+     case o: OneOf => o.expressions.map(checkPaths(_)).sequence.map(_.flatten.toSet)
      case e: Expr => ok(empty)
      case i: Inclusion => for {
        te <- fromEither(schema.getTripleExpr(i.include))
        ps <- checkPaths(te)
      } yield ps
-     case tc: TripleConstraint => ok(List(tc.path))
+     case tc: TripleConstraint => ok(Set(tc.path))
    }
 
   val (_, paths) = pathsAux(te).value.run(initialState)

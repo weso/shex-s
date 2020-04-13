@@ -3,8 +3,9 @@ import es.weso.rdf.nodes._
 import cats._
 import implicits._
 import es.weso.shex._
+import es.weso.rdf.triples.RDFTriple
 
-class ShowValidator(schema: Schema) {
+class ShowValidator(schema: AbstractSchema) {
 
   implicit lazy val showIRI = new Show[IRI] {
     override def show(i: IRI): String = {
@@ -19,6 +20,12 @@ class ShowValidator(schema: Schema) {
         case l: Literal => l.getLexicalForm
         case b: BNode => "_:" + b.getLexicalForm
       }
+    }
+  }
+
+  implicit lazy val showRDFTriple = new Show[RDFTriple] {
+    override def show(n: RDFTriple): String = {
+      s"<${n.subj.show},${n.pred.show},${n.obj.show}>"
     }
   }
 

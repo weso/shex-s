@@ -1,7 +1,7 @@
 package es.weso.shextest.manifest
 
 import java.net.URI
-import es.weso.utils.UriUtils._
+//import es.weso.utils.UriUtils._
 import java.nio.file.Paths
 import com.typesafe.config.{Config, ConfigFactory}
 import es.weso.rdf.PrefixMap
@@ -11,13 +11,17 @@ import es.weso.shapeMaps.{BNodeLabel => BNodeMapLabel, IRILabel => IRIMapLabel, 
 import es.weso.shex._
 import es.weso.shex.validator.{ExternalIRIResolver, Validator}
 import es.weso.shapeMaps._
-import es.weso.shex.compact.CompareSchemas
+//import es.weso.shex.compact.CompareSchemas
 import es.weso.shextest.manifest.Utils._
-import es.weso.shex.implicits.decoderShEx._
-import es.weso.shex.implicits.encoderShEx._
+//import es.weso.shex.implicits.decoderShEx._
+//import es.weso.shex.implicits.encoderShEx._
+//import cats._
+import cats.data.EitherT
+import cats.implicits._
+import cats.effect.IO
 import ManifestPrefixes._
-import scala.io._
-import io.circe.parser._
+//import scala.io._
+//import io.circe.parser._
 import io.circe.syntax._
 
 
@@ -34,62 +38,59 @@ class ValidationManifestTest extends ValidateManifest {
 //  val shexFolder = conf.getString("shexLocalFolder")
   val shexFolderURI = Paths.get(shexFolder).normalize.toUri
 
-  println(s"ValidationManifest")
+  println(s"ValidationManifest...${shexFolder}")
 
-  describe("ValidationManifest") {
+  describe("Validation Manifest") {
+
     val r = RDF2Manifest.read(shexFolder + "/" + "manifest.ttl", "Turtle", Some(shexFolderURI.toString), false)
-    r.fold(e => println(s"Error reading manifest: $e"),
+    r.value.unsafeRunSync.fold(e => info(s"Error reading manifest: $e"),
       mf => {
-        println(s"Manifest read with ${mf.entries.length} entries")
+        info(s"Manifest read with ${mf.entries.length} entries")
         for (e <- mf.entries) {
-          if (nameIfSingle == None || nameIfSingle.getOrElse("") === e.name) {
+          if (nameIfSingle == None || eq(nameIfSingle.getOrElse(""), e.name)) {
             it(s"Should pass test ${e.name}") {
               e match {
-                case r: RepresentationTest => {
+                case r: RepresentationTest => ??? /*{
                   val resolvedJson = mkLocal(r.json,schemasBase,shexFolderURI)// IRI(shexFolderURI).resolve(r.json).uri
                   val resolvedShEx = mkLocal(r.shex,schemasBase,shexFolderURI)// IRI(shexFolderURI).resolve(r.shex).uri
                   // info(s"Entry: $r with json: ${resolvedJsonIri}")
-                  val jsonStr   = Source.fromURI(resolvedJson)("UTF-8").mkString
-                  val schemaStr = Source.fromURI(resolvedShEx)("UTF-8").mkString
-                  Schema.fromString(schemaStr, "SHEXC", None) match {
-                    case Right(schema) => {
-                      decode[Schema](jsonStr) match {
-                        case Left(err) => fail(s"Error parsing Json ${r.json}: $err")
-                        case Right(expectedSchema) =>
-                          if (CompareSchemas.compareSchemas(schema, expectedSchema)) {
+                  val res: EitherT[IO, String, String] = for {
+                    jsonStr <- derefUriIO(resolvedJson)
+                    schemaStr <- derefUriIO(resolvedShEx)
+                    schema <- EitherT.liftF(Schema.fromString(schemaStr, "SHEXC", None))
+                    expectedSchema <- fromEither(decode[Schema](jsonStr).leftMap(e => e.toString))
+                    r <- if (CompareSchemas.compareSchemas(schema, expectedSchema)) {
                             parse(jsonStr) match {
-                              case Left(err) => fail(s"Schemas are equal but error parsing Json $jsonStr")
+                              case Left(err) => s"Schemas are equal but error parsing Json $jsonStr".asLeft
                               case Right(json) => {
                                 if (json.equals(schema.asJson)) {
-                                  info("Schemas and Json representations are equal")
+                                  "Schemas and Json representations are equal".asRight
                                 } else {
-                                  fail(
-                                    s"Json's are different\nSchema:${schema}\nJson generated: ${schema.asJson.spaces2}\nExpected: ${json.spaces2}")
+                                  s"Json's are different\nSchema:${schema}\nJson generated: ${schema.asJson.spaces2}\nExpected: ${json.spaces2}".asLeft
                                 }
                               }
-                            }
-                          } else {
-                            fail(s"Schemas are different. Parsed:\n${schema}\n-----Expected:\n${expectedSchema}")
+                          } } else {
+                            s"Schemas are different. Parsed:\n${schema}\n-----Expected:\n${expectedSchema}".asLeft
                           }
-                      }
-                    }
-                    case Left(e) => fail(s"Error parsing Schema: ${r.shex}: $e")
-                  }
-                }
+                  } yield r
+                  res.value.attempt.unsafeRunSync.fold(e => fail(s"Error: $e"), 
+                    v => info(s"Passed: $v")
+                  )
+                } */
                 case v: ValidationTest => {
                   val base = Paths.get(".").toUri
                   v.action match {
                     case focusAction: FocusAction => validateFocusAction(focusAction,base,v,true)
                     case mr: MapResultAction => validateMapResult(mr,base,v)
-                    case ma: ManifestAction => Left(s"Not implemented validate ManifestAction yet")
+                    case ma: ManifestAction => err(s"Not implemented validate ManifestAction yet")
                   }
                 }
                 case v: ValidationFailure => {
                   val base = Paths.get(".").toUri
-                  val r: Either[String,String] = v.action match {
+                  val r: EitherT[IO,String,String] = v.action match {
                     case focusAction: FocusAction => validateFocusAction(focusAction,base,v,false)
                     case mr: MapResultAction => validateMapResult(mr,base,v)
-                    case ma: ManifestAction => Left(s"Not implemented validate ManifestAction yet")
+                    case ma: ManifestAction => err(s"Not implemented validate ManifestAction yet")
                   }
                   r.fold(e => fail(s"Error: ${v.name}: Error: $e"), resultMsg => {
                     info(s"ValidationFailure ${v.name} passed")
@@ -108,15 +109,16 @@ class ValidationManifestTest extends ValidateManifest {
                           base: URI,
                           v: ValidOrFailureTest,
                           shouldValidate: Boolean
-                         ): Either[String, String] = {
+                         ): EitherT[IO, String, String] = {
     val focus = fa.focus
     val schemaUri = mkLocal(fa.schema,schemasBase,shexFolderURI)
     val dataUri = mkLocal(fa.data,schemasBase,shexFolderURI)
     for {
-      schemaStr <- derefUri(schemaUri)
-      dataStr <- derefUri(dataUri)
-      schema <- Schema.fromString(schemaStr, "SHEXC", Some(fa.schema))
-      data   <- RDFAsJenaModel.fromChars(dataStr, "TURTLE", Some(fa.data))
+      schemaStr <- derefUriIO(schemaUri)
+      dataStr <- derefUriIO(dataUri)
+      schema <- fromIO(Schema.fromString(schemaStr, "SHEXC", Some(fa.schema)))
+      data   <- fromIO(RDFAsJenaModel.fromChars(dataStr, "TURTLE", Some(fa.data)))
+      resolvedSchema <- fromIO(ResolvedSchema.resolve(schema, Some(fa.schema)))
       lbl = fa.shape match {
         case None           => StartMap: ShapeMapLabel
         case Some(i: IRI)   => IRIMapLabel(i)
@@ -125,60 +127,64 @@ class ValidationManifestTest extends ValidateManifest {
           IRIMapLabel(IRI(s"UnknownLabel"))
         }
       }
-      ok <- if (v.traits contains sht_Greedy) {
-        Right(s"Greedy")
+      res <- if (v.traits contains sht_Greedy) {
+        ok(s"Greedy")
       } else {
         val shapeMap = FixedShapeMap(Map(focus -> Map(lbl -> Info())), data.getPrefixMap, schema.prefixMap)
         for {
-          resultShapeMap <- Validator(schema, ExternalIRIResolver(fa.shapeExterns))
-            .validateShapeMap(data, shapeMap).toEitherS
-          ok <- if (resultShapeMap.getConformantShapes(focus) contains lbl)
-            if (shouldValidate) Right(s"Focus $focus conforms to $lbl as expected")
-            else Left(s"Focus $focus conforms to $lbl but should not" ++
+          result <- fromIO(Validator(resolvedSchema, ExternalIRIResolver(fa.shapeExterns))
+            .validateShapeMap(data, shapeMap))
+          resultShapeMap <- fromIO(result.toResultShapeMap)  
+          r <- if (resultShapeMap.getConformantShapes(focus) contains lbl)
+            if (shouldValidate) ok(s"Focus $focus conforms to $lbl as expected")
+            else err(s"Focus $focus conforms to $lbl but should not" ++
                       s"\nData: \n${dataStr}\nSchema: ${schemaStr}\n" ++
                       s"${resultShapeMap.getInfo(focus, lbl)}\n" ++
                       s"Schema: ${schema}\n" ++
                       s"Data: ${data}")
           else {
-            if (!shouldValidate) Right(s"Focus $focus does not conforms to $lbl as expected")
-            else Left(s"Focus $focus does not conform to $lbl but should" ++
+            if (!shouldValidate) ok(s"Focus $focus does not conforms to $lbl as expected")
+            else err(s"Focus $focus does not conform to $lbl but should" ++
               s"\nData: \n${dataStr}\nSchema: ${schemaStr}\n" ++
               s"${resultShapeMap.getInfo(focus, lbl)}\n" ++
               s"Schema: ${schema}\n" ++
               s"Data: ${data}")
           }
-        } yield ok
+        } yield r
       }
-    } yield ok
-  }
+    } yield res
+  } 
 
   def validateMapResult(mr: MapResultAction,
                         base: URI,
                         v: ValidOrFailureTest
-                       ): Either[String,String] = {
+                       ): EitherT[IO, String, String] = {
     v.maybeResult match {
-      case None => Left(s"No result specified")
+      case None => EitherT.fromEither(s"No result specified".asLeft[String])
       case Some(resultIRI) => {
         val schemaUri         = mkLocal(mr.schema, validationBase, shexFolderURI)
         val shapeMapUri       = mkLocal(mr.shapeMap, validationBase, shexFolderURI)
         val resultMapUri      = mkLocal(resultIRI, validationBase, shexFolderURI)
-        val r: Either[String, String] = for {
-          schemaStr      <- derefUri(schemaUri)
-          resultMapStr  <- derefUri(resultMapUri)
-          smapStr       <- derefUri(shapeMapUri)
-          sm            <- ShapeMap.fromJson(smapStr)
-          schema        <- Schema.fromString(schemaStr, "SHEXC", None)
-          fixedShapeMap <- ShapeMap.fixShapeMap(sm, RDFAsJenaModel.empty, PrefixMap.empty, PrefixMap.empty)
+        val r: EitherT[IO, String, String] = for {
+          schemaStr      <- derefUriIO(schemaUri)
+          resultMapStr  <- derefUriIO(resultMapUri)
+          smapStr       <- derefUriIO(shapeMapUri)
+          sm            <- fromEitherS(ShapeMap.fromJson(smapStr))
+          schema        <- fromIO(Schema.fromString(schemaStr, "SHEXC", None))
+          emptyRdf      <- fromIO(RDFAsJenaModel.empty)
+          fixedShapeMap <- fromIO(ShapeMap.fixShapeMap(sm, emptyRdf, PrefixMap.empty, PrefixMap.empty))
           dataUri = mkLocal(mr.data,schemasBase,shexFolderURI)
-          strData        <- derefUri(dataUri)
-          data           <- RDFAsJenaModel.fromChars(strData, "TURTLE", None)
-          resultShapeMap <- Validator(schema).validateShapeMap(data, fixedShapeMap).toEitherS
-          jsonResult     <- JsonResult.fromJsonString(resultMapStr)
-          result <- if (jsonResult.compare(resultShapeMap)) Right(s"Json results match resultShapeMap")
+          strData        <- derefUriIO(dataUri)
+          data           <- fromIO(RDFAsJenaModel.fromChars(strData, "TURTLE", None))
+          resolvedSchema <- fromIO(ResolvedSchema.resolve(schema, None))
+          resultVal <- fromIO(Validator(resolvedSchema).validateShapeMap(data, fixedShapeMap))
+          resultShapeMap <- fromIO(resultVal.toResultShapeMap)
+          jsonResult     <- fromEitherS(JsonResult.fromJsonString(resultMapStr))
+          result <- if (jsonResult.compare(resultShapeMap)) 
+            ok(s"Json results match resultShapeMap")
           else
-            Left(
-              s"Json results are different. Expected: ${jsonResult.asJson.spaces2}\nObtained: ${resultShapeMap.toString}")
-        } yield result
+            err(s"Json results are different. Expected: ${jsonResult.asJson.spaces2}\nObtained: ${resultShapeMap.toString}")
+        } yield result 
         r
       }
     }

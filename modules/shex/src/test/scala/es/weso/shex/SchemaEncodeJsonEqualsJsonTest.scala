@@ -15,8 +15,10 @@ import io.circe.syntax._
 import cats.data.EitherT
 import org.scalatest._
 import cats.effect._
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
-class SchemaEncodeJsonEqualsJsonTest extends FunSpec with JsonTest with Matchers with EitherValues {
+class SchemaEncodeJsonEqualsJsonTest extends AnyFunSpec with JsonTest with Matchers with EitherValues {
 
   val conf: Config = ConfigFactory.load()
   val schemasFolder = conf.getString("schemasFolder")
@@ -49,7 +51,7 @@ class SchemaEncodeJsonEqualsJsonTest extends FunSpec with JsonTest with Matchers
       fileJson <- getFileFromFolderWithSameExt(file,".shex",".json")
       strJson <- getContents(fileJson)
       jsonExpected <- EitherT.fromEither[IO](parse(strJson.toString).leftMap(e => s"Error parsing $strJson: $e"))
-      schema <- EitherT.fromEither[IO](Schema.fromString(strSchema).leftMap(e => s"Error obtainning Schema from string: $e\nString:\n${strSchema}"))
+      schema <- EitherT.liftF(Schema.fromString(strSchema)).leftMap((e: String) => s"Error obtainning Schema from string: $e\nString:\n${strSchema}")
       jsonEncoded = schema.asJson
       check <- if (jsonEncoded.equals(jsonExpected)) EitherT.pure[IO,String](())
       else

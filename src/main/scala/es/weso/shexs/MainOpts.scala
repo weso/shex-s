@@ -5,7 +5,7 @@ import org.rogach.scallop._
 class MainOpts(arguments: Array[String], 
                onError: (Throwable, Scallop) => Nothing) extends ScallopConf(arguments) {
 
-  banner("""| shaclex: SHACL/ShEx processor
+  banner("""| shaclex: ShEx-s processor
                 | Options:
                 |""".stripMargin)
 

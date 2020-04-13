@@ -9,8 +9,10 @@ import es.weso.utils.FileUtils._
 import es.weso.shex._
 import cats.effect._
 import cats.implicits._
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
-class ShexCompactSingle extends FunSpec with JsonTest with Matchers with EitherValues {
+class ShexCompactSingle extends AnyFunSpec with JsonTest with Matchers with EitherValues {
 
   val conf: Config = ConfigFactory.load()
   val schemasFolder = conf.getString("schemasFolder")
@@ -28,7 +30,7 @@ class ShexCompactSingle extends FunSpec with JsonTest with Matchers with EitherV
     for (file <- getCompactFiles(schemasFolder).unsafeRunSync()) {
       it(s"Should read Schema from file ${file.getName}") {
         val str = Source.fromFile(file)("UTF-8").mkString
-        Schema.fromString(str, "SHEXC", None) match {
+        Schema.fromString(str, "SHEXC", None).attempt.unsafeRunSync match {
           case Right(schema) => {
             val (name, ext) = splitExtension(file.getName)
             // TODO: Check that parsed file equals schema file
