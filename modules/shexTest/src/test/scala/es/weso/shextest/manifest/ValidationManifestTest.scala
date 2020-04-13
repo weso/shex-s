@@ -38,14 +38,14 @@ class ValidationManifestTest extends ValidateManifest {
 //  val shexFolder = conf.getString("shexLocalFolder")
   val shexFolderURI = Paths.get(shexFolder).normalize.toUri
 
-  println(s"ValidationManifest")
+  println(s"ValidationManifest...${shexFolder}")
 
-  describe("ValidationManifest") {
+  describe("Validation Manifest") {
 
     val r = RDF2Manifest.read(shexFolder + "/" + "manifest.ttl", "Turtle", Some(shexFolderURI.toString), false)
-    r.fold(e => println(s"Error reading manifest: $e"),
+    r.value.unsafeRunSync.fold(e => info(s"Error reading manifest: $e"),
       mf => {
-        println(s"Manifest read with ${mf.entries.length} entries")
+        info(s"Manifest read with ${mf.entries.length} entries")
         for (e <- mf.entries) {
           if (nameIfSingle == None || eq(nameIfSingle.getOrElse(""), e.name)) {
             it(s"Should pass test ${e.name}") {

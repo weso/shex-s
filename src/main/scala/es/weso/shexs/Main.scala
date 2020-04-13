@@ -28,7 +28,7 @@ object Main {
       } yield ()
     } else {
       IO.sleep(1.second) *> 
-      IO(println("Hello world!"))
+      IO(println("ShEx-s!"))
     }
   }
 

@@ -58,6 +58,7 @@ object Table extends LazyLogging {
   }
 
   object CTable {
+
     def empty: CTable = CTable(Map(), Map(), 0)
 
     def simplify(rbe: Rbe_): Rbe_ = {
@@ -193,7 +194,13 @@ object Table extends LazyLogging {
         }
         cs.foldLeft(List[String]())(combine).mkString("\n")
       }
-      s"""Constraints:\n${showConstraints(table.constraints)}\nPaths: ${table.paths.toString}\n---endTable\n""".stripMargin
+     def showPaths(paths: PathsMap): String = 
+      paths.map {
+        case (path, cr) => s"${path.show}->${cr.map(_.show).mkString(",")}"
+      }.mkString(s"\n")
+
+      s"""Constraints:\n${showConstraints(table.constraints)}\nPaths:\n${showPaths(table.paths)}\n---endTable\n""".stripMargin
     }
+
   }
 }

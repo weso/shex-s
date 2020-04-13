@@ -15,7 +15,7 @@ object Arc {
 
   implicit lazy val showArc = new Show[Arc] {
     def show(arc: Arc): String = {
-      s"(${arc.path.show},${arc.node.show})"
+      s"${arc.path.show} ${arc.node.show}"
     }
   }
 

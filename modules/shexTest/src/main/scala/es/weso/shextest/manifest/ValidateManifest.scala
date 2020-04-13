@@ -95,7 +95,7 @@ trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with Opti
       verbose: Boolean
   ): Unit = {
     it(s"Should parse manifestTest $folder/$name") {
-      val r = runManifest(name, folder, parentFolder, nameIfSingle, ignoreList, processEntryValidating)
+      val r: EitherT[IO,String,List[Result]] = runManifest(name, folder, parentFolder, nameIfSingle, ignoreList, processEntryValidating)
       r.value.unsafeRunSync.fold(e => {
         val currentFolder = new java.io.File(".").getCanonicalPath
         fail(s"Error: $e\nCurrent folder: $currentFolder")
@@ -110,14 +110,17 @@ trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with Opti
   }
 
   def processEntryValidating: EntryProcess = ep => {
+
     if (ep.nameIfSingle == None || 
         ep.nameIfSingle.getOrElse("") == ep.entry.name
     ) {
       if (ep.ignoreList contains(ep.entry.name)) {
         result(ep.entry.name, true, s"Ignored ${ep.entry.name}")        
       } else {
+
       val folderURI = Paths.get(ep.parentFolder).normalize.toUri
       val base = Paths.get(".").toUri
+      println(s"Entry process: ${ep.entry}")
        
       ep.entry match {
 

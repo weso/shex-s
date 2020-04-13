@@ -49,15 +49,16 @@ case class NodeConstraintChecker(schema: AbstractSchema, rdf: RDFReader)
     )
   }
 
-  private def checkDatatype(node: RDFNode)(datatype: IRI): EitherT[IO,String, String] = EitherT(for {
-    b <- rdf.checkDatatype(node,datatype)
-  } yield if (b) {
-    Right(s"${node.show} has datatype ${datatype.show}")
-  } else {
-    Left(s"${node.show} doesn't have datatype ${datatype.show}")
-  }.recoverWith { 
-    case s => s"Error trying to check if $node has datatype $datatype: ${s}".asLeft[String]
-  })
+  private def checkDatatype(node: RDFNode)(datatype: IRI): EitherT[IO,String, String] = 
+   EitherT(for {
+    b <- rdf.checkDatatype(node,datatype).attempt
+   } yield b.fold(s => s"Error trying to check if $node has datatype $datatype: ${s.getMessage()}".asLeft[String], 
+    v => if (v) {
+     Right(s"${node.show} has datatype ${datatype.show}")
+    } else {
+     Left(s"${node.show} doesn't have datatype ${datatype.show}")
+    })
+   )
 
   private def checkXsFacets(node: RDFNode)(facets: List[XsFacet]): EitherT[IO,String, String] =
    if (facets.isEmpty) EitherT.fromEither("".asRight[String])

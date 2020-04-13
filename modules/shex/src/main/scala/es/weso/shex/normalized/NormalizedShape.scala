@@ -1,7 +1,9 @@
 package es.weso.shex.normalized
 
+import cats._
 import cats.implicits._
 import es.weso.shex._
+import es.weso.shex.implicits.showShEx._
 
 /**
   * A normalized shape consists of a list of slots where each slot is formed by a path and a list of constraints.
@@ -73,4 +75,17 @@ object NormalizedShape {
       }
     }
   }
+
+  implicit lazy val showNormalizedShape: Show[NormalizedShape] = new Show[NormalizedShape] {
+    final def show(c: NormalizedShape): String = {
+      s"NormalizedShape, closed: ${c.closed}\n${c.slots.map(showSlot).mkString("\n")}"
+    }
+
+    private def showSlot(pair:(Path, Vector[Constraint])): String = {
+      val (path,cs) = pair
+      s"${path.show} -> ${cs.map(_.show).mkString(",")}"
+    }
+  }
+
+
 }

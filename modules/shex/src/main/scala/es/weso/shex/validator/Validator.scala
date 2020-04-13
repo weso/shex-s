@@ -493,7 +493,7 @@ case class Validator(schema: ResolvedSchema, externalResolver: ExternalResolver 
       case _ =>
         for {
           paths <- getPaths(s)  
-          _ <- info(s"getNeighPaths: node=${node.show}\n Paths: ${paths.map(_.show).mkString(",")}\n Attempt: ${attempt.show}\n")
+          _ <- info(s"getNeighPaths: node=${node.show}\n Paths:\n${paths.map(_.show).mkString(",")}\n")
           neighs <- getNeighPaths(node, paths)
           _ <- info(s"Neighs: $neighs")
           typing <- checkNeighsShape(attempt, node, neighs, s)
@@ -641,13 +641,24 @@ case class Validator(schema: ResolvedSchema, externalResolver: ExternalResolver 
     c.crefs.nonEmpty
   }
 
-  private[validator] def showCandidateLines(cs: List[CandidateLine]): String = {
+  private[validator] def showCandidateLines(cs: List[CandidateLine], table: CTable): String = {
     cs.length match {
       case 0 => "No candidate lines"
-      case 1 => s"One candidate line\n${cs.head.show}"
-      case _ => cs.map(_.show).mkString("\n")
+      case 1 => s"One candidate line\n${showCandidateLine(cs.head, table)}"
+      case _ => cs.map(showCandidateLine(_,table)).mkString("\n")
     }
   }
+
+  private[validator] def showCandidateLine(c: CandidateLine, table: CTable): String = {
+      def compare(pair1:(Arc,ConstraintRef), pair2:(Arc,ConstraintRef)): Boolean =
+        Ordering[ConstraintRef].compare(pair1._2, pair2._2) <= 0
+
+      s"Candidate line:\n${c.values.sortWith(compare).map{ 
+        case (arc,cref) => 
+        s"${arc.show} as ${cref.show}/${table.constraints.get(cref).map(_.show).getOrElse("?")}"
+      }.mkString("\n")}"
+  }
+
 
   private[validator] def checkCandidates(attempt: Attempt, bagChecker: BagChecker_, table: CTable)(
       cs: Candidates
@@ -671,10 +682,11 @@ case class Validator(schema: ResolvedSchema, externalResolver: ExternalResolver 
           checks, {
             // println(s"None of the candidates match")
             StringError(
-              s"""|None of the candidates matched. Attempt: ${attempt.show}
-                |Bag: ${bagChecker.show}
-                |Candidate lines:${showCandidateLines(as)}
-                |""".stripMargin
+              s"""|None of the candidates matched.
+                  | Attempt: ${attempt.show}
+                  | Bag: ${bagChecker.show}
+                  | Candidate lines:\n${showCandidateLines(as,table)}
+                  |""".stripMargin
             )
           }
         )
@@ -683,9 +695,9 @@ case class Validator(schema: ResolvedSchema, externalResolver: ExternalResolver 
     }
   }
 
-  private[validator] def showListCandidateLine(ls: List[CandidateLine]): String = {
+/*  private[validator] def showListCandidateLine(ls: List[CandidateLine]): String = {
     ls.map(_.show).mkString("\n")
-  }
+  } */
 
   private[validator] def checkCandidateLine(attempt: Attempt, bagChecker: BagChecker_, table: CTable)(
       cl: CandidateLine
@@ -698,7 +710,7 @@ case class Validator(schema: ResolvedSchema, externalResolver: ExternalResolver 
       .fold(
         e => {
           // println(s"Does not match RBE. ${bag} with ${bagChecker.show}")
-          errStr(s"${attempt.show} Candidate line ${cl.show} which corresponds to ${bag} does not match ${Rbe
+          errStr(s"${attempt.show} Candidate line ${showCandidateLine(cl,table)} which corresponds to ${bag} does not match ${Rbe
             .show(bagChecker.rbe)}\nTable:${table.show}\nErr: $e")
         },
         bag => {

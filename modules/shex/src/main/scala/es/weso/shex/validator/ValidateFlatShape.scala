@@ -4,7 +4,7 @@ import es.weso.shex._
 import es.weso.rdf.nodes._
 import ShExChecker._
 import es.weso.shex.normalized._
-import es.weso.shex.implicits.showShEx._
+// import es.weso.shex.implicits.showShEx._
 import cats.data._
 import cats.effect.IO
 //import cats._

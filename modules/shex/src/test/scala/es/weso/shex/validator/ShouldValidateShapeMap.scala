@@ -49,6 +49,4 @@ trait ShouldValidateShapeMap extends AnyFunSpecLike with Matchers {
     }
   }
 
-
-
 }

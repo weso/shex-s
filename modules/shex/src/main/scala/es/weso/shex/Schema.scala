@@ -168,18 +168,23 @@ object Schema {
        } yield schema.addId(i)
   }
 
-  private def getSchemaWithExts(iri: IRI, exts: List[(String,String)], base: Option[IRI] ): IO[Schema] = exts match {
+  private def getSchemaWithExts(iri: IRI, exts: List[(String,String)], base: Option[IRI] ): IO[Schema] = 
+  exts match {
     case (e :: es) => getSchemaExt(iri,e,base) orElse getSchemaWithExts(iri,es,base)
-    case Nil => err(s"Can not obtain schema from iri: $iri")
+    case Nil => err(s"Can not obtain schema from iri: $iri, Exts: ${exts} ")
   }
 
   private def getSchemaExt(iri: IRI, pair: (String,String), base: Option[IRI]): IO[Schema] = {
+   println(s"getSchemaExt: ${iri} ${pair}") 
    val (ext,format) = pair
    val uri = if (ext == "") iri.uri
    else (iri + "." + ext).uri
    for {
+    _ <- { println(s"Trying to deref $uri"); IO.pure(()); }
     str <- derefUri(uri)
+    _ <- { println(s"Str obtained...${str.linesIterator.take(2).mkString("\n")}\n..."); IO.pure(()); }
     schema <- Schema.fromString(str,format,base,None)
+    _ <- { println(s"Obtained schema at $uri"); IO.pure(()); }
    } yield schema
   }
 
@@ -188,11 +193,14 @@ object Schema {
   def derefUri(uri: URI): IO[String] = {
     Try {
         val urlCon = uri.toURL.openConnection()
-        urlCon.setConnectTimeout(4000)
-        urlCon.setReadTimeout(2000)
+        urlCon.setConnectTimeout(10000)
+        urlCon.setReadTimeout(10000)
         val is = urlCon.getInputStream()
         Source.fromInputStream(is).mkString
-    }.fold(e => IO.raiseError(e), IO(_))
+    }.fold(e => {
+      println(s"Error trying to access $uri: ${e.getMessage()}\n${e.getClass()}\n")
+      IO.raiseError(e)
+    }, IO(_))
   }
 
 
@@ -262,6 +270,6 @@ object Schema {
     }
   }
 
-  def resolveSchema: IO[ResolvedSchema] = ???
+//  def resolveSchema: IO[ResolvedSchema] = ???
 
 }

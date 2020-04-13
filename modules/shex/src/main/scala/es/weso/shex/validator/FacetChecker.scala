@@ -125,7 +125,7 @@ case class FacetChecker(
         } yield r
       case FractionDigits(m) => {
         for {
-          fd <- EitherT.liftF(NodeInfo.fractionDigits(node, rdf))
+          fd <- NodeInfo.fractionDigits(node, rdf)
           b <- checkCond(
                 fd <= m,
                 s"${node.show} does not match FractionDigits($m) with $node and fraction digits = $fd",
@@ -135,7 +135,7 @@ case class FacetChecker(
       }
       case TotalDigits(m) => {
         for {
-          td <- EitherT.liftF(NodeInfo.totalDigits(node, rdf))
+          td <- NodeInfo.totalDigits(node, rdf)
           b <- checkCond(
                 td <= m,
                 s"${node.show} does not match TotalDigits($m) with $node and totalDigits = $td",

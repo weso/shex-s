@@ -8,6 +8,8 @@ import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import es.weso.rdf.RDFReader
 import cats.effect.IO
+import cats.data._
+import es.weso.utils.IOUtils._
 
 class NodeInfoTest extends AnyFunSpec with Matchers with EitherValues {
   // val rdf = RDFAsJenaModel.empty
@@ -41,23 +43,23 @@ class NodeInfoTest extends AnyFunSpec with Matchers with EitherValues {
     }
   }
 
-  def checkOK[A,B](x: A, f: (A, RDFReader) => IO[B], expected: B): Unit = { 
+  def checkOK[A,B](x: A, f: (A, RDFReader) => EitherT[IO,String,B], expected: B): Unit = { 
     val ioa = for {
-    rdf <- RDFAsJenaModel.empty
+    rdf <- io2es(RDFAsJenaModel.empty)
     v <- f(x,rdf)
     } yield v
-    ioa.attempt.unsafeRunSync.fold(
+    run_es(ioa).unsafeRunSync.fold(
       e => fail("Failed"),
       v => v should be(expected)
     )
   }
 
-  def checkFails[A,B](x: A, f: (A, RDFReader) => IO[B]): Unit = { 
+  def checkFails[A,B](x: A, f: (A, RDFReader) => EitherT[IO,String,B]): Unit = { 
     val ioa = for {
-    rdf <- RDFAsJenaModel.empty
+    rdf <- io2es(RDFAsJenaModel.empty)
     v <- f(x,rdf)
     } yield v
-    ioa.attempt.unsafeRunSync.fold(
+    run_es(ioa).unsafeRunSync.fold(
       e => info("Failed as expected"),
       v => fail(s"Should have failed")
     )

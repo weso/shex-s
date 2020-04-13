@@ -3,7 +3,7 @@ lazy val scala213 = "2.13.1"
 lazy val supportedScalaVersions = List(scala213, scala212)
 
 // Local dependencies
-lazy val srdfVersion           = "0.1.63"
+lazy val srdfVersion           = "0.1.66"
 lazy val shapeMapsVersion      = "0.1.56"
 lazy val utilsVersion          = "0.1.67"
 lazy val documentVersion       = "0.0.8"
@@ -27,7 +27,6 @@ lazy val scalaTestVersion      = "3.1.0"
 lazy val scalaGraphVersion     = "1.11.5"
 lazy val scalatagsVersion      = "0.6.7"
 lazy val scallopVersion        = "3.3.1"
-lazy val seleniumVersion       = "2.35.0"
 lazy val sextVersion           = "0.2.6"
 lazy val typesafeConfigVersion = "1.3.4"
 lazy val xercesVersion         = "2.12.0"
@@ -72,8 +71,6 @@ lazy val scalactic    = "org.scalactic"              %% "scalactic"     % scalac
 lazy val scalacheck   = "org.scalacheck"             %% "scalacheck"    % scalacheckVersion
 lazy val scalaTest    = "org.scalatest"              %% "scalatest"     % scalaTestVersion
 lazy val scalatags    = "com.lihaoyi"                %% "scalatags"     % scalatagsVersion
-lazy val selenium     = "org.seleniumhq.selenium"    % "selenium-java"  % seleniumVersion
-// lazy val htmlUnit          = "org.seleniumhq.selenium"    % "htmlunit-driver"      % seleniumVersion
 lazy val sext           = "com.github.nikita-volkov" % "sext"        % sextVersion
 lazy val typesafeConfig = "com.typesafe"             % "config"      % typesafeConfigVersion
 lazy val xercesImpl     = "xerces"                   % "xercesImpl"  % xercesVersion
@@ -88,8 +85,8 @@ lazy val shexsRoot = project
 //    buildInfoPackage := "es.weso.shaclex.buildinfo"
 //  )
   .settings(commonSettings, packagingSettings, publishSettings, ghPagesSettings, wixSettings)
-  .aggregate(depGraphs, shex, shexTest, rbe)
-  .dependsOn(depGraphs, shex, shexTest, rbe)
+  .aggregate(depGraphs, shex, shexTest, rbe, wikibaserdf)
+  .dependsOn(depGraphs, shex, shexTest, rbe, wikibaserdf)
   .settings(
     unidocProjectFilter in (ScalaUnidoc, unidoc) := inAnyProject -- inProjects(noDocProjects: _*),
     libraryDependencies ++= Seq(
@@ -170,6 +167,23 @@ lazy val depGraphs = project
       jgraphtCore,
       utils
     )
+  )
+
+lazy val wikibaserdf = project
+  .in(file("modules/wikibaserdf"))
+  .disablePlugins(RevolverPlugin)
+  .settings(commonSettings, publishSettings)
+  .settings(
+    crossScalaVersions := supportedScalaVersions,
+    libraryDependencies ++= Seq(
+      catsCore,
+      catsKernel,
+      catsMacros,
+      utils,
+      srdf,
+      srdfJena,
+  )).dependsOn(
+    shex
   )
 
 lazy val shexTest = project
