@@ -46,7 +46,8 @@ class RDF2ManifestTest extends AnyFunSpec with ValidateManifest {
     parseManifest("manifest", 
        "validation", 
        validationFolder, 
-       Some("1bnodePattern_pass-bnode-match"), 
+       None, 
+       // Some("2RefS2-IS1"), 
        List(), 
        false)
   }

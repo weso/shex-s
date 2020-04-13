@@ -26,6 +26,7 @@ import es.weso.rdf.nodes._
 import ManifestPrefixes._
 import matchers.should._
 import funspec._
+import es.weso.utils.IOUtils._
 
 
 trait RunManifest {
@@ -120,7 +121,7 @@ trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with Opti
 
       val folderURI = Paths.get(ep.parentFolder).normalize.toUri
       val base = Paths.get(".").toUri
-      println(s"Entry process: ${ep.entry}")
+      // pprint.pprintln(ep.entry)
        
       ep.entry match {
 
@@ -222,6 +223,21 @@ trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with Opti
     } */
   }
 
+  def testInfo(msg: String): EitherT[IO,String,Unit] = {
+    io2es( IO { 
+      // println(msg); 
+      ()
+    })
+
+  }
+
+  def testInfoValue(msg: String, value: Any): EitherT[IO,String,Unit] = {
+    io2es(IO { 
+      // pprint.log(value, tag = msg);
+      ()
+    })
+  }
+
   def validateFocusAction(
       fa: FocusAction,
       base: URI,
@@ -234,11 +250,15 @@ trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with Opti
     val schemaUri = mkLocal(fa.schema, schemasBase, folderURI)
     val dataUri   = mkLocal(fa.data, schemasBase, folderURI)
     for {
-      //_         <- testInfo(s"Validating focusAction: $name")
+      _         <- testInfo(s"Validating focusAction: $name")
       schemaStr <- derefUriIO(schemaUri)
+      _         <- testInfo(s"schemaStr:\n$schemaStr\n-----end schemaStr\nNest step: deref: $dataUri")
       dataStr   <- derefUriIO(dataUri)
+      _         <- testInfo(s"dataStr:\n$dataStr\n-----end dataStr")
       schema    <- EitherT.liftF(Schema.fromString(schemaStr, "SHEXC", Some(fa.schema)))
+      _         <- testInfoValue(s"schema", schema)
       data      <- EitherT.liftF(RDFAsJenaModel.fromChars(dataStr, "TURTLE", Some(fa.data)))
+      _         <- testInfoValue(s"data", data)
       lbl = fa.shape match {
         case None           => StartMap: ShapeMapLabel
         case Some(i: IRI)   => IRIMapLabel(i)
@@ -247,14 +267,18 @@ trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with Opti
           IRIMapLabel(IRI(s"UnknownLabel"))
         }
       }
+      _         <- testInfoValue(s"label", lbl)
       ok <- if (v.traits contains sht_Greedy) {
         result(name, true, "Ignored sht:Greedy")
       } else {
         val shapeMap = FixedShapeMap(Map(focus -> Map(lbl -> Info())), data.getPrefixMap, schema.prefixMap)
         for {
+          _         <- testInfoValue(s"shapeMap", shapeMap)
           resolvedSchema <- EitherT.liftF(ResolvedSchema.resolve(schema, Some(fa.schema)))
+           _         <- testInfoValue(s"resolvedSchema", resolvedSchema)
           resultVal <- EitherT.liftF(Validator(resolvedSchema, ExternalIRIResolver(fa.shapeExterns)).validateShapeMap(data, shapeMap))
           resultShapeMap <- EitherT.liftF(resultVal.toResultShapeMap)
+          _         <- testInfoValue(s"resultShapeMap", resultShapeMap)
           ok <- if (resultShapeMap.getConformantShapes(focus) contains lbl) {
             if (shouldValidate) result(name, true, "Conformant shapes match")
             else
