@@ -1,0 +1,19 @@
+= ShEx-s Shape Expressions library in Scala
+:toc: right
+
+ShEx-s: Scala implementation of 
+link:http://shex.io[Shape Expressions].
+
+- link:https://github.com/labra/shex-s/issues[List of issues]
+- link:https://github.com/labra/shex-s[Source code]
+- link:scaladoc/latest/es/weso/index.html[ScalaDoc]
+- link:https://bintray.com/labra/maven/shex-s[Binary Jars and Javadocs]
+
+== Links about ShEx
+
+- link:http://book.validatingrdf.com/[Validating RDF data book]. The HTML version of the book is freely available online.
+
+
+== ScalaDoc
+
+link:scaladoc/latest/es/weso/index.html[ScalaDoc]

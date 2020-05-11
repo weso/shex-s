@@ -40,7 +40,7 @@ In order to run the shex test-suite and generate the EARL report, you can do the
 ```
 sbt
 ...
-sbt:shaclex> project shex
+sbt:shexRoot> project shex
 sbt:shex> compat:test
 ```
 

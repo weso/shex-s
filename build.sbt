@@ -3,10 +3,10 @@ lazy val scala213 = "2.13.1"
 lazy val supportedScalaVersions = List(scala213, scala212)
 
 // Local dependencies
-lazy val srdfVersion           = "0.1.66"
-lazy val shapeMapsVersion      = "0.1.56"
-lazy val utilsVersion          = "0.1.67"
-lazy val documentVersion       = "0.0.8"
+lazy val srdfVersion           = "0.1.69"
+lazy val shapeMapsVersion      = "0.1.58"
+lazy val utilsVersion          = "0.1.69"
+lazy val documentVersion       = "0.0.11"
 
 // Dependency versions
 lazy val antlrVersion          = "4.7.1"
@@ -20,6 +20,7 @@ lazy val jenaVersion           = "3.13.1"
 lazy val jgraphtVersion        = "1.3.1"
 lazy val logbackVersion        = "1.2.3"
 lazy val loggingVersion        = "3.9.2"
+lazy val pprintVersion         = "0.5.6"
 lazy val rdf4jVersion          = "3.0.0"
 lazy val scalacheckVersion     = "1.14.0"
 lazy val scalacticVersion      = "3.1.0"
@@ -65,20 +66,29 @@ lazy val typing            = "es.weso"                    %% "typing"          %
 lazy val validating        = "es.weso"                    %% "validating"      % utilsVersion
 lazy val utilsTest         = "es.weso"                    %% "utilstest"       % utilsVersion
 
-lazy val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % loggingVersion
-lazy val scallop      = "org.rogach"                 %% "scallop"       % scallopVersion
-lazy val scalactic    = "org.scalactic"              %% "scalactic"     % scalacticVersion
-lazy val scalacheck   = "org.scalacheck"             %% "scalacheck"    % scalacheckVersion
-lazy val scalaTest    = "org.scalatest"              %% "scalatest"     % scalaTestVersion
-lazy val scalatags    = "com.lihaoyi"                %% "scalatags"     % scalatagsVersion
-lazy val sext           = "com.github.nikita-volkov" % "sext"        % sextVersion
-lazy val typesafeConfig = "com.typesafe"             % "config"      % typesafeConfigVersion
-lazy val xercesImpl     = "xerces"                   % "xercesImpl"  % xercesVersion
-lazy val simulacrum     = "org.typelevel"            %% "simulacrum" % simulacrumVersion
+lazy val scalaLogging   = "com.typesafe.scala-logging" %% "scala-logging" % loggingVersion
+lazy val scallop        = "org.rogach"                 %% "scallop"       % scallopVersion
+lazy val scalactic      = "org.scalactic"              %% "scalactic"     % scalacticVersion
+lazy val scalacheck     = "org.scalacheck"             %% "scalacheck"    % scalacheckVersion
+lazy val scalaTest      = "org.scalatest"              %% "scalatest"     % scalaTestVersion
+lazy val scalatags      = "com.lihaoyi"                %% "scalatags"     % scalatagsVersion
+lazy val sext           = "com.github.nikita-volkov"   % "sext"        % sextVersion
+lazy val pprint         = "com.lihaoyi"                %% "pprint"     % pprintVersion
+lazy val typesafeConfig = "com.typesafe"               % "config"      % typesafeConfigVersion
+lazy val xercesImpl     = "xerces"                     % "xercesImpl"  % xercesVersion
+lazy val simulacrum     = "org.typelevel"              %% "simulacrum" % simulacrumVersion
 
 lazy val shexsRoot = project
   .in(file("."))
-  .enablePlugins(ScalaUnidocPlugin, SbtNativePackager, WindowsPlugin, JavaAppPackaging, LauncherJarPlugin)
+  .enablePlugins(
+    ScalaUnidocPlugin, 
+    SiteScaladocPlugin, 
+    AsciidoctorPlugin, 
+    SbtNativePackager, 
+    WindowsPlugin, 
+    JavaAppPackaging, 
+    LauncherJarPlugin
+    )
   .disablePlugins(RevolverPlugin)
 //  .settings(
 //    buildInfoKeys := BuildInfoKey.ofN(name, version, scalaVersion, sbtVersion),
@@ -88,7 +98,12 @@ lazy val shexsRoot = project
   .aggregate(depGraphs, shex, shexTest, rbe, wikibaserdf)
   .dependsOn(depGraphs, shex, shexTest, rbe, wikibaserdf)
   .settings(
+    siteSubdirName in ScalaUnidoc := "scaladoc/latest",
+    addMappingsToSiteDir(mappings in (ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc),
     unidocProjectFilter in (ScalaUnidoc, unidoc) := inAnyProject -- inProjects(noDocProjects: _*),
+    mappings in makeSite ++= Seq(
+      file("src/assets/favicon.ico") -> "favicon.ico"
+    ),
     libraryDependencies ++= Seq(
       catsCore,
       catsKernel,
@@ -98,7 +113,8 @@ lazy val shexsRoot = project
       srdf,
       scalaLogging,
       scallop,
-      typesafeConfig
+      typesafeConfig,
+      pprint
     ),
     cancelable in Global := true,
     fork := true,
@@ -140,6 +156,7 @@ lazy val shex = project
       circeGeneric,
       circeParser,
       catsEffect,
+      pprint,
       scalaTest  % Test,
       scalacheck % Test,
       typing,
