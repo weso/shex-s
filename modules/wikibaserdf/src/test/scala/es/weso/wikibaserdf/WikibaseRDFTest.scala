@@ -93,16 +93,17 @@ class WikibaseRDFTest extends AnyFunSpec with Matchers {
           |  wdt:P103 @<language> *;
           |  wdt:P1412 @<language> *;
           |  wdt:P6886  @<language> *;
-          |  rdfs:label rdf:langString+;
+          |  rdfs:label rdf:langString +; 
           |}
           |
           |<country> EXTRA wdt:P31 {
-          |  wdt:P31 [wd:Q6256 wd:Q3024240 wd:Q3624078] +;
+          |  wdt:P31 [ wd:Q6256 wd:Q3024240 wd:Q3624078] +;
           |}
           |
-          |<language> EXTRA wdt:P31 {
-          |  wdt:P31 [wd:Q34770 wd:Q1288568] +;
-          |}
+          |#<language> EXTRA wdt:P31 {
+          |#  wdt:P31 [wd:Q34770 wd:Q1288568] +;
+          |#}
+          |<language> { }
           |""".stripMargin
     println(s"strSchema: \n${strSchema}")      
     shouldValidateWikidata(wd+"Q42", IRI("human"), strSchema, true, Some(ex))
