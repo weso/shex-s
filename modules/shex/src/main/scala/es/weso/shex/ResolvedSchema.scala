@@ -25,12 +25,18 @@ case class ResolvedSchema(
  def base = source.base
  def startActs = source.startActs
  def start = source.start
+
+ override def labels: List[ShapeLabel] = (resolvedMapShapeExprs.keySet ++ resolvedMapTripleExprs.keySet).toList
+
  def shapes = source.shapes
  def maybeTripleExprMap = source.tripleExprMap
  def imports = source.imports
  
- override def getShape(sl: ShapeLabel): Either[String, ShapeExpr] = 
+ override def getShape(sl: ShapeLabel): Either[String, ShapeExpr] = {
+   // pprint.log(sl,tag="getShape")
+   // pprint.log(resolvedMapShapeExprs,tag="ResolvedMapShapeExprs")
   resolvedMapShapeExprs.get(sl).toRight(s"Not found $sl").map(_.se) 
+ }
 
  override def getTripleExpr(sl: ShapeLabel): Either[String, TripleExpr] = 
   resolvedMapTripleExprs.get(sl).toRight(s"Not found $sl").map(_.te) 

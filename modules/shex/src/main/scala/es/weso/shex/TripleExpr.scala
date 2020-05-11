@@ -16,6 +16,8 @@ sealed trait TripleExpr {
 
   def paths(schema: AbstractSchema): Set[Path] = getPaths(schema, this).getOrElse(Set())
 
+  def hasSemActs: Boolean
+
   private def getPaths(schema: AbstractSchema, te: TripleExpr): Either[String,Set[Path]] = {
 
    /* We use a state monad to handle the list of visited triple expressions in case 
@@ -82,6 +84,8 @@ case class EachOf( id: Option[ShapeLabel],
       semActs.map(_.map(_.relativize(base))),
       annotations.map(_.map(_.relativize(base)))
     )
+
+  override def hasSemActs: Boolean = semActs.isDefined  
 }
 
 object EachOf {
@@ -99,6 +103,7 @@ case class OneOf(
   lazy val min: Int = optMin.getOrElse(Cardinality.defaultMin)
   lazy val max: Max = optMax.getOrElse(Cardinality.defaultMax)
   override def addId(lbl: ShapeLabel): OneOf = this.copy(id = Some(lbl))
+  override def hasSemActs: Boolean = semActs.isDefined  
 
 //  override def getShapeRefs (schema: Schema): List[ShapeLabel] = expressions.flatMap(_.getShapeRefs(schema))
 
@@ -120,6 +125,7 @@ object OneOf {
 case class Inclusion(include: ShapeLabel) extends TripleExpr {
   override def addId(lbl: ShapeLabel): Inclusion = this
   override def id: None.type = None
+  override def hasSemActs: Boolean = false
 
   // TODO: The following code can raise stack overflow when a label refers to itself
   //override def getShapeRefs(schema: Schema): List[ShapeLabel] =
@@ -150,6 +156,7 @@ case class TripleConstraint(
     if (direct) Direct(predicate)
     else Inverse(predicate)
   override def addId(lbl: ShapeLabel): TripleConstraint = this.copy(id = Some(lbl))
+  override def hasSemActs: Boolean = semActs.isDefined  
 
   def decreaseCard: TripleConstraint = this.copy(
     optMin = optMin.map(x => Math.min(x - 1,0)),
@@ -171,19 +178,6 @@ case class TripleConstraint(
     )
 }
 
-/**
-  * Support for arithmetic expressions
-  * @param id an optional ShapeLabel
-  * @param e value expression
-  */
-case class Expr(id: Option[ShapeLabel],
-                e: ValueExpr
-               ) extends TripleExpr {
-  def addId(label: ShapeLabel): Expr = this.copy(id = Some(label))
-  // override def getShapeRefs(schema: Schema): List[ShapeLabel] = List()
-  override def relativize(base: IRI): Expr =
-    Expr(id.map(_.relativize(base)),e)
-}
 
 object TripleConstraint {
   def emptyPred(pred: IRI): TripleConstraint =
@@ -198,3 +192,17 @@ object TripleConstraint {
 
 }
 
+/**
+  * Support for arithmetic expressions
+  * @param id an optional ShapeLabel
+  * @param e value expression
+  */
+case class Expr(id: Option[ShapeLabel],
+                e: ValueExpr
+               ) extends TripleExpr {
+  def addId(label: ShapeLabel): Expr = this.copy(id = Some(label))
+  // override def getShapeRefs(schema: Schema): List[ShapeLabel] = List()
+  override def relativize(base: IRI): Expr =
+    Expr(id.map(_.relativize(base)),e)
+  override def hasSemActs: Boolean = false
+}

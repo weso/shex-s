@@ -34,7 +34,7 @@ case class FacetChecker(
   
   def facetsChecker(node: RDFNode, facets: List[XsFacet]): EitherT[IO,String, String] = { 
     def cnv(pairs: (List[String], List[String])): Either[String,String] = {
-      val (passed,failed) = pairs
+      val (failed, passed) = pairs
       if (failed.isEmpty) {
         Right(s"$node passed facets: ${passed.map(_.show).mkString(",")}")
       } else {
@@ -78,13 +78,17 @@ case class FacetChecker(
       }
       case Pattern(p, flags) => {
         val str = node.getLexicalForm
+        // pprint.log(str, tag = "str")
+        // pprint.log(p, tag = "p")
         RegEx(p, flags).matches(str) match {
-          case Right(b) =>
+          case Right(b) => {
+            // pprint.log(b, tag = "b")
             checkCond(
               b,
               s"${node.show} does not match Pattern($p) with lexical form $str",
               s"${node.show} satisfies Pattern($p) with lexical form $str"
             )
+          }
           case Left(msg) => EitherT.left(IO(msg))
         }
       }

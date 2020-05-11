@@ -65,7 +65,7 @@ class WikibaseRDFTest extends AnyFunSpec with Matchers {
     println(s"strSchema: \n${strSchema}")      
     shouldValidateWikidata(wd+"Q42", ex+"S", strSchema, true, Some(ex))
    }
-  /* {
+   {
     val ex = IRI("http://example.org/")
     val strSchema = 
       s"""|PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -106,7 +106,7 @@ class WikibaseRDFTest extends AnyFunSpec with Matchers {
           |""".stripMargin
     println(s"strSchema: \n${strSchema}")      
     shouldValidateWikidata(wd+"Q42", IRI("human"), strSchema, true, Some(ex))
-  } */
+  } 
   }
 
  def shouldValidateWikidata(entity: IRI, label: IRI, schemaStr: String, expected: Boolean, base: Option[IRI]): Unit = {
