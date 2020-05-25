@@ -3,4 +3,3 @@ prefix : <http://example.org/>
 :MyShape {
   :my-property IRI ; # Comment
 }
-
