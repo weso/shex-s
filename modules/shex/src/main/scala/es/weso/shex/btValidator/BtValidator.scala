@@ -2,7 +2,7 @@ package es.weso.shex.btValidator
 
 import cats._
 import cats.data._
-import cats.implicits._
+import cats.syntax.all._
 import es.weso.rdf.RDFReader
 import es.weso.rdf.nodes.RDFNode
 import es.weso.shapeMaps._

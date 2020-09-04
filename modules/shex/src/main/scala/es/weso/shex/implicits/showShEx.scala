@@ -1,6 +1,6 @@
 package es.weso.shex.implicits
 import cats._
-import cats.implicits._
+import cats.syntax.all._
 import es.weso.rdf.nodes._
 import es.weso.shex._
 import es.weso.rdf._

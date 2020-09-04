@@ -1,7 +1,7 @@
 package es.weso.shex
 
 import es.weso.depgraphs.{DepGraph, Neg, Pos, PosNeg}
-import cats.implicits._
+import cats.syntax.all._
 import es.weso.rdf.nodes.IRI
 
 import scala.util.{Either, Right}

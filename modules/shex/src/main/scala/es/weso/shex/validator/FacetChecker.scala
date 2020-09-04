@@ -9,7 +9,7 @@ import es.weso.utils.RegEx
 import es.weso.shex.implicits.showShEx._
 import cats._
 import data._
-import cats.implicits._
+import cats.syntax.all._
 import cats.effect.IO
 import ShExChecker._
 import es.weso.utils.eitherios.EitherIOUtils._

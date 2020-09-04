@@ -8,7 +8,7 @@ import es.weso.shex.shexR.PREFIXES._
 import es.weso.rdf.operations.Comparisons._
 import es.weso.rdf.nodes._
 import es.weso.rdf.parser._
-import cats.implicits._
+import cats.syntax.all._
 import cats.data._
 
 import cats.effect._

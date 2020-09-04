@@ -1,6 +1,6 @@
 package es.weso.depgraphs
 
-import cats.implicits._
+import cats.syntax.all._
 import org.jgrapht.Graph
 import org.jgrapht.alg.connectivity._
 import org.jgrapht.alg.interfaces.StrongConnectivityAlgorithm

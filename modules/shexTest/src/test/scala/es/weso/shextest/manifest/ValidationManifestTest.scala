@@ -17,7 +17,7 @@ import es.weso.shextest.manifest.Utils._
 //import es.weso.shex.implicits.encoderShEx._
 //import cats._
 import cats.data.EitherT
-import cats.implicits._
+import cats.syntax.all._
 import cats.effect.IO
 import ManifestPrefixes._
 //import scala.io._

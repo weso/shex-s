@@ -2,7 +2,7 @@ package es.weso.shex.compact
 
 import java.io.File
 
-import cats.implicits._
+import cats.syntax.all._
 import com.typesafe.config.{Config, ConfigFactory}
 import es.weso.shex._
 import es.weso.shex.implicits.encoderShEx._

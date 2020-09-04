@@ -8,7 +8,7 @@ import es.weso.shex.normalized._
 import cats.data._
 import cats.effect.IO
 //import cats._
-import cats.implicits._
+import cats.syntax.all._
 import es.weso.rdf.triples.RDFTriple
 import es.weso.rdf.RDFReader
 import es.weso.utils.eitherios.EitherIOUtils._

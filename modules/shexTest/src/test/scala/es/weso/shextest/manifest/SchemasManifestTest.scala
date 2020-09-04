@@ -14,7 +14,7 @@ import Utils._
 //import cats._
 import cats.data._
 import cats.effect.IO
-import cats.implicits._
+import cats.syntax.all._
 
 class SchemasManifestTest extends ValidateManifest {
 

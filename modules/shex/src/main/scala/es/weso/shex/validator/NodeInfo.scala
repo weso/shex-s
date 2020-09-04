@@ -1,7 +1,7 @@
 package es.weso.shex.validator
 
 import cats.data._
-import cats.implicits._
+import cats.syntax.all._
 import cats.effect.IO
 import es.weso.rdf.nodes.{Literal, RDFNode}
 import es.weso.rdf.PREFIXES._

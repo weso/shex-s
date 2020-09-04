@@ -8,7 +8,7 @@ import es.weso.rdf.nodes._
 import es.weso.rdf.parser.RDFParser
 import ManifestPrefixes._
 import cats.data._
-import cats.implicits._
+import cats.syntax.all._
 import scala.util._
 import es.weso.rdf.parser._
 

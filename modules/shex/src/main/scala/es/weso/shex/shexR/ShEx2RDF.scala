@@ -2,7 +2,7 @@ package es.weso.shex.shexR
 
 import es.weso.shex._
 import PREFIXES._
-import cats.implicits._
+import cats.syntax.all._
 import com.typesafe.scalalogging.LazyLogging
 import es.weso.rdf.nodes._
 import es.weso.rdf.PREFIXES._

@@ -4,7 +4,7 @@ import es.weso.rdf.PrefixMap
 import es.weso.rdf.nodes.IRI
 import cats._
 import cats.data._
-import cats.implicits._
+import cats.syntax.all._
 
 trait ShapeExpr extends Product with Serializable {
   def id: Option[ShapeLabel]

@@ -1,6 +1,6 @@
 package es.weso.shex.compact
 
-import cats.implicits._
+import cats.syntax.all._
 import es.weso.shex.Schema
 import org.scalatest._
 import org.scalatest.funspec.AnyFunSpec

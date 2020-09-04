@@ -2,7 +2,7 @@ package es.weso.collection
 
 import scala.collection.SortedMap
 import cats.Show
-import cats.implicits._
+import cats.syntax.all._
 
 trait Bag[A] {
 
