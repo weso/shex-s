@@ -9,18 +9,18 @@ import es.weso.rdf.PREFIXES._
 import es.weso.rdf.RDFBuilder
 import es.weso.rdf.saver.RDFSaver
 import es.weso.rdf.operations.Comparisons._
-
+import cats.effect._
 
 trait ShEx2RDF extends RDFSaver with LazyLogging {
 
-  def serialize(shex: Schema, node: Option[IRI], format: String, rdfBuilder: RDFBuilder): Either[String,String] = {
-    val rdf: RDFBuilder = toRDF(shex, node, rdfBuilder)
-    rdf.serialize(format)
-  }
+  def serialize(shex: Schema, node: Option[IRI], format: String, rdfBuilder: RDFBuilder): IO[String] = 
+   for {
+    rdf <- toRDF(shex, node, rdfBuilder)
+    str <- rdf.serialize(format)
+  } yield str
 
-  def toRDF(s: Schema, node: Option[IRI], initial: RDFBuilder): RDFBuilder = {
-    val result = schema(s, node).run(initial)
-    result.value._1
+  def toRDF(s: Schema, node: Option[IRI], initial: RDFBuilder): IO[RDFBuilder] = {
+    schema(s, node).run(initial).map(_._1)
   }
 
   private def schema(s: Schema, id: Option[IRI]): RDFSaver[Unit] = {
@@ -35,7 +35,6 @@ trait ShEx2RDF extends RDFSaver with LazyLogging {
   }
 
   private def shapeExpr(e: ShapeExpr): RDFSaver[RDFNode] = e match {
-
     case sa: ShapeAnd => for {
       node <- mkId(sa.id)
       _ <- addTriple(node, `rdf:type`, sx_ShapeAnd)
@@ -302,7 +301,7 @@ trait ShEx2RDF extends RDFSaver with LazyLogging {
 
 object ShEx2RDF {
 
-  def apply(s: Schema, n: Option[IRI], builder: RDFBuilder): RDFBuilder = {
+  def apply(s: Schema, n: Option[IRI], builder: RDFBuilder): IO[RDFBuilder] = {
     val srdf = new ShEx2RDF {}
     srdf.toRDF(s, n, builder)
   }

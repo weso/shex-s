@@ -7,7 +7,6 @@ import es.weso.rdf._
 import es.weso.rdf.PREFIXES._
 import compact.CompactShow
 import es.weso.rdf.operations.Comparisons._
-import es.weso.shex.normalized.Constraint
 
 
 object showShEx {
@@ -34,9 +33,9 @@ object showShEx {
 
   implicit lazy val showShapeExpr: Show[ShapeExpr] = new Show[ShapeExpr] {
     final def show(a: ShapeExpr): String = a match {
-      case ShapeOr(id, shapes,_,_) => s"${optShow(id)} ${shapes.map(_.show).mkString(" OR ")})"
-      case ShapeAnd(id, shapes,_,_) => s"${optShow(id)}, ${shapes.map(_.show).mkString(" AND ")})"
-      case ShapeNot(id, shape,_,_) => s"${optShow(id)} NOT ${shape.show})"
+      case ShapeOr(id, shapes,_,_) => s"(${optShow(id)} ${shapes.map(_.show).mkString(" OR ")})"
+      case ShapeAnd(id, shapes,_,_) => s"(${optShow(id)}, ${shapes.map(_.show).mkString(" AND ")})"
+      case ShapeNot(id, shape,_,_) => s"(${optShow(id)} NOT ${shape.show})"
       case s: Shape => s.show
       case nc: NodeConstraint => nc.show
       case ShapeRef(r,_,_) => s"@${r.show}"
@@ -48,20 +47,15 @@ object showShEx {
     final def show(a: Shape): String = a match {
       case Shape(None,None,None,None,None,None,None,None) => "."
       case _ =>
-        s"${optShow(a.id)}${optShowBoolean(a.virtual, "VIRTUAL")}${optShowBoolean(a.closed,"CLOSED")}${optShowExtras(a.extra)}${optShowExtends(a._extends)} { ${optShow(a.expression)} ${optShowLs(a.actions,"\n")} }"
+        s"${optShow(a.id)}${optShowBoolean(a.virtual, "VIRTUAL")}${optShowBoolean(a.closed," CLOSED")}${optShowExtras(a.extra)}${optShowExtends(a._extends)} { ${optShow(a.expression)} ${optShowLs(a.actions,"\n")} }"
     }
   }
 
-  implicit lazy val showConstraint: Show[Constraint] = new Show[Constraint] {
-    final def show(c: Constraint): String = {
-      s"${c.shape.fold(".")(_.show)} ${if (c.hasExtra) "EXTRA" else ""} ${c.card.show}"
-    }
-  }
 
 
   implicit lazy val showNodeConstraint: Show[NodeConstraint] = new Show[NodeConstraint] {
     final def show(a: NodeConstraint): String =
-      s"${optShow(a.id)} ${optShow(a.nodeKind)} ${optShow(a.datatype)} ${showLs(a.xsFacets," ")} ${optShowValues(a.values)})"
+      s"${optShow(a.id)}${optShow(a.nodeKind)}${optShow(a.datatype)}${showLs(a.xsFacets," ")}${optShowValues(a.values)}"
   }
 
   implicit lazy val showNodeKind: Show[NodeKind] = new Show[NodeKind] {
@@ -135,7 +129,6 @@ object showShEx {
     }
   }
 
-
   // TODO: It should qualify with schema's prefixMap
   implicit lazy val showIRI: Show[IRI] = new Show[IRI] {
     final def show(iri: IRI): String =
@@ -186,18 +179,18 @@ object showShEx {
 
   implicit lazy val showEachOf: Show[EachOf] = new Show[EachOf] {
     final def show(a: EachOf): String =
-      s"${optShow(a.id)} ${a.expressions.map(_.show).mkString(";\n")}${optShowCard(a.optMin,a.optMax)}${optShow(a.semActs)} ${optShow(a.annotations)}"
+      s"${optShow(a.id)}${a.expressions.map(_.show).mkString(";\n")}${optShowCard(a.optMin,a.optMax)}${optShow(a.semActs)}${optShow(a.annotations)}"
   }
 
 
   implicit lazy val showOneOf: Show[OneOf] = new Show[OneOf] {
     final def show(a: OneOf): String =
-      s"${optShow(a.id)} ${a.expressions.map(_.show).mkString("|")}${optShowCard(a.optMin,a.optMax)}${optShow(a.semActs)}${optShow(a.annotations)})"
+      s"${optShow(a.id)}${a.expressions.map(_.show).mkString("|")}${optShowCard(a.optMin,a.optMax)}${optShow(a.semActs)}${optShow(a.annotations)})"
   }
 
   implicit lazy val showTripleConstraint: Show[TripleConstraint] = new Show[TripleConstraint] {
     final def show(a: TripleConstraint): String =
-      s"${optShow(a.id)} ${optShow(a.optInverse)}${optShow(a.optNegated)}${a.predicate.show}${optShow(a.valueExpr)}${optShowCard(a.optMin, a.optMax)}${optShow(a.semActs)}${optShow(a.annotations)}"
+      s"${optShow(a.id)}${optShow(a.optInverse)}${optShow(a.optNegated)}${a.predicate.show}${optShow(a.valueExpr)}${optShowCard(a.optMin, a.optMax)}${optShow(a.semActs)}${optShow(a.annotations)}"
   }
 
   implicit lazy val showAnnotation: Show[Annotation] = new Show[Annotation] {
@@ -232,15 +225,6 @@ object showShEx {
     }
   }
 
-  implicit lazy val showCardinality: Show[Cardinality] = new Show[Cardinality] {
-    final def show(c: Cardinality): String = (c.min,c.max) match {
-      case (0,Star) => "*"
-      case (0,IntMax(1)) => "?"
-      case (1,Star) => "+"
-      case (m,Star) => s"{$m,*}"
-      case (m,IntMax(n)) => s"{$m,$n}"
-    }
-  }
 
   private def showLs[A: Show](ls: List[A], sep: String): String =
     ls.map(_.show).mkString(sep)
@@ -286,7 +270,7 @@ object showShEx {
 
   def optShowExtras(maybeIRIs: Option[List[IRI]]): String = maybeIRIs match {
     case None => ""
-    case Some(ls) => "EXTRA " + ls.map(_.show).mkString(" ")
+    case Some(ls) => " EXTRA " + ls.map(_.show).mkString(" ")
   }
 
   def optShowBoolean(maybeBool: Option[Boolean], ifTrue: String): String = maybeBool match {

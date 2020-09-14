@@ -16,6 +16,8 @@ trait DepGraph[Node] {
 
   def outEdges(node: Node): Either[String, Set[(PosNeg, Node)]]
 
+  def inEdges(node: Node): Either[String, Set[(Node,PosNeg)]]
+
   def empty: DepGraph[Node]
 
   def containsNegCycle: Boolean = {

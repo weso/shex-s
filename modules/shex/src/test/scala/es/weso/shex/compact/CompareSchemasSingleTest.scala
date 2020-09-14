@@ -26,11 +26,12 @@ class CompareSchemasSingleTest extends AnyFunSpec with JsonTest with Matchers wi
   describe(s"Parsing single File $name") {
     it(s"Should read Schema from file ${name}") {
 
-      val either = for {
+      val either: EitherT[IO,String,(Schema,File)] = for {
         file <- EitherT.liftF[IO,String,File](getFileFromFolderWithExt(schemasFolder, name, "shex"))
         str <- EitherT(IO(Source.fromFile(file)("UTF-8").mkString.asRight[String]))
-        schema <- EitherT.fromEither[IO](Schema.fromString(str))
+        schema <- EitherT.liftF(Schema.fromString(str))
       } yield (schema,file)
+
       either.value.unsafeRunSync match {
         case Right(pair) => {
           val (schema,file) = pair

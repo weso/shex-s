@@ -33,16 +33,17 @@ The project uses [sbt](http://www.scala-sbt.org/) for compilation as well as Jav
 
 ## Compatibility tests
 
-We also aim to pass the [ShEx test-suite](https://github.com/shexSpec/shexTest).
+We also pass the [ShEx test-suite](https://github.com/shexSpec/shexTest).
 
-In order to run the shex test-suite and generate the EARL report, you can do the following:
+<!-- In order to run the shex test-suite and generate the EARL report, you can do the following:
 
 ```
 sbt
 ...
-sbt:shaclex> project shex
-sbt:shex> compat:test
+sbt:shexRoot> project shex
+sbt:shex> test
 ```
+-->
 
 ## More information
 
@@ -72,3 +73,8 @@ Contributors:
 Contributions are greatly appreciated.
 Please fork this repository and open a
 pull request to add more features or [submit issues](https://github.com/labra/shaclex/issues)
+
+
+<a href="https://github.com/weso/shex-s/graphs/contributors">
+  <img src="https://contributors-img.web.app/image?repo=weso/shex-s" />
+</a>

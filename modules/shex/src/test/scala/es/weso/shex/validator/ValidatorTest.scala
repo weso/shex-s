@@ -1,6 +1,6 @@
 package es.weso.shex.validator
 
-import es.weso.rdf.RDFReader
+// import es.weso.rdf.RDFReader
 import es.weso.rdf.jena._
 import es.weso.rdf.nodes._
 import es.weso.shex._
@@ -18,40 +18,36 @@ class ValidatorTest extends AnyFunSpec with Matchers with EitherValues {
                     |:a :p :b .""".stripMargin
 
     it("Should not validate if label not found") {
-      shouldNotValidate(IRI("http://example.org/a"), IRILabel(IRI("http://example.org/Unknown")), rdfStr, schema)
+      shouldValidate(IRI("http://example.org/a"), IRILabel(IRI("http://example.org/Unknown")), rdfStr, schema, false)
     }
 
     it("Should validate single node constraint") {
-      shouldValidate(IRI("http://example.org/a"), shapeLabel, rdfStr, schema)
+      shouldValidate(IRI("http://example.org/a"), shapeLabel, rdfStr, schema, true)
     }
   }
 
-  def shouldValidate(node: RDFNode, label: ShapeLabel, rdfStr: String, schema: Schema): Unit = {
-    val v = Validator(schema)
-    val check: ShExChecker.Check[ShapeTyping] = v.checkNodeLabel(node, label)
-    val reader : Either[String, RDFReader] = RDFAsJenaModel
-      .fromChars(rdfStr, "TURTLE")
-
-    val obtained = reader
-      .map(rdf => ShExChecker.runCheck(check, rdf).toEither)
-      .getOrElse(sys.error("Unexpected Left found in Either"))
-      .fold(err => fail(s"Error validating: $err"), _.hasType(node, label))
-
-    obtained should be(true)
+  def shouldValidate(node: RDFNode, label: ShapeLabel, rdfStr: String, schema: Schema, ok: Boolean): Unit = {
+    val result = for {
+      resolved <- ResolvedSchema.resolve(schema,None)
+      rdf <- RDFAsJenaModel.fromChars(rdfStr, "TURTLE")
+      v = Validator(resolved)
+      check: ShExChecker.Check[ShapeTyping] = v.checkNodeLabel(node, label)
+      r <- ShExChecker.runCheck(check, rdf)
+    } yield r
+    result.attempt.unsafeRunSync.fold(
+      e => fail(s"Failed: $e"), 
+      r => r.toEither.fold(
+        e => fail(s"Error obtaining result: $e"),
+        res => if (ok) {
+          if (res.hasType(node,label)) info(s"$node has type $label as expected")
+          else fail(s"$node doesn't have type $label")
+        } else {
+          if (res.hasType(node,label)) fail(s"$node has type $label but it was expected otherwise")
+          else info(s"$node doesn't have type $label as expected")
+        }
+      )
+    )
   }
 
 
-  def shouldNotValidate(node: RDFNode, label: ShapeLabel, rdfStr: String, schema: Schema): Unit = {
-    val v = Validator(schema)
-    val check: ShExChecker.Check[ShapeTyping] = v.checkNodeLabel(node, label)
-    val reader: Either[String, RDFReader] = RDFAsJenaModel
-      .fromChars(rdfStr, "TURTLE")
-
-    val obtained = reader
-      .map(rdf => ShExChecker.runCheck(check, rdf).toEither)
-      .getOrElse(sys.error("Unexpected Left found in Either"))
-      .fold(err => fail(s"Error validating: $err"), _.hasNoType(node, label))
-
-    obtained should be(true)
-  }
 }
