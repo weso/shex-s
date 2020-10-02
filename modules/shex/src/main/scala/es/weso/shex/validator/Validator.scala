@@ -884,12 +884,13 @@ case class Validator(schema: ResolvedSchema, externalResolver: ExternalResolver 
 
   def runValidator(chk: Check[ShapeTyping], rdf: RDFReader): IO[Result] = for {
     r <- runCheck(chk, rdf)
-  } yield cnvResult(r, rdf)
+    pm <- rdf.getPrefixMap
+  } yield cnvResult(r, rdf, pm)
 
-  private def cnvResult(r: CheckResult[ShExError, ShapeTyping, Log], rdf: RDFReader): Result = Result (
+  private def cnvResult(r: CheckResult[ShExError, ShapeTyping, Log], rdf: RDFReader, rdfPrefixMap: PrefixMap): Result = Result (
     for {
       shapeTyping <- r.toEither
-      result      <- shapeTyping.toShapeMap(rdf.getPrefixMap, schema.prefixMap).leftMap(StringError(_))
+      result      <- shapeTyping.toShapeMap(rdfPrefixMap, schema.prefixMap).leftMap(StringError)
     } yield result
   )
 

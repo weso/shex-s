@@ -1,16 +1,27 @@
 package es.weso.shextest.manifest
+import java.io.FileNotFoundException
+import java.nio.file.{Path, Paths}
+import java.util.concurrent.Executors
+
 import cats.effect._
 import com.typesafe.scalalogging.LazyLogging
 import es.weso.rdf._
 import es.weso.rdf.jena.RDFAsJenaModel
-import es.weso.utils.FileUtils._
 import es.weso.rdf.nodes._
 import es.weso.rdf.parser.RDFParser
 import ManifestPrefixes._
+import fs2._
+
+import scala.concurrent.ExecutionContext
+// import cats._
+import cats.arrow.FunctionK
 import cats.data._
 import cats.implicits._
+
 import scala.util._
 import es.weso.rdf.parser._
+// import es.weso.utils.IOException
+import es.weso.utils.IOUtils.fromES
 
 case class ManifestContext(base: Option[IRI], derefIncludes: Boolean, visited: List[IRI])
 
@@ -24,6 +35,8 @@ class RDF2Manifest extends RDFParser with LazyLogging {
      Kleisli.local(fn)(parser)
   }
 
+  def getConfig[A]: ManifestParser[Config] = liftParser(lift(ReaderT.ask[IO,Config]))
+
 /*  private def getSubjectsWithType(rdf: RDFReader, t: IRI): ManifestParser[List[RDFTriple]] = 
     liftIO */
 
@@ -33,7 +46,7 @@ class RDF2Manifest extends RDFParser with LazyLogging {
       rdf <- liftParser(getRDF)
       candidates <- liftParser(liftIO(rdf.subjectsWithType(mf_Manifest).compile.toList))
       // candidates <- liftParser(fromEitherT(triples))
-      _ <- liftParser(info(s"rdf2Manifest: candidates=${candidates.mkString(",")}"))
+      // _ <- liftParser(info(s"rdf2Manifest: candidates=${candidates.mkString(",")}"))
       nodes <- { 
         liftParser(parseNodes(candidates.toList, manifest.run(ctx)))
       }
@@ -257,16 +270,36 @@ class RDF2Manifest extends RDFParser with LazyLogging {
     } else liftParser(parseOk(List()))
   } yield v
 
+  private def parseShExManifest(iri: IRI,
+                                ctx: ManifestContext,
+                                config: Config
+                               ): ManifestParser[(IRI,Option[ShExManifest])] = {
+    val io: IO[(IRI,Option[ShExManifest])] = derefRDF(iri).use(rdf => for {
+     eitherMfs <- parseManifest(iri,rdf).run(ctx).value.run(config)
+     mf <- eitherMfs.fold(
+       e => IO.raiseError(new RuntimeException(s"Error parsing $iri:${e}")),
+       mfs => if (mfs.size == 1) IO(mfs.head)
+       else IO.raiseError(new RuntimeException(s"More than one manifest ${mfs.size}"))
+     )
+    } yield (iri,Some(mf)))
+    val xs: RDFParser[(IRI, Option[ShExManifest])] = liftIO(io)
+    liftParser(xs)
+/*    resource.use(rdf =>
+    for {
+      // liftedParser <- liftParser(rdf)
+      mfs <- parseManifest(iri, rdf)
+      manifest <- liftParser()
+    } yield (iri, manifest.some)) */
+  }
+
   private def derefInclude(node: IRI): ManifestParser[(IRI, Option[ShExManifest])] = for {
     ctx <- getContext
+    config <- getConfig
     pair <- node match {
       case iri: IRI => if (ctx.derefIncludes) {
-          val iriResolved = ctx.base.fold(iri)(base => base.resolve(iri))
-          for {
-            rdf <- liftParser(derefRDF(iriResolved))
-            mfs <- parseManifest(iriResolved, rdf) 
-            manifest <- liftParser(checkListManifests(mfs))
-          } yield (iri, Some(manifest))
+         val iriResolved = ctx.base.fold(iri)(base => base.resolve(iri))
+         val r: ManifestParser[(IRI,Option[ShExManifest])] = parseShExManifest(iriResolved,ctx,config)
+         r
         } else liftParser(ok((iri, None)))
       case _ =>
         liftParser(parseFail(s"Trying to deref an include from node $node which is not an IRI"))
@@ -282,9 +315,19 @@ class RDF2Manifest extends RDFParser with LazyLogging {
     if (mfs.size == 1) ok(mfs.head)
     else parseFail(s"More than one manifests found: ${mfs} at iri $iri")
 
-  private def derefRDF(iri: IRI): RDFParser[RDFReader] = 
-    liftIO(RDFAsJenaModel.fromURI(iri.getLexicalForm, "TURTLE", Some(iri)))
-    
+/*  private def derefRDF(iri: IRI): Resource[ManifestParser,RDFReader] =
+    liftResource(RDFAsJenaModel.fromURI(iri.getLexicalForm, "TURTLE", Some(iri))) */
+  private def derefRDF(iri: IRI): Resource[IO,RDFReader] =
+    RDFAsJenaModel.fromURI(iri.getLexicalForm, "TURTLE", Some(iri))
+
+  val io2parser = new FunctionK[IO,ManifestParser] {
+    override def apply[A](ioa: IO[A]): ManifestParser[A] =
+      liftParser(liftIO(ioa))
+  }
+
+  private def liftResource[A](r: Resource[IO,A]): Resource[ManifestParser,A] = {
+   r.mapK(io2parser)
+  }
 
   private def parsePropertyList[A](pred: IRI, parser: RDFParser[A]): RDFParser[List[A]] =
     for {
@@ -359,52 +402,64 @@ object RDF2Manifest extends LazyLogging {
     } yield manifest
   }
  */
+
+  private def getIriBase(base: Option[String]): IO[Option[IRI]] =
+    base match {
+      case None      => None.pure[IO]
+      case Some(str) => {
+        val s: Either[String,Option[IRI]] = IRI.fromString(str).map(Some(_))
+        val r: IO[Option[IRI]] = fromES(s)
+        r
+      }
+  }
+
   def read(
       fileName: String,
       format: String,
       base: Option[String],
       derefIncludes: Boolean
-  ): EitherT[IO, String, ShExManifest] = {
+  ): IO[ShExManifest] = {
     val noIri : Option[IRI] = None
     val n : RDFNode = IRI("http://internal.base/")
-    for {
-      cs  <- getContents(fileName)
-      rdf <- getRDF(cs.toString, format, base)
-      iriBase <- base match {
-        case None      => { 
-          val s: EitherT[IO, String,Option[IRI]] = EitherT.pure(noIri) 
-          s
+    val r: IO[ShExManifest] = for {
+      cs <- getContents(fileName)
+      sm <- getRDF(cs.toString, format, base).use(rdf => for {
+        iriBase <- getIriBase(base)
+        mfs <- {
+          val ctx = ManifestContext(iriBase, derefIncludes, List())
+          val cfg = Config(n, rdf)
+          val mm: IO[List[ShExManifest]] = mkShExManifest(cfg, ctx)
+          mm
         }
-        case Some(str) => { 
-          val s: Either[String,Option[IRI]] = IRI.fromString(str).map(Some(_))
-          val r: EitherT[IO, String, Option[IRI]] = EitherT.fromEither(s) 
-          r
-        }
-      }
-      mfs <- {
-        val ctx = ManifestContext(iriBase,derefIncludes,List())
-        val cfg = Config(n,rdf)
-        val mm: EitherT[IO, String, List[ShExManifest]] = mkShExManifest(cfg,ctx)
-        mm
-      }
-      manifest <- if (mfs.size == 1) { 
-        val r: EitherT[IO,String,ShExManifest] = EitherT.pure(mfs.head)
-        r
-      } 
-        else EitherT.leftT[IO,ShExManifest](s"Number of manifests != 1: ${mfs}")
-    } yield manifest
+        manifest <-
+          if (mfs.size == 1) mfs.head.pure[IO]
+          else IO.raiseError(new RuntimeException(s"Number of manifests != 1: ${mfs}"))
+      } yield manifest)
+    } yield sm
+    r
   }
 
-  private def mkShExManifest(cfg: Config, ctx: ManifestContext): EitherT[IO,String, List[ShExManifest]] = {
+  private def mkShExManifest(cfg: Config, ctx: ManifestContext): IO[List[ShExManifest]] = {
     val mm: IO[Either[Throwable,List[ShExManifest]]] = (new RDF2Manifest).rdf2Manifest.run(ctx).value.run(cfg)
-    EitherT(mm.map(_.leftMap(_.getMessage)))
+    mm.flatMap(_.fold(
+      e => IO.raiseError(new RuntimeException(s"mkShExManifest: Error: ${e.getMessage}")),
+      IO(_)
+    ))
   }
-//  private def ok[A](x:A): EitherT[IO, String, A] = EitherT.pure(x)
-//  private def err[A](s: String): EitherT[IO,String,A] = EitherT.left[A](s)
 
-  private def getRDF(cs: String, format: String, base: Option[String]): EitherT[IO, String, RDFReader] = {
-    val s: IO[RDFReader] = RDFAsJenaModel.fromChars(cs, format, base.map(IRI(_)))
-    EitherT.liftF(s)
+  private def getRDF(cs: String, format: String, base: Option[String]): Resource[IO, RDFReader] = {
+    RDFAsJenaModel.fromChars(cs, format, base.map(IRI(_)))
+  }
+
+  private def getContents(fileName: String): IO[CharSequence] = {
+    val path = Paths.get(fileName)
+    implicit val cs = IO.contextShift(ExecutionContext.global)
+    val decoder: Pipe[IO,Byte,String] = fs2.text.utf8Decode
+    val s: IO[String] =
+      Stream.resource(Blocker[IO]).flatMap(blocker =>
+        fs2.io.file.readAll[IO](path, blocker,4096).through(decoder)
+      ).compile.string
+    s
   }
 
 }
