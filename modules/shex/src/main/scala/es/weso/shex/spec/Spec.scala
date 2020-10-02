@@ -1,7 +1,7 @@
 package es.weso.shex.spec
 
 import cats._
-import cats.implicits._
+import cats.syntax.all._
 import es.weso.shex.implicits.showShEx._
 import es.weso.rdf.{PrefixMap, RDFReader}
 import es.weso.rdf.nodes.{IRI, Literal, RDFNode}

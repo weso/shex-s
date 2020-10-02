@@ -1,6 +1,6 @@
 package es.weso.shex.validator
 import cats._
-import cats.implicits._
+import cats.syntax.all._
 import es.weso.rdf.PrefixMap
 import es.weso.rdf.nodes.{IRI, RDFNode}
 import es.weso.shex.implicits.showShEx._

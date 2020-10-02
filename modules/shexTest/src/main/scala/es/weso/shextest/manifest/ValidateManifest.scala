@@ -11,7 +11,7 @@ import org.scalatest._
 import scala.util.{Either, Left, Right, Try}
 import cats.data.EitherT
 import cats.effect.IO
-import cats.implicits._
+import cats.syntax.all._
 import es.weso.shex._
 import es.weso.shex.validator.{ExternalIRIResolver, Validator}
 import es.weso.shex.compact.CompareSchemas

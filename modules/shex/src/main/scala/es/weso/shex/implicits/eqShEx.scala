@@ -1,7 +1,7 @@
 package es.weso.shex.implicits
 
 import cats._
-import cats.implicits._
+import cats.syntax.all._
 import com.typesafe.scalalogging.LazyLogging
 import es.weso.rdf.nodes._
 import es.weso.shex._

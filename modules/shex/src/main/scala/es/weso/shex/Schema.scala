@@ -1,7 +1,7 @@
 package es.weso.shex
 
 import java.nio.file.{Files, Paths}
-import cats.implicits._
+import cats.syntax.all._
 import es.weso.depgraphs.DepGraph
 import es.weso.rdf.{PrefixMap, RDFBuilder, RDFReader}
 import es.weso.rdf.nodes._

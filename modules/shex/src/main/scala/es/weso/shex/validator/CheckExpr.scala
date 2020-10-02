@@ -1,7 +1,7 @@
 package es.weso.shex.validator
 
 import cats.Show
-import cats.implicits._
+import cats.syntax.all._
 import es.weso.shex.{SemAct, ShapeExpr}
 
 private[validator] sealed trait CheckExpr

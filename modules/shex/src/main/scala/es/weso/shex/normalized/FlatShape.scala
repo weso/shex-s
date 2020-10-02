@@ -1,10 +1,10 @@
 package es.weso.shex.normalized
 
-import cats.implicits._
+import cats.syntax.all._
 import es.weso.rdf.nodes.IRI
 import es.weso.shex._
 import cats._
-import cats.implicits._
+import cats.syntax.all._
 import es.weso.shex.implicits.showShEx._
 
 /**

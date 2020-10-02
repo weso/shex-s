@@ -2,7 +2,7 @@ package es.weso.shex
 
 import java.io.File
 
-import cats.implicits._
+import cats.syntax.all._
 // import cats.syntax.either._
 import com.typesafe.config._
 import es.weso.utils.json.JsonCompare.jsonDiff

@@ -10,7 +10,7 @@ lazy val documentVersion       = "0.0.11"
 
 // Dependency versions
 lazy val antlrVersion          = "4.7.1"
-lazy val catsVersion           = "2.1.1"  
+lazy val catsVersion           = "2.2.0"  
 lazy val catsEffectVersion     = "2.1.2"  
 lazy val commonsTextVersion    = "1.8"
 lazy val circeVersion          = "0.12.3"
@@ -35,7 +35,7 @@ lazy val xercesVersion         = "2.12.0"
 // Compiler plugin dependency versions
 lazy val simulacrumVersion = "1.0.0"
 // lazy val kindProjectorVersion = "0.9.5"
-lazy val scalaMacrosVersion = "2.1.1"
+lazy val scalaMacrosVersion = "2.2.0"
 
 // Dependency modules
 lazy val antlr4            = "org.antlr"                  % "antlr4"               % antlrVersion

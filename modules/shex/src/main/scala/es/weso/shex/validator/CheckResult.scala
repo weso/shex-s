@@ -1,6 +1,6 @@
 package es.weso.shex.validator
 import cats._
-import cats.implicits._
+import cats.syntax.all._
 // import cats.effect.IO
 
 case class CheckResult[E: Show, A: Show, Log: Show](r: (Log, Either[E, A])) {

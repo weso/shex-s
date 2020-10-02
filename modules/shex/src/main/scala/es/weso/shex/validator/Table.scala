@@ -7,7 +7,7 @@ import es.weso.rbe.{Direct => _, Schema => _, Star => _, _}
 import es.weso.rdf.nodes.IRI
 import es.weso.shex._
 import es.weso.shex.compact.Parser.TripleExprMap
-import cats.implicits._
+import cats.syntax.all._
 
 /* Candidates table */
 object Table extends LazyLogging {

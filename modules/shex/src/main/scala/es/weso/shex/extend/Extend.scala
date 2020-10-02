@@ -1,7 +1,6 @@
 package es.weso.shex.extend
 import cats._
-import cats.data._
-import cats.implicits._
+import cats.data._
 
 trait Extend {
 

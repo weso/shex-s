@@ -13,7 +13,7 @@ import es.weso.shex.implicits.encoderShEx._
 import cats.data.EitherT
 import cats.effect._
 import scala.io._
-import cats.implicits._
+import cats.syntax.all._
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 

@@ -8,7 +8,7 @@ import es.weso.utils.json._
 import es.weso.utils.FileUtils._
 import es.weso.shex._
 import cats.effect._
-import cats.implicits._
+import cats.syntax.all._
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 

@@ -2,7 +2,7 @@ package es.weso.shex.compact
 
 import java.io.{ByteArrayInputStream, InputStreamReader, Reader => JavaReader}
 import cats.data._
-import cats.implicits._
+import cats.syntax.all._
 import com.typesafe.scalalogging._
 import es.weso.rdf._
 import es.weso.rdf.nodes._

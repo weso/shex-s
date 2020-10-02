@@ -1,10 +1,10 @@
 package es.weso.shex.validator
 
-import cats.implicits._
+import cats.syntax.all._
 import es.weso.shapeMaps.ResultShapeMap
 import cats.effect.IO
 import cats._
-import cats.implicits._
+import cats.syntax.all._
 
 case class Result(e: Either[ShExError, ResultShapeMap]) {
 

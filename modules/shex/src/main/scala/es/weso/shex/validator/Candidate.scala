@@ -1,7 +1,7 @@
 package es.weso.shex.validator
 
 import cats.Show
-import cats.implicits._
+import cats.syntax.all._
 
 case class Candidate(arc: Arc, crefs: Set[ConstraintRef]) {
   override def toString: String = Candidate.showCandidate.show(this)

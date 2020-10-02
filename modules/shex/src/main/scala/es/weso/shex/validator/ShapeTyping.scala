@@ -1,6 +1,6 @@
 package es.weso.shex.validator
 import cats._
-import cats.implicits._
+import cats.syntax.all._
 import com.typesafe.scalalogging.LazyLogging
 import es.weso.rdf.PrefixMap
 import es.weso.typing._

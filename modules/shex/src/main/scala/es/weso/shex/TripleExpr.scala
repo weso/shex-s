@@ -4,7 +4,7 @@ import es.weso.rdf.nodes.IRI
 import values._
 import cats.data._  
 import cats._
-import cats.implicits._
+import cats.syntax.all._
 
 sealed trait TripleExpr {
   def addId(label: ShapeLabel): TripleExpr

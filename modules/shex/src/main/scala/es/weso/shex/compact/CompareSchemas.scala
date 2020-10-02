@@ -1,6 +1,5 @@
 package es.weso.shex.compact
-import cats._
-import cats.implicits._
+import cats._
 import es.weso.shex._
 import es.weso.shex.implicits.eqShEx._
 

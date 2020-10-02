@@ -2,7 +2,7 @@ package es.weso.shex.implicits
 import io.circe._
 import io.circe.syntax._
 import es.weso.rdf.nodes._
-import cats.implicits._
+import cats.syntax.all._
 import es.weso.shex._
 import showShEx._
 import es.weso.rdf._

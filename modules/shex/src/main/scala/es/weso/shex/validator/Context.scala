@@ -1,7 +1,7 @@
 package es.weso.shex.validator
 
 import cats._
-import cats.implicits._
+import cats.syntax.all._
 import es.weso.shex.VarTable
 
 case class Context(typing: ShapeTyping, varTable: VarTable)
