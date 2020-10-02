@@ -915,9 +915,9 @@
       
       
     </li><li name="es.weso.shex.Schema#fromString" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="fromString(cs:CharSequence,format:String,base:Option[es.weso.rdf.nodes.IRI],maybeRDFReader:Option[es.weso.rdf.RDFReader]):cats.effect.IO[es.weso.shex.Schema]"></a><a id="fromString(CharSequence,String,Option[IRI],Option[RDFReader]):IO[Schema]"></a>
+      <a id="fromString(cs:CharSequence,format:String,base:Option[es.weso.rdf.nodes.IRI],maybeRDFBuilder:Option[es.weso.rdf.RDFBuilder]):cats.effect.IO[es.weso.shex.Schema]"></a><a id="fromString(CharSequence,String,Option[IRI],Option[RDFBuilder]):IO[Schema]"></a>
       <span class="permalink">
-      <a href="../../../es/weso/shex/Schema$.html#fromString(cs:CharSequence,format:String,base:Option[es.weso.rdf.nodes.IRI],maybeRDFReader:Option[es.weso.rdf.RDFReader]):cats.effect.IO[es.weso.shex.Schema]" title="Permalink">
+      <a href="../../../es/weso/shex/Schema$.html#fromString(cs:CharSequence,format:String,base:Option[es.weso.rdf.nodes.IRI],maybeRDFBuilder:Option[es.weso.rdf.RDFBuilder]):cats.effect.IO[es.weso.shex.Schema]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -926,10 +926,10 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">fromString</span><span class="params">(<span name="cs">cs: <span class="extype" name="java.lang.CharSequence">CharSequence</span></span>, <span name="format">format: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;ShExC&quot;</span></span>, <span name="base">base: <a href="https://www.scala-lang.org/api/2.12.11/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<span class="extype" name="es.weso.rdf.nodes.IRI">IRI</span>] = <span class="symbol">None</span></span>, <span name="maybeRDFReader">maybeRDFReader: <a href="https://www.scala-lang.org/api/2.12.11/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<span class="extype" name="es.weso.rdf.RDFReader">RDFReader</span>] = <span class="symbol">None</span></span>)</span><span class="result">: <span class="extype" name="cats.effect.IO">IO</span>[<a href="Schema.html" class="extype" name="es.weso.shex.Schema">Schema</a>]</span>
+        <span class="name">fromString</span><span class="params">(<span name="cs">cs: <span class="extype" name="java.lang.CharSequence">CharSequence</span></span>, <span name="format">format: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;ShExC&quot;</span></span>, <span name="base">base: <a href="https://www.scala-lang.org/api/2.12.11/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<span class="extype" name="es.weso.rdf.nodes.IRI">IRI</span>] = <span class="symbol">None</span></span>, <span name="maybeRDFBuilder">maybeRDFBuilder: <a href="https://www.scala-lang.org/api/2.12.11/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<span class="extype" name="es.weso.rdf.RDFBuilder">RDFBuilder</span>] = <span class="symbol">None</span></span>)</span><span class="result">: <span class="extype" name="cats.effect.IO">IO</span>[<a href="Schema.html" class="extype" name="es.weso.shex.Schema">Schema</a>]</span>
       </span>
       
-      <p class="shortcomment cmt">Reads a Schema from a char sequence</p><div class="fullcomment"><div class="comment cmt"><p>Reads a Schema from a char sequence</p></div><dl class="paramcmts block"><dt class="param">cs</dt><dd class="cmt"><p>char sequence</p></dd><dt class="param">format</dt><dd class="cmt"><p>syntax format</p></dd><dt class="param">base</dt><dd class="cmt"><p>base URL</p></dd><dt class="param">maybeRDFReader</dt><dd class="cmt"><p>RDFReader value from which to obtain RDF data formats (in case of RDF format)</p></dd><dt>returns</dt><dd class="cmt"><p>either a Schema or a String message error</p></dd></dl></div>
+      <p class="shortcomment cmt">Reads a Schema from a char sequence</p><div class="fullcomment"><div class="comment cmt"><p>Reads a Schema from a char sequence</p></div><dl class="paramcmts block"><dt class="param">cs</dt><dd class="cmt"><p>char sequence</p></dd><dt class="param">format</dt><dd class="cmt"><p>syntax format</p></dd><dt class="param">base</dt><dd class="cmt"><p>base URL</p></dd><dt class="param">maybeRDFBuilder</dt><dd class="cmt"><p>RDFReader value from which to obtain RDF data formats (in case of RDF format)</p></dd><dt>returns</dt><dd class="cmt"><p>either a Schema or a String message error</p></dd></dl></div>
     </li><li name="scala.AnyRef#getClass" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getClass():Class[_]"></a>
       <span class="permalink">

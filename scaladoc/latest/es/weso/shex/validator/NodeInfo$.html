@@ -133,6 +133,22 @@
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../index.html" class="extype" name="es.weso.shex">shex</a></dd></dl></div>
+    </li><li name="es.weso.shex.validator.exceptions" visbl="pub" class="indented5 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="exceptions"></a><a id="exceptions:exceptions"></a>
+      <span class="permalink">
+      <a href="../../../../es/weso/shex/validator/exceptions/index.html" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a title="" href="exceptions/index.html"><span class="name">exceptions</span></a>
+      </span>
+      
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="index.html" class="extype" name="es.weso.shex.validator">validator</a></dd></dl></div>
     </li><li class="current-entities indented4">
                         <a class="object" href="Action$.html" title=""></a>
                         <a class="class" href="Action.html" title="Represents actions to be done"></a>
@@ -157,6 +173,14 @@
                         <span class="separator"></span>
                         <a class="class" href="CheckResult.html" title=""></a>
                         <a href="CheckResult.html" title="">CheckResult</a>
+                      </li><li class="current-entities indented4">
+                        <span class="separator"></span>
+                        <a class="class" href="CheckerCats.html" title=""></a>
+                        <a href="CheckerCats.html" title="">CheckerCats</a>
+                      </li><li class="current-entities indented4">
+                        <span class="separator"></span>
+                        <a class="object" href="CheckerCatsStr$.html" title=""></a>
+                        <a href="CheckerCatsStr$.html" title="">CheckerCatsStr</a>
                       </li><li class="current-entities indented4">
                         <span class="separator"></span>
                         <a class="class" href="ClosedButExtraPreds.html" title=""></a>
@@ -477,9 +501,9 @@
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li name="es.weso.shex.validator.NodeInfo#fractionDigits" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="fractionDigits(node:es.weso.rdf.nodes.RDFNode,rdf:es.weso.rdf.RDFReader):cats.data.EitherT[cats.effect.IO,String,Int]"></a><a id="fractionDigits(RDFNode,RDFReader):EitherT[IO,String,Int]"></a>
+      <a id="fractionDigits(node:es.weso.rdf.nodes.RDFNode,rdf:es.weso.rdf.RDFReader):cats.effect.IO[Int]"></a><a id="fractionDigits(RDFNode,RDFReader):IO[Int]"></a>
       <span class="permalink">
-      <a href="../../../../es/weso/shex/validator/NodeInfo$.html#fractionDigits(node:es.weso.rdf.nodes.RDFNode,rdf:es.weso.rdf.RDFReader):cats.data.EitherT[cats.effect.IO,String,Int]" title="Permalink">
+      <a href="../../../../es/weso/shex/validator/NodeInfo$.html#fractionDigits(node:es.weso.rdf.nodes.RDFNode,rdf:es.weso.rdf.RDFReader):cats.effect.IO[Int]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -488,23 +512,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">fractionDigits</span><span class="params">(<span name="node">node: <span class="extype" name="es.weso.rdf.nodes.RDFNode">RDFNode</span></span>, <span name="rdf">rdf: <span class="extype" name="es.weso.rdf.RDFReader">RDFReader</span></span>)</span><span class="result">: <a href="http://typelevel.org/cats/api/cats/data/EitherT.html#cats.data.EitherT" class="extype" name="cats.data.EitherT">EitherT</a>[<span class="extype" name="cats.effect.IO">IO</span>, <span class="extype" name="scala.Predef.String">String</span>, <a href="https://www.scala-lang.org/api/2.12.11/scala/Int.html#scala.Int" class="extype" name="scala.Int">Int</a>]</span>
-      </span>
-      
-      
-    </li><li name="es.weso.shex.validator.NodeInfo#fromIOEither" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="fromIOEither[A](e:cats.effect.IO[scala.util.Either[Throwable,A]]):cats.data.EitherT[cats.effect.IO,String,A]"></a><a id="fromIOEither[A](IO[Either[Throwable,A]]):EitherT[IO,String,A]"></a>
-      <span class="permalink">
-      <a href="../../../../es/weso/shex/validator/NodeInfo$.html#fromIOEither[A](e:cats.effect.IO[scala.util.Either[Throwable,A]]):cats.data.EitherT[cats.effect.IO,String,A]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">fromIOEither</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="e">e: <span class="extype" name="cats.effect.IO">IO</span>[<a href="https://www.scala-lang.org/api/2.12.11/scala/util/Either.html#scala.util.Either" class="extype" name="scala.util.Either">Either</a>[<span class="extype" name="scala.Throwable">Throwable</span>, <span class="extype" name="es.weso.shex.validator.NodeInfo.fromIOEither.A">A</span>]]</span>)</span><span class="result">: <a href="http://typelevel.org/cats/api/cats/data/EitherT.html#cats.data.EitherT" class="extype" name="cats.data.EitherT">EitherT</a>[<span class="extype" name="cats.effect.IO">IO</span>, <span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="es.weso.shex.validator.NodeInfo.fromIOEither.A">A</span>]</span>
+        <span class="name">fractionDigits</span><span class="params">(<span name="node">node: <span class="extype" name="es.weso.rdf.nodes.RDFNode">RDFNode</span></span>, <span name="rdf">rdf: <span class="extype" name="es.weso.rdf.RDFReader">RDFReader</span></span>)</span><span class="result">: <span class="extype" name="cats.effect.IO">IO</span>[<a href="https://www.scala-lang.org/api/2.12.11/scala/Int.html#scala.Int" class="extype" name="scala.Int">Int</a>]</span>
       </span>
       
       
@@ -673,9 +681,9 @@
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li name="es.weso.shex.validator.NodeInfo#totalDigits" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="totalDigits(node:es.weso.rdf.nodes.RDFNode,rdf:es.weso.rdf.RDFReader):cats.data.EitherT[cats.effect.IO,String,Int]"></a><a id="totalDigits(RDFNode,RDFReader):EitherT[IO,String,Int]"></a>
+      <a id="totalDigits(node:es.weso.rdf.nodes.RDFNode,rdf:es.weso.rdf.RDFReader):cats.effect.IO[Int]"></a><a id="totalDigits(RDFNode,RDFReader):IO[Int]"></a>
       <span class="permalink">
-      <a href="../../../../es/weso/shex/validator/NodeInfo$.html#totalDigits(node:es.weso.rdf.nodes.RDFNode,rdf:es.weso.rdf.RDFReader):cats.data.EitherT[cats.effect.IO,String,Int]" title="Permalink">
+      <a href="../../../../es/weso/shex/validator/NodeInfo$.html#totalDigits(node:es.weso.rdf.nodes.RDFNode,rdf:es.weso.rdf.RDFReader):cats.effect.IO[Int]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -684,7 +692,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">totalDigits</span><span class="params">(<span name="node">node: <span class="extype" name="es.weso.rdf.nodes.RDFNode">RDFNode</span></span>, <span name="rdf">rdf: <span class="extype" name="es.weso.rdf.RDFReader">RDFReader</span></span>)</span><span class="result">: <a href="http://typelevel.org/cats/api/cats/data/EitherT.html#cats.data.EitherT" class="extype" name="cats.data.EitherT">EitherT</a>[<span class="extype" name="cats.effect.IO">IO</span>, <span class="extype" name="scala.Predef.String">String</span>, <a href="https://www.scala-lang.org/api/2.12.11/scala/Int.html#scala.Int" class="extype" name="scala.Int">Int</a>]</span>
+        <span class="name">totalDigits</span><span class="params">(<span name="node">node: <span class="extype" name="es.weso.rdf.nodes.RDFNode">RDFNode</span></span>, <span name="rdf">rdf: <span class="extype" name="es.weso.rdf.RDFReader">RDFReader</span></span>)</span><span class="result">: <span class="extype" name="cats.effect.IO">IO</span>[<a href="https://www.scala-lang.org/api/2.12.11/scala/Int.html#scala.Int" class="extype" name="scala.Int">Int</a>]</span>
       </span>
       
       

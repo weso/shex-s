@@ -351,9 +351,9 @@
       
       
     </li><li name="es.weso.shextest.manifest.RunManifest.EntryProcess" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="EntryProcess=RunManifest.this.EntryParam=&gt;cats.data.EitherT[cats.effect.IO,String,Option[RunManifest.this.Result]]"></a><a id="EntryProcess:EntryProcess"></a>
+      <a id="EntryProcess=RunManifest.this.EntryParam=&gt;cats.effect.IO[Option[RunManifest.this.Result]]"></a><a id="EntryProcess:EntryProcess"></a>
       <span class="permalink">
-      <a href="../../../../es/weso/shextest/manifest/RunManifest.html#EntryProcess=RunManifest.this.EntryParam=&gt;cats.data.EitherT[cats.effect.IO,String,Option[RunManifest.this.Result]]" title="Permalink">
+      <a href="../../../../es/weso/shextest/manifest/RunManifest.html#EntryProcess=RunManifest.this.EntryParam=&gt;cats.effect.IO[Option[RunManifest.this.Result]]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -362,7 +362,7 @@
         <span class="kind">type</span>
       </span>
       <span class="symbol">
-        <span class="name">EntryProcess</span><span class="result alias"> = (<a href="RunManifest$EntryParam.html" class="extype" name="es.weso.shextest.manifest.RunManifest.EntryParam">EntryParam</a>) ⇒ <a href="http://typelevel.org/cats/api/cats/data/EitherT.html#cats.data.EitherT" class="extype" name="cats.data.EitherT">EitherT</a>[<span class="extype" name="cats.effect.IO">IO</span>, <span class="extype" name="scala.Predef.String">String</span>, <a href="https://www.scala-lang.org/api/2.12.11/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<a href="RunManifest$Result.html" class="extype" name="es.weso.shextest.manifest.RunManifest.Result">Result</a>]]</span>
+        <span class="name">EntryProcess</span><span class="result alias"> = (<a href="RunManifest$EntryParam.html" class="extype" name="es.weso.shextest.manifest.RunManifest.EntryParam">EntryParam</a>) ⇒ <span class="extype" name="cats.effect.IO">IO</span>[<a href="https://www.scala-lang.org/api/2.12.11/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<a href="RunManifest$Result.html" class="extype" name="es.weso.shextest.manifest.RunManifest.Result">Result</a>]]</span>
       </span>
       
       
@@ -629,9 +629,9 @@
               
         </dd></dl></div>
     </li><li name="es.weso.shextest.manifest.RunManifest#runManifest" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="runManifest(name:String,folder:String,parentFolder:String,nameIfSingle:Option[String],ignoreList:List[String],withEntry:RunManifest.this.EntryProcess):cats.data.EitherT[cats.effect.IO,String,List[RunManifest.this.Result]]"></a><a id="runManifest(String,String,String,Option[String],List[String],EntryProcess):EitherT[IO,String,List[Result]]"></a>
+      <a id="runManifest(name:String,folder:String,parentFolder:String,nameIfSingle:Option[String],ignoreList:List[String],withEntry:RunManifest.this.EntryProcess):cats.effect.IO[List[RunManifest.this.Result]]"></a><a id="runManifest(String,String,String,Option[String],List[String],EntryProcess):IO[List[Result]]"></a>
       <span class="permalink">
-      <a href="../../../../es/weso/shextest/manifest/RunManifest.html#runManifest(name:String,folder:String,parentFolder:String,nameIfSingle:Option[String],ignoreList:List[String],withEntry:RunManifest.this.EntryProcess):cats.data.EitherT[cats.effect.IO,String,List[RunManifest.this.Result]]" title="Permalink">
+      <a href="../../../../es/weso/shextest/manifest/RunManifest.html#runManifest(name:String,folder:String,parentFolder:String,nameIfSingle:Option[String],ignoreList:List[String],withEntry:RunManifest.this.EntryProcess):cats.effect.IO[List[RunManifest.this.Result]]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -640,7 +640,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">runManifest</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="folder">folder: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="parentFolder">parentFolder: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="nameIfSingle">nameIfSingle: <a href="https://www.scala-lang.org/api/2.12.11/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="ignoreList">ignoreList: <span class="extype" name="scala.List">List</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="withEntry">withEntry: <a href="#EntryProcess=RunManifest.this.EntryParam=&gt;cats.data.EitherT[cats.effect.IO,String,Option[RunManifest.this.Result]]" class="extmbr" name="es.weso.shextest.manifest.RunManifest.EntryProcess">EntryProcess</a></span>)</span><span class="result">: <a href="http://typelevel.org/cats/api/cats/data/EitherT.html#cats.data.EitherT" class="extype" name="cats.data.EitherT">EitherT</a>[<span class="extype" name="cats.effect.IO">IO</span>, <span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.List">List</span>[<a href="RunManifest$Result.html" class="extype" name="es.weso.shextest.manifest.RunManifest.Result">Result</a>]]</span>
+        <span class="name">runManifest</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="folder">folder: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="parentFolder">parentFolder: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="nameIfSingle">nameIfSingle: <a href="https://www.scala-lang.org/api/2.12.11/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="ignoreList">ignoreList: <span class="extype" name="scala.List">List</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="withEntry">withEntry: <a href="#EntryProcess=RunManifest.this.EntryParam=&gt;cats.effect.IO[Option[RunManifest.this.Result]]" class="extmbr" name="es.weso.shextest.manifest.RunManifest.EntryProcess">EntryProcess</a></span>)</span><span class="result">: <span class="extype" name="cats.effect.IO">IO</span>[<span class="extype" name="scala.List">List</span>[<a href="RunManifest$Result.html" class="extype" name="es.weso.shextest.manifest.RunManifest.Result">Result</a>]]</span>
       </span>
       
       
