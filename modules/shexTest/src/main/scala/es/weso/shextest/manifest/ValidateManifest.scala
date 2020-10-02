@@ -52,11 +52,8 @@ trait RunManifest {
     val manifestFolder  = s"$parentFolder/$folder"
     val fileName        = s"$manifestFolder/$name.ttl"
     for {
-      _ <- IO { println(s"Before RDF2Manifest.read...")}
       mf <- RDF2Manifest.read(fileName, "TURTLE", Some(s"$parentFolderURI/$folder/"), true)
-      _ <- IO { println(s"After RDF2Manifest.read...") }
       v <- processManifest(mf, name, manifestFolder, nameIfSingle, ignoreList, withEntry)
-      _ <- IO { println(s"After process Manifest...")}
     } yield v
   }
 
@@ -69,7 +66,6 @@ trait RunManifest {
       withEntry: EntryProcess
   ): IO[List[Result]] =
     for {
-      _ <- IO { println(s"Before vs1 ")}
       vs1 <- m.includes
         .map {
           case (includeNode, manifest) =>
@@ -78,9 +74,7 @@ trait RunManifest {
         }
         .sequence
         .map(_.flatten)
-      _ <- IO { println(s"After vs1 ")}
       vs2 <- m.entries.map(e => withEntry(EntryParam(e, name, parentFolder, nameIfSingle, ignoreList))).sequence
-      _ <- IO { println(s"After vs2 ")}
     } yield (vs1 ++ vs2.flatten[Result])
 }
 

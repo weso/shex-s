@@ -43,9 +43,10 @@ trait RDF2ShEx extends RDFParser with LazyLogging {
     start <- opt(sx_start, shapeExpr)
     shapePairs <- starWithNodes(sx_shapes, shapeExpr)
     shapes <- star(sx_shapes, shapeExpr)
+    pm <- liftIO(rdf.getPrefixMap)
     // TODO: import
   } yield {
-    Schema(IRI(""),Some(rdf.getPrefixMap()), None, startActions, start, ls2Option(shapes),None, List())
+    Schema(IRI(""),Some(pm), None, startActions, start, ls2Option(shapes),None, List())
   }
 
   /*  def cnvShapePairs(ps: List[(RDFNode,ShapeExpr)]): Try[Map[ShapeLabel,ShapeExpr]] = {
@@ -451,9 +452,9 @@ trait RDF2ShEx extends RDFParser with LazyLogging {
 
 object RDF2ShEx extends RDF2ShEx {
 
-  def rdf2Schema(rdf: RDFReader): EitherT[IO, String, Schema] = {
+  def rdf2Schema(rdf: RDFReader): IO[Either[String,Schema]] = {
     val cfg = Config(IRI("http://internal/"),rdf)
-    EitherT(getSchema(rdf).value.run(cfg).map(_.leftMap(_.getMessage)))
+    getSchema(rdf).value.run(cfg).map(_.leftMap(_.getMessage))
   }
 
 }

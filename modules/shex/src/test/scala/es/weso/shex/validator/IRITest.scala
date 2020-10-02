@@ -12,11 +12,11 @@ class IRITest extends AnyFunSpec with Matchers with EitherValues {
 
   describe(s"Test IRI") {
     it(s"Resolves basic") {
-      val r = for {
-       rdf <- RDFAsJenaModel.fromChars("""|<x> <p> 1""".stripMargin, "TURTLE", Some(IRI("http://example.org/")))
-       schema <- Schema.fromString("""|<S> { <p> . }""".stripMargin, "ShExC", Some(IRI("http://example.org/")))
-       ts <- rdf.triplesWithSubject(IRI("http://example.org/x")).compile.toList
-      } yield ts
+      val r = RDFAsJenaModel.fromChars("""|<x> <p> 1""".stripMargin, "TURTLE", Some(IRI("http://example.org/"))).use(rdf =>
+        for {
+         schema <- Schema.fromString("""|<S> { <p> . }""".stripMargin, "ShExC", Some(IRI("http://example.org/")))
+         ts <- rdf.triplesWithSubject(IRI("http://example.org/x")).compile.toList
+        } yield ts)
       r.attempt.unsafeRunSync.fold(e => fail(s"Error $e"), values => {
         val ts = values
         ts.size should be(1)

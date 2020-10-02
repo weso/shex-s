@@ -46,8 +46,8 @@ class RDF2ManifestTest extends AnyFunSpec with ValidateManifest {
     parseManifest("manifest", 
        "validation", 
        validationFolder, 
-       // None,
-       Some("1literalTotaldigits_fail-malformedxsd_integer-1_2345"), 
+       None,
+       // Some("1literalTotaldigits_fail-malformedxsd_integer-1_2345"),
        List(), 
        false)
   }

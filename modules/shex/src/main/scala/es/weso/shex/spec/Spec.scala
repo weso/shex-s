@@ -53,7 +53,10 @@ object Spec extends LazyLogging {
   }
 
 
-  def satisfyStatus(node: RDFNode, lbl: ShapeMapLabel, status: Status): Check[Boolean] = ???
+  def satisfyStatus(node: RDFNode, lbl: ShapeMapLabel, status: Status): Check[Boolean] = {
+    println(s"satisfyStatus node: $node Label: $lbl status: $status, not implemented yet")
+    ???
+  }
 
   /*{
     m.flatten.map(t => t._3 match {

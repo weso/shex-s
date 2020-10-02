@@ -20,11 +20,8 @@ import cats.implicits._
 
 import scala.util._
 import es.weso.rdf.parser._
-import es.weso.utils.FileUtils.using
 // import es.weso.utils.IOException
 import es.weso.utils.IOUtils.fromES
-
-import scala.io.Source
 
 case class ManifestContext(base: Option[IRI], derefIncludes: Boolean, visited: List[IRI])
 
@@ -49,7 +46,7 @@ class RDF2Manifest extends RDFParser with LazyLogging {
       rdf <- liftParser(getRDF)
       candidates <- liftParser(liftIO(rdf.subjectsWithType(mf_Manifest).compile.toList))
       // candidates <- liftParser(fromEitherT(triples))
-      _ <- liftParser(info(s"rdf2Manifest: candidates=${candidates.mkString(",")}"))
+      // _ <- liftParser(info(s"rdf2Manifest: candidates=${candidates.mkString(",")}"))
       nodes <- { 
         liftParser(parseNodes(candidates.toList, manifest.run(ctx)))
       }
@@ -425,11 +422,8 @@ object RDF2Manifest extends LazyLogging {
     val noIri : Option[IRI] = None
     val n : RDFNode = IRI("http://internal.base/")
     val r: IO[ShExManifest] = for {
-      _ <- IO { println(s"Before getContents")}
       cs <- getContents(fileName)
-      _ <- IO { println(s"After getContents")}
       sm <- getRDF(cs.toString, format, base).use(rdf => for {
-        _ <- IO { println(s"Inside getRDF before getIriBase")}
         iriBase <- getIriBase(base)
         mfs <- {
           val ctx = ManifestContext(iriBase, derefIncludes, List())
@@ -452,8 +446,6 @@ object RDF2Manifest extends LazyLogging {
       IO(_)
     ))
   }
-//  private def ok[A](x:A): EitherT[IO, String, A] = EitherT.pure(x)
-//  private def err[A](s: String): EitherT[IO,String,A] = EitherT.left[A](s)
 
   private def getRDF(cs: String, format: String, base: Option[String]): Resource[IO, RDFReader] = {
     RDFAsJenaModel.fromChars(cs, format, base.map(IRI(_)))
