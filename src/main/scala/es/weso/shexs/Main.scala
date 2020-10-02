@@ -1,41 +1,43 @@
 package es.weso.shexs
 import cats.effect._
-import scala.concurrent.ExecutionContext
 import org.rogach.scallop._
 import org.rogach.scallop.exceptions._
 import es.weso.shextest.manifest._
 
-object Main {
-  // Needed for `IO.sleep`
-  implicit val timer: Timer[IO] = IO.timer(ExecutionContext.global)
+object Main extends IOApp {
+  // implicit val timer: Timer[IO] = IO.timer(ExecutionContext.global)
 
-  private def program(args: Array[String]): IO[Unit] = {
-    val opts = new MainOpts(args, errorDriver)
+  def run(args: List[String]): IO[ExitCode] = {
+    val opts = new MainOpts(args.toArray, errorDriver)
     for {
       _ <- IO(opts.verify())
-      _ <- run(opts)
-    } yield ()
+      code <- run(opts)
+    } yield code
   }
 
-  private def run(opts: MainOpts): IO[Unit] = {
+  private def run(opts: MainOpts): IO[ExitCode] = {
     if (opts.manifest.isDefined) { 
       for {
        eitherValue <- runManifest(opts.manifest()).attempt
-       _ <- eitherValue.fold(
-         s => IO(println(s"Error: $s")),
-         v => IO(println(s"End: $v"))
+       exitCode <- eitherValue.fold(
+         s => IO {
+           println(s"Error: $s")
+           ExitCode.Error
+         },
+         v => IO {
+           println(s"End: $v")
+           ExitCode.Success
+         }
        )
-      } yield ()
+      } yield exitCode
     } else {
       IO {
         println(s"ShEx-s!")
         opts.printHelp()
+        ExitCode.Success
       }
     }
   }
-
-  def main(args: Array[String]): Unit =
-    program(args).unsafeRunSync
 
   private def errorDriver(e: Throwable, scallop: Scallop) = e match {
     case Help(s) => {
@@ -54,6 +56,5 @@ object Main {
   manifest <- RDF2Manifest.read(manifest,"Turtle",None, true)
   _ <- IO(println(s"Manifest read with ${manifest.entries.length} entries. Number of includes: ${manifest.includes.length}"))
  } yield ()
- 
 
 }
