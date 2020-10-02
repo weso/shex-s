@@ -1,8 +1,5 @@
 package es.weso.shexs
-import cats.data.EitherT
 import cats.effect._
-import cats.syntax.all._
-import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 import org.rogach.scallop._
 import org.rogach.scallop.exceptions._
@@ -23,12 +20,17 @@ object Main {
   private def run(opts: MainOpts): IO[Unit] = {
     if (opts.manifest.isDefined) { 
       for {
-       eitherValue <- runManifest(opts.manifest()).value
-       _ <- eitherValue.fold(s => IO(println(s"Error: $s")), v => IO(println(s"End: $v")))
+       eitherValue <- runManifest(opts.manifest()).attempt
+       _ <- eitherValue.fold(
+         s => IO(println(s"Error: $s")),
+         v => IO(println(s"End: $v"))
+       )
       } yield ()
     } else {
-      IO.sleep(1.second) *> 
-      IO(println("ShEx-s!"))
+      IO {
+        println(s"ShEx-s!")
+        opts.printHelp()
+      }
     }
   }
 
@@ -48,9 +50,9 @@ object Main {
     }
   }
 
- private def runManifest(manifest: String): EitherT[IO,String,Unit] = for {
+ private def runManifest(manifest: String): IO[Unit] = for {
   manifest <- RDF2Manifest.read(manifest,"Turtle",None, true)
-  _ <- EitherT.liftF(IO(println(s"Manifest read with ${manifest.entries.length} entries. Number of includes: ${manifest.includes.length}")))
+  _ <- IO(println(s"Manifest read with ${manifest.entries.length} entries. Number of includes: ${manifest.includes.length}"))
  } yield ()
  
 

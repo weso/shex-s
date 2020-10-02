@@ -7,8 +7,9 @@ import es.weso.shex.{IRILabel => ShExIriLabel, _}
 import org.scalatest._
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-import cats.data._ 
+import cats.data._
 import cats.effect._
+import es.weso.utils.IOUtils.fromES
 
 class SpecTest extends AnyFunSpec with Matchers with EitherValues {
   val x = IRI(s"http://example.org/x")
@@ -190,24 +191,27 @@ class SpecTest extends AnyFunSpec with Matchers with EitherValues {
 
   def shouldValidateShapeMap(strRDF: String, strSchema: String, strShapeMap: String, strExpectedShapeMap: String): Unit = {
 
-    def info(msg:String): EitherT[IO,String,Unit] = EitherT.liftF(IO(println(msg)))
+    def info(msg:String): IO[Unit] = IO(println(msg))
 
     it(s"Should validate RDF\n$strRDF\nSchema:\n$strSchema\nShapeMap:$strShapeMap\nExpected shape map: $strExpectedShapeMap") {
-        val r: EitherT[IO,String,Boolean] = for {
-          rdf <- EitherT.liftF(RDFAsJenaModel.fromChars(strRDF, "Turtle", None))
+        val r: IO[Boolean] = RDFAsJenaModel.fromChars(strRDF, "Turtle", None).use(rdf => for {
           _ <- { info(s"RDF: $rdf") }
-          schema <- EitherT.liftF(Schema.fromString(strSchema, "ShExC", None))
+          schema <- Schema.fromString(strSchema, "ShExC", None)
           _ <- { info(s"Schema: $schema") }
-          shapeMap <- EitherT.fromEither[IO](ShapeMap.fromString(strShapeMap, "Compact", None, rdf.getPrefixMap, schema.prefixMap))
+          rdfPrefixMap <- rdf.getPrefixMap
+          shapeMap <- fromES(ShapeMap.fromString(strShapeMap, "Compact", None, rdfPrefixMap, schema.prefixMap))
           _ <- { info(s"shapeMap: $shapeMap") }
-          fixedShapeMap <- EitherT.liftF(ShapeMap.fixShapeMap(shapeMap, rdf, rdf.getPrefixMap, schema.prefixMap))
+          fixedShapeMap <- ShapeMap.fixShapeMap(shapeMap, rdf, rdfPrefixMap, schema.prefixMap)
           shapeTyping <- Check.runCheck(Env(schema, TypingMap.empty, rdf), Spec.checkShapeMap(rdf, fixedShapeMap))
-          result = Spec.shapeTyping2ResultShapeMap(shapeTyping,rdf.getPrefixMap,schema.prefixMap)
-          expectedShapeMap <- EitherT.liftF(ShapeMap.parseResultMap(strExpectedShapeMap, None, rdf, schema.prefixMap))
-          compare <- EitherT.fromEither[IO](result.compareWith(expectedShapeMap))
-        } yield compare
+          result = Spec.shapeTyping2ResultShapeMap(shapeTyping,rdfPrefixMap,schema.prefixMap)
+          expectedShapeMap <- ShapeMap.parseResultMap(strExpectedShapeMap, None, rdf, schema.prefixMap)
+          compare <- result.compareWith(expectedShapeMap).fold(
+            str => IO.raiseError(new RuntimeException(s"Error comparing: $str")),
+            IO(_)
+          )
+        } yield compare)
 
-        r.value.unsafeRunSync.fold(
+        r.attempt.unsafeRunSync.fold(
           e => fail(s"Error $e"),
           comparison => comparison should be (true)
         )

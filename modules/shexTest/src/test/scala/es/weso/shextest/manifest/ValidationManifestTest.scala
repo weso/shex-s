@@ -42,7 +42,6 @@ class ValidationManifestTest extends ValidateManifest {
 //  val shexFolder = conf.getString("shexLocalFolder")
   val shexFolderURI = Paths.get(shexFolder).normalize.toUri
 
-  println(s"ValidationManifest...${shexFolder}")
 
   describe("Validation Manifest") {
 
@@ -113,7 +112,6 @@ class ValidationManifestTest extends ValidateManifest {
   private def schema2Json(schema: Schema): Json = schema.asJson
 
   private def decodeSchema(jsonStr: String): IO[Schema] = {
-    println(s"Decoding schema...")
     // import es.weso.shex.implicits.decoderShEx.decodeSchema
     implicit val decodeSchema : Decoder[Schema] = es.weso.shex.implicits.decoderShEx.decodeSchema
     fromES(decode[Schema](jsonStr)(decodeSchema).leftMap(
