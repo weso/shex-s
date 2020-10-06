@@ -4,6 +4,7 @@ import es.weso.shex.{Annotation, Schema, ShapeExpr, ShapeLabel}
 import cats.effect.IO
 
 sealed abstract class ExternalResolver {
+
   def getShapeExpr(label: ShapeLabel,
                    as: Option[List[Annotation]]
                   ): IO[ShapeExpr]

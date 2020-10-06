@@ -69,9 +69,9 @@ object ResolvedSchema {
     * @param schema
     * @return a resolved schema
     */
-  def resolve(schema: Schema, base: Option[IRI]): IO[ResolvedSchema] = for {
-    mapsImported <- closureImports(
-      schema.imports, 
+  def resolve(schema: Schema, base: Option[IRI]): IO[ResolvedSchema] =
+    for {
+     mapsImported <- closureImports(schema.imports,
       List(schema.id), 
       MapsImported(
         cnvMap(schema.shapesMap, (v: ShapeExpr) => ResolvedShapeExpr(v)),

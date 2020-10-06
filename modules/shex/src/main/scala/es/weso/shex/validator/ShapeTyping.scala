@@ -10,8 +10,9 @@ import es.weso.shex.ShapeLabel
 import io.circe.Json
 import es.weso.shex.shexR.PREFIXES.sx_start
 
-case class ShapeTyping(t: Typing[RDFNode, ShapeType, ShExError, String]
-                      ) extends LazyLogging {
+case class ShapeTyping(
+   t: Typing[RDFNode, ShapeType, ShExError, String]
+) extends LazyLogging {
 
   def getOkValues(node: RDFNode): Set[ShapeType] =
     t.getOkValues(node)

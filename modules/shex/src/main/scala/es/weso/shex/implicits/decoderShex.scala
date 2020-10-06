@@ -56,7 +56,9 @@ object decoderShEx {
     Decoder[Int].map(n => n match {
       case n if n >= 0 => IntMax(n)
       case -1 => Star
-      case _ => ??? // raise an error
+      case _ => {
+        throw new RuntimeException(s"decodeMax: unknown value: $n")
+      } // raise an error
     })
 
   implicit lazy val decodeShapeExpr: Decoder[ShapeExpr] =

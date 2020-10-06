@@ -3,8 +3,8 @@ package es.weso.rbe.interval
 import es.weso.collection._
 import es.weso.rbe._
 import org.scalatest._
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
+import funspec.AnyFunSpec
+import matchers.should.Matchers
 
 class IntervalTest extends AnyFunSpec with Matchers with BagMatchers {
 

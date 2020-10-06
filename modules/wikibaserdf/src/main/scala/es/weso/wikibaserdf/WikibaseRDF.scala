@@ -25,9 +25,7 @@ import io.circe.parser.parse
 case class CachedState(iris: Set[IRI], rdf: RDFAsJenaModel) 
 
 object CachedState {
-  def initial: IO[CachedState] = for {
-    rdf <- RDFAsJenaModel.empty 
-  } yield CachedState(Set(),rdf)
+  def initial: IO[CachedState] = RDFAsJenaModel.empty.use(rdf => IO(CachedState(Set(),rdf)))
 }
 
 case class WikibaseRDF(
@@ -38,11 +36,11 @@ case class WikibaseRDF(
 
  // val reader: RDFAsJenaModel = RDFAsJenaModel(cachedModel,None,None)
 
- override def getPrefixMap: PrefixMap = prefixMap 
+ override def getPrefixMap: IO[PrefixMap] = IO(prefixMap)
 
- override def fromString(cs: CharSequence, format: String, base: Option[IRI]): RDFRead[Rdf] = {
+ /*override def fromString(cs: CharSequence, format: String, base: Option[IRI]): RDFRead[Rdf] = {
     err("Cannot parse WikibaseRDF")
-  }
+  }*/
 
  private def getCachedState: IO[CachedState] = refCached.get
 
@@ -77,8 +75,8 @@ case class WikibaseRDF(
            println(s"Node ${node} already in cache")
            cachedState.rdf.triplesWithSubject(node) 
          } else for {
-           _ <- Stream.eval { IO { println(s"Dereferentiating ${node}") ; IO.pure(())} }
-           rdfNode <- Stream.eval(derefRDFJava(subj))
+//           _ <- Stream.eval { IO { println(s"Dereferentiating ${node}") ; IO.pure(())} }
+           rdfNode <- Stream.resource(derefRDFJava(subj))
            _ <- Stream.eval(addNodeCache(subj, rdfNode))
            rs <- rdfNode.triplesWithSubject(subj)
            } yield rs

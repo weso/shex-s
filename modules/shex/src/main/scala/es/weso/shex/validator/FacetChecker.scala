@@ -12,6 +12,7 @@ import data._
 import cats.implicits._
 import cats.effect.IO
 import ShExChecker._
+import es.weso.utils.IOUtils._
 import es.weso.utils.eitherios.EitherIOUtils._
 
 case class FacetChecker(
@@ -129,7 +130,7 @@ case class FacetChecker(
         } yield r
       case FractionDigits(m) => {
         for {
-          fd <- NodeInfo.fractionDigits(node, rdf)
+          fd <- io2es(NodeInfo.fractionDigits(node, rdf))
           b <- checkCond(
                 fd <= m,
                 s"${node.show} does not match FractionDigits($m) with $node and fraction digits = $fd",
@@ -139,7 +140,7 @@ case class FacetChecker(
       }
       case TotalDigits(m) => {
         for {
-          td <- NodeInfo.totalDigits(node, rdf)
+          td <- io2es(NodeInfo.totalDigits(node, rdf))
           b <- checkCond(
                 td <= m,
                 s"${node.show} does not match TotalDigits($m) with $node and totalDigits = $td",
