@@ -19,7 +19,7 @@ class TestSemanticActionTest extends AnyFunSpec with Matchers with EitherValues 
           |:x :p 1 .
         """.stripMargin
       val r = RDFAsJenaModel.fromString(rdfStr,"TURTLE",None).use(rdf => for {
-        result <- fromES(TestSemanticAction.runAction("print(s)", IRI("http://example.org/x"),rdf))
+        result <- TestSemanticAction.runAction("print(s)", IRI("http://example.org/x"),rdf)
       } yield result)
       r.attempt.unsafeRunSync.fold(
         e => fail(s"Error: $e"),
@@ -32,7 +32,7 @@ class TestSemanticActionTest extends AnyFunSpec with Matchers with EitherValues 
            |:x :p 1 .
         """.stripMargin
       val r = RDFAsJenaModel.fromString(rdfStr,"TURTLE",None).use(rdf => for {
-        result <- fromES(TestSemanticAction.runAction(" print(o) ", IRI("http://example.org/x"),rdf))
+        result <- TestSemanticAction.runAction(" print(o) ", IRI("http://example.org/x"),rdf)
       } yield result)
       r.attempt.unsafeRunSync.fold(
         e => fail(s"Error: $e"),
@@ -41,7 +41,7 @@ class TestSemanticActionTest extends AnyFunSpec with Matchers with EitherValues 
     }
     it(s"Should run fail code") {
       val r = RDFAsJenaModel.empty.use(rdf => for {
-        result <- fromES(TestSemanticAction.runAction("fail(s)", IRI(""), rdf))
+        result <- TestSemanticAction.runAction("fail(s)", IRI(""), rdf)
       } yield result)
       r.attempt.unsafeRunSync.fold(
         e => info(s"Failed as expected: $e"),

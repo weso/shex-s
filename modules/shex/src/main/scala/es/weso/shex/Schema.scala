@@ -1,16 +1,24 @@
 package es.weso.shex
 
+import java.io.File
 import java.nio.file.{Files, Paths}
+
 import cats.implicits._
 import es.weso.depgraphs.DepGraph
 import es.weso.rdf.{PrefixMap, RDFBuilder, RDFReader}
 import es.weso.rdf.nodes._
 import es.weso.shex.shexR.{RDF2ShEx, ShEx2RDF}
+
 import scala.io.Source
 import scala.util._
-import cats.effect.IO
+import cats.effect._
+// import es.weso.utils.FileUtilsIO.getContents
+import fs2.{Stream,Pipe}
 
-case class Schema(id: IRI,
+import scala.concurrent.ExecutionContext
+
+case class Schema private
+                ( id: IRI,
                   prefixes: Option[PrefixMap],
                   base: Option[IRI],
                   startActs: Option[List[SemAct]],
@@ -270,6 +278,24 @@ object Schema {
       case _ =>
         err(s"Not implemented conversion to $format. Schema: $schema")
     }
+  }
+
+  def fromFile(fileName: String,
+               format: String = "ShExC",
+               base: Option[IRI] = None,
+               maybeRDFBuilder: Option[RDFBuilder] = None
+              ): IO[Schema] = for {
+    cs <- getContents(fileName)
+    schema <- fromString(cs,format,base,maybeRDFBuilder)
+  } yield schema
+
+  def getContents(fileName: String): IO[CharSequence] = {
+    val path = Paths.get(fileName)
+    implicit val cs = IO.contextShift(ExecutionContext.global)
+    val decoder: Pipe[IO,Byte,String] = fs2.text.utf8Decode
+    Stream.resource(Blocker[IO]).flatMap(blocker =>
+      fs2.io.file.readAll[IO](path, blocker,4096).through(decoder)
+    ).compile.string
   }
 
 //  def resolveSchema: IO[ResolvedSchema] = ???

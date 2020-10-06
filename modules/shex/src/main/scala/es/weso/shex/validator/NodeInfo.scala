@@ -5,7 +5,7 @@ import cats.effect.IO
 import es.weso.rdf.nodes.{Literal, RDFNode}
 import es.weso.rdf.PREFIXES._
 import es.weso.rdf.RDFReader
-import es.weso.shex.validator.exceptions.ValidationError._
+import es.weso.shex.validator.ShExError._
 import org.apache.xerces.impl.dv.{SchemaDVFactory, ValidatedInfo, XSSimpleType}
 import org.apache.xerces.impl.dv.xs.DecimalDV
 import org.apache.xerces.impl.validation.ValidationState

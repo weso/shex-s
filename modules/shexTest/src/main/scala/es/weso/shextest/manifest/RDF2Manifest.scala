@@ -11,7 +11,7 @@ import es.weso.rdf.nodes._
 import es.weso.rdf.parser.RDFParser
 import ManifestPrefixes._
 import fs2._
-
+// import es.weso.utils.FileUtilsIO._
 import scala.concurrent.ExecutionContext
 // import cats._
 import cats.arrow.FunctionK
@@ -373,36 +373,6 @@ class RDF2Manifest extends RDFParser with LazyLogging {
 
 object RDF2Manifest extends LazyLogging {
 
-/*  def read(
-      fileName: String,
-      format: String,
-      base: Option[String],
-      derefIncludes: Boolean
-  ): Either[String, ShExManifest] = {
-    val noIri : Option[IRI] = None
-    for {
-      cs  <- getContents(fileName)
-      rdf <- RDFAsJenaModel.fromChars(cs, format, base.map(IRI(_)))
-      iriBase <- base match {
-        case None      => { 
-          Right(noIri)
-        }
-        case Some(str) => { 
-          IRI.fromString(str).map(Some(_))
-        }
-      }
-      mfs <- {
-        val ctx = RDF2Manifest.Context()
-        RDF2Manifest(iriBase, derefIncludes).rdf2Manifest(rdf).run(ctx)
-      }
-      manifest <- if (mfs.size == 1) { 
-        Right(mfs.head)
-      } 
-      else Left(s"Number of manifests != 1: ${mfs}")
-    } yield manifest
-  }
- */
-
   private def getIriBase(base: Option[String]): IO[Option[IRI]] =
     base match {
       case None      => None.pure[IO]
@@ -455,11 +425,9 @@ object RDF2Manifest extends LazyLogging {
     val path = Paths.get(fileName)
     implicit val cs = IO.contextShift(ExecutionContext.global)
     val decoder: Pipe[IO,Byte,String] = fs2.text.utf8Decode
-    val s: IO[String] =
-      Stream.resource(Blocker[IO]).flatMap(blocker =>
+    Stream.resource(Blocker[IO]).flatMap(blocker =>
         fs2.io.file.readAll[IO](path, blocker,4096).through(decoder)
-      ).compile.string
-    s
+    ).compile.string
   }
 
 }
