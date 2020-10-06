@@ -1,13 +1,15 @@
-package es.weso.shex.validator
+package rdf4j.es.weso.shex.validator
 
+import cats.effect.IO
 import es.weso.rdf.rdf4j._
 import es.weso.shapeMaps.ShapeMap
 import es.weso.shex._
+import es.weso.shex.validator.Validator
 // import cats.data.EitherT
 //import cats.effect._
 import org.scalatest._
-import org.scalatest.funspec._
-import org.scalatest.matchers.should._
+//import org.scalatest.funspec._
+//import org.scalatest.matchers.should._
 
 import es.weso.utils.eitherios.EitherIOUtils._
 import es.weso.shex.ResolvedSchema
@@ -249,18 +251,19 @@ class ShapeMapValidator_RDF4jTest extends AnyFunSpec with Matchers with EitherVa
     shapeMapStr: String,
     expected: String): Unit = {
       
-    it(s"Should validate ${shexStr} with ${rdfStr} and ${shapeMapStr} and result $expected") {
-      val validate = for {
-        rdf <- RDFAsRDF4jModel.fromChars(rdfStr, "Turtle")
+    it(s"Should validate $shexStr with $rdfStr and $shapeMapStr and result $expected") {
+      val validate: IO[Boolean] = RDFAsRDF4jModel.fromChars(rdfStr, "Turtle").use(rdf =>
+        for {
         shex <- Schema.fromString(shexStr, "ShExC", None)
-        shapeMap <- eitherStr2IO(ShapeMap.fromCompact(shapeMapStr, shex.base, rdf.getPrefixMap, shex.prefixMap))
-        fixedShapeMap <- ShapeMap.fixShapeMap(shapeMap, rdf, rdf.getPrefixMap, shex.prefixMap)
+        rdfPrefixMap <- rdf.getPrefixMap
+        shapeMap <- eitherStr2IO(ShapeMap.fromCompact(shapeMapStr, shex.base, rdfPrefixMap, shex.prefixMap))
+        fixedShapeMap <- ShapeMap.fixShapeMap(shapeMap, rdf, rdfPrefixMap, shex.prefixMap)
         resolved <- ResolvedSchema.resolve(shex,None)
         result <- Validator.validate(resolved, fixedShapeMap, rdf)
         expectedShapeMap <- ShapeMap.parseResultMap(expected, None, rdf, shex.prefixMap)
         resultShapeMap <- result.toResultShapeMap
         compare <- eitherStr2IO(resultShapeMap.compareWith(expectedShapeMap))
-      } yield compare
+      } yield compare)
       validate.attempt.unsafeRunSync match {
         case Left(msg) => fail(s"Error: $msg")
         case Right(v) => v should be(true)

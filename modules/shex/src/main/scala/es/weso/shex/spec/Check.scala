@@ -123,9 +123,13 @@ object Check {
     x <- runLocal(env => env.copy(typing = newTyping), check)
   } yield x
 
-  def runCheck[A](env: Env, check: Check[A]): EitherT[IO,String,A] = {
-    EitherT(check.value.run(env))
-  }
+  def runCheck[A](env: Env, check: Check[A]): IO[A] = for {
+    ex <- check.value.run(env)
+    x <- ex.fold(
+      e => IO.raiseError(new RuntimeException(s"Error: $e")),
+      IO(_)
+    )
+  } yield x
 
 }
 

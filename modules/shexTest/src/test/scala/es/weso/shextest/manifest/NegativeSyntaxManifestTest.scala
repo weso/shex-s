@@ -29,7 +29,7 @@ class NegativeSyntaxManifestTest extends ValidateManifest {
 
   describe("RDF2ManifestLocal") {
     val r = RDF2Manifest.read(negativeSyntaxFolder + "/" + "manifest.ttl", "Turtle", Some(folderUri.toString), false)
-    r.fold(e => fail(s"Error reading manifest: $e"),
+    r.attempt.unsafeRunSync().fold(e => fail(s"Error reading manifest: $e"),
       mf => {
         for (e <- mf.entries) {
           if (nameIfSingle == None || nameIfSingle.getOrElse("") === e.name) {
@@ -41,14 +41,14 @@ class NegativeSyntaxManifestTest extends ValidateManifest {
                 case r: NegativeSyntax => {
                   val fileName = Paths.get(r.shex.uri.getPath).getFileName.toString
                   val uri      = folderUri.resolve(fileName)
-                  val res : EitherT[IO,String,String]= for {
+                  val res : IO[String]= for {
                     schemaStr <- derefUriIO(uri)
-                    e <- fromIO(Schema.fromString(schemaStr, "SHEXC", None).attempt)
+                    e <- Schema.fromString(schemaStr, "SHEXC", None).attempt
                     v <- e.fold(
-                    err => ok(s"Error as expected"), 
-                    schema => err(s"ShEx parsed OK but should fail. String:\n${schemaStr}\nParsed as:\n${schema}"))
+                     err => IO(s"Error as expected"),
+                     schema => ioErr(s"ShEx parsed OK but should fail. String:\n${schemaStr}\nParsed as:\n${schema}"))
                   } yield v
-                  res.value.unsafeRunSync.fold(fail(_), info(_))
+                  res.attempt.unsafeRunSync.fold(fail(_), info(_))
                 }
               }
             }
@@ -58,4 +58,6 @@ class NegativeSyntaxManifestTest extends ValidateManifest {
       }
     )
    }
+
+  private def ioErr[A](msg: String): IO[A] = IO.raiseError(new RuntimeException(msg))
 }

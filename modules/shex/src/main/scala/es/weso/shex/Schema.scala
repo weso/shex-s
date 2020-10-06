@@ -1,16 +1,24 @@
 package es.weso.shex
 
+import java.io.File
 import java.nio.file.{Files, Paths}
+
 import cats.implicits._
 import es.weso.depgraphs.DepGraph
 import es.weso.rdf.{PrefixMap, RDFBuilder, RDFReader}
 import es.weso.rdf.nodes._
 import es.weso.shex.shexR.{RDF2ShEx, ShEx2RDF}
+
 import scala.io.Source
 import scala.util._
-import cats.effect.IO
+import cats.effect._
+// import es.weso.utils.FileUtilsIO.getContents
+import fs2.{Stream,Pipe}
 
-case class Schema(id: IRI,
+import scala.concurrent.ExecutionContext
+
+case class Schema private
+                ( id: IRI,
                   prefixes: Option[PrefixMap],
                   base: Option[IRI],
                   startActs: Option[List[SemAct]],
@@ -209,13 +217,13 @@ object Schema {
     * @param cs char sequence
     * @param format syntax format
     * @param base base URL
-    * @param maybeRDFReader RDFReader value from which to obtain RDF data formats (in case of RDF format)
+    * @param maybeRDFBuilder RDFReader value from which to obtain RDF data formats (in case of RDF format)
     * @return either a Schema or a String message error
     */
   def fromString(cs: CharSequence,
                  format: String = "ShExC",
                  base: Option[IRI] = None,
-                 maybeRDFReader: Option[RDFReader] = None
+                 maybeRDFBuilder: Option[RDFBuilder] = None
                 ): IO[Schema] = {
     val formatUpperCase = format.toUpperCase
     formatUpperCase match {
@@ -228,14 +236,15 @@ object Schema {
         import es.weso.shex.implicits.decoderShEx._
         decode[Schema](cs.toString).leftMap(_.getMessage).fold(e => err(e), ok)
       }
-      case _ => maybeRDFReader match {
+      case _ => maybeRDFBuilder match {
         case None => err(s"Not implemented ShEx parser for format $format and no rdfReader provided")
-        case Some(rdfReader) =>
-         if (rdfDataFormats(rdfReader).contains(formatUpperCase)) for {
-          rdf    <- rdfReader.fromString(cs, formatUpperCase, base)
-          eitherSchema <- RDF2ShEx.rdf2Schema(rdf).value
-          schema <- eitherSchema.fold(e => err(e), ok)
-         } yield schema
+        case Some(rdfBuilder) =>
+         if (rdfDataFormats(rdfBuilder).contains(formatUpperCase))
+           rdfBuilder.fromString(cs.toString, formatUpperCase, base).use(rdf =>
+             for {
+              eitherSchema <- RDF2ShEx.rdf2Schema(rdf)
+              schema <- eitherSchema.fold(e => err(e), ok)
+             } yield schema)
          else err(s"Not implemented ShEx parser for format $format")
        }
     }
@@ -260,14 +269,33 @@ object Schema {
         import es.weso.shex.implicits.encoderShEx._
         IO.pure(relativeSchema.asJson.spaces2)
       }
-      case _ if (rdfDataFormats(rdfBuilder).contains(formatUpperCase)) => for {
-        empty <- rdfBuilder.empty
-        rdf <- ShEx2RDF(relativeSchema, None, empty)
-        str <- rdf.serialize(formatUpperCase, base)
-      } yield str
+      case _ if (rdfDataFormats(rdfBuilder).contains(formatUpperCase)) =>
+        rdfBuilder.empty.use(empty =>
+         for {
+          rdf <- ShEx2RDF(relativeSchema, None, empty)
+          str <- rdf.serialize(formatUpperCase, base)
+         } yield str)
       case _ =>
         err(s"Not implemented conversion to $format. Schema: $schema")
     }
+  }
+
+  def fromFile(fileName: String,
+               format: String = "ShExC",
+               base: Option[IRI] = None,
+               maybeRDFBuilder: Option[RDFBuilder] = None
+              ): IO[Schema] = for {
+    cs <- getContents(fileName)
+    schema <- fromString(cs,format,base,maybeRDFBuilder)
+  } yield schema
+
+  def getContents(fileName: String): IO[CharSequence] = {
+    val path = Paths.get(fileName)
+    implicit val cs = IO.contextShift(ExecutionContext.global)
+    val decoder: Pipe[IO,Byte,String] = fs2.text.utf8Decode
+    Stream.resource(Blocker[IO]).flatMap(blocker =>
+      fs2.io.file.readAll[IO](path, blocker,4096).through(decoder)
+    ).compile.string
   }
 
 //  def resolveSchema: IO[ResolvedSchema] = ???
