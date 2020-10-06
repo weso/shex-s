@@ -3,7 +3,7 @@ package es.weso.shex.validator
 import cats._
 import cats.data._
 import cats.implicits._
-import es.weso.checking.CheckerCats
+// import es.weso.checking.CheckerCats
 import es.weso.rdf.RDFReader
 import es.weso.rdf.nodes.IRI
 import es.weso.shex.validator.Action._

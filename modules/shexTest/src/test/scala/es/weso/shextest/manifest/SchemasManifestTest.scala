@@ -10,6 +10,7 @@ import io.circe.syntax._
 import es.weso.shex.implicits.decoderShEx._
 import es.weso.shex.implicits.encoderShEx._
 import Utils._
+import es.weso.utils.IOUtils.fromES
 // import es.weso.utils.UriUtils._
 //import cats._
 import cats.data._
@@ -29,7 +30,7 @@ class SchemasManifestTest extends ValidateManifest {
 
   describe("RDF2ManifestLocal") {
     val r = RDF2Manifest.read(shexFolder + "/" + "manifest.ttl", "Turtle", Some(shexFolderURI.toString), false)
-    r.fold(e => fail(s"Error reading manifest: $e"),
+    r.attempt.unsafeRunSync().fold(e => fail(s"Error reading manifest: $e"),
       mf => {
         for (e <- mf.entries) {
           if (nameIfSingle == None || nameIfSingle.getOrElse("") == e.name) {
@@ -39,24 +40,27 @@ class SchemasManifestTest extends ValidateManifest {
                 case r: RepresentationTest => {
                   val schemaUri = mkLocal(r.shex, schemasBase, shexFolderURI)
                   val jsonUri   = mkLocal(r.json, schemasBase, shexFolderURI)
-                  val either: EitherT[IO, String, String] = for {
+                  val either: IO[String] = for {
                     schemaStr      <- derefUriIO(schemaUri)
                     jsonStr        <- derefUriIO(jsonUri)
-                    schema         <- fromIO(Schema.fromString(schemaStr, "SHEXC", None))
-                    _ <- fromIO (IO { println(s"Schema: ${schema}") })
-                    _ <- fromIO (IO { println(s"Checking if it is well formed...") })
+                    schema         <- Schema.fromString(schemaStr, "SHEXC", None)
+                    _ <- IO { println(s"Schema: ${schema}") }
+                    _ <- IO { println(s"Checking if it is well formed...") }
                     // b              <- schema.wellFormed
                     // _ <- { println(s"Schema well formed?: ${b.toString}"); Right(()) }
 
-                    expectedSchema <- fromEitherS(decode[Schema](jsonStr).leftMap(_.getMessage()))
-                    _ <- fromIO (IO { println(s"Expected schema: ${expectedSchema}") })
-                    _ <- if (CompareSchemas.compareSchemas(schema, expectedSchema)) ok("Schemas are ")
-                         else err(s"Schemas are different. Parsed:\n${schema}\n-----Expected:\n${expectedSchema}")
-                    json <- fromEitherS(parse(jsonStr).leftMap(_.message))
-                    check <- if (json.equals(schema.asJson)) ok(s"Schemas are equal")
-                             else err(s"Json's are different\nSchema:${schema}\nJson generated: ${schema.asJson.spaces2}\nExpected: ${json.spaces2}")
+                    expectedSchema <- fromES(decode[Schema](jsonStr).leftMap(_.getMessage()))
+                    _ <- IO { println(s"Expected schema: ${expectedSchema}") }
+                    _ <- if (CompareSchemas.compareSchemas(schema, expectedSchema)) IO.pure("Schemas are ")
+                         else ioErr(s"Schemas are different. Parsed:\n${schema}\n-----Expected:\n${expectedSchema}")
+                    json <- fromES(parse(jsonStr).leftMap(_.message))
+                    check <- if (json.equals(schema.asJson)) IO.pure(s"Schemas are equal")
+                             else ioErr(s"Json's are different\nSchema:${schema}\nJson generated: ${schema.asJson.spaces2}\nExpected: ${json.spaces2}")
                   } yield check
-                  either.fold(e => fail(s"Error: $e"), msg => info(msg))
+                  either.attempt.unsafeRunSync().fold(
+                    e => fail(s"Error: $e"),
+                    msg => info(msg)
+                  )
                 }
               }
             }
@@ -67,5 +71,6 @@ class SchemasManifestTest extends ValidateManifest {
     )
    }
 
+  private def ioErr[A](msg: String): IO[A] = IO.raiseError(new RuntimeException(msg))
 
 }

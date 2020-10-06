@@ -10,4 +10,6 @@ addSbtPlugin("org.lyranthe.sbt"  % "partial-unification" % "1.1.2")
 addSbtPlugin("org.foundweekends" % "sbt-bintray"         % "0.5.5")
 addSbtPlugin("org.scoverage"     % "sbt-scoverage"       % "1.6.1")
 addSbtPlugin("com.codacy"        % "sbt-codacy-coverage" % "3.0.3")
-addSbtPlugin("com.simplytyped"   % "sbt-antlr4"          % "0.8.3")
+addSbtPlugin("com.simplytyped"   % "sbt-antlr4"          % "0.8.2")
+
+addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1")
