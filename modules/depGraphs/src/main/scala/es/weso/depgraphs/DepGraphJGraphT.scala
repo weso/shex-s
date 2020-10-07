@@ -81,9 +81,19 @@ case class DepGraphJGraphT[Node]() extends DepGraph[Node] {
       val edges: Set[Edge] = graph.outgoingEdgesOf(node).asScala.toSet
       Right(edges.map(e => (e.posNeg, e.target)))
     } else {
-      Left(s"Node $node is not in graph $graph")
+      Left(s"outEdges: Node $node is not in graph $graph")
     }
   }
+
+  override def inEdges(node: Node): Either[String, Set[(Node, PosNeg)]] = {
+    if (graph.containsVertex(node)) {
+      val edges: Set[Edge] = graph.incomingEdgesOf(node).asScala.toSet
+      Right(edges.map(e => (e.source, e.posNeg)))
+    } else {
+      Left(s"inEdges: Node $node is not in graph $graph")
+    }
+  }
+
 
   private def containsNegEdge(g: Graph[Node, Edge]): Boolean = {
     g.edgeSet.asScala.exists(e => e.posNeg == Neg || e.posNeg == Both)

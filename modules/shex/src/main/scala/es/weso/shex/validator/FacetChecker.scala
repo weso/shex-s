@@ -12,6 +12,7 @@ import data._
 import cats.implicits._
 import cats.effect.IO
 import ShExChecker._
+import es.weso.utils.IOUtils._
 import es.weso.utils.eitherios.EitherIOUtils._
 
 case class FacetChecker(
@@ -34,7 +35,7 @@ case class FacetChecker(
   
   def facetsChecker(node: RDFNode, facets: List[XsFacet]): EitherT[IO,String, String] = { 
     def cnv(pairs: (List[String], List[String])): Either[String,String] = {
-      val (passed,failed) = pairs
+      val (failed, passed) = pairs
       if (failed.isEmpty) {
         Right(s"$node passed facets: ${passed.map(_.show).mkString(",")}")
       } else {
@@ -78,13 +79,17 @@ case class FacetChecker(
       }
       case Pattern(p, flags) => {
         val str = node.getLexicalForm
+        // pprint.log(str, tag = "str")
+        // pprint.log(p, tag = "p")
         RegEx(p, flags).matches(str) match {
-          case Right(b) =>
+          case Right(b) => {
+            // pprint.log(b, tag = "b")
             checkCond(
               b,
               s"${node.show} does not match Pattern($p) with lexical form $str",
               s"${node.show} satisfies Pattern($p) with lexical form $str"
             )
+          }
           case Left(msg) => EitherT.left(IO(msg))
         }
       }
@@ -125,7 +130,7 @@ case class FacetChecker(
         } yield r
       case FractionDigits(m) => {
         for {
-          fd <- NodeInfo.fractionDigits(node, rdf)
+          fd <- io2es(NodeInfo.fractionDigits(node, rdf))
           b <- checkCond(
                 fd <= m,
                 s"${node.show} does not match FractionDigits($m) with $node and fraction digits = $fd",
@@ -135,7 +140,7 @@ case class FacetChecker(
       }
       case TotalDigits(m) => {
         for {
-          td <- NodeInfo.totalDigits(node, rdf)
+          td <- io2es(NodeInfo.totalDigits(node, rdf))
           b <- checkCond(
                 td <= m,
                 s"${node.show} does not match TotalDigits($m) with $node and totalDigits = $td",

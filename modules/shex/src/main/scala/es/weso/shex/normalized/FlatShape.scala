@@ -38,6 +38,8 @@ object FlatShape {
   ): Either[String, Map[Path, Constraint]] = te match {
     case _: Expr      => Left(s"Contains an expr")
     case _: Inclusion => Left(s"Contains an inclusion")
+    case eo: EachOf if !Cardinality.isDefault(eo.min,eo.max) => Left(s"Each of contains groupings")
+    case _ if te.hasSemActs => Left(s"TripleExpr contains semantic actions")
     case eo: EachOf => {
       val zero = cs.asRight[String]
       def cmb(current: Either[String, Map[Path, Constraint]], te: TripleExpr): Either[String, Map[Path, Constraint]] =
