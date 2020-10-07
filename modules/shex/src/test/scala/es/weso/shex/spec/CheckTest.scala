@@ -10,28 +10,22 @@ import org.scalatest._
 import es.weso.utils.internal.CollectionCompat._
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-import cats.data._ 
+import cats.data._
 import cats.effect._
+import es.weso.utils.IOUtils.fromES
 
 class CheckTest extends AnyFunSpec with Matchers with EitherValues {
 
 
-  def runCheckEmptyEnv[A](chk: Check[A]): Either[String,A] = {
-    val v: EitherT[IO,String,A] = for {
-      rdf <- EitherT.liftF(RDFAsJenaModel.empty)
-      env = Env(Schema.empty,TypingMap.empty,rdf)
-      r <- runCheck(env,chk)
-    } yield r
-    v.value.unsafeRunSync
+  def runCheckEmptyEnv[A](chk: Check[A]): IO[A] = {
+    RDFAsJenaModel.empty.use(rdf => {
+      val env = Env(Schema.empty, TypingMap.empty, rdf)
+      runCheck(env, chk)
+    })
   }
 
-  def runCheckEnv[A](env: Env, chk: Check[A]): EitherT[IO,String,A] = {
-    val v: EitherT[IO,String,A] = for {
-      rdf <- EitherT.liftF(RDFAsJenaModel.empty)
-      // env = Env(Schema.empty,TypingMap.empty,rdf)
-      r <- runCheck(env,chk)
-    } yield r
-    v
+  def runCheckEnv[A](env: Env, chk: Check[A]): IO[A] = {
+    runCheck(env,chk)
   }
 
   describe(s"satisfy all") {
@@ -40,8 +34,8 @@ class CheckTest extends AnyFunSpec with Matchers with EitherValues {
       val opt1 = pure(true)
       val opt2 = pure(true)
       
-      runCheckEmptyEnv(satisfyAll(List(opt1, opt2))).fold(
-        e => fail(s"Error"),
+      runCheckEmptyEnv(satisfyAll(List(opt1, opt2))).attempt.unsafeRunSync().fold(
+        e => fail(s"Error: $e"),
         v => v should be(true)
       )
     }
@@ -49,15 +43,15 @@ class CheckTest extends AnyFunSpec with Matchers with EitherValues {
     it(s"Should not satisfy a list of values when one is false") {
       val opt1 = pure(true)
       val opt2 = pure(false)
-      runCheckEmptyEnv(satisfyAll(List(opt1, opt2))).fold(
-        e => fail(s"Error"),
+      runCheckEmptyEnv(satisfyAll(List(opt1, opt2))).attempt.unsafeRunSync().fold(
+        e => fail(s"Error $e"),
         v => v should be(false)
       )
     }
     it(s"Should fail when one fails") {
       val opt1: Check[Boolean] = pure(true)
       val opt2: Check[Boolean] = err(s"Error")
-      runCheckEmptyEnv(satisfyAll(List(opt1, opt2))).fold(
+      runCheckEmptyEnv(satisfyAll(List(opt1, opt2))).attempt.unsafeRunSync().fold(
         e => info(s"Fails as expected $e"),
         v => fail(s"Should fail but returned $v")
       )
@@ -70,20 +64,20 @@ class CheckTest extends AnyFunSpec with Matchers with EitherValues {
       else pure(false)
 
     it(s"Should satisfy a none") {
-      runCheckEmptyEnv(optSatisfy(None, check)).
-        fold(e => fail(s"Failed with none but it should be true"),
+      runCheckEmptyEnv(optSatisfy(None, check)).attempt.unsafeRunSync().
+        fold(e => fail(s"Failed with none but it should be true: $e"),
           v => v should be(true)
         )
     }
     it(s"Should satisfy an ok value (0)") {
-      runCheckEmptyEnv(optSatisfy(Some(0), check)).
-        fold(e => fail(s"Failed with none but it should be true"),
+      runCheckEmptyEnv(optSatisfy(Some(0), check)).attempt.unsafeRunSync().
+        fold(e => fail(s"Failed with none but it should be true\n$e"),
           v => v should be(true)
         )
     }
     it(s"Should not satisfy an incorrect value (non 0") {
-      runCheckEmptyEnv(optSatisfy(Some(1), check)).
-        fold(e => fail(s"Failed with none but it should be true"),
+      runCheckEmptyEnv(optSatisfy(Some(1), check)).attempt.unsafeRunSync().
+        fold(e => fail(s"Failed with none but it should be true\n$e"),
           v => v should be(false)
         )
     }
@@ -94,8 +88,8 @@ class CheckTest extends AnyFunSpec with Matchers with EitherValues {
     it(s"Should satisfy a list of values when all true") {
       val opt1: Check[Boolean] = pure(true)
       val opt2: Check[Boolean] = pure(true)
-      runCheckEmptyEnv(satisfySome(List(opt1, opt2))).fold(
-        e => fail(s"Error"),
+      runCheckEmptyEnv(satisfySome(List(opt1, opt2))).attempt.unsafeRunSync().fold(
+        e => fail(s"Error: $e"),
         v => v should be(true)
       )
     }
@@ -103,8 +97,8 @@ class CheckTest extends AnyFunSpec with Matchers with EitherValues {
     it(s"Should satisfy a list of values when one is false but another is true") {
       val opt1: Check[Boolean] = pure(false)
       val opt2: Check[Boolean] = pure(true)
-      runCheckEmptyEnv(satisfySome(List(opt1, opt2))).fold(
-        e => fail(s"Error"),
+      runCheckEmptyEnv(satisfySome(List(opt1, opt2))).attempt.unsafeRunSync().fold(
+        e => fail(s"Error: $e"),
         v => v should be(true)
       )
     }
@@ -112,7 +106,7 @@ class CheckTest extends AnyFunSpec with Matchers with EitherValues {
     it(s"Should fail when one fails") {
       val opt1: Check[Boolean] = pure(true)
       val opt2: Check[Boolean] = err(s"Error")
-      runCheckEmptyEnv(satisfySome(List(opt1, opt2))).fold(
+      runCheckEmptyEnv(satisfySome(List(opt1, opt2))).attempt.unsafeRunSync().fold(
         e => info(s"Fails as expected $e"),
         v => fail(s"Should fail but returned $v")
       )
@@ -120,7 +114,7 @@ class CheckTest extends AnyFunSpec with Matchers with EitherValues {
     it(s"Should fail when all fail") {
       val opt1: Check[Boolean] = pure(false)
       val opt2: Check[Boolean] = pure(false)
-      runCheckEmptyEnv(satisfySome(List(opt1, opt2))).fold(
+      runCheckEmptyEnv(satisfySome(List(opt1, opt2))).attempt.unsafeRunSync().fold(
         e => fail(s"Error $e"),
         v => v should be(false)
       )
@@ -131,23 +125,23 @@ class CheckTest extends AnyFunSpec with Matchers with EitherValues {
 
     it(s"Should satisfy a failing check") {
       val opt: Check[Boolean] = pure(true)
-      runCheckEmptyEnv(satisfyNot(opt)).fold(
-        e => fail(s"Error"),
+      runCheckEmptyEnv(satisfyNot(opt)).attempt.unsafeRunSync().fold(
+        e => fail(s"Error: $e"),
         v => v should be(false)
       )
     }
 
     it(s"Should not satisfy a failing check") {
       val opt: Check[Boolean] = pure(false)
-      runCheckEmptyEnv(satisfyNot(opt)).fold(
-        e => fail(s"Error"),
+      runCheckEmptyEnv(satisfyNot(opt)).attempt.unsafeRunSync().fold(
+        e => fail(s"Error: $e"),
         v => v should be(true)
       )
     }
     it(s"Should err an error check") {
       val opt: Check[Boolean] = err("Error")
-      runCheckEmptyEnv(satisfyNot(opt)).fold(
-        e => info(s"Error as expected"),
+      runCheckEmptyEnv(satisfyNot(opt)).attempt.unsafeRunSync().fold(
+        e => info(s"Error as expected $e"),
         v => fail(s"Should return error and returned $v")
       )
     }
@@ -162,8 +156,8 @@ class CheckTest extends AnyFunSpec with Matchers with EitherValues {
         if (n < 0) err(s"Negative")
         else pure(n % 2 == 0)
       }
-      runCheckEmptyEnv(satisfyFirst(ls, even)).fold(
-        e => fail(s"Error"),
+      runCheckEmptyEnv(satisfyFirst(ls, even)).attempt.unsafeRunSync().fold(
+        e => fail(s"Error $e"),
         v => v should be(true)
       )
     }
@@ -174,8 +168,8 @@ class CheckTest extends AnyFunSpec with Matchers with EitherValues {
         if (n < 0) err(s"Negative")
         else pure(n % 2 == 0)
       }
-      runCheckEmptyEnv(satisfyFirst(ls, even)).fold(
-        e => fail(s"Error"),
+      runCheckEmptyEnv(satisfyFirst(ls, even)).attempt.unsafeRunSync().fold(
+        e => fail(s"Error $e"),
         v => v should be(false)
       )
     }
@@ -206,8 +200,8 @@ class CheckTest extends AnyFunSpec with Matchers with EitherValues {
           pure(b)
         }
       }
-      runCheckEmptyEnv(satisfyFirst(ls, even)).fold(
-        e => fail(s"Error"),
+      runCheckEmptyEnv(satisfyFirst(ls, even)).attempt.unsafeRunSync().fold(
+        e => fail(s"Error $e"),
         v => v should be(true)
       )
     }
@@ -223,7 +217,8 @@ class CheckTest extends AnyFunSpec with Matchers with EitherValues {
         pure(false)
       }
       val c = satisfyOr(c1, c2)
-      runCheckEmptyEnv(c).fold(e => fail(s"Error $e"),
+      runCheckEmptyEnv(c).attempt.unsafeRunSync().fold(
+        e => fail(s"Error $e"),
         n => n should be(true))
 
       global should be(0) // checks that or is short circuited
@@ -238,7 +233,8 @@ class CheckTest extends AnyFunSpec with Matchers with EitherValues {
       }
       val c = satisfyOr(c1, c2)
 
-      runCheckEmptyEnv(c).fold(e => fail(s"Error $e"),
+      runCheckEmptyEnv(c).attempt.unsafeRunSync().fold(
+        e => fail(s"Error $e"),
         n => n should be(true))
 
       global should be(1) // checks that or is short circuited
@@ -253,7 +249,8 @@ class CheckTest extends AnyFunSpec with Matchers with EitherValues {
       }
       val c = satisfyOr(c1, c2)
       // val env = Env(Schema.empty,TypingMap.empty,RDFAsJenaModel.empty)
-      runCheckEmptyEnv(c).fold(e => fail(s"Error $e"),
+      runCheckEmptyEnv(c).attempt.unsafeRunSync().fold(
+        e => fail(s"Error $e"),
         n => n should be(false))
 
       global should be(1) // checks that or is short circuited
@@ -272,7 +269,7 @@ class CheckTest extends AnyFunSpec with Matchers with EitherValues {
       } yield newTyping
       val c = satisfyChain(ls,check)
       // val env = Env(Schema.empty,TypingMap.empty,RDFAsJenaModel.empty)
-      runCheckEmptyEnv(c).fold(
+      runCheckEmptyEnv(c).attempt.unsafeRunSync().fold(
         e => fail(s"Error: $e"),
         typing => {
           typing.conformingValues(x) should contain theSameElementsAs(List(mkLabel("1"),mkLabel("2"),mkLabel("3")))
@@ -287,13 +284,12 @@ class CheckTest extends AnyFunSpec with Matchers with EitherValues {
         newTyping <- fromEither(typing.addConformant(x, mkLabel(v), List()))
       } yield newTyping
       val c = satisfyChain(ls,check)
-      val r : EitherT[IO,String,ShapeTyping] = for {
-        rdf <- EitherT.liftF(RDFAsJenaModel.empty)
-        typing <- EitherT.fromEither[IO](emptyTyping.addNonConformant(x,mkLabel("2"), List()))
+      val r : IO[ShapeTyping] = RDFAsJenaModel.empty.use(rdf => for {
+        typing <- fromES(emptyTyping.addNonConformant(x,mkLabel("2"), List()))
         env = Env(Schema.empty,typing,rdf)
         r <- runCheckEnv(env,c)
-      } yield r
-      r.value.unsafeRunSync.fold(
+      } yield r)
+      r.attempt.unsafeRunSync.fold(
         e => info(s"Fails as expected"),
         typing => {
           fail(s"It returned a good typing $typing but should return an error")

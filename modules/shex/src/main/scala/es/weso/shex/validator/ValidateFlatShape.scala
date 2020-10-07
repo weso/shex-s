@@ -12,6 +12,7 @@ import cats.implicits._
 import es.weso.rdf.triples.RDFTriple
 import es.weso.rdf.RDFReader
 import es.weso.utils.eitherios.EitherIOUtils._
+import es.weso.shex.validator.ShExError._
 
 /**
   * ShEx validator
