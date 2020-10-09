@@ -8,6 +8,7 @@ import es.weso.rdf.nodes.IRI
 import es.weso.shex._
 import es.weso.shex.compact.Parser.TripleExprMap
 import cats.implicits._
+import io.circe.Json
 
 /* Candidates table */
 object Table extends LazyLogging {
@@ -54,6 +55,19 @@ object Table extends LazyLogging {
       // println(s"neights2Candidates, result candidates: ${rs.map(c => c.show).mkString("\n")}")        
       rs  
     }
+
+    def pathsMap2Json(pair: (Path,Set[ConstraintRef])): Json = {
+        val (path,cs) = pair
+        Json.obj(
+          ("path",Json.fromString(path.toString())),
+          ("constraintRef", Json.fromValues(cs.toList.map(_.toString).map(Json.fromString(_)))))
+        
+    }
+
+    def toJson: Json = Json.obj(
+      ("type", Json.fromString("ConstraintTable")),
+      ("pathsMap", Json.fromValues(paths.toList.map(pathsMap2Json)))
+    )
 
   }
 

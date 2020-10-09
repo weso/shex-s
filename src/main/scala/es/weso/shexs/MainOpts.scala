@@ -49,7 +49,29 @@ class MainOpts(arguments: Array[String],
     name = "showDataFormat",
     descr = "Format to show RDF data",
     default = Some("Turtle"),
-    noshort = true)
+    noshort = true
+  )
+
+  val showSchema: ScallopOption[Boolean] = opt[Boolean](
+    name = "showSchema",
+    descr = "Show Schema",
+    default = Some(false),
+    noshort = true
+  )
+
+  val showSchemaFormat: ScallopOption[String] = opt[String](
+    "showSchemaFormat",
+    default = Some("ShExC"),
+    descr = "Format to show Schema",
+    noshort = true
+  )
+
+  val showResultFormat: ScallopOption[String] = opt[String](
+    "showResultFormat",
+    default = Some("Compact"),
+    descr = "Format to show Result",
+    noshort = true
+  )
 
   val schemaFile: ScallopOption[String] = opt[String](
     name = "schemaFile",

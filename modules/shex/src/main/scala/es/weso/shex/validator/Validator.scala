@@ -10,7 +10,7 @@ import es.weso.rdf.nodes._
 import es.weso.collection.Bag
 import es.weso.rbe.interval.IntervalChecker
 import es.weso.rbe.{BagChecker, Empty, Rbe}
-import es.weso.rbe.BagChecker._
+// import es.weso.rbe.BagChecker._
 import es.weso.utils.{SeqUtils, SetUtils}
 import es.weso.shex.implicits.showShEx._
 import es.weso.rdf.PREFIXES._
@@ -610,23 +610,6 @@ case class Validator(schema: ResolvedSchema,
     c.crefs.nonEmpty
   }
 
-  private[validator] def showCandidateLines(cs: List[CandidateLine], table: CTable): String = {
-    cs.length match {
-      case 0 => "No candidate lines"
-      case 1 => s"One candidate line\n${showCandidateLine(cs.head, table)}"
-      case _ => cs.map(showCandidateLine(_,table)).mkString("\n")
-    }
-  }
-
-  private[validator] def showCandidateLine(c: CandidateLine, table: CTable): String = {
-      def compare(pair1:(Arc,ConstraintRef), pair2:(Arc,ConstraintRef)): Boolean =
-        Ordering[ConstraintRef].compare(pair1._2, pair2._2) <= 0
-
-      s"Candidate line:\n${c.values.sortWith(compare).map{ 
-        case (arc,cref) => 
-        s"${arc.show} as ${cref.show}/${table.constraints.get(cref).map(_.show).getOrElse("?")}"
-      }.mkString("\n")}"
-  }
 
 
   private[validator] def checkCandidates(attempt: Attempt, bagChecker: BagChecker_, table: CTable)(
@@ -647,26 +630,10 @@ case class Validator(schema: ResolvedSchema,
         // println(s"Non deterministic")
         val checks: List[CheckTyping] =
           as.map(checkCandidateLine(attempt, bagChecker, table)(_))
-        checkSome(
-          checks, {
-            // println(s"None of the candidates match")
-            StringError(
-              s"""|None of the candidates matched.
-                  | Attempt: ${attempt.show}
-                  | Bag: ${bagChecker.show}
-                  | Candidate lines:\n${showCandidateLines(as,table)}
-                  |""".stripMargin
-            )
-          }
-        )
-
+        checkSome(checks, NoCandidate(attempt,bagChecker,as,table))
       }
     }
   }
-
-/*  private[validator] def showListCandidateLine(ls: List[CandidateLine]): String = {
-    ls.map(_.show).mkString("\n")
-  } */
 
   private[validator] def checkCandidateLine(attempt: Attempt, bagChecker: BagChecker_, table: CTable)(
       cl: CandidateLine
@@ -679,8 +646,9 @@ case class Validator(schema: ResolvedSchema,
       .fold(
         e => {
           // println(s"Does not match RBE. ${bag} with ${bagChecker.show}")
-          errStr(s"${attempt.show} Candidate line ${showCandidateLine(cl,table)} which corresponds to ${bag} does not match ${Rbe
-            .show(bagChecker.rbe)}\nTable:${table.show}\nErr: $e")
+          err(ErrRBEMatch(attempt,cl,table,bag,bagChecker.rbe,e))
+/*          errStr(s"${attempt.show} Candidate line ${showCandidateLine(cl,table)} which corresponds to ${bag} does not match ${Rbe
+            .show(bagChecker.rbe)}\nTable:${table.show}\nErr: $e") */
         },
         bag => {
           // println(s"Matches RBE...")

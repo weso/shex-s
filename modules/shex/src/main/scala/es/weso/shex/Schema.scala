@@ -176,13 +176,13 @@ object Schema {
        } yield schema.addId(i)
   }
 
-  private def getSchemaWithExts(iri: IRI, exts: List[(String,String)], base: Option[IRI] ): IO[Schema] = 
+ private def getSchemaWithExts(iri: IRI, exts: List[(String,String)], base: Option[IRI] ): IO[Schema] = 
   exts match {
     case (e :: es) => getSchemaExt(iri,e,base) orElse getSchemaWithExts(iri,es,base)
     case Nil => err(s"Can not obtain schema from iri: $iri, Exts: ${exts} ")
   }
 
-  private def getSchemaExt(iri: IRI, pair: (String,String), base: Option[IRI]): IO[Schema] = {
+ private def getSchemaExt(iri: IRI, pair: (String,String), base: Option[IRI]): IO[Schema] = {
    println(s"getSchemaExt: ${iri} ${pair}") 
    val (ext,format) = pair
    val uri = if (ext == "") iri.uri
@@ -250,8 +250,8 @@ object Schema {
     }
   }
 
-  def err[A](msg:String): IO[A] = IO.raiseError(new RuntimeException(msg))
-  def ok[A](v:A): IO[A] = IO.pure(v)
+  private def err[A](msg:String): IO[A] = IO.raiseError(new RuntimeException(msg))
+  private def ok[A](v:A): IO[A] = IO.pure(v)
 
   def serialize(schema: Schema,
                 format: String,
