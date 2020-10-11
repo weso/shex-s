@@ -9,9 +9,12 @@ import es.weso.shapeMaps.{BNodeLabel, IRILabel => IRIMapLabel, _}
 import es.weso.shex.ShapeLabel
 import io.circe.Json
 import es.weso.shex.shexR.PREFIXES.sx_start
+import io.circe._
+import io.circe.syntax._
 
-case class ShapeTyping(t: Typing[RDFNode, ShapeType, ShExError, String]
-                      ) extends LazyLogging {
+case class ShapeTyping(
+   t: Typing[RDFNode, ShapeType, ShExError, String]
+) extends LazyLogging {
 
   def getOkValues(node: RDFNode): Set[ShapeType] =
     t.getOkValues(node)
@@ -64,8 +67,13 @@ case class ShapeTyping(t: Typing[RDFNode, ShapeType, ShExError, String]
     val reason =
       if (t.isOK) t.getEvidences.map(_.mkString("\n"))
       else t.getErrors.map(es => es.map(_.showQualified(nodesPrefixMap,shapesPrefixMap)).mkString("\n"))
-    val appInfo = Json.fromString("Shaclex")
+    val appInfo = typingResult2Json(t) 
     Info(status, reason, Some(appInfo))
+  }
+
+  private def typingResult2Json(t: TypingResult[ShExError,String]): Json = {
+     if (t.isOK) Json.obj(("evidences", Json.fromValues(t.getEvidences.getOrElse(List()).map(Json.fromString(_)))))
+     else Json.obj(("errors", Json.fromValues(t.getErrors.getOrElse(List()).map(_.asJson))))
   }
 
   private def typing2Labels(m: Map[ShapeType, TypingResult[ShExError, String]],

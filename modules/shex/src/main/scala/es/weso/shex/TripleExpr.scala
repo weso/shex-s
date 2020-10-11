@@ -9,14 +9,16 @@ import cats.implicits._
 sealed trait TripleExpr {
   def addId(label: ShapeLabel): TripleExpr
   def id: Option[ShapeLabel]
-  def predicates(schema:Schema): List[IRI] =
+  def predicates(schema:Schema): Set[IRI] =
     paths(schema).collect { case i: Direct => i.pred }
 
   def relativize(base: IRI): TripleExpr
 
-  def paths(schema: Schema): List[Path] = getPaths(schema, this).getOrElse(List())
+  def paths(schema: AbstractSchema): Set[Path] = getPaths(schema, this).getOrElse(Set())
 
-  private def getPaths(schema: Schema, te: TripleExpr): Either[String,List[Path]] = {
+  def hasSemActs: Boolean
+
+  private def getPaths(schema: AbstractSchema, te: TripleExpr): Either[String,Set[Path]] = {
 
    /* We use a state monad to handle the list of visited triple expressions in case 
       a triple expr refers to itself */
@@ -32,10 +34,10 @@ sealed trait TripleExpr {
      _ <- EitherT.liftF(modifyS(f))
    } yield ()
    def ok[A](x:A): E[A] = EitherT.pure(x)
-   def empty: List[Path] = List()
+   def empty: Set[Path] = Set()
    def fromEither[A](e: Either[String,A]): E[A] = EitherT.fromEither(e)
 
-   def checkPaths(te: TripleExpr): E[List[Path]] = for {
+   def checkPaths(te: TripleExpr): E[Set[Path]] = for {
      s <- getState
      ps <- if (s.visited contains te) ok(empty)
            else for {
@@ -44,16 +46,16 @@ sealed trait TripleExpr {
            } yield v 
    } yield ps
 
-   def pathsAux(te: TripleExpr): E[List[Path]] = 
+   def pathsAux(te: TripleExpr): E[Set[Path]] = 
     te match {
-     case e: EachOf => e.expressions.map(checkPaths(_)).sequence.map(_.flatten)
-     case o: OneOf => o.expressions.map(checkPaths(_)).sequence.map(_.flatten)
+     case e: EachOf => e.expressions.map(checkPaths(_)).sequence.map(_.flatten.toSet)
+     case o: OneOf => o.expressions.map(checkPaths(_)).sequence.map(_.flatten.toSet)
      case e: Expr => ok(empty)
      case i: Inclusion => for {
        te <- fromEither(schema.getTripleExpr(i.include))
        ps <- checkPaths(te)
      } yield ps
-     case tc: TripleConstraint => ok(List(tc.path))
+     case tc: TripleConstraint => ok(Set(tc.path))
    }
 
   val (_, paths) = pathsAux(te).value.run(initialState)
@@ -82,6 +84,8 @@ case class EachOf( id: Option[ShapeLabel],
       semActs.map(_.map(_.relativize(base))),
       annotations.map(_.map(_.relativize(base)))
     )
+
+  override def hasSemActs: Boolean = semActs.isDefined  
 }
 
 object EachOf {
@@ -99,6 +103,7 @@ case class OneOf(
   lazy val min: Int = optMin.getOrElse(Cardinality.defaultMin)
   lazy val max: Max = optMax.getOrElse(Cardinality.defaultMax)
   override def addId(lbl: ShapeLabel): OneOf = this.copy(id = Some(lbl))
+  override def hasSemActs: Boolean = semActs.isDefined  
 
 //  override def getShapeRefs (schema: Schema): List[ShapeLabel] = expressions.flatMap(_.getShapeRefs(schema))
 
@@ -120,6 +125,7 @@ object OneOf {
 case class Inclusion(include: ShapeLabel) extends TripleExpr {
   override def addId(lbl: ShapeLabel): Inclusion = this
   override def id: None.type = None
+  override def hasSemActs: Boolean = false
 
   // TODO: The following code can raise stack overflow when a label refers to itself
   //override def getShapeRefs(schema: Schema): List[ShapeLabel] =
@@ -150,6 +156,7 @@ case class TripleConstraint(
     if (direct) Direct(predicate)
     else Inverse(predicate)
   override def addId(lbl: ShapeLabel): TripleConstraint = this.copy(id = Some(lbl))
+  override def hasSemActs: Boolean = semActs.isDefined  
 
   def decreaseCard: TripleConstraint = this.copy(
     optMin = optMin.map(x => Math.min(x - 1,0)),
@@ -171,19 +178,6 @@ case class TripleConstraint(
     )
 }
 
-/**
-  * Support for arithmetic expressions
-  * @param id an optional ShapeLabel
-  * @param e value expression
-  */
-case class Expr(id: Option[ShapeLabel],
-                e: ValueExpr
-               ) extends TripleExpr {
-  def addId(label: ShapeLabel): Expr = this.copy(id = Some(label))
-  // override def getShapeRefs(schema: Schema): List[ShapeLabel] = List()
-  override def relativize(base: IRI): Expr =
-    Expr(id.map(_.relativize(base)),e)
-}
 
 object TripleConstraint {
   def emptyPred(pred: IRI): TripleConstraint =
@@ -198,3 +192,17 @@ object TripleConstraint {
 
 }
 
+/**
+  * Support for arithmetic expressions
+  * @param id an optional ShapeLabel
+  * @param e value expression
+  */
+case class Expr(id: Option[ShapeLabel],
+                e: ValueExpr
+               ) extends TripleExpr {
+  def addId(label: ShapeLabel): Expr = this.copy(id = Some(label))
+  // override def getShapeRefs(schema: Schema): List[ShapeLabel] = List()
+  override def relativize(base: IRI): Expr =
+    Expr(id.map(_.relativize(base)),e)
+  override def hasSemActs: Boolean = false
+}

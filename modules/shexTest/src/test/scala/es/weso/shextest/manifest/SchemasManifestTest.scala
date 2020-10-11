@@ -10,8 +10,12 @@ import io.circe.syntax._
 import es.weso.shex.implicits.decoderShEx._
 import es.weso.shex.implicits.encoderShEx._
 import Utils._
-import es.weso.utils.UriUtils._
-import cats.syntax.either._
+import es.weso.utils.IOUtils.fromES
+// import es.weso.utils.UriUtils._
+//import cats._
+import cats.data._
+import cats.effect.IO
+import cats.implicits._
 
 class SchemasManifestTest extends ValidateManifest {
 
@@ -26,35 +30,37 @@ class SchemasManifestTest extends ValidateManifest {
 
   describe("RDF2ManifestLocal") {
     val r = RDF2Manifest.read(shexFolder + "/" + "manifest.ttl", "Turtle", Some(shexFolderURI.toString), false)
-    r.fold(e => fail(s"Error reading manifest: $e"),
+    r.attempt.unsafeRunSync().fold(e => fail(s"Error reading manifest: $e"),
       mf => {
         for (e <- mf.entries) {
-          if (nameIfSingle == None || nameIfSingle.getOrElse("") === e.name) {
+          if (nameIfSingle == None || nameIfSingle.getOrElse("") == e.name) {
             it(s"Should pass test ${e.name}") {
               println(s"Testing: ${e.name}")
               e match {
                 case r: RepresentationTest => {
                   val schemaUri = mkLocal(r.shex, schemasBase, shexFolderURI)
                   val jsonUri   = mkLocal(r.json, schemasBase, shexFolderURI)
-                  val either: Either[String, String] = for {
-                    schemaStr      <- derefUri(schemaUri)
-                    jsonStr        <- derefUri(jsonUri)
+                  val either: IO[String] = for {
+                    schemaStr      <- derefUriIO(schemaUri)
+                    jsonStr        <- derefUriIO(jsonUri)
                     schema         <- Schema.fromString(schemaStr, "SHEXC", None)
-                    _ <- { println(s"Schema: ${schema}"); Right(()) }
-                    _ <- { println(s"Checking if it is well formed..."); Right(()) }
+                    _ <- IO { println(s"Schema: ${schema}") }
+                    _ <- IO { println(s"Checking if it is well formed...") }
                     // b              <- schema.wellFormed
                     // _ <- { println(s"Schema well formed?: ${b.toString}"); Right(()) }
-                    expectedSchema <- decode[Schema](jsonStr).leftMap(_.getMessage)
-                    _ <- { println(s"Expected schema: ${expectedSchema}"); Right(()) }
-                    _ <- if (CompareSchemas.compareSchemas(schema, expectedSchema)) Right(())
-                    else Left(s"Schemas are different. Parsed:\n${schema}\n-----Expected:\n${expectedSchema}")
-                    json <- parse(jsonStr).leftMap(e => s"Error parsing Expected JSON schema: ${e.getMessage}")
-                    check <- if (json.equals(schema.asJson)) Right(s"Schemas are equal")
-                    else
-                      Left(
-                        s"Json's are different\nSchema:${schema}\nJson generated: ${schema.asJson.spaces2}\nExpected: ${json.spaces2}")
+
+                    expectedSchema <- fromES(decode[Schema](jsonStr).leftMap(_.getMessage()))
+                    _ <- IO { println(s"Expected schema: ${expectedSchema}") }
+                    _ <- if (CompareSchemas.compareSchemas(schema, expectedSchema)) IO.pure("Schemas are ")
+                         else ioErr(s"Schemas are different. Parsed:\n${schema}\n-----Expected:\n${expectedSchema}")
+                    json <- fromES(parse(jsonStr).leftMap(_.message))
+                    check <- if (json.equals(schema.asJson)) IO.pure(s"Schemas are equal")
+                             else ioErr(s"Json's are different\nSchema:${schema}\nJson generated: ${schema.asJson.spaces2}\nExpected: ${json.spaces2}")
                   } yield check
-                  either.fold(e => fail(s"Error: $e"), msg => info(msg))
+                  either.attempt.unsafeRunSync().fold(
+                    e => fail(s"Error: $e"),
+                    msg => info(msg)
+                  )
                 }
               }
             }
@@ -65,5 +71,6 @@ class SchemasManifestTest extends ValidateManifest {
     )
    }
 
+  private def ioErr[A](msg: String): IO[A] = IO.raiseError(new RuntimeException(msg))
 
 }

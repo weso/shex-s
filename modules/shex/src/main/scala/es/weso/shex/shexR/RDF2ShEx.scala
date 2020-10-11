@@ -8,8 +8,11 @@ import es.weso.shex.shexR.PREFIXES._
 import es.weso.rdf.operations.Comparisons._
 import es.weso.rdf.nodes._
 import es.weso.rdf.parser._
-import cats.data.EitherT
+import cats.implicits._
+import cats.data._
+
 import cats.effect._
+import fs2.Stream
 
 /* Parses RDF into SHEx.
  * The parser follows ShExR definition: https://github.com/shexSpec/shexTest/blob/master/doc/ShExR.shex
@@ -19,7 +22,7 @@ trait RDF2ShEx extends RDFParser with LazyLogging {
   val initialNode = BNode("internalNode")
 
   def getSchema(rdf: RDFReader): RDFParser[Schema] = for {
-    schemaNodes <- fromEither(rdf.triplesWithPredicateObject(`rdf:type`, sx_Schema)) // .map(_.subj).toList
+    schemaNodes <- fromStream(rdf.triplesWithPredicateObject(`rdf:type`, sx_Schema)) // .map(_.subj).toList
     cfg = Config(initialNode,rdf)
     schemas <- 
       parseNodes(schemaNodes.toList.map(_.subj), schema)
@@ -40,9 +43,10 @@ trait RDF2ShEx extends RDFParser with LazyLogging {
     start <- opt(sx_start, shapeExpr)
     shapePairs <- starWithNodes(sx_shapes, shapeExpr)
     shapes <- star(sx_shapes, shapeExpr)
+    pm <- liftIO(rdf.getPrefixMap)
     // TODO: import
   } yield {
-    Schema(IRI(""),Some(rdf.getPrefixMap()), None, startActions, start, ls2Option(shapes),None, List())
+    Schema(IRI(""),Some(pm), None, startActions, start, ls2Option(shapes),None, List())
   }
 
   /*  def cnvShapePairs(ps: List[(RDFNode,ShapeExpr)]): Try[Map[ShapeLabel,ShapeExpr]] = {
@@ -439,13 +443,18 @@ trait RDF2ShEx extends RDFParser with LazyLogging {
   private def valueSetValueList1Plus: RDFParser[List[ValueSetValue]] =
     list1Plus(valueSetValue)
 
+  // def fromIO[A](io: IO[A]): RDFParser[A] = liftIO(io)
+
+  def fromStream[A](s: Stream[IO,A]): RDFParser[List[A]] = 
+    fromIO(s.compile.toList)
+
 }
 
 object RDF2ShEx extends RDF2ShEx {
 
-  def rdf2Schema(rdf: RDFReader): EitherT[IO, String, Schema] = {
+  def rdf2Schema(rdf: RDFReader): IO[Either[String,Schema]] = {
     val cfg = Config(IRI("http://internal/"),rdf)
-    EitherT(getSchema(rdf).value.run(cfg))
+    getSchema(rdf).value.run(cfg).map(_.leftMap(_.getMessage))
   }
 
 }

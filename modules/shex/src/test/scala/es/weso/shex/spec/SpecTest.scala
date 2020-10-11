@@ -7,6 +7,9 @@ import es.weso.shex.{IRILabel => ShExIriLabel, _}
 import org.scalatest._
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+import cats.data._
+import cats.effect._
+import es.weso.utils.IOUtils.fromES
 
 class SpecTest extends AnyFunSpec with Matchers with EitherValues {
   val x = IRI(s"http://example.org/x")
@@ -19,7 +22,7 @@ class SpecTest extends AnyFunSpec with Matchers with EitherValues {
   val slbl = IRILabel(s)
   val lbl = ShExIriLabel(IRI(s"http://example.org/lbl"))
   val lbl2 = ShExIriLabel(IRI(s"http://example.org/lbl2"))
-  val emptyEnv = Env(Schema.empty, TypingMap.empty, RDFAsJenaModel.empty)
+//  val emptyEnv = Env(Schema.empty, TypingMap.empty, RDFAsJenaModel.empty)
 
 /*  describe(s"getMatchables") {
 
@@ -187,19 +190,28 @@ class SpecTest extends AnyFunSpec with Matchers with EitherValues {
   }
 
   def shouldValidateShapeMap(strRDF: String, strSchema: String, strShapeMap: String, strExpectedShapeMap: String): Unit = {
-    it(s"Should validate RDF\n$strRDF\nSchema:\n$strSchema\nShapeMap:$strShapeMap\nExpected shape map: $strExpectedShapeMap") {
-        val r = for {
-          rdf <- RDFAsJenaModel.fromChars(strRDF, "Turtle", None)
-          schema <- Schema.fromString(strSchema, "ShExC", None)
-          shapeMap <- ShapeMap.fromString(strShapeMap, "Compact", None, rdf.getPrefixMap, schema.prefixMap)
-          fixedShapeMap <- ShapeMap.fixShapeMap(shapeMap, rdf, rdf.getPrefixMap, schema.prefixMap)
-          shapeTyping <- Check.runCheck(Env(schema, TypingMap.empty, rdf), Spec.checkShapeMap(rdf, fixedShapeMap))
-          result = Spec.shapeTyping2ResultShapeMap(shapeTyping,rdf.getPrefixMap,schema.prefixMap)
-          expectedShapeMap <- ShapeMap.parseResultMap(strExpectedShapeMap, None, rdf, schema.prefixMap)
-          compare <- result.compareWith(expectedShapeMap)
-        } yield compare
 
-        r.fold(
+    def info(msg:String): IO[Unit] = IO(println(msg))
+
+    it(s"Should validate RDF\n$strRDF\nSchema:\n$strSchema\nShapeMap:$strShapeMap\nExpected shape map: $strExpectedShapeMap") {
+        val r: IO[Boolean] = RDFAsJenaModel.fromChars(strRDF, "Turtle", None).use(rdf => for {
+          _ <- { info(s"RDF: $rdf") }
+          schema <- Schema.fromString(strSchema, "ShExC", None)
+          _ <- { info(s"Schema: $schema") }
+          rdfPrefixMap <- rdf.getPrefixMap
+          shapeMap <- fromES(ShapeMap.fromString(strShapeMap, "Compact", None, rdfPrefixMap, schema.prefixMap))
+          _ <- { info(s"shapeMap: $shapeMap") }
+          fixedShapeMap <- ShapeMap.fixShapeMap(shapeMap, rdf, rdfPrefixMap, schema.prefixMap)
+          shapeTyping <- Check.runCheck(Env(schema, TypingMap.empty, rdf), Spec.checkShapeMap(rdf, fixedShapeMap))
+          result = Spec.shapeTyping2ResultShapeMap(shapeTyping,rdfPrefixMap,schema.prefixMap)
+          expectedShapeMap <- ShapeMap.parseResultMap(strExpectedShapeMap, None, rdf, schema.prefixMap)
+          compare <- result.compareWith(expectedShapeMap).fold(
+            str => IO.raiseError(new RuntimeException(s"Error comparing: $str")),
+            IO(_)
+          )
+        } yield compare)
+
+        r.attempt.unsafeRunSync.fold(
           e => fail(s"Error $e"),
           comparison => comparison should be (true)
         )

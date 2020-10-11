@@ -9,7 +9,7 @@ class RDF2ManifestTest extends AnyFunSpec with ValidateManifest {
 
   val conf: Config = ConfigFactory.load()
 
-  describe("RDF2Manifest schemas") {
+/*  describe("RDF2Manifest schemas") {
     val validationFolder = conf.getString("testsFolder")
     parseManifest("manifest", "schemas", validationFolder, None, List(), false)
   }
@@ -39,11 +39,17 @@ class RDF2ManifestTest extends AnyFunSpec with ValidateManifest {
       ),
       false
     )
-  }
+  } */
 
   describe("RDF2Manifest validating") {
     val validationFolder = conf.getString("testsFolder")
-    parseManifest("manifest", "validation", validationFolder, None, List(), false)
+    parseManifest("manifest", 
+       "validation", 
+       validationFolder, 
+       None,
+       // Some("1literalTotaldigits_fail-malformedxsd_integer-1_2345"),
+       List(), 
+       false)
   }
 
 }

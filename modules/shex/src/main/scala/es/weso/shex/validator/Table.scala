@@ -8,6 +8,7 @@ import es.weso.rdf.nodes.IRI
 import es.weso.shex._
 import es.weso.shex.compact.Parser.TripleExprMap
 import cats.implicits._
+import io.circe.Json
 
 /* Candidates table */
 object Table extends LazyLogging {
@@ -48,13 +49,30 @@ object Table extends LazyLogging {
     }
 
     private[validator] def neighs2Candidates(neighs: List[Arc]): List[Candidate] = {
-      neighs.map(arc =>
+      // println(s"neights2Candidates: Neighs=\n$neighs\n")
+      val rs = neighs.map(arc =>
         Candidate(arc, paths.get(arc.path).getOrElse(Set())))
+      // println(s"neights2Candidates, result candidates: ${rs.map(c => c.show).mkString("\n")}")        
+      rs  
     }
+
+    def pathsMap2Json(pair: (Path,Set[ConstraintRef])): Json = {
+        val (path,cs) = pair
+        Json.obj(
+          ("path",Json.fromString(path.toString())),
+          ("constraintRef", Json.fromValues(cs.toList.map(_.toString).map(Json.fromString(_)))))
+        
+    }
+
+    def toJson: Json = Json.obj(
+      ("type", Json.fromString("ConstraintTable")),
+      ("pathsMap", Json.fromValues(paths.toList.map(pathsMap2Json)))
+    )
 
   }
 
   object CTable {
+
     def empty: CTable = CTable(Map(), Map(), 0)
 
     def simplify(rbe: Rbe_): Rbe_ = {
@@ -190,7 +208,13 @@ object Table extends LazyLogging {
         }
         cs.foldLeft(List[String]())(combine).mkString("\n")
       }
-      s"""Constraints:\n${showConstraints(table.constraints)}\nPaths: ${table.paths.toString}\n---endTable\n""".stripMargin
+     def showPaths(paths: PathsMap): String = 
+      paths.map {
+        case (path, cr) => s"${path.show}->${cr.map(_.show).mkString(",")}"
+      }.mkString(s"\n")
+
+      s"""Constraints:\n${showConstraints(table.constraints)}\nPaths:\n${showPaths(table.paths)}\n---endTable\n""".stripMargin
     }
+
   }
 }

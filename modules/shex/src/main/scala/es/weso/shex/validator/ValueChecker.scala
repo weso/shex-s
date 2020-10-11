@@ -8,7 +8,7 @@ import es.weso.shex._
 import es.weso.shex.validator.ShExChecker._
 import ShExError._
 
-case class ValueChecker(schema: Schema)
+case class ValueChecker(schema: AbstractSchema)
   extends ShowValidator(schema) with LazyLogging {
 
   def checkValue(
@@ -24,7 +24,7 @@ case class ValueChecker(schema: Schema)
     *
     * @param node: RDF node
     * @param value: ValueSetValue
-    * @return Left(msg) if node doesn't match, msg constains some explanation, Right(()) if it matches
+    * @return Left(msg) if node doesn't match, msg contains some explanation, Right(()) if it matches
     */
   private[validator] def valueChecker(node: RDFNode,
                            value: ValueSetValue): Either[String, String] = {

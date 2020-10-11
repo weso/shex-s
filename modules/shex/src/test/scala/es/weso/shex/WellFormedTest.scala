@@ -2,6 +2,8 @@ package es.weso.shex
 import org.scalatest._
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+import cats.data._ 
+import cats.effect._
 
 class WellFormedTest extends AnyFunSpec with Matchers with EitherValues {
 
@@ -24,17 +26,17 @@ class WellFormedTest extends AnyFunSpec with Matchers with EitherValues {
   def shouldCheckWellFormed(strSchema: String, label: String): Unit = {
     it(s"Should check well formed $label") {
       (for {
-        schema <- Schema.fromString(strSchema)
-        _      <- schema.wellFormed
-      } yield ()).fold(e => fail(s"Not well formed $label: $e"), _ => info(s"well formed $label"))
+        schema <- EitherT.liftF(Schema.fromString(strSchema))
+        _      <- EitherT.fromEither[IO](schema.wellFormed)
+      } yield ()).value.unsafeRunSync.fold(e => fail(s"Not well formed $label: $e"), _ => info(s"well formed $label"))
     }
   }
 
   def shouldCheckNotWellFormed(strSchema: String, label: String): Unit = {
     it(s"Should check not well formed $label") {
       (for {
-        schema <- Schema.fromString(strSchema)
-        _      <- schema.wellFormed
+        schema <- EitherT.liftF(Schema.fromString(strSchema))
+        _      <- EitherT.fromEither[IO](schema.wellFormed)
       } yield ()).fold(
         e => info(s"Not well formed $label with error $e as expected"),
         _ => fail(s"Should not be well formed $label. Input:\n$strSchema")

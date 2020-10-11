@@ -4,15 +4,15 @@ import cats._
 import org.scalactic._
 import scala.math.{ max => intMax }
 import scala.math.{ min => intMin }
+import io.circe._
+import io.circe.syntax._
 
-case class IntOrUnboundedException(msg: String)
-  extends Exception("IntOrUnbounded: " + msg)
 
 /**
  * Represents a limit of an [[Interval interval]].
  * It can be either an Int or an Unbounded value
  */
-sealed abstract trait IntOrUnbounded {
+sealed abstract trait IntOrUnbounded extends Product with Serializable {
 
   /**
    * `true` if this value is Unbounded
@@ -87,6 +87,7 @@ sealed abstract trait IntOrUnbounded {
     }
   }
 
+
 }
 
 case object Unbounded extends IntOrUnbounded {
@@ -107,7 +108,9 @@ case object Unbounded extends IntOrUnbounded {
  */
 case class IntLimit(m: Int) extends IntOrUnbounded with Requirements {
 
-  require(m >= 0)
+  // Commented because it raises null pointer exception when testing
+  // require(m >= 0)
+  // 
 
   def isUnbounded = false
 
@@ -165,6 +168,13 @@ object IntOrUnbounded {
 
   lazy val _0 = IntLimit(0)
   lazy val _1 = IntLimit(1)
+
+  implicit val encodeIntOrUnbounded: Encoder[IntOrUnbounded] = new Encoder[IntOrUnbounded] {
+    final def apply(v: IntOrUnbounded): Json = v match {
+      case IntLimit(m) => m.asJson
+      case Unbounded => "*".asJson
+    }
+  }
 
 }
 

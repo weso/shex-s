@@ -3,7 +3,10 @@ package es.weso.shextest.manifest
 import java.nio.file.Paths
 import com.typesafe.config.{Config, ConfigFactory}
 import es.weso.shex._
-import scala.io._
+// import scala.io._
+import cats.data.EitherT
+import cats.effect.IO
+
 
 class NegativeStructureManifestTest extends ValidateManifest {
 
@@ -28,7 +31,7 @@ class NegativeStructureManifestTest extends ValidateManifest {
 
   describe("RDF2ManifestLocal") {
     val r = RDF2Manifest.read(negativeStructureFolder + "/" + "manifest.ttl", "Turtle", Some(folderUri.toString), false)
-    r.fold(e => fail(s"Error reading manifest: $e"),
+    r.attempt.unsafeRunSync().fold(e => fail(s"Error reading manifest: $e"),
       mf => {
         for (e <- mf.entries) {
           if (nameIfSingle == None || nameIfSingle.getOrElse("") === e.name) {
@@ -40,16 +43,15 @@ class NegativeStructureManifestTest extends ValidateManifest {
                 case r: NegativeStructure => {
                   val fileName = Paths.get(r.shex.uri.getPath).getFileName.toString
                   val uri      = folderUri.resolve(fileName)
-                  val schemaStr = Source.fromURI(uri)("UTF-8").mkString
-                  Schema.fromString(schemaStr, "SHEXC", None) match {
-                    case Right(schema) => {
-                      schema.wellFormed match {
-                        case Right(str) => fail(s"Schema is well formed, but should not\nSchema: $schema\nMsg: $str")
-                        case Left(str) => info(s"Schema is not well formed: $str\nSchema: ${schema}")
-                      }
+                  val res: IO[String] = for {
+                    schemaStr <- derefUriIO(uri)
+                    schema <- Schema.fromString(schemaStr, "SHEXC", None)
+                    res <- schema.wellFormed match {
+                        case Right(str) => ioErr(s"Schema is well formed, but should not\nSchema: $schema\nMsg: $str")
+                        case Left(str) => IO(s"Schema is not well formed: $str\nSchema: ${schema}")
                     }
-                    case Left(e) => fail(s"Faiiled to parse: $e")
-                  }
+                  } yield res
+                  res.attempt.unsafeRunSync.fold(s => fail(s"Error $s"), v => info(s"$v"))
                 }
               }
             }
@@ -59,4 +61,7 @@ class NegativeStructureManifestTest extends ValidateManifest {
       }
     )
    }
+
+  private def ioErr[A](msg: String): IO[A] = IO.raiseError(new RuntimeException(msg))
+
 }

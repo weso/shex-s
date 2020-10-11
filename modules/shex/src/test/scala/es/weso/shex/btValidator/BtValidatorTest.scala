@@ -13,7 +13,7 @@ import org.scalatest.matchers.should.Matchers
 
 class BtValidatorTest extends AnyFunSpec with Matchers with EitherValues {
 
-  describe(s"BtValidator semantics") {
+/*  describe(s"BtValidator semantics") {
     it(s"Should validate OK") {
       val c: Check[Int] = ok(3)
       val rdf = RDFAsJenaModel.empty
@@ -71,5 +71,5 @@ class BtValidatorTest extends AnyFunSpec with Matchers with EitherValues {
       )
     }
 
-  }
+  } */
 }

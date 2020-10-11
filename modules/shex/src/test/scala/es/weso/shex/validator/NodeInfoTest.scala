@@ -6,44 +6,57 @@ import es.weso.rdf.PREFIXES._
 import es.weso.rdf.jena.RDFAsJenaModel
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+import es.weso.rdf.RDFReader
+import cats.effect.IO
+import cats.data._
+import es.weso.utils.IOUtils._
 
 class NodeInfoTest extends AnyFunSpec with Matchers with EitherValues {
-  val rdf = RDFAsJenaModel.empty
+  // val rdf = RDFAsJenaModel.empty
 
   describe("totalDigits") {
     it("Should calculate total digits of 3.14") {
-      val d = DecimalLiteral(3.14)
-      NodeInfo.totalDigits(d,rdf).fold(e => fail(s"Error: $e"), n => n should be(3))
+      checkOK(DecimalLiteral(3.14), NodeInfo.totalDigits, 3)
     }
     it("Should calculate total digits of 3.14 as datatype literal") {
-      val d = DatatypeLiteral("3.14", `xsd:decimal`)
-      NodeInfo.totalDigits(d,rdf).fold(e => fail(s"Error: $e"), n => n should be(3))
+      checkOK(DatatypeLiteral("3.14", `xsd:decimal`), NodeInfo.totalDigits, 3)
     }
     it("Should calculate total digits of 3.123456 as datatype literal") {
-      val d = DatatypeLiteral("3.123456", `xsd:decimal`)
-      NodeInfo.totalDigits(d,rdf).fold(e => fail(s"Error: $e"), n => n should be(7))
+      checkOK(DatatypeLiteral("3.123456", `xsd:decimal`), NodeInfo.totalDigits, 7)
     }
     it("Should calculate total digits of true and return error") {
-      val d = BooleanLiteral(true)
-      NodeInfo.totalDigits(d,rdf).fold(e => info(s"Failed as expected with error: $e"), n => fail(s"Should return an error instead of $n"))
+      checkFails(BooleanLiteral(true), NodeInfo.totalDigits)
     }
   }
   describe("fractionDigits") {
-    it("Should calculate fraction digits of 3.14") {
-      val d = DecimalLiteral(3.14)
-      NodeInfo.fractionDigits(d,rdf).fold(e => fail(s"Error: $e"), n => n should be(2))
+    it(s"Fraction digits of 3.14"){
+    checkOK(DecimalLiteral(3.14), NodeInfo.fractionDigits, 2)
     }
     it("Should calculate fraction digits of 3.14 as datatype literal") {
-      val d = DatatypeLiteral("3.14", `xsd:decimal`)
-      NodeInfo.fractionDigits(d,rdf).fold(e => fail(s"Error: $e"), n => n should be(2))
+      checkOK(DatatypeLiteral("3.14", `xsd:decimal`), NodeInfo.fractionDigits, 2)
     }
     it("Should calculate fraction digits of 3.123456 as datatype literal") {
-      val d = DatatypeLiteral("3.123456", `xsd:decimal`)
-      NodeInfo.fractionDigits(d,rdf).fold(e => fail(s"Error: $e"), n => n should be(6))
+      checkOK(DatatypeLiteral("3.123456", `xsd:decimal`), NodeInfo.fractionDigits, 6)
     }
     it("Should calculate fraction digits of true and return 0") {
-      val d = BooleanLiteral(true)
-      NodeInfo.fractionDigits(d,rdf).fold(e => info(s"Error as expected: $e"), n => fail(s"Should return error instead of $n"))
+      checkFails(BooleanLiteral(true), NodeInfo.fractionDigits)
     }
   }
+
+  def checkOK[A,B](x: A, f: (A, RDFReader) => IO[B], expected: B): Unit = {
+    val ioa = RDFAsJenaModel.empty.use(rdf => f(x,rdf))
+    ioa.attempt.unsafeRunSync.fold(
+      e => fail("Failed"),
+      v => v should be(expected)
+    )
+  }
+
+  def checkFails[A,B](x: A, f: (A, RDFReader) => IO[B]): Unit = {
+    val iob = RDFAsJenaModel.empty.use(rdf => f(x,rdf))
+    iob.attempt.unsafeRunSync.fold(
+      e => info("Failed as expected"),
+      v => fail(s"Should have failed")
+    )
+  }
+
 }

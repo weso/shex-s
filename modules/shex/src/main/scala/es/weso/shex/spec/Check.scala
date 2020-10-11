@@ -7,19 +7,26 @@ import es.weso.rdf.nodes.RDFNode
 import es.weso.shapeMaps._
 import es.weso.shex.Schema
 import es.weso.utils.internal.CollectionCompat._
+import cats.effect._
+import fs2.Stream
 
 object Check {
 
   type Evidence = String
   type ShapeTyping = TypingMap[RDFNode, ShapeMapLabel, Evidence]
-  type ReaderEnv[A] = ReaderT[Id, Env, A]
+  type ReaderEnv[A] = ReaderT[IO, Env, A]
   type Check[A] = EitherT[ReaderEnv,String,A]
 
   def emptyTyping: ShapeTyping = TypingMap.empty
 
-
   def fromEither[A](e: Either[String, A]): Check[A] =
     EitherT.fromEither[ReaderEnv](e)
+
+  def fromIO[A](ioa: IO[A]): Check[A] = 
+    EitherT.liftF(ReaderT.liftF(ioa))
+
+  def fromStream[A](s: Stream[IO,A]): Check[List[A]] =
+    fromIO(s.compile.toList)
 
   def satisfyChain[A](ls: List[A], check: A => Check[ShapeTyping]): Check[ShapeTyping] = {
     val zero: Check[ShapeTyping] = getTyping
@@ -116,9 +123,13 @@ object Check {
     x <- runLocal(env => env.copy(typing = newTyping), check)
   } yield x
 
-  def runCheck[A](env: Env, check: Check[A]): Either[String,A] = {
-    check.value.run(env)
-  }
+  def runCheck[A](env: Env, check: Check[A]): IO[A] = for {
+    ex <- check.value.run(env)
+    x <- ex.fold(
+      e => IO.raiseError(new RuntimeException(s"Error: $e")),
+      IO(_)
+    )
+  } yield x
 
 }
 
