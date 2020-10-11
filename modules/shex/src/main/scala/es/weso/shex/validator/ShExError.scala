@@ -10,8 +10,9 @@ import es.weso.shex.validator.Table.CTable
 import es.weso.rbe.Rbe
 import es.weso.collection.Bag
 import es.weso.rbe.BagChecker
+import scala.util.control.NoStackTrace
 
-sealed  abstract class ShExError extends Exception with Product with Serializable {
+sealed  abstract class ShExError protected (val msg: String) extends Exception(msg) with NoStackTrace with Product with Serializable {
   def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String
   def toJson: Json
 }
@@ -35,7 +36,7 @@ object ShExError {
    }
   }
 
-  case class StringError(msg: String) extends ShExError {
+  case class StringError(override val msg: String) extends ShExError(msg) {
     override def toString: String =
       ShExError.showViolationError.show(this)
 
@@ -53,7 +54,7 @@ object ShExError {
                            values: Set[RDFNode],
                            path: Path,
                            min: Int
-                          ) extends ShExError {
+                          ) extends ShExError(s"Not enough arcs for ${node}") {
     override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
       s"""Not enough values for node: ${nodesPrefixMap.qualify(node)}
       Path: ${path.showQualified(shapesPrefixMap)}
@@ -67,7 +68,7 @@ object ShExError {
 
   }
 
-  case class LabelNotFound(label: ShapeLabel, availableLabels: List[ShapeLabel]) extends ShExError {
+  case class LabelNotFound(label: ShapeLabel, availableLabels: List[ShapeLabel]) extends ShExError(s"Label not found: ${label}") {
     override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
       s"""Label not found: ${shapesPrefixMap.qualify(label.toRDFNode)}
       Available labels: ${availableLabels.map(label => shapesPrefixMap.qualify(label.toRDFNode)).mkString(",")}"""
@@ -79,7 +80,7 @@ object ShExError {
 
   }
 
-  case class NoStart(node: RDFNode) extends ShExError {
+  case class NoStart(node: RDFNode) extends ShExError(s"No Start. Node $node") {
     override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
       s"""Checking node ${nodesPrefixMap.qualify(node)}@start but no start found"""
     }
@@ -90,7 +91,7 @@ object ShExError {
 
   }
 
-  case class ErrCardinality(attempt: Attempt, node: RDFNode, path: Path, values: Int, card: Cardinality) extends ShExError {
+  case class ErrCardinality(attempt: Attempt, node: RDFNode, path: Path, values: Int, card: Cardinality) extends ShExError(s"Cardinality error. Node: $node. Cardinality: $card") {
     override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
       s"""${attempt.showQualified(nodesPrefixMap,shapesPrefixMap)}: # of values for ${path.showQualified(shapesPrefixMap)}=$values doesn't match ${card.show}"""
     }
@@ -101,7 +102,7 @@ object ShExError {
 
   }
 
-  case class ErrCardinalityWithExtra(attempt: Attempt, node: RDFNode, path: Path, values: Int, valuesFailed: Int, card: Cardinality) extends ShExError {
+  case class ErrCardinalityWithExtra(attempt: Attempt, node: RDFNode, path: Path, values: Int, valuesFailed: Int, card: Cardinality) extends ShExError(s"Cardinality ${card} with extra. ${valuesFailed} failed. Values: ${values}") {
     override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
       s"""${attempt.showQualified(nodesPrefixMap, shapesPrefixMap)}: # of values for ${path.showQualified(shapesPrefixMap)}=$values doesn't match ${card.show}
          | #of values that failed: $valuesFailed
@@ -114,7 +115,8 @@ object ShExError {
 
   }
 
-  case class ValuesNotPassed(attempt: Attempt, node: RDFNode, path: Path, valuesPassed: Int, valuesFailed: Set[(RDFNode, String)]) extends ShExError {
+  case class ValuesNotPassed(attempt: Attempt, node: RDFNode, path: Path, valuesPassed: Int, valuesFailed: Set[(RDFNode, String)]
+  ) extends ShExError(s"Error: ${valuesFailed} values failed. ${valuesPassed} values passed") {
     override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
       s"""${attempt.showQualified(nodesPrefixMap, shapesPrefixMap)}: # of values for ${path.showQualified(shapesPrefixMap)} failed}
          | #values that failed: ${showValues(valuesFailed, nodesPrefixMap)}""".stripMargin
@@ -132,7 +134,7 @@ object ShExError {
 
   }
 
-  case class ClosedButExtraPreds(preds: Set[IRI]) extends ShExError {
+  case class ClosedButExtraPreds(preds: Set[IRI]) extends ShExError(s"Closed but extra predicates: ${preds}") {
     override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
       s"""Closed shape but extra properties found: ${preds.map(shapesPrefixMap.qualifyIRI).mkString(",")}"""
     }
@@ -143,7 +145,7 @@ object ShExError {
 
   }
 
-  case class CheckDatatypeError(node: RDFNode, datatype: IRI) extends ShExError {
+  case class CheckDatatypeError(node: RDFNode, datatype: IRI) extends ShExError(s"Check datatype error: ${node}. Datatype: ${datatype}") {
     override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
       s"""Node: ${nodesPrefixMap.qualify(node)} doesn't have datatype ${nodesPrefixMap.qualify(datatype)}"""
     }
@@ -155,7 +157,7 @@ object ShExError {
   }
 
     // FractionDigits
-    case class ErrorObtainingFractionDigits(node: RDFNode, e: Throwable) extends ShExError {
+    case class ErrorObtainingFractionDigits(node: RDFNode, e: Throwable) extends ShExError(s"Error obtaining fraction digits: ${node}: ${e.getMessage()}") {
       override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
         s"""FractionDigits(${nodesPrefixMap.qualify(node)}) Error: ${e.getMessage}"""
       }
@@ -166,7 +168,7 @@ object ShExError {
 
     }
 
-    case class FractionDigitsAppliedUnknownDatatype(node: RDFNode, d: IRI) extends ShExError {
+    case class FractionDigitsAppliedUnknownDatatype(node: RDFNode, d: IRI) extends ShExError(s"Fraction digits applied to ${d} on node ${node}") {
       override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
         s"""FractionDigits(${nodesPrefixMap.qualify(node)}) Error: Applied to wrong type: ${nodesPrefixMap.qualify(d)}"""
       }
@@ -176,7 +178,7 @@ object ShExError {
       ) 
 
     }
-    case class FractionDigitsAppliedNonLiteral(node: RDFNode) extends ShExError {
+    case class FractionDigitsAppliedNonLiteral(node: RDFNode) extends ShExError(s"Fraction digits applied to non literal: $node") {
       override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
         s"""FractionDigits(${nodesPrefixMap.qualify(node)}) Error: applied to non literal"""
       }
@@ -188,7 +190,7 @@ object ShExError {
     }
 
     // TotalDigits
-    case class ErrorObtainingTotalDigits(node: RDFNode, e: Throwable) extends ShExError {
+    case class ErrorObtainingTotalDigits(node: RDFNode, e: Throwable) extends ShExError(s"Error obtaining total digits: ${node}: ${e.getMessage()}") {
       override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
         s"""TotalDigits(${nodesPrefixMap.qualify(node)}) Error: ${e.getMessage}"""
       }
@@ -197,7 +199,7 @@ object ShExError {
        ("type", Json.fromString("ErrorObtainingTotalDigits")),
       ) 
     }
-    case class TotalDigitsAppliedUnknownDatatype(node: RDFNode, d: IRI) extends ShExError {
+    case class TotalDigitsAppliedUnknownDatatype(node: RDFNode, d: IRI) extends ShExError(s"Total digits applied to unknown datatye: ${d}") {
       override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
         s"""TotalDigits(${nodesPrefixMap.qualify(node)}) Error: Applied to wrong type: ${nodesPrefixMap.qualify(d)}"""
       }
@@ -208,7 +210,7 @@ object ShExError {
 
     }
 
-    case class TotalDigitsAppliedNonLiteral(node: RDFNode) extends ShExError {
+    case class TotalDigitsAppliedNonLiteral(node: RDFNode) extends ShExError(s"Total digits applied to non literal: ${node}") {
       override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
         s"""FractionDigits(${nodesPrefixMap.qualify(node)}) Error: applied to non literal"""
       }
@@ -219,7 +221,7 @@ object ShExError {
 
     }
 
-  case class ExtraPropertiesClosedShape(node: RDFNode, ps: List[IRI]) extends ShExError {
+  case class ExtraPropertiesClosedShape(node: RDFNode, ps: List[IRI]) extends ShExError(s"EXTRA properties on closed shape: ${ps}") {
     override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
       s"""Closed shape with extra properties at node: ${nodesPrefixMap.qualify(node)}) Properties: ${showIris(nodesPrefixMap, ps)}"""
     }
@@ -229,7 +231,7 @@ object ShExError {
 
   }
 
-  case class FailSemanticAction(node: RDFNode, msg: String) extends ShExError {
+  case class FailSemanticAction(node: RDFNode, override val msg: String) extends ShExError(s"Failed semantic action on node: $node: $msg") {
     override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
       s"""Failed semantic action: ${nodesPrefixMap.qualify(node)}: $msg"""
     }
@@ -245,18 +247,19 @@ object ShExError {
     bag: Bag[ConstraintRef], 
     rbe: Rbe[ConstraintRef],
     e: String
-    ) extends ShExError {
+    ) extends ShExError(s"Error matching RBE: $e") {
 
     override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
-      s"""s"Attempt: ${attempt.show} 
-          Candidate line:
-          ${showCandidateLine(cl,table)} 
-          which corresponds to 
-          ${bag} 
-          does not match expression:
-          ${Rbe.show(rbe)}
-          Table:${table.show}
-          Err: $e""""
+      s"""|Error matching expression with neighbourhood candidates.
+          | Error: ${e}
+          | Attempt: ${attempt.show} 
+          | Candidate line:
+          | ${showCandidateLine(cl,table)} 
+          |  which corresponds to bag:
+          |  ${bag} 
+          | does not match expression: 
+          |  ${Rbe.show(rbe)}
+          | Table:${table.show} """.stripMargin
     }
 
     override def toJson: Json = Json.obj(
@@ -268,25 +271,43 @@ object ShExError {
        ("candidateLine",cl.toJson),
        ("table", table.toJson)
       ) 
-
   }
 
   case class NoCandidate(attempt: Attempt, 
        bagChecker: BagChecker[ConstraintRef], 
        as: List[CandidateLine], 
        ctable: CTable
-      ) extends ShExError {
+      ) extends ShExError(s"No candidate matches") {
     
     override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
       s"""|None of the candidates matched.
           | Attempt: ${attempt.show}
-          | Bag: ${bagChecker.show}
           | Candidate lines:\n${showCandidateLines(as,ctable)}
           |""".stripMargin
     }
 
     override def toJson: Json = Json.obj(
        ("type", Json.fromString("NoCandidate")),
+      ) 
+  }
+
+  case class NoPartition(
+    attempt: Attempt, 
+    node: RDFNode, 
+    shape: Shape, 
+    label: ShapeLabel,
+    neighs: List[Arc]
+    ) extends ShExError(s"No partition matches") {
+
+    override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
+      s"""No partition found for node ${nodesPrefixMap.qualify(node)}
+          Attempt: ${attempt.show} 
+        """"
+    }
+
+    override def toJson: Json = Json.obj(
+       ("type", Json.fromString("NoPartition")),
+       ("node", Json.fromString(node.getLexicalForm))
       ) 
   }
   

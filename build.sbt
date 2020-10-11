@@ -363,7 +363,7 @@ lazy val commonSettings = compilationSettings ++ sharedDependencies ++ Seq(
     Resolver.bintrayRepo("weso", "weso-releases"),
     Resolver.sonatypeRepo("snapshots")
   )
-)
+) ++ warnUnusedImport
 
 def antlrSettings(packageName: String) = Seq(
   antlr4GenListener in Antlr4 := true,
@@ -397,4 +397,10 @@ lazy val publishSettings = Seq(
   publishMavenStyle := true,
   bintrayRepository in bintray := "weso-releases",
   bintrayOrganization in bintray := Some("weso")
+)
+
+lazy val warnUnusedImport = Seq(
+  scalacOptions ++= (if (isDotty.value) Nil else Seq("-Ywarn-unused:imports")),
+  scalacOptions in (Compile, console) ~= { _.filterNot(Set("-Ywarn-unused-import", "-Ywarn-unused:imports")) },
+  scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value
 )

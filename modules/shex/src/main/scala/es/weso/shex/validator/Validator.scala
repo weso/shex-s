@@ -99,7 +99,7 @@ case class Validator(schema: ResolvedSchema,
           }
         }
       case Undefined =>
-        errStr(s"Cannot check $node agains undefined status")
+        errStr(s"Cannot check $node against undefined status")
     }
 
   private def mkLabel(label: ShapeMapLabel): ShapeLabel =
@@ -387,7 +387,7 @@ case class Validator(schema: ResolvedSchema,
       // _ <- { println(s"checkShapeExtend(node=$node,shape=${s.show},base=$baseLabel). \npaths=$paths") ; ok(()) }
       neighs <- getNeighPaths(node, paths.toList)
       partitions = SetUtils.pSet(neighs.toSet)
-      _      <- checkSomeFlag(partitions, checkPartition(base, s, attempt, node), noPartition(node, neighs))
+      _      <- checkSomeFlag(partitions, checkPartition(base, s, attempt, node), noPartition(attempt, node, s, baseLabel, neighs))
       typing <- getTyping
     } yield typing
 
@@ -413,8 +413,14 @@ case class Validator(schema: ResolvedSchema,
     c1.orElse(c2)
   } */
 
-  private[validator] def noPartition(node: RDFNode, neighs: Neighs): Check[(ShapeTyping, Boolean)] =
-    errStr(s"No partition of $neighs conforms. Node: $node")
+  private[validator] def noPartition(
+     attempt: Attempt, 
+     node: RDFNode, 
+     s: Shape, 
+     label: ShapeLabel,
+     neighs: Neighs
+     ): Check[(ShapeTyping, Boolean)] =
+     errStr(s"No partition of $neighs conforms. Node: $node")
 
   private[validator] def checkNeighsShapeExpr(
       attempt: Attempt,
@@ -646,7 +652,7 @@ case class Validator(schema: ResolvedSchema,
       .fold(
         e => {
           // println(s"Does not match RBE. ${bag} with ${bagChecker.show}")
-          err(ErrRBEMatch(attempt,cl,table,bag,bagChecker.rbe,e))
+          err(ErrRBEMatch(attempt,cl,table,bag,bagChecker.rbe,e.head.msg))
 /*          errStr(s"${attempt.show} Candidate line ${showCandidateLine(cl,table)} which corresponds to ${bag} does not match ${Rbe
             .show(bagChecker.rbe)}\nTable:${table.show}\nErr: $e") */
         },
