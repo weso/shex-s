@@ -7,7 +7,9 @@ import io.circe.syntax._
 import es.weso.rbe.interval.Interval
 import es.weso.collection.Bag
 import es.weso.rbe.interval.IntOrUnbounded
-
+import cats._
+import cats.implicits._
+import es.weso.rbe.ShowRbe._
 
 sealed abstract class RbeError protected (val msg: String)
  extends Exception(msg) with NoStackTrace with Product with Serializable {
@@ -118,48 +120,48 @@ case class MaxCardinalityZeroFoundValue[A](
        )
 }
 
-case class Unexpected[A](
+case class Unexpected[A:Show](
     x: A,
-    s: Symbol[A],
+    s: Rbe[A],
     open: Boolean
- ) extends RbeError(s"""|Unexpected x=${x} doesn't match ${s}. Open: $open
+ ) extends RbeError(s"""|Unexpected ${x.show} doesn't match ${s.show}\nOpen?: $open
                         |""".stripMargin) {
     override def show: String = msg
     override def toJson: Json = 
        Json.obj(
            ("type", "Unexpected".asJson),
-           ("x", x.toString.asJson),
-           ("s", s.toString.asJson),
+           ("found", x.show.asJson),
+           ("expected", s.show.asJson),
            ("open", open.asJson),
        )
 }
 
-case class UnexpectedEmpty[A](
+case class UnexpectedEmpty[A:Show](
     x: A,
     open: Boolean
- ) extends RbeError(s"""|Unexpected x=${x} doesn't match empty. Open?: $open
+ ) extends RbeError(s"""|Unexpected ${x.show} doesn't match empty. Open?: $open
                         |""".stripMargin) {
     override def show: String = msg
     override def toJson: Json = 
        Json.obj(
            ("type", "Unexpected".asJson),
-           ("x", x.toString.asJson),
+           ("x", x.show.asJson),
            ("open", open.asJson),
        )
 }
 
-case class CardinalityZeroZeroDeriv[A](
+case class CardinalityZeroZeroDeriv[A:Show](
     x: A,
     e: Rbe[A],
     d: Rbe[A],
- ) extends RbeError(s"""|Cardinality 0,0 but deriv e=${e}/x=${x} = $d is nullable
+ ) extends RbeError(s"""|Cardinality 0,0 but deriv e=${e.show}/x=${x.show} = $d is nullable
                         |""".stripMargin) {
     override def show: String = msg
     override def toJson: Json = 
        Json.obj(
            ("type", "CardinalityZeroZeroDerivNullable".asJson),
-           ("x", x.toString.asJson),
-           ("e", e.toString.asJson),
-           ("d", d.toString.asJson),
+           ("x", x.show.asJson),
+           ("e", e.show.asJson),
+           ("d", d.show.asJson),
        )
 }

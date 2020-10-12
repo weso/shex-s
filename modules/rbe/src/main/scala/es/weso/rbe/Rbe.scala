@@ -4,6 +4,7 @@ import es.weso.collection._
 import interval._
 import IntOrUnbounded._
 import cats._
+import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 
 /**
@@ -68,11 +69,11 @@ sealed trait Rbe[+A] extends LazyLogging with Product with Serializable {
    * @param open allows extra symbols
    * @param controlled limits the extra symbols to those that don't appear in controlled
    */
-  def derivBag[U >: A](bag: Bag[U], open: Boolean, controlled: Seq[U]): Rbe[U] = {
+  def derivBag[U >: A](bag: Bag[U], open: Boolean, controlled: Seq[U])(implicit r: Show[U]): Rbe[U] = {
     val e: Rbe[U] = this
     def f(x: U, rest: Rbe[U]): Rbe[U] = {
-      val r = rest.deriv(x, open, controlled)
-      r
+      val v: Rbe[U] = rest.deriv(x, open, controlled)(r)
+      v
     }
     bag.toSeq.foldRight(e)(f)
   }
@@ -151,7 +152,7 @@ sealed trait Rbe[+A] extends LazyLogging with Product with Serializable {
     Repeat(r, m, n)
   } */
 
-  private def derivSymbol[U >: A](x: U, s: Symbol[U], open: Boolean, controlled: Seq[U]): Rbe[U] = {
+  private def derivSymbol[U >: A](x: U, s: Symbol[U], open: Boolean, controlled: Seq[U])(implicit r: Show[U]): Rbe[U] = {
     if (x == s.a) {
       if (s.m == IntLimit(0))
         Fail(MaxCardinalityZeroFoundValue(x,s))
@@ -170,14 +171,14 @@ sealed trait Rbe[+A] extends LazyLogging with Product with Serializable {
    * @param open allows extra symbols
    * @param controlled defines the symbols that are allowed in closed expressions
    */
-  def deriv[U >: A](x: U, open: Boolean, controlled: Seq[U]): Rbe[U] = {
+  def deriv[U >: A](x: U, open: Boolean, controlled: Seq[U])(implicit r: Show[U]): Rbe[U] = {
     this match {
       case f @ Fail(_) => f
       case Empty =>
         if (open && !(controlled contains x))
           Empty
         else
-          Fail(UnexpectedEmpty(x,open))
+          Fail(UnexpectedEmpty(x,open)(r))
       case s @ Symbol(_, _, _) => {
         derivSymbol(x, s, open, controlled)
       }
@@ -205,13 +206,13 @@ sealed trait Rbe[+A] extends LazyLogging with Product with Serializable {
         else Empty
       }
       case Repeat(e, m, n) => {
-        lazy val d = e.deriv(x, open, controlled)
+        lazy val d: Rbe[U] = e.deriv(x, open, controlled)(r)
         // println(s"Repeat: deriv of $e/$x = $d")
         lazy val rest = mkRange(e, math.max(m - 1, 0), n minusOne)
         // println(s"Repeat: rest $rest")
-        val r = mkAnd(d, rest)
+        val v = mkAnd(d, rest)
         // println(s"Repeat: and: $r")
-        r
+        v
       }
     }
   }
@@ -260,6 +261,8 @@ case class Repeat[A](v: Rbe[A], n: Int, m: IntOrUnbounded) extends Rbe[A]
 
 
 object Rbe {
+
+  // implicit def showRbe[A:Show]: Show[Rbe[A]] = Show.show(show(_))
 
   def show[A:Show](r: Rbe[A]): String = {
     import ShowRbe._

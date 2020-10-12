@@ -21,6 +21,7 @@ import es.weso.shapeMaps.{BNodeLabel => BNodeMapLabel, IRILabel => IRIMapLabel, 
 import es.weso.shex.actions.TestSemanticAction
 import Function.tupled
 import es.weso.shex.validator.ShExError._
+import es.weso.shex.validator.ConstraintRef.{showConstraintRef => _}
 
 
 /**
@@ -458,9 +459,9 @@ case class Validator(schema: ResolvedSchema,
       node: RDFNode,
       neighs: Neighs,
       s: Shape
-  ): CheckTyping =
+  ): CheckTyping = {
     for {
-      tableRbe <- mkTable(s.expression, s.extra.getOrElse(List()))
+      tableRbe <- mkTable(s.expression, s.extra.getOrElse(List()), schema.prefixMap)
       (cTable, rbe) = tableRbe
       _ <- info(s"cTable: $cTable")
       bagChecker    = IntervalChecker(rbe)
@@ -481,6 +482,7 @@ case class Validator(schema: ResolvedSchema,
       // println(s"End of checkShape(attempt=${attempt.show},node=${node.show},shape=${s.show})=${typing.show}")
       typing
     }
+  }
 
   private def getPaths(s: Shape): Check[List[Path]] =
     fromEitherString(s.paths(schema).map(_.toList))
@@ -584,13 +586,13 @@ case class Validator(schema: ResolvedSchema,
     } else Right(())
   }
 
-  private[validator] def mkTable(maybeTe: Option[TripleExpr], extra: List[IRI]): Check[(CTable, Rbe_)] = {
+  private[validator] def mkTable(maybeTe: Option[TripleExpr], extra: List[IRI], prefixMap: PrefixMap): Check[(CTable, Rbe_)] = {
     maybeTe match {
       case None => ok((CTable.empty, Empty))
       case Some(te) =>
         fromEitherString(
           for {
-            pair <- CTable.mkTable(te, extra, schema.tripleExprMap)
+            pair <- CTable.mkTable(te, extra, schema.tripleExprMap, prefixMap)
           } yield pair
         )
     }
@@ -647,12 +649,15 @@ case class Validator(schema: ResolvedSchema,
     // println(s"checkCandidateLine: ${cl}")
     // println(s"Table: $table")
     val bag = cl.mkBag
+    
+    val s = implicitly[Show[ConstraintRef]]
+    println(s"Before check candidateline $s")
     bagChecker
       .check(bag, false)
       .fold(
         e => {
           // println(s"Does not match RBE. ${bag} with ${bagChecker.show}")
-          err(ErrRBEMatch(attempt,cl,table,bag,bagChecker.rbe,e.head.msg))
+          err(ErrRBEMatch(attempt,cl,table,bag,bagChecker.rbe,e.head))
 /*          errStr(s"${attempt.show} Candidate line ${showCandidateLine(cl,table)} which corresponds to ${bag} does not match ${Rbe
             .show(bagChecker.rbe)}\nTable:${table.show}\nErr: $e") */
         },
