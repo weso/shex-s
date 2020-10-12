@@ -65,7 +65,7 @@ object nodeShape {
       Either.right((x, implicitly[Read[Evidence]].read(msg)))
 
     def errString[A, Evidence: Read](err: String): CheckVal[A, RbeError, Evidence] =
-      Either.left(List(RbeError(err)))
+      Either.left(List(MsgError(err)))
 
   }
 

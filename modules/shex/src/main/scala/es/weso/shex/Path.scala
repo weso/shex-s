@@ -39,6 +39,8 @@ case class Inverse(pred: IRI) extends Path {
 
 object Path {
 
+  def fromIRI(iri: IRI): Path = Direct(iri)
+  
   implicit def showPath: Show[Path] = new Show[Path] {
     override def show(x: Path): String = x match {
       case Direct(iri) => iri.toString

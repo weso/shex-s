@@ -4,6 +4,7 @@ import es.weso.collection._
 import interval._
 import IntOrUnbounded._
 import cats._
+import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 
 /**
@@ -18,14 +19,14 @@ import com.typesafe.scalalogging.LazyLogging
  *     S. Staworko, I. Boneva, J. Labra, S. Hym, E. Prud'hommeaux, H. Solbrig
  *
  */
-sealed trait Rbe[+A] extends LazyLogging {
+sealed trait Rbe[+A] extends LazyLogging with Product with Serializable {
 
   /**
    * Checks if a RBE contains repetitions
    */
   lazy val containsRepeats: Boolean = {
     this match {
-      case Fail(_) => false
+      case _: Fail => false
       case Empty => false
       case Symbol(_, _, _) => false
       case And(e1, e2) => e1.containsRepeats || e2.containsRepeats
@@ -45,7 +46,7 @@ sealed trait Rbe[+A] extends LazyLogging {
    */
   lazy val symbols: Seq[A] = {
     this match {
-      case Fail(_) => List()
+      case _ : Fail => List()
       case Empty => List()
       case Symbol(a, _, _) => List(a)
       case And(v1, v2) => v1.symbols ++ v2.symbols // v1.symbols concat v2.symbols
@@ -68,11 +69,11 @@ sealed trait Rbe[+A] extends LazyLogging {
    * @param open allows extra symbols
    * @param controlled limits the extra symbols to those that don't appear in controlled
    */
-  def derivBag[U >: A](bag: Bag[U], open: Boolean, controlled: Seq[U]): Rbe[U] = {
+  def derivBag[U >: A](bag: Bag[U], open: Boolean, controlled: Seq[U])(implicit r: Show[U]): Rbe[U] = {
     val e: Rbe[U] = this
     def f(x: U, rest: Rbe[U]): Rbe[U] = {
-      val r = rest.deriv(x, open, controlled)
-      r
+      val v: Rbe[U] = rest.deriv(x, open, controlled)(r)
+      v
     }
     bag.toSeq.foldRight(e)(f)
   }
@@ -82,7 +83,7 @@ sealed trait Rbe[+A] extends LazyLogging {
    */
   lazy val nullable: Boolean = {
     val r = this match {
-      case Fail(_) => false
+      case _ : Fail => false
       case Empty => true
       case Symbol(_, 0, IntLimit(0)) => true
       case Symbol(_, 0, _) => true
@@ -111,8 +112,8 @@ sealed trait Rbe[+A] extends LazyLogging {
   }
 
   private def mkRange[U >: A](e: Rbe[U], m: Int, n: IntOrUnbounded): Rbe[U] = {
-    if (m < 0) Fail("Range with negative lower bound = " + m)
-    else if (m > n) Fail("Range with lower bound " + m + " bigger than upper bound " + n)
+    if (m < 0) Fail(RangeNegativeLowerBound(m))
+    else if (m > n) Fail(RangeLowerBoundBigger(m,n))
     else {
       (m, n, e) match {
         case (0, IntLimit(0), _) => Empty
@@ -125,8 +126,8 @@ sealed trait Rbe[+A] extends LazyLogging {
   }
 
   private def mkRangeSymbol[U >: A](x: U, m: Int, n: IntOrUnbounded): Rbe[U] = {
-    if (m < 0) Fail("Range with negative lower bound = " + m)
-    else if (m > n) Fail("Range with lower bound " + m + " bigger than upper bound " + n)
+    if (m < 0) Fail(RangeNegativeLowerBound(m))
+    else if (m > n) Fail(RangeLowerBoundBigger(m,n))
     else {
       (m, n) match {
         //        case (0, IntLimit(0)) => Empty
@@ -151,16 +152,16 @@ sealed trait Rbe[+A] extends LazyLogging {
     Repeat(r, m, n)
   } */
 
-  private def derivSymbol[U >: A](x: U, s: Symbol[U], open: Boolean, controlled: Seq[U]): Rbe[U] = {
+  private def derivSymbol[U >: A](x: U, s: Symbol[U], open: Boolean, controlled: Seq[U])(implicit r: Show[U]): Rbe[U] = {
     if (x == s.a) {
       if (s.m == IntLimit(0))
-        Fail(s"Found $x but max. cardinality is 0. Current deriv: $s")
+        Fail(MaxCardinalityZeroFoundValue(x,s))
       else
         mkRangeSymbol(s.a, math.max(s.n - 1, 0), s.m minusOne)
     } else if (open && !(controlled contains x)) {
       this
     } else {
-      Fail(s"symbol: Unexpected $x doesn't match $s. open: $open, controlled: $controlled")
+      Fail(Unexpected(x,s,open))
     }
   }
 
@@ -170,14 +171,14 @@ sealed trait Rbe[+A] extends LazyLogging {
    * @param open allows extra symbols
    * @param controlled defines the symbols that are allowed in closed expressions
    */
-  def deriv[U >: A](x: U, open: Boolean, controlled: Seq[U]): Rbe[U] = {
+  def deriv[U >: A](x: U, open: Boolean, controlled: Seq[U])(implicit r: Show[U]): Rbe[U] = {
     this match {
       case f @ Fail(_) => f
       case Empty =>
         if (open && !(controlled contains x))
           Empty
         else
-          Fail(s"Unexpected $x doesn't match empty, open: $open, controlled: $controlled")
+          Fail(UnexpectedEmpty(x,open)(r))
       case s @ Symbol(_, _, _) => {
         derivSymbol(x, s, open, controlled)
       }
@@ -201,17 +202,17 @@ sealed trait Rbe[+A] extends LazyLogging {
       }
       case Repeat(e, 0, IntLimit(0)) => {
         val d = e.deriv(x, open, controlled)
-        if (d.nullable) Fail(s"Cardinality 0,0 but deriv. of $e/$x = $d is nullable")
+        if (d.nullable) Fail(CardinalityZeroZeroDeriv(x,e,d))
         else Empty
       }
       case Repeat(e, m, n) => {
-        lazy val d = e.deriv(x, open, controlled)
+        lazy val d: Rbe[U] = e.deriv(x, open, controlled)(r)
         // println(s"Repeat: deriv of $e/$x = $d")
         lazy val rest = mkRange(e, math.max(m - 1, 0), n minusOne)
         // println(s"Repeat: rest $rest")
-        val r = mkAnd(d, rest)
+        val v = mkAnd(d, rest)
         // println(s"Repeat: and: $r")
-        r
+        v
       }
     }
   }
@@ -221,7 +222,7 @@ sealed trait Rbe[+A] extends LazyLogging {
 /**
  * Fail RBE doesn't match
  */
-case class Fail(msg: String) extends Rbe[Nothing]
+case class Fail(error: RbeError) extends Rbe[Nothing]
 
 /**
  * Empty RBE
@@ -261,9 +262,12 @@ case class Repeat[A](v: Rbe[A], n: Int, m: IntOrUnbounded) extends Rbe[A]
 
 object Rbe {
 
+  // implicit def showRbe[A:Show]: Show[Rbe[A]] = Show.show(show(_))
+
   def show[A:Show](r: Rbe[A]): String = {
     import ShowRbe._
     Show[Rbe[A]].show(r)
   }
+
 
 }

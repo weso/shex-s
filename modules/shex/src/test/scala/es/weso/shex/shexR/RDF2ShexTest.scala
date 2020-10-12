@@ -12,12 +12,11 @@ import es.weso.rdf.PREFIXES._
 import es.weso.rdf.parser._
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+import cats.implicits._
+import cats.effect._
 
-import cats.data._
-import cats.effect.IO
-
-class RDF2ShExTest extends AnyFunSpec with Matchers with EitherValues with TryValues {
-  val rdf2Shex = new RDF2ShEx {}
+class RDF2ShexTest extends AnyFunSpec with Matchers with EitherValues with TryValues {
+  val rdf2Shex: RDF2ShEx = new RDF2ShEx {}
 
   describe("Simple schema") {
     it("should parse simple schema") {
@@ -42,18 +41,24 @@ class RDF2ShExTest extends AnyFunSpec with Matchers with EitherValues with TryVa
         None,
         List())
 
-      val result: EitherT[IO, String, (Boolean,String,String)] = for {
-        builder <- EitherT.liftF(RDFAsJenaModel.empty)
-        rdf <- EitherT.liftF(RDFAsJenaModel.fromChars(str, "TURTLE", None))
-        schema <- RDF2ShEx.rdf2Schema(rdf)
-        rdf1 <- EitherT.liftF(ShEx2RDF(schema, Some(IRI("http://example.org/x")),builder))
-        rdf2 <- EitherT.liftF(ShEx2RDF(expected, Some(IRI("http://example.org/x")),builder))
-        iso <- EitherT.liftF(rdf1.isIsomorphicWith(rdf2))
-        str1 <- EitherT.liftF(rdf1.serialize("TURTLE"))
-        str2 <- EitherT.liftF(rdf2.serialize("TURTLE"))
-      } yield (iso,str1,str2)
+      val result: IO[(Boolean,String,String)] = (
+        RDFAsJenaModel.empty,
+        RDFAsJenaModel.fromChars(str, "TURTLE", None) ).tupled.use { case (builder, rdf) =>
+        for {
+          eitherSchema <- RDF2ShEx.rdf2Schema(rdf)
+          schema <- eitherSchema.fold(
+            e => IO.raiseError(new RuntimeException(s"Error converting RDF to schema: $e\nRDF: $rdf")),
+            IO(_)
+          )
+          rdf1 <- ShEx2RDF(schema, Some(IRI("http://example.org/x")), builder)
+          rdf2 <- ShEx2RDF(expected, Some(IRI("http://example.org/x")), builder)
+          iso <- rdf1.isIsomorphicWith(rdf2)
+          str1 <- rdf1.serialize("TURTLE")
+          str2 <- rdf2.serialize("TURTLE")
+        } yield (iso, str1, str2)
+      }
 
-      result.value.unsafeRunSync match {
+      result.attempt.unsafeRunSync match {
         case Right(v) => {
           val (iso,s1,s2) = v
           if (iso) {
@@ -82,11 +87,10 @@ class RDF2ShExTest extends AnyFunSpec with Matchers with EitherValues with TryVa
             stripMargin
         
 
-        val result = (for {
-          rdf <- RDFAsJenaModel.fromChars(str, "TURTLE", None)
-          cfg = Config(IRI("http://example.org/x"), rdf)
-          schemas <- rdf2Shex.opt(sx_start, rdf2Shex.iri).value.run(cfg)
-        } yield schemas).unsafeRunSync
+        val result = RDFAsJenaModel.fromChars(str, "TURTLE", None).use(rdf => {
+          val cfg = Config(IRI("http://example.org/x"), rdf)
+          rdf2Shex.opt(sx_start, rdf2Shex.iri).value.run(cfg)
+        }).unsafeRunSync
 
         result match {
           case Right(v) => v should be(Some(IRI("http://example.org/S")))
@@ -107,11 +111,11 @@ class RDF2ShExTest extends AnyFunSpec with Matchers with EitherValues with TryVa
             stripMargin
 
         
-        val result = (for {
-          rdf <- RDFAsJenaModel.fromChars(str, "TURTLE", None)
-          cfg = Config(IRI("http://example.org/x"), rdf)    
-          schemas <- rdf2Shex.opt(sx_start, rdf2Shex.iri).value.run(cfg)
-        } yield schemas).unsafeRunSync
+        val result = RDFAsJenaModel.fromChars(str, "TURTLE", None).use(rdf =>
+         {
+          val cfg = Config(IRI("http://example.org/x"), rdf)
+          rdf2Shex.opt(sx_start, rdf2Shex.iri).value.run(cfg)
+         }).unsafeRunSync
 
         result match {
           case Right(v) => v should be(None)
@@ -143,10 +147,9 @@ class RDF2ShExTest extends AnyFunSpec with Matchers with EitherValues with TryVa
             |:v  a sx:NodeConstraint ;
             |    sx:datatype xsd:string .
          """.stripMargin
-      val result = (for {
-        rdf <- RDFAsJenaModel.fromChars(rdfStr, "TURTLE", None)
-        schema <- RDF2ShEx.rdf2Schema(rdf).value
-      } yield schema).unsafeRunSync
+      val result = RDFAsJenaModel.fromChars(rdfStr, "TURTLE", None).use(rdf => {
+        RDF2ShEx.rdf2Schema(rdf)
+      }).unsafeRunSync
 
       val nc = NodeConstraint.datatype(`xsd:string`, List()).addId(v)
       val tc = TripleConstraint.valueExpr(p, nc).addId(expr)
@@ -188,10 +191,9 @@ class RDF2ShExTest extends AnyFunSpec with Matchers with EitherValues with TryVa
             |:expr2 a sx:NodeConstraint ;
             |       sx:nodeKind sx:iri .
          """.stripMargin
-      val result = (for {
-        rdf <- RDFAsJenaModel.fromChars(rdfStr, "TURTLE", None)
-        schema <- RDF2ShEx.rdf2Schema(rdf).value
-      } yield schema).unsafeRunSync
+      val result = RDFAsJenaModel.fromChars(rdfStr, "TURTLE", None).use(rdf =>
+        RDF2ShEx.rdf2Schema(rdf)
+      ).unsafeRunSync
 
       val nc = NodeConstraint.datatype(`xsd:string`, List()).addId(v)
       val te: TripleExpr = TripleConstraint.valueExpr(p, nc).addId(tc)

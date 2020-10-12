@@ -3,7 +3,6 @@ package es.weso.shex.validator
 import cats.implicits._
 import es.weso.shapeMaps.ResultShapeMap
 import cats.effect.IO
-import cats._
 import cats.implicits._
 
 case class Result(e: Either[ShExError, ResultShapeMap]) {
@@ -13,6 +12,8 @@ case class Result(e: Either[ShExError, ResultShapeMap]) {
   def toResultShapeMap: IO[ResultShapeMap] = cnv(e)
 
   private def cnv[A](e: Either[ShExError,A]): IO[A] = 
-    MonadError[IO,Throwable].rethrow(IO(e.leftMap((err: ShExError) => new Exception(err.toString))))
+    IO.fromEither(e)
+/*    MonadError[IO,Throwable].rethrow(
+      IO(e.leftMap((err: ShExError) => new Exception(err.toString)))) */
   
 }

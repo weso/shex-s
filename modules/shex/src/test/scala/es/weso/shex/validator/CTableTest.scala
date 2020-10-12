@@ -6,6 +6,7 @@ import es.weso.shex.validator.Table.CTable
 import org.scalatest._
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+import es.weso.rdf.PrefixMap
 
 class CTableTest extends AnyFunSpec with Matchers with EitherValues {
   describe(s"CTable") {
@@ -21,7 +22,7 @@ class CTableTest extends AnyFunSpec with Matchers with EitherValues {
       val extras: List[IRI] = List()
       val s: ShapeLabel = IRILabel(IRI(ex + "S"))
       val tripleExprMap : Map[ShapeLabel, TripleExpr] = Map(s -> te)
-      val c0 = ConstraintRef(0)
+      val c0 = ConstraintRef(0,Path.fromIRI(p), "<http://example.org/p>")
       val cs = List(c0)
       shouldMakeCTable(te,extras,tripleExprMap,cs)
    }
@@ -38,18 +39,20 @@ class CTableTest extends AnyFunSpec with Matchers with EitherValues {
       val extras: List[IRI] = List()
       val s: ShapeLabel = IRILabel(IRI(ex + "S"))
       val tripleExprMap : Map[ShapeLabel, TripleExpr] = Map(s -> te)
-      val c0 = ConstraintRef(0)
-      val c1 = ConstraintRef(1)
+      val c0 = ConstraintRef(0, Path.fromIRI(p), "<" + ex + "p>")
+      val c1 = ConstraintRef(1, Path.fromIRI(q), "<" + ex + "q>")
       val expected  = List(c0,c1)
-
        shouldMakeCTable(te,extras,tripleExprMap,expected)
     } 
 
     def shouldMakeCTable(te: TripleExpr, extras: List[IRI], teMap: Map[ShapeLabel,TripleExpr], symbols: List[ConstraintRef]): Unit = {
-      val maybeTable = CTable.mkTable(te, extras,teMap)
+      val maybeTable = CTable.mkTable(te, extras,teMap, PrefixMap.empty)
       maybeTable.fold(e => fail(s"Error: $e"), 
        pair => {
          val (ctable, rbe) = pair
+         println(s"rbe: $rbe")
+         println(s"rbe.symbols=${rbe.symbols}")
+         println(s"symbols=${symbols}")
          rbe.symbols should contain theSameElementsAs(symbols)
          info(s"${ctable}")
        }

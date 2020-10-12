@@ -64,18 +64,18 @@ class ExprTest extends AnyFunSpec with Matchers with EitherValues {
           |:good@:R,:bad@:R
         """.stripMargin
 
-      val eitherResult = for {
-        rdf <- RDFAsJenaModel.fromChars(strRdf,"TURTLE",None)
+      val eitherResult = RDFAsJenaModel.fromChars(strRdf,"TURTLE",None).use(rdf => for {
         schema <- Schema.fromString(strSchema,"ShExC",None)
-        shapeMap <- eitherStr2IO(ShapeMap.fromString(strShapeMap,"Compact",None,rdf.getPrefixMap,schema.prefixMap))
-        fixedShapeMap <- ShapeMap.fixShapeMap(shapeMap,rdf,rdf.getPrefixMap,schema.prefixMap)
-        expectedShapeMap <- eitherStr2IO(ShapeMap.fromString(strExpectedShapeMap,"Compact", None, rdf.getPrefixMap,schema.prefixMap))
+        rdfPm <- rdf.getPrefixMap
+        shapeMap <- eitherStr2IO(ShapeMap.fromString(strShapeMap,"Compact",None,rdfPm,schema.prefixMap))
+        fixedShapeMap <- ShapeMap.fixShapeMap(shapeMap,rdf,rdfPm,schema.prefixMap)
+        expectedShapeMap <- eitherStr2IO(ShapeMap.fromString(strExpectedShapeMap,"Compact", None, rdfPm,schema.prefixMap))
         resolvedSchema <- ResolvedSchema.resolve(schema,None)
         result <- Validator.validate(resolvedSchema,fixedShapeMap,rdf)
         expectedShapeMap <- ShapeMap.parseResultMap(strExpectedShapeMap, None, rdf, schema.prefixMap)
         resultShapeMap <- result.toResultShapeMap
         compare <- eitherStr2IO(expectedShapeMap.compareWith(resultShapeMap))
-      } yield result
+      } yield result)
 
       eitherResult.attempt.unsafeRunSync.fold(
         e => fail(s"Error: $e"),

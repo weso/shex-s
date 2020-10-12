@@ -1,9 +1,10 @@
 package es.weso.shex.validator
 
 import cats.Show
+import es.weso.shex.Path
 
-case class ConstraintRef(n: Int) extends AnyVal {
-  override def toString(): String = s"C$n"
+case class ConstraintRef(n: Int, path: Path, showPath: String)  {
+  override def toString(): String = s"${showPath}"
 }
 
 object ConstraintRef {
@@ -16,6 +17,6 @@ object ConstraintRef {
   }
 
   implicit lazy val showConstraintRef =
-    Show.fromToString[ConstraintRef]
+    Show.fromToString[ConstraintRef] 
 
 }

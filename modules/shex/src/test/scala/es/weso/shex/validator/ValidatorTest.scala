@@ -27,13 +27,12 @@ class ValidatorTest extends AnyFunSpec with Matchers with EitherValues {
   }
 
   def shouldValidate(node: RDFNode, label: ShapeLabel, rdfStr: String, schema: Schema, ok: Boolean): Unit = {
-    val result = for {
+    val result = RDFAsJenaModel.fromChars(rdfStr, "TURTLE").use(rdf => for {
       resolved <- ResolvedSchema.resolve(schema,None)
-      rdf <- RDFAsJenaModel.fromChars(rdfStr, "TURTLE")
       v = Validator(resolved)
       check: ShExChecker.Check[ShapeTyping] = v.checkNodeLabel(node, label)
       r <- ShExChecker.runCheck(check, rdf)
-    } yield r
+    } yield r)
     result.attempt.unsafeRunSync.fold(
       e => fail(s"Failed: $e"), 
       r => r.toEither.fold(
