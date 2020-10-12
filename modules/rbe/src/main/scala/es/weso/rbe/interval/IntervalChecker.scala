@@ -4,10 +4,11 @@ import es.weso.collection._
 import es.weso.rbe._
 import es.weso.rbe.deriv._
 import es.weso.rbe.interval.IntOrUnbounded._
+import cats._
 import cats.data._
 import cats.implicits._
 
-case class IntervalChecker[A](rbe: Rbe[A]) extends BagChecker[A] {
+case class IntervalChecker[A:Show](rbe: Rbe[A]) extends BagChecker[A] {
 
   type Matched[B] = Either[NonEmptyList[RbeError], B]
 

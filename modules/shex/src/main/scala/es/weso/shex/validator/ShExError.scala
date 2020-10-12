@@ -7,10 +7,11 @@ import es.weso.shex._
 import io.circe.Encoder
 import io.circe.Json
 import es.weso.shex.validator.Table.CTable
-import es.weso.rbe.Rbe
+import es.weso.rbe.{Shape => _, Attempt => _, _}
 import es.weso.collection.Bag
 import es.weso.rbe.BagChecker
 import scala.util.control.NoStackTrace
+import es.weso.rbe.ShowRbe._
 
 sealed  abstract class ShExError protected (val msg: String) extends Exception(msg) with NoStackTrace with Product with Serializable {
   def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String
@@ -246,28 +247,29 @@ object ShExError {
     table: CTable, 
     bag: Bag[ConstraintRef], 
     rbe: Rbe[ConstraintRef],
-    e: String
-    ) extends ShExError(s"Error matching RBE: $e") {
+    err: RbeError
+    ) extends ShExError(s"Error matching RBE: ${err.msg}") {
 
     override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
-      s"""|Error matching expression with neighbourhood candidates.
-          | Error: ${e}
+      s"""|Error matching expression.
+          | Error: ${err}
           | Attempt: ${attempt.show} 
           | Candidate line:
           | ${showCandidateLine(cl,table)} 
           |  which corresponds to bag:
           |  ${bag} 
           | does not match expression: 
-          |  ${Rbe.show(rbe)}
+          |  ${rbe.show}
           | Table:${table.show} """.stripMargin
     }
 
     override def toJson: Json = Json.obj(
-       ("type", Json.fromString("ErrRBEMatch")),
+       ("type", Json.fromString("ErrorMatchingRegularExpression")),
        ("node", Json.fromString(attempt.nodeShape.node.getLexicalForm)),
+       ("error", err.toJson),
        ("shape", Json.fromString(attempt.nodeShape.shape.label.map(_.toRDFNode.getLexicalForm).getOrElse("?"))),
        ("bag", Json.fromString(bag.toString)),
-       ("rbe",Json.fromString(Rbe.show(rbe))),
+       ("regularExpression",Json.fromString(Rbe.show(rbe))),
        ("candidateLine",cl.toJson),
        ("table", table.toJson)
       ) 
@@ -335,3 +337,24 @@ object ShExError {
 
 }
 
+  case class SemanticActionException(attempt: Attempt, node: RDFNode, action: SemAct, exc: Throwable) extends ShExError(s"Semantic Action exception: ${exc.getMessage()}") {
+    
+    override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
+      s"""|Semantic action exception: ${exc.getMessage()}
+          |Action IRI: ${action.name}
+          |Action code: ${action.code}
+          |Node: ${nodesPrefixMap.qualify(node)}
+          |Attempt: ${attempt} 
+          |""".stripMargin
+    }
+
+    override def toJson: Json = Json.obj(
+       ("type", Json.fromString("SemanticActionError")),
+       ("message", Json.fromString(exc.getMessage())),
+       ("action", Json.obj(
+         ("iri", Json.fromString(action.name.toString())),
+         ("code", Json.fromString(action.code.getOrElse("")))
+       )),
+       ("node", Json.fromString(node.getLexicalForm))
+      )
+  }

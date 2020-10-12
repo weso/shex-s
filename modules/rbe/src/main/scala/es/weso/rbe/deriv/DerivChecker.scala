@@ -1,10 +1,11 @@
 package es.weso.rbe.deriv
 import es.weso.rbe._
 import es.weso.collection._
+import cats._
 import cats.data._ 
 import cats.implicits._
 
-case class DerivChecker[A](rbe: Rbe[A]) extends BagChecker[A] {
+case class DerivChecker[A: Show](rbe: Rbe[A]) extends BagChecker[A] {
 
   def check(bag: Bag[A], open: Boolean): Either[NonEmptyList[RbeError], Bag[A]] = {
     val d = rbe.derivBag(bag, open, rbe.symbols)
