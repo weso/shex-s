@@ -7,7 +7,7 @@ import es.weso.shex._
 import io.circe.Encoder
 import io.circe.Json
 import es.weso.shex.validator.Table.CTable
-import es.weso.rbe.{Shape => _, _}
+import es.weso.rbe.{Shape => _, Attempt => _, _}
 import es.weso.collection.Bag
 import es.weso.rbe.BagChecker
 import scala.util.control.NoStackTrace
