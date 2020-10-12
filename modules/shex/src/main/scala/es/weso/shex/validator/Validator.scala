@@ -776,6 +776,19 @@ case class Validator(schema: ResolvedSchema,
     runValidator(checkNodeStart(node), rdf)
   }
 
+  def validateNodeDecls(rdf: RDFReader): IO[Result] = {	
+    runValidator(checkTargetNodeDeclarations, rdf)	
+  }
+
+  def validateNodeShape(rdf: RDFReader, node: IRI, shape: String): IO[Result] = {	
+    ShapeLabel	
+      .fromString(shape)	
+      .fold(	
+        e => IO.raiseError(StringError(s"Can not obtain label from $shape")),	
+        label => runValidator(checkNodeShapeLabel(node, label), rdf)	
+      )	
+  }
+
   def validateShapeMap(rdf: RDFReader, shapeMap: FixedShapeMap): IO[Result] = {
     runValidator(checkShapeMap(shapeMap), rdf)
   }
