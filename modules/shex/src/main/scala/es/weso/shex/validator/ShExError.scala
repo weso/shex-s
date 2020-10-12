@@ -337,3 +337,24 @@ object ShExError {
 
 }
 
+  case class SemanticActionException(attempt: Attempt, node: RDFNode, action: SemAct, exc: Throwable) extends ShExError(s"Semantic Action exception: ${exc.getMessage()}") {
+    
+    override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
+      s"""|Semantic action exception: ${exc.getMessage()}
+          |Action IRI: ${action.name}
+          |Action code: ${action.code}
+          |Node: ${nodesPrefixMap.qualify(node)}
+          |Attempt: ${attempt} 
+          |""".stripMargin
+    }
+
+    override def toJson: Json = Json.obj(
+       ("type", Json.fromString("SemanticActionError")),
+       ("message", Json.fromString(exc.getMessage())),
+       ("action", Json.obj(
+         ("iri", Json.fromString(action.name.toString())),
+         ("code", Json.fromString(action.code.getOrElse("")))
+       )),
+       ("node", Json.fromString(node.getLexicalForm))
+      )
+  }

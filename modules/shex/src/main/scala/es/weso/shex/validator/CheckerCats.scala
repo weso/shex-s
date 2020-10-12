@@ -44,7 +44,9 @@ abstract class CheckerCats {
 
   def fromEither[A](e: Either[Err,A]): Check[A] = EitherT.fromEither[WriterEC](e)
 
-  def fromIO[A](io: IO[A]): Check[A] = EitherT.liftF(WriterT.liftF(Kleisli.liftF(Kleisli.liftF(io))))
+  // TODO: Capture errors in EitherT
+  def fromIO[A](io: IO[A]): Check[A] = 
+    EitherT.liftF(WriterT.liftF(Kleisli.liftF(Kleisli.liftF(io))))
 
   def fromEitherIO[A](e: EitherT[IO,Err,A]): Check[A] = {
     val ea: Check[Either[Err,A]] = EitherT.liftF(WriterT.liftF(ReaderT.liftF(ReaderT.liftF(e.value))))

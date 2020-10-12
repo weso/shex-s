@@ -176,7 +176,7 @@ case class Validator(schema: ResolvedSchema,
       t <- {
         runLocalSafeTyping(
           bind(
-            checkOptSemActs(node, schema.startActs),
+            checkOptSemActs(attempt,node, schema.startActs),
             checkNodeShapeExpr(attempt, node, shape)
           ),
           _.addType(node, shapeType),
@@ -477,7 +477,7 @@ case class Validator(schema: ResolvedSchema,
       _ <- info(s"Before checkCandidates:\n ${candidates.map(_.show).mkString(",")}\nTable:${cTable.show}\n")
       typing <- checkCandidates(attempt, bagChecker, cTable)(candidates)
       _ <- info(s"After checkCandidates: $typing")
-      _ <- checkOptSemActs(node, s.actions)
+      _ <- checkOptSemActs(attempt,node, s.actions)
     } yield {
       // println(s"End of checkShape(attempt=${attempt.show},node=${node.show},shape=${s.show})=${typing.show}")
       typing
@@ -514,36 +514,44 @@ case class Validator(schema: ResolvedSchema,
       _ <- checkCond(s.isEmpty, attempt, ExtraPropertiesClosedShape(node,s.toList), "Closed properties with no extra property")
     } yield ()
 
-  private[validator] def checkOptSemActs(node: RDFNode, maybeActs: Option[List[SemAct]]): Check[Unit] =
+  private[validator] def checkOptSemActs(attempt: Attempt, node: RDFNode, maybeActs: Option[List[SemAct]]): Check[Unit] =
     maybeActs match {
       case None     => ok(())
-      case Some(as) => checkSemActs(node, as)
+      case Some(as) => checkSemActs(attempt,node, as)
     }
 
-  private[validator] def checkSemActs(node: RDFNode, as: List[SemAct]): Check[Unit] =
+  private[validator] def checkSemActs(attempt: Attempt, node: RDFNode, as: List[SemAct]): Check[Unit] =
     for {
-      _ <- checkAll(as.map(checkSemAct(node, _)))
+      _ <- checkAll(as.map(checkSemAct(attempt,node, _)))
     } yield ()
 
-  private[validator] def checkSemAct(node: RDFNode, a: SemAct): Check[Unit] =
+  private[validator] def checkSemAct(attempt: Attempt, node: RDFNode, a: SemAct): Check[Unit] =
     for {
       rdf <- getRDF
-      _   <- runAction(a.name, a.code, node, rdf)
+      _ <- info("Before check semantic action")
+      eitherResult   <- {
+        println(s"Before running action")
+        runAction(a.name, a.code, node, rdf)
+      }
+      _ <- info("After check semantic action")
+      _ <- fromEither(eitherResult.leftMap(exc => SemanticActionException(attempt, node, a, exc)))
     } yield ()
 
-  private[validator] def runAction(name: IRI, code: Option[String], node: RDFNode, rdf: RDFReader): Check[Unit] = {
+  private[validator] def runAction(name: IRI, code: Option[String], node: RDFNode, rdf: RDFReader): Check[Either[Throwable,Unit]] = {
     // println(s"Semantic action: $name/$code")
     for {
-      _ <- name match {
+      r <- name match {
         case TestSemanticAction.`iri` => {
-          fromIO(TestSemanticAction.runAction(code.getOrElse(""), node, rdf))
+          println(s"Before TestSemanticAction runAction")
+          fromIO(TestSemanticAction.runAction(code.getOrElse(""), node, rdf).attempt)
         }
         case _ => {
           logger.info(s"Unsupported semantic action processor: $name")
           addLog(List(Action(name, code)))
+          ok(Right(()))
         }
       }
-    } yield ()
+    } yield r
   }
 
 
@@ -671,7 +679,7 @@ case class Validator(schema: ResolvedSchema,
                 // println(s"Checking $node with $shapeExpr")
                 for {
                   t <- checkNodeShapeExpr(attempt, node, shapeExpr)
-                  _ <- checkOptSemActs(node, maybeSemActs)
+                  _ <- checkOptSemActs(attempt, node, maybeSemActs)
                 } yield t
               }
             }
