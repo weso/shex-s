@@ -1,32 +1,35 @@
-lazy val scala212 = "2.12.11"
-lazy val scala213 = "2.13.1"
+lazy val scala212 = "2.12.12"
+lazy val scala213 = "2.13.3"
 lazy val supportedScalaVersions = List(scala213, scala212)
 
 // Local dependencies
-lazy val srdfVersion           = "0.1.69"
-lazy val shapeMapsVersion      = "0.1.58"
+lazy val srdfVersion           = "0.1.74"
+lazy val shapeMapsVersion      = "0.1.59"
 lazy val utilsVersion          = "0.1.69"
 lazy val documentVersion       = "0.0.11"
 
 // Dependency versions
 lazy val antlrVersion          = "4.7.1"
-lazy val catsVersion           = "2.1.1"  
-lazy val catsEffectVersion     = "2.1.2"  
+lazy val catsVersion           = "2.2.0"
+lazy val catsEffectVersion     = "2.2.0"
+lazy val catsMacrosVersion     = "2.1.1"
 lazy val commonsTextVersion    = "1.8"
-lazy val circeVersion          = "0.12.3"
+lazy val console4catsVersion   = "0.8.1"
+lazy val circeVersion          = "0.14.0-M1"
 lazy val diffsonVersion        = "4.0.0"
+lazy val fs2Version            = "2.4.0"
 // lazy val effVersion            = "4.6.1"
-lazy val jenaVersion           = "3.13.1"
+lazy val jenaVersion           = "3.16.0"
 lazy val jgraphtVersion        = "1.3.1"
 lazy val logbackVersion        = "1.2.3"
 lazy val loggingVersion        = "3.9.2"
 lazy val pprintVersion         = "0.5.6"
-lazy val rdf4jVersion          = "3.0.0"
+lazy val rdf4jVersion          = "3.4.0"
 lazy val scalacheckVersion     = "1.14.0"
-lazy val scalacticVersion      = "3.1.0"
-lazy val scalaTestVersion      = "3.1.0"
+lazy val scalacticVersion      = "3.2.0"
+lazy val scalaTestVersion      = "3.2.0"
 lazy val scalaGraphVersion     = "1.11.5"
-lazy val scalatagsVersion      = "0.6.7"
+// lazy val scalatagsVersion      = "0.6.7"
 lazy val scallopVersion        = "3.3.1"
 lazy val sextVersion           = "0.2.6"
 lazy val typesafeConfigVersion = "1.3.4"
@@ -41,14 +44,17 @@ lazy val scalaMacrosVersion = "2.1.1"
 lazy val antlr4            = "org.antlr"                  % "antlr4"               % antlrVersion
 lazy val catsCore          = "org.typelevel"              %% "cats-core"           % catsVersion
 lazy val catsKernel        = "org.typelevel"              %% "cats-kernel"         % catsVersion
-lazy val catsMacros        = "org.typelevel"              %% "cats-macros"         % catsVersion
+lazy val catsMacros        = "org.typelevel"              %% "cats-macros"         % catsMacrosVersion
 lazy val catsEffect        = "org.typelevel"              %% "cats-effect"         % catsEffectVersion
 lazy val circeCore         = "io.circe"                   %% "circe-core"          % circeVersion
 lazy val circeGeneric      = "io.circe"                   %% "circe-generic"       % circeVersion
 lazy val circeParser       = "io.circe"                   %% "circe-parser"        % circeVersion
 lazy val commonsText       = "org.apache.commons"         %  "commons-text"        % commonsTextVersion
+lazy val console4cats      = "dev.profunktor"             %% "console4cats"        % console4catsVersion
 lazy val diffsonCirce      = "org.gnieh"                  %% "diffson-circe"       % diffsonVersion
 // lazy val eff               = "org.atnos"                  %% "eff"                 % effVersion
+lazy val fs2            = "co.fs2"            %% "fs2-core" % fs2Version
+lazy val fs2io          = "co.fs2"            %% "fs2-io" % fs2Version
 lazy val jgraphtCore    = "org.jgrapht"       % "jgrapht-core"     % jgraphtVersion
 lazy val logbackClassic = "ch.qos.logback"    % "logback-classic"  % logbackVersion
 lazy val jenaArq        = "org.apache.jena"   % "jena-arq"         % jenaVersion
@@ -71,7 +77,7 @@ lazy val scallop        = "org.rogach"                 %% "scallop"       % scal
 lazy val scalactic      = "org.scalactic"              %% "scalactic"     % scalacticVersion
 lazy val scalacheck     = "org.scalacheck"             %% "scalacheck"    % scalacheckVersion
 lazy val scalaTest      = "org.scalatest"              %% "scalatest"     % scalaTestVersion
-lazy val scalatags      = "com.lihaoyi"                %% "scalatags"     % scalatagsVersion
+// lazy val scalatags      = "com.lihaoyi"                %% "scalatags"     % scalatagsVersion
 lazy val sext           = "com.github.nikita-volkov"   % "sext"        % sextVersion
 lazy val pprint         = "com.lihaoyi"                %% "pprint"     % pprintVersion
 lazy val typesafeConfig = "com.typesafe"               % "config"      % typesafeConfigVersion
@@ -107,8 +113,8 @@ lazy val shexsRoot = project
     libraryDependencies ++= Seq(
       catsCore,
       catsKernel,
-      catsMacros,
       catsEffect,
+      console4cats,
       logbackClassic,
       srdf,
       scalaLogging,
@@ -118,11 +124,10 @@ lazy val shexsRoot = project
     ),
     cancelable in Global := true,
     fork := true,
-//    parallelExecution in Test := false,
     ThisBuild / turbo := true,
     crossScalaVersions := supportedScalaVersions,
-//    crossScalaVersions := Nil,
-    publish / skip := true
+    skip in publish := true,
+    Compile / run / mainClass := Some("es.weso.shexs.Main")
   )
 
 lazy val CompatTest                     = config("compat") extend (Test) describedAs ("Tests that check compatibility (some may fail)")
@@ -161,6 +166,7 @@ lazy val shex = project
       scalacheck % Test,
       typing,
       document,
+      fs2, fs2io,
       utils     % "test -> test; compile -> compile",
       utilsTest % Test,
       validating,
@@ -357,7 +363,7 @@ lazy val commonSettings = compilationSettings ++ sharedDependencies ++ Seq(
     Resolver.bintrayRepo("weso", "weso-releases"),
     Resolver.sonatypeRepo("snapshots")
   )
-)
+) ++ warnUnusedImport
 
 def antlrSettings(packageName: String) = Seq(
   antlr4GenListener in Antlr4 := true,
@@ -391,4 +397,10 @@ lazy val publishSettings = Seq(
   publishMavenStyle := true,
   bintrayRepository in bintray := "weso-releases",
   bintrayOrganization in bintray := Some("weso")
+)
+
+lazy val warnUnusedImport = Seq(
+  scalacOptions ++= (if (isDotty.value) Nil else Seq("-Ywarn-unused:imports")),
+  scalacOptions in (Compile, console) ~= { _.filterNot(Set("-Ywarn-unused-import", "-Ywarn-unused:imports")) },
+  scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value
 )

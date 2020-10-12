@@ -1,7 +1,6 @@
 package es.weso.shex.validator
 
 import cats._
-//import data._
 import implicits._
 import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
@@ -11,7 +10,7 @@ import es.weso.rdf.nodes._
 import es.weso.collection.Bag
 import es.weso.rbe.interval.IntervalChecker
 import es.weso.rbe.{BagChecker, Empty, Rbe}
-import es.weso.rbe.BagChecker._
+// import es.weso.rbe.BagChecker._
 import es.weso.utils.{SeqUtils, SetUtils}
 import es.weso.shex.implicits.showShEx._
 import es.weso.rdf.PREFIXES._
@@ -20,18 +19,16 @@ import ShExChecker._
 import es.weso.rdf.triples.RDFTriple
 import es.weso.shapeMaps.{BNodeLabel => BNodeMapLabel, IRILabel => IRIMapLabel, Start => StartMapLabel, _}
 import es.weso.shex.actions.TestSemanticAction
-// import es.weso.shex.normalized._
-//import es.weso.utils.internal.CollectionCompat._
 import Function.tupled
-//import es.weso.utils.eitherios.EitherIOUtils._
-//import fs2.Stream
-// import es.weso.utils.CommonUtils._
+import es.weso.shex.validator.ShExError._
+import es.weso.shex.validator.ConstraintRef.{showConstraintRef => _}
 
 
 /**
   * ShEx validator
   */
-case class Validator(schema: ResolvedSchema, externalResolver: ExternalResolver = NoAction)
+case class Validator(schema: ResolvedSchema,
+                     externalResolver: ExternalResolver = NoAction)
     extends ShowValidator(schema)
     with LazyLogging {
 
@@ -103,7 +100,7 @@ case class Validator(schema: ResolvedSchema, externalResolver: ExternalResolver 
           }
         }
       case Undefined =>
-        errStr(s"Cannot check $node agains undefined status")
+        errStr(s"Cannot check $node against undefined status")
     }
 
   private def mkLabel(label: ShapeMapLabel): ShapeLabel =
@@ -179,7 +176,7 @@ case class Validator(schema: ResolvedSchema, externalResolver: ExternalResolver 
       t <- {
         runLocalSafeTyping(
           bind(
-            checkOptSemActs(node, schema.startActs),
+            checkOptSemActs(attempt,node, schema.startActs),
             checkNodeShapeExpr(attempt, node, shape)
           ),
           _.addType(node, shapeType),
@@ -193,46 +190,34 @@ case class Validator(schema: ResolvedSchema, externalResolver: ExternalResolver 
     }
   }
 
+  private def addNot(node: RDFNode, label: ShapeLabel, typing: ShapeTyping)(err: ShExError): CheckTyping = {
+    val shapeType = ShapeType(ShapeExpr.fail, Some(label), schema)
+    ok(typing.addNotEvidence(node, shapeType, err))
+  }
+
+
   private[validator] def checkNodeLabel(node: RDFNode, label: ShapeLabel): CheckTyping = {
-
-    def addNot(typing: ShapeTyping)(err: ShExError): CheckTyping = {
-      val shapeType = ShapeType(ShapeExpr.fail, Some(label), schema)
-      ok(typing.addNotEvidence(node, shapeType, err))
-    }
-
     for {
       typing <- getTyping
       newTyping <- if (typing.hasInfoAbout(node, label)) {
         ok(typing)
       } else
-        cond(getShape(label), (shape: ShapeExpr) => checkNodeLabelSafe(node, label, shape), addNot(typing))
+        cond(getShape(label), (shape: ShapeExpr) => checkNodeLabelSafe(node, label, shape), addNot(node,label,typing))
     } yield newTyping
   }
 
   private[validator] def checkNodeShapeExpr(attempt: Attempt, node: RDFNode, s: ShapeExpr): CheckTyping = 
-  info(s"CheckNodeShapeExpr $node ") *>
-  {
-    s match {
-      case so: ShapeOr        => checkOr(attempt, node, so.shapeExprs)
-      case sa: ShapeAnd       => checkAnd(attempt, node, sa.shapeExprs)
-      case sn: ShapeNot       => checkNot(attempt, node, sn.shapeExpr)
-      case nc: NodeConstraint => checkNodeConstraint(attempt, node, nc)
-      case s: Shape           => checkShape(attempt, node, s)
-      case sr: ShapeRef       => checkRef(attempt, node, sr.reference)
-      case se: ShapeExternal => {
-        for {
-          externalShape <- se.id match {
-            case None =>
-              errStr(s"No label in external shape")
-            case Some(label) =>
-              fromIO(externalResolver.getShapeExpr(label, se.annotations))
-          }
-          newAttempt = Attempt(NodeShape(node, ShapeType(externalShape, se.id, schema)), attempt.path)
-          t <- checkNodeShapeExpr(newAttempt, node, externalShape)
-        } yield t
-      }
-    }
-  }
+   info(s"CheckNodeShapeExpr $node ") *> {
+     s match {
+       case so: ShapeOr => checkOr(attempt, node, so.shapeExprs)
+       case sa: ShapeAnd => checkAnd(attempt, node, sa.shapeExprs)
+       case sn: ShapeNot => checkNot(attempt, node, sn.shapeExpr)
+       case nc: NodeConstraint => checkNodeConstraint(attempt, node, nc)
+       case s: Shape => checkShape(attempt, node, s)
+       case sr: ShapeRef => checkRef(attempt, node, sr.reference)
+       case se: ShapeExternal => checkExternal(attempt, node, se)
+     }
+   }
 
   private[validator] def checkAnd(attempt: Attempt, node: RDFNode, ses: List[ShapeExpr]): CheckTyping =
     for {
@@ -272,21 +257,25 @@ case class Validator(schema: ResolvedSchema, externalResolver: ExternalResolver 
     cond(check, handleNotError, handleError)
   }
 
+  private def checkNodeHasType(node: RDFNode, shapeLabel: ShapeLabel, typing: ShapeTyping, attempt: Attempt): Check[Unit] =
+    if (typing.hasNoType(node, shapeLabel)) {
+      typing.getTypingResult(node, shapeLabel) match {
+        case None =>
+          errStr(s"Node ${node.show} has no shape ${shapeLabel.show}. Attempt: $attempt")
+        case Some(tr) =>
+          tr.getErrors match {
+            case None =>
+              errStr(s"Node ${node.show} has no shape ${shapeLabel.show}\nReason typing result ${tr.show} with no errors")
+            case Some(es) =>
+              errStr(s"Node ${node.show} has no shape ${shapeLabel.show}\nErrors: ${es.map(_.show).mkString("\n")}")
+          }
+      }
+    } else ok(())
+
   private[validator] def checkRef(attempt: Attempt, node: RDFNode, ref: ShapeLabel): CheckTyping =
     for {
       t <- checkNodeLabel(node, ref)
-      _ <- if (t.hasNoType(node, ref)) {
-        t.getTypingResult(node, ref) match {
-          case None => errStr(s"Node ${node.show} has no shape ${ref.show}. Attempt: $attempt")
-          case Some(tr) =>
-            tr.getErrors match {
-              case None =>
-                errStr(s"Node ${node.show} has no shape ${ref.show}\nReason typing result ${tr.show} with no errors")
-              case Some(es) =>
-                errStr(s"Node ${node.show} has no shape ${ref.show}\nErrors: ${es.map(_.show).mkString("\n")}")
-            }
-        }
-      } else ok(())
+      _ <- checkNodeHasType(node,ref,t, attempt)
     } yield t
 
   private[validator] def checkNodeConstraint(attempt: Attempt, node: RDFNode, s: NodeConstraint): CheckTyping =
@@ -300,7 +289,25 @@ case class Validator(schema: ResolvedSchema, externalResolver: ExternalResolver 
       t
     }
 
-  private[validator] def checkValues(attempt: Attempt, node: RDFNode)(values: List[ValueSetValue]): CheckTyping = {
+  private [validator] def getExternalShape(se: ShapeExternal): Check[ShapeExpr] = se.id match {
+    case None => errStr(s"No label in external shape")
+    case Some(label) => fromIO(externalResolver.getShapeExpr(label, se.annotations))
+  }
+
+
+  private[validator] def checkExternal(attempt: Attempt,
+                                       node: RDFNode,
+                                       se: ShapeExternal): CheckTyping = {
+    for {
+      externalShape <- getExternalShape(se)
+      newAttempt = Attempt(NodeShape(node, ShapeType(externalShape, se.id, schema)), attempt.path)
+      t <- checkNodeShapeExpr(newAttempt, node, externalShape)
+    } yield t
+  }
+
+  private[validator] def checkValues(attempt: Attempt,
+                                     node: RDFNode)
+                                    (values: List[ValueSetValue]): CheckTyping = {
     val cs: List[CheckTyping] =
       values.map(v => ValueChecker(schema).checkValue(attempt, node)(v))
     checkSome(cs, StringError(s"${node.show} does not belong to [${values.map(_.show).mkString(",")}]"))
@@ -309,13 +316,13 @@ case class Validator(schema: ResolvedSchema, externalResolver: ExternalResolver 
   private[validator] def checkDatatype(attempt: Attempt, node: RDFNode)(datatype: IRI): CheckTyping =
     for {
       rdf   <- getRDF
-      check <- fromIO(rdf.checkDatatype(node, datatype))
-      r <- check match {
-        // case Left(s) => errStr(s"${attempt.show}\n${node.show} does not have datatype ${datatype.show}\nDetails: $s")
-        case false => errStr(s"${attempt.show}\n${node.show} does not have datatype ${datatype.show}")
-        case true  => addEvidence(attempt.nodeShape, s"${node.show} has datatype ${datatype.show}")
-      }
-    } yield r
+      hasDatatype <- fromIO(rdf.checkDatatype(node, datatype))
+      check <- checkCond(
+        hasDatatype,
+        attempt,
+        CheckDatatypeError(node, datatype),
+        s"${node.show} has datatype ${datatype.show}")
+    } yield check
 
   private[validator] def checkXsFacets(attempt: Attempt, node: RDFNode)(xsFacets: List[XsFacet]): CheckTyping = {
     if (xsFacets.isEmpty) getTyping
@@ -381,7 +388,7 @@ case class Validator(schema: ResolvedSchema, externalResolver: ExternalResolver 
       // _ <- { println(s"checkShapeExtend(node=$node,shape=${s.show},base=$baseLabel). \npaths=$paths") ; ok(()) }
       neighs <- getNeighPaths(node, paths.toList)
       partitions = SetUtils.pSet(neighs.toSet)
-      _      <- checkSomeFlag(partitions, checkPartition(base, s, attempt, node), noPartition(node, neighs))
+      _      <- checkSomeFlag(partitions, checkPartition(base, s, attempt, node), noPartition(attempt, node, s, baseLabel, neighs))
       typing <- getTyping
     } yield typing
 
@@ -407,8 +414,14 @@ case class Validator(schema: ResolvedSchema, externalResolver: ExternalResolver 
     c1.orElse(c2)
   } */
 
-  private[validator] def noPartition(node: RDFNode, neighs: Neighs): Check[(ShapeTyping, Boolean)] =
-    errStr(s"No partition of $neighs conforms. Node: $node")
+  private[validator] def noPartition(
+     attempt: Attempt, 
+     node: RDFNode, 
+     s: Shape, 
+     label: ShapeLabel,
+     neighs: Neighs
+     ): Check[(ShapeTyping, Boolean)] =
+     errStr(s"No partition of $neighs conforms. Node: $node")
 
   private[validator] def checkNeighsShapeExpr(
       attempt: Attempt,
@@ -446,43 +459,36 @@ case class Validator(schema: ResolvedSchema, externalResolver: ExternalResolver 
       node: RDFNode,
       neighs: Neighs,
       s: Shape
-  ): CheckTyping =
+  ): CheckTyping = {
     for {
-      tableRbe <- mkTable(s.expression, s.extra.getOrElse(List()))
+      tableRbe <- mkTable(s.expression, s.extra.getOrElse(List()), schema.prefixMap)
       (cTable, rbe) = tableRbe
       _ <- info(s"cTable: $cTable")
       bagChecker    = IntervalChecker(rbe)
-      csRest <- {
-        calculateCandidates(neighs, cTable)
-      }
+      csRest <- calculateCandidates(neighs, cTable)
       (candidates, rest) = csRest
       _     <- checkRests(rest, s.extraPaths, s.isClosed, ignoredPathsClosed)
       paths <- fromEither(s.paths(schema).leftMap(StringError(_)))
       _ <- {
         if (s.isClosed) {
-          checkNoStrangeProperties(node, paths.toList)
+          checkNoStrangeProperties(node, paths.toList, attempt)
         } else ok(())
       }
       _ <- info(s"Before checkCandidates:\n ${candidates.map(_.show).mkString(",")}\nTable:${cTable.show}\n")
-      typing <- {
-        checkCandidates(attempt, bagChecker, cTable)(candidates)
-      }
+      typing <- checkCandidates(attempt, bagChecker, cTable)(candidates)
       _ <- info(s"After checkCandidates: $typing")
-      _ <- {
-        // println(s"checkOptSemActs: ${s.actions}")
-        checkOptSemActs(node, s.actions)
-      }
+      _ <- checkOptSemActs(attempt,node, s.actions)
     } yield {
       // println(s"End of checkShape(attempt=${attempt.show},node=${node.show},shape=${s.show})=${typing.show}")
       typing
     }
+  }
 
   private def getPaths(s: Shape): Check[List[Path]] =
     fromEitherString(s.paths(schema).map(_.toList))
 
   private[validator] def checkShapeBase(attempt: Attempt, node: RDFNode, s: Shape): CheckTyping = {
     info(s"CheckShapeBase $node FlatShape? ${s.isFlatShape(schema)}") *> {
-    // println(s"checkShapeBase: $node, $s. Normalized?: ${s.isNormalized(schema)}")
     s match {
       case _ if s.isEmpty => addEvidence(attempt.nodeShape, s"Node $node matched empty shape")
       case _ if s.isFlatShape(schema) =>
@@ -502,73 +508,52 @@ case class Validator(schema: ResolvedSchema, externalResolver: ExternalResolver 
   }
 }
 
-  /* private[validator] def checkFlatShape(attempt: Attempt, node: RDFNode, s: FlatShape): CheckTyping = {
-    val zero = getTyping
-    def cmb(ct: CheckTyping, slot: (Path, Constraint)): CheckTyping = {
-      val (path, constraint) = slot
-      for {
-        _ <- { info(s"CheckFlatShape: path: $path\nConstraint: $constraint") }
-        typing1 <- ct
-        typing2 <- checkConstraint(attempt, node, path, constraint)
-        typing  <- combineTypings(List(typing1, typing2))
-      } yield {
-        //println(s"Typing: ${typing.getMap}")
-        typing
-      }
-    }
+  private def checkNoStrangeProperties(node: RDFNode, paths: List[Path], attempt: Attempt): Check[Unit] =
     for {
-      extra <- extraPreds(node, s.preds)
-      _ <- {
-        //println(s"Extra preds: $extra. Closed? ${s.closed}")
-        ok(extra)
-      }
-      typing <- if (s.closed && extra.nonEmpty) {
-        err(ClosedButExtraPreds(extra))
-      } else s.slots.foldLeft(zero)(cmb)
-    } yield typing
-  }*/
-
-
-
-  private def checkNoStrangeProperties(node: RDFNode, paths: List[Path]): Check[Unit] =
-    for {
-      rdf <- getRDF
       s   <- getNotAllowedPredicates(node, paths)
-      check <- if (s.isEmpty) ok(())
-      else errStr(s"Closed shape does not allow properties: ${s.map(_.show).mkString(",")}")
-    } yield check
+      _ <- checkCond(s.isEmpty, attempt, ExtraPropertiesClosedShape(node,s.toList), "Closed properties with no extra property")
+    } yield ()
 
-  private[validator] def checkOptSemActs(node: RDFNode, maybeActs: Option[List[SemAct]]): Check[Unit] =
+  private[validator] def checkOptSemActs(attempt: Attempt, node: RDFNode, maybeActs: Option[List[SemAct]]): Check[Unit] =
     maybeActs match {
       case None     => ok(())
-      case Some(as) => checkSemActs(node, as)
+      case Some(as) => checkSemActs(attempt,node, as)
     }
 
-  private[validator] def checkSemActs(node: RDFNode, as: List[SemAct]): Check[Unit] =
+  private[validator] def checkSemActs(attempt: Attempt, node: RDFNode, as: List[SemAct]): Check[Unit] =
     for {
-      _ <- checkAll(as.map(checkSemAct(node, _)))
+      _ <- checkAll(as.map(checkSemAct(attempt,node, _)))
     } yield ()
 
-  private[validator] def checkSemAct(node: RDFNode, a: SemAct): Check[Unit] =
+  private[validator] def checkSemAct(attempt: Attempt, node: RDFNode, a: SemAct): Check[Unit] =
     for {
       rdf <- getRDF
-      _   <- runAction(a.name, a.code, node, rdf)
+      _ <- info("Before check semantic action")
+      eitherResult   <- {
+        println(s"Before running action")
+        runAction(a.name, a.code, node, rdf)
+      }
+      _ <- info("After check semantic action")
+      _ <- fromEither(eitherResult.leftMap(exc => SemanticActionException(attempt, node, a, exc)))
     } yield ()
 
-  private[validator] def runAction(name: IRI, code: Option[String], node: RDFNode, rdf: RDFReader): Check[Unit] = {
+  private[validator] def runAction(name: IRI, code: Option[String], node: RDFNode, rdf: RDFReader): Check[Either[Throwable,Unit]] = {
     // println(s"Semantic action: $name/$code")
     for {
-      _ <- name match {
+      r <- name match {
         case TestSemanticAction.`iri` => {
-          TestSemanticAction.runAction(code.getOrElse(""), node, rdf).fold(e => errStr(e), _ => ok(()))
+          println(s"Before TestSemanticAction runAction")
+          fromIO(TestSemanticAction.runAction(code.getOrElse(""), node, rdf).attempt)
         }
         case _ => {
           logger.info(s"Unsupported semantic action processor: $name")
           addLog(List(Action(name, code)))
+          ok(Right(()))
         }
       }
-    } yield ()
+    } yield r
   }
+
 
   private[validator] def checkRests(
       rests: List[Arc],
@@ -609,13 +594,13 @@ case class Validator(schema: ResolvedSchema, externalResolver: ExternalResolver 
     } else Right(())
   }
 
-  private[validator] def mkTable(maybeTe: Option[TripleExpr], extra: List[IRI]): Check[(CTable, Rbe_)] = {
+  private[validator] def mkTable(maybeTe: Option[TripleExpr], extra: List[IRI], prefixMap: PrefixMap): Check[(CTable, Rbe_)] = {
     maybeTe match {
       case None => ok((CTable.empty, Empty))
       case Some(te) =>
         fromEitherString(
           for {
-            pair <- CTable.mkTable(te, extra, schema.tripleExprMap)
+            pair <- CTable.mkTable(te, extra, schema.tripleExprMap, prefixMap)
           } yield pair
         )
     }
@@ -641,23 +626,6 @@ case class Validator(schema: ResolvedSchema, externalResolver: ExternalResolver 
     c.crefs.nonEmpty
   }
 
-  private[validator] def showCandidateLines(cs: List[CandidateLine], table: CTable): String = {
-    cs.length match {
-      case 0 => "No candidate lines"
-      case 1 => s"One candidate line\n${showCandidateLine(cs.head, table)}"
-      case _ => cs.map(showCandidateLine(_,table)).mkString("\n")
-    }
-  }
-
-  private[validator] def showCandidateLine(c: CandidateLine, table: CTable): String = {
-      def compare(pair1:(Arc,ConstraintRef), pair2:(Arc,ConstraintRef)): Boolean =
-        Ordering[ConstraintRef].compare(pair1._2, pair2._2) <= 0
-
-      s"Candidate line:\n${c.values.sortWith(compare).map{ 
-        case (arc,cref) => 
-        s"${arc.show} as ${cref.show}/${table.constraints.get(cref).map(_.show).getOrElse("?")}"
-      }.mkString("\n")}"
-  }
 
 
   private[validator] def checkCandidates(attempt: Attempt, bagChecker: BagChecker_, table: CTable)(
@@ -678,26 +646,10 @@ case class Validator(schema: ResolvedSchema, externalResolver: ExternalResolver 
         // println(s"Non deterministic")
         val checks: List[CheckTyping] =
           as.map(checkCandidateLine(attempt, bagChecker, table)(_))
-        checkSome(
-          checks, {
-            // println(s"None of the candidates match")
-            StringError(
-              s"""|None of the candidates matched.
-                  | Attempt: ${attempt.show}
-                  | Bag: ${bagChecker.show}
-                  | Candidate lines:\n${showCandidateLines(as,table)}
-                  |""".stripMargin
-            )
-          }
-        )
-
+        checkSome(checks, NoCandidate(attempt,bagChecker,as,table))
       }
     }
   }
-
-/*  private[validator] def showListCandidateLine(ls: List[CandidateLine]): String = {
-    ls.map(_.show).mkString("\n")
-  } */
 
   private[validator] def checkCandidateLine(attempt: Attempt, bagChecker: BagChecker_, table: CTable)(
       cl: CandidateLine
@@ -705,13 +657,17 @@ case class Validator(schema: ResolvedSchema, externalResolver: ExternalResolver 
     // println(s"checkCandidateLine: ${cl}")
     // println(s"Table: $table")
     val bag = cl.mkBag
+    
+    val s = implicitly[Show[ConstraintRef]]
+    println(s"Before check candidateline $s")
     bagChecker
       .check(bag, false)
       .fold(
         e => {
           // println(s"Does not match RBE. ${bag} with ${bagChecker.show}")
-          errStr(s"${attempt.show} Candidate line ${showCandidateLine(cl,table)} which corresponds to ${bag} does not match ${Rbe
-            .show(bagChecker.rbe)}\nTable:${table.show}\nErr: $e")
+          err(ErrRBEMatch(attempt,cl,table,bag,bagChecker.rbe,e.head))
+/*          errStr(s"${attempt.show} Candidate line ${showCandidateLine(cl,table)} which corresponds to ${bag} does not match ${Rbe
+            .show(bagChecker.rbe)}\nTable:${table.show}\nErr: $e") */
         },
         bag => {
           // println(s"Matches RBE...")
@@ -723,7 +679,7 @@ case class Validator(schema: ResolvedSchema, externalResolver: ExternalResolver 
                 // println(s"Checking $node with $shapeExpr")
                 for {
                   t <- checkNodeShapeExpr(attempt, node, shapeExpr)
-                  _ <- checkOptSemActs(node, maybeSemActs)
+                  _ <- checkOptSemActs(attempt, node, maybeSemActs)
                 } yield t
               }
             }
@@ -768,7 +724,7 @@ case class Validator(schema: ResolvedSchema, externalResolver: ExternalResolver 
     }
   }
 
-  def getTriplesWithSubjectPredicates(rdf: RDFReader, node: RDFNode, preds: List[IRI]): IO[List[RDFTriple]] = {
+  private def getTriplesWithSubjectPredicates(rdf: RDFReader, node: RDFNode, preds: List[IRI]): IO[List[RDFTriple]] = {
     // println(s"GetTriplesWithSubjectPredicate...${node.show} \nPreds=${preds.map(_.show)}")
     node match {
       case _: IRI => { 
@@ -805,47 +761,6 @@ case class Validator(schema: ResolvedSchema, externalResolver: ExternalResolver 
     vs.traverse(f).map((_.flatten))
   }
 
-/*  private def triplesWithSubjectPredicates(n: RDFNode, ps: List[IRI], rdf: RDFReader): Stream[IO,RDFTriple] = {
-    println(s"TriplesWithSubjectPredicates ${n.show}, ${ps.map(_.show).mkString(",")}")
-    val ss = mkSeq(ps, (p: IRI) => {
-      println(s"TriplesWithSubjectPredicates ${n.show}/${p.show}")
-      val ts = rdf.triplesWithSubjectPredicate(n,p)
-      println(s"TriplesWithSubjectPredicates ${n.show}/${p.show} = ${ts.compile.toList.unsafeRunSync().map(_.show).mkString(",")}")
-      ts
-    })
-    println(s"ss = ${ss.compile.toList.unsafeRunSync()}")
-    ss
-  } 
-
-
-  private def mkSeq[A,B](vs: List[A], f: A => Stream[IO,B]): Stream[IO,B] = {
-    vs.traverse(f).map(Stream.emits(_)).flatten
-  }
-
-
-
-  def getTriplesWithSubjectPredicates(rdf: RDFReader, node: RDFNode, preds: List[IRI]): Stream[IO,RDFTriple] = {
-    println(s"GetTriplesWithSubjectPredicate...${node.show} \nPreds=${preds.map(_.show)}")
-    node match {
-      case _: IRI => { 
-        println(s"IRI...$node")
-        val vs = triplesWithSubjectPredicates(node,preds,rdf)
-        println(s"Triples obtained: ${vs.compile.toList.unsafeRunSync()}")
-        println(s"Triples for node: ${rdf.triplesWithSubject(node).compile.toList.unsafeRunSync()}")
-        println(s"Preds: $preds")
-        preds.map(p => 
-          println(s"Triples for ${node.show}/${p.show}: ${rdf.triplesWithSubjectPredicate(node,p).compile.toList.unsafeRunSync()}")
-        ) 
-        vs
-      }
-      case _: BNode => triplesWithSubjectPredicates(node,preds,rdf)
-      case _ => { 
-        println(s"Literal node? ${node}")
-        Stream() 
-      }
-    }
-  } */
-
   private[validator] def getNotAllowedPredicates(node: RDFNode, paths: List[Path]): Check[Set[IRI]] =
     for {
       rdf <- getRDF
@@ -857,25 +772,21 @@ case class Validator(schema: ResolvedSchema, externalResolver: ExternalResolver 
       }
     }
 
-  lazy val emptyTyping: ShapeTyping = Monoid[ShapeTyping].empty
-
-  def validateNodeDecls(rdf: RDFReader): IO[Result] = {
-    runValidator(checkTargetNodeDeclarations, rdf)
-  }
-
-  def validateNodeShape(rdf: RDFReader, node: IRI, shape: String): IO[Result] = {
-    ShapeLabel
-      .fromString(shape)
-      .fold(
-        e => IO(strErr(s"Can not obtain label from $shape")),
-        label => runValidator(checkNodeShapeLabel(node, label), rdf)
-      )
-  }
-
-  private def strErr(str: String): Result = Result(Left(StringError(str)))
-
   def validateNodeStart(rdf: RDFReader, node: IRI): IO[Result] = {
     runValidator(checkNodeStart(node), rdf)
+  }
+
+  def validateNodeDecls(rdf: RDFReader): IO[Result] = {	
+    runValidator(checkTargetNodeDeclarations, rdf)	
+  }
+
+  def validateNodeShape(rdf: RDFReader, node: IRI, shape: String): IO[Result] = {	
+    ShapeLabel	
+      .fromString(shape)	
+      .fold(	
+        e => IO.raiseError(StringError(s"Can not obtain label from $shape")),	
+        label => runValidator(checkNodeShapeLabel(node, label), rdf)	
+      )	
   }
 
   def validateShapeMap(rdf: RDFReader, shapeMap: FixedShapeMap): IO[Result] = {
@@ -884,12 +795,13 @@ case class Validator(schema: ResolvedSchema, externalResolver: ExternalResolver 
 
   def runValidator(chk: Check[ShapeTyping], rdf: RDFReader): IO[Result] = for {
     r <- runCheck(chk, rdf)
-  } yield cnvResult(r, rdf)
+    pm <- rdf.getPrefixMap
+  } yield cnvResult(r, rdf, pm)
 
-  private def cnvResult(r: CheckResult[ShExError, ShapeTyping, Log], rdf: RDFReader): Result = Result (
+  private def cnvResult(r: CheckResult[ShExError, ShapeTyping, Log], rdf: RDFReader, rdfPrefixMap: PrefixMap): Result = Result (
     for {
       shapeTyping <- r.toEither
-      result      <- shapeTyping.toShapeMap(rdf.getPrefixMap, schema.prefixMap).leftMap(StringError(_))
+      result      <- shapeTyping.toShapeMap(rdfPrefixMap, schema.prefixMap).leftMap(StringError)
     } yield result
   )
 
@@ -898,11 +810,6 @@ case class Validator(schema: ResolvedSchema, externalResolver: ExternalResolver 
 object Validator {
 
   def empty: Validator = Validator(schema = ResolvedSchema.empty)
-
-//  type Result[A] = Either[NonEmptyList[ShExError], List[(A, Evidences)]]
-
-/*  def isOK[A](r: Result[A]): Boolean =
-    r.isRight && r.toList.isEmpty == false */
 
   def validate(schema: ResolvedSchema, fixedShapeMap: FixedShapeMap, rdf: RDFReader): IO[Result] = {
     val validator = Validator(schema)

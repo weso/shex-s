@@ -111,7 +111,9 @@ class WikibaseRDFTest extends AnyFunSpec with Matchers {
   }
 
  def shouldValidateWikidata(entity: IRI, label: IRI, schemaStr: String, expected: Boolean, base: Option[IRI]): Unit = {
-   it(s"Should validate ${entity} with ${schemaStr} and obtain ${expected}") {
+
+  // TODO: We ignore this test because it takes a lot of time
+   ignore(s"Should validate ${entity} with ${schemaStr} and obtain ${expected}") {
      println(s"Inside should...")
      val r: EitherT[IO,String,ResultShapeMap] = for {
         wikibase <- io2es(WikibaseRDF.wikidata)

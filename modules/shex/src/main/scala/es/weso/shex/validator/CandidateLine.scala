@@ -1,13 +1,14 @@
 package es.weso.shex.validator
 
-import cats._
-import cats.implicits._
+// import cats._
+// import cats.implicits._
 import es.weso.collection.Bag
 import es.weso.rdf.nodes.RDFNode
 import es.weso.shex.{SemAct, ShapeExpr}
 import es.weso.shex.validator.Table.CTable
 import es.weso.utils.SeqUtils.filterOptions
 import ConstraintRef._
+import io.circe.Json
 
 case class CandidateLine(values: List[(Arc,ConstraintRef)]) {
   def mkBag: Bag[ConstraintRef] = Bag.toBag(values.map(_._2))
@@ -18,6 +19,18 @@ case class CandidateLine(values: List[(Arc,ConstraintRef)]) {
     })
 
 //  override def toString: String = CandidateLine.showCandidateLine.show(this)
+
+def toJson: Json = 
+  Json.fromValues(values.map(pair2Json(_)))
+
+def pair2Json(pair: (Arc,ConstraintRef)): Json = {
+  val (arc,c) = pair
+  Json.obj(
+   ("type", Json.fromString("CandidateLine")),
+   ("arc", Json.fromString(arc.toString)),
+   ("constraint", Json.fromString(c.toString))
+  )
+ }
 
 }
 
@@ -32,4 +45,7 @@ object CandidateLine {
     }
   }
 */
+
+ 
+
 }

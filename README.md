@@ -33,16 +33,17 @@ The project uses [sbt](http://www.scala-sbt.org/) for compilation as well as Jav
 
 ## Compatibility tests
 
-We also aim to pass the [ShEx test-suite](https://github.com/shexSpec/shexTest).
+We also pass the [ShEx test-suite](https://github.com/shexSpec/shexTest).
 
-In order to run the shex test-suite and generate the EARL report, you can do the following:
+<!-- In order to run the shex test-suite and generate the EARL report, you can do the following:
 
 ```
 sbt
 ...
 sbt:shexRoot> project shex
-sbt:shex> compat:test
+sbt:shex> test
 ```
+-->
 
 ## More information
 

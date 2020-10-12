@@ -8,6 +8,8 @@ import es.weso.rdf.nodes.IRI
 import es.weso.shex._
 import es.weso.shex.compact.Parser.TripleExprMap
 import cats.implicits._
+import io.circe.Json
+import es.weso.rdf.PrefixMap
 
 /* Candidates table */
 object Table extends LazyLogging {
@@ -21,6 +23,7 @@ object Table extends LazyLogging {
   case class CTable(constraints: ConstraintsMap,
                     paths: PathsMap,
                     elems: Int,
+                    prefixMap: PrefixMap
                    ) {
 
     private[validator] def addPath(p: Path, n: ConstraintRef): PathsMap =
@@ -38,7 +41,7 @@ object Table extends LazyLogging {
     }
 
     private[validator] def addConstraint(path: Path, expr: CheckExpr): (CTable, ConstraintRef) = {
-      val cref = ConstraintRef(this.elems)
+      val cref = ConstraintRef(this.elems, path, path.showQualified(prefixMap))
       val newTable = this.copy(
         elems = this.elems + 1,
         constraints = this.constraints + (cref -> expr),
@@ -55,11 +58,24 @@ object Table extends LazyLogging {
       rs  
     }
 
+    def pathsMap2Json(pair: (Path,Set[ConstraintRef])): Json = {
+        val (path,cs) = pair
+        Json.obj(
+          ("path",Json.fromString(path.toString())),
+          ("constraintRef", Json.fromValues(cs.toList.map(_.toString).map(Json.fromString(_)))))
+        
+    }
+
+    def toJson: Json = Json.obj(
+      ("type", Json.fromString("ConstraintTable")),
+      ("pathsMap", Json.fromValues(paths.toList.map(pathsMap2Json)))
+    )
+
   }
 
   object CTable {
 
-    def empty: CTable = CTable(Map(), Map(), 0)
+    def empty: CTable = CTable(Map(), Map(), 0, PrefixMap.empty)
 
     def simplify(rbe: Rbe_): Rbe_ = {
       rbe match {
@@ -97,10 +113,12 @@ object Table extends LazyLogging {
 
     private[validator] def mkTable(te: TripleExpr,
                                    extras: List[IRI],
-                                   tripleExprMap: TripleExprMap): Either[String, ResultPair] = {
+                                   tripleExprMap: TripleExprMap,
+                                   prefixMap: PrefixMap
+                                   ): Either[String, ResultPair] = {
       logger.info(s"mkTable from ${te.id}")
       for {
-        pair <- mkTableAux(te, CTable.empty, tripleExprMap)
+        pair <- mkTableAux(te, CTable.empty.copy(prefixMap = prefixMap), tripleExprMap)
       } yield extendWithExtras(pair, te, extras)
     }
 
