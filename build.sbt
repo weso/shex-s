@@ -126,7 +126,7 @@ lazy val shexsRoot = project
     fork := true,
     ThisBuild / turbo := true,
     crossScalaVersions := supportedScalaVersions,
-    publish / skip := true,
+    skip in publish := true,
     Compile / run / mainClass := Some("es.weso.shexs.Main")
   )
 

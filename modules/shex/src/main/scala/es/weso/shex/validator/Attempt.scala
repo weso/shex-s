@@ -27,6 +27,7 @@ case class Attempt(nodeShape: NodeShape, path: Option[IRI]) {
 }
 
 object Attempt {
+  
   implicit def showAttempt = new Show[Attempt] {
     import NodeShape._
     override def show(t: Attempt): String = {

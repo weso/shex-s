@@ -4,9 +4,16 @@ import cats.implicits._
 import es.weso.rdf.PrefixMap
 import es.weso.rdf.nodes.{IRI, RDFNode}
 import es.weso.shex._
+<<<<<<< HEAD
 import io.circe._
 import io.circe.syntax._
 import es.weso.rbe.{Shape => _, _}
+=======
+import io.circe.Encoder
+import io.circe.Json
+import es.weso.shex.validator.Table.CTable
+import es.weso.rbe.{Shape => _, Attempt => _, _}
+>>>>>>> 2f69807dc4afcf0ae6f31368a8907d79c8e5a65a
 import es.weso.collection.Bag
 import es.weso.rbe.BagChecker
 import scala.util.control.NoStackTrace
