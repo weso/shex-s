@@ -4,6 +4,9 @@ import cats._
 import cats.implicits._
 import es.weso.rdf.PrefixMap
 import es.weso.rdf.nodes._
+import io.circe._
+import io.circe.syntax._
+// import es.weso.shex.implicits.encoderShEx.encodeShape
 
 /**
  * Represents current validation attempt
@@ -29,6 +32,14 @@ object Attempt {
     override def show(t: Attempt): String = {
       s"Attempt: ${t.nodeShape.show}\npath: ${t.path.map(_.str).getOrElse("")}"
     }
+  }
+
+  implicit val attemptEncoder: Encoder[Attempt] = new Encoder[Attempt] {
+    final def apply(v: Attempt): Json = 
+      Json.obj(
+        ("node", v.nodeShape.node.getLexicalForm.asJson),
+        ("shape", v.nodeShape.shape.asJson),
+      )
   }
 
 }

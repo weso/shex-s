@@ -4,14 +4,14 @@ import cats.implicits._
 import es.weso.rdf.PrefixMap
 import es.weso.rdf.nodes.{IRI, RDFNode}
 import es.weso.shex._
-import io.circe.Encoder
-import io.circe.Json
-import es.weso.shex.validator.Table.CTable
+import io.circe._
+import io.circe.syntax._
 import es.weso.rbe.{Shape => _, _}
 import es.weso.collection.Bag
 import es.weso.rbe.BagChecker
 import scala.util.control.NoStackTrace
 import es.weso.rbe.ShowRbe._
+import Attempt._
 
 sealed  abstract class ShExError protected (val msg: String) extends Exception(msg) with NoStackTrace with Product with Serializable {
   def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String
@@ -356,5 +356,24 @@ object ShExError {
          ("code", Json.fromString(action.code.getOrElse("")))
        )),
        ("node", Json.fromString(node.getLexicalForm))
+      )
+  }
+
+
+  case class NoCandidateLine(
+    attempt: Attempt,
+    table: CTable) extends ShExError(s"No candidate line found: ${attempt.show}") {
+    
+    override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
+      s"""|No candidates found to match
+          |Atempt: ${attempt.show}
+          |Table: ${table.show}
+          |""".stripMargin
+    }
+
+    override def toJson: Json = Json.obj(
+       ("type", Json.fromString("NoCandidateLine")),
+       ("attempt", attempt.asJson),
+       ("table", table.asJson)
       )
   }

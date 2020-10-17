@@ -44,7 +44,11 @@ case class IntervalError[A](
        )
 }
 
-case class RepeatsError[A](r: Rbe[A], rbe: Rbe[A], bag: Bag[A]) extends RbeError(s"Repeats error for ${rbe}. Repeated = ${r}") {
+case class RepeatsError[A: Show](
+    r: Rbe[A], 
+    rbe: Rbe[A], 
+    bag: Bag[A]
+  ) extends RbeError(s"Repeats error for ${rbe}. Repeated = ${r}") {
     override def show: String = s"""|Interval algorithm applied to a Rbe with repeats
                                     |RBe: ${rbe}
                                     |Repeats: ${r}
@@ -59,13 +63,13 @@ case class RepeatsError[A](r: Rbe[A], rbe: Rbe[A], bag: Bag[A]) extends RbeError
     )                                    
 }
 
-case class NonNullableError[A](
+case class NonNullableError[A:Show](
     nonNullable: Rbe[A], 
     rbe: Rbe[A], 
     bag: Bag[A], 
     open: Boolean
- ) extends RbeError(s"""|NonNullable: ${nonNullable.toString}
-                        |Rbe: ${rbe.toString}
+ ) extends RbeError(s"""|NonNullable: ${nonNullable.show}
+                        |Rbe: ${rbe.show}
                         |Bag: ${bag.toString}
                         |Open?: ${open.toString}
                         |""".stripMargin) {
@@ -73,8 +77,8 @@ case class NonNullableError[A](
     override def toJson: Json = 
        Json.obj(
            ("type", "NonNullableError".asJson),
-           ("interval", nonNullable.toString.asJson),
-           ("rbe", rbe.toString.asJson),
+           ("interval", nonNullable.show.asJson),
+           ("rbe", rbe.show.asJson),
            ("bag", bag.toString.asJson),
            ("open", open.asJson)
        )

@@ -257,7 +257,10 @@ trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with Opti
       _         <- testInfo(s"dataStr:\n$dataStr\n-----end dataStr")
       schema    <- Schema.fromString(schemaStr, "SHEXC", Some(fa.schema))
       _         <- testInfoValue(s"schema", schema)
-      result      <- RDFAsJenaModel.fromChars(dataStr, "TURTLE", Some(fa.data)).use(data =>
+      result      <- (
+         RDFAsJenaModel.fromChars(dataStr, "TURTLE", Some(fa.data)),
+         RDFAsJenaModel.empty
+        ).tupled.use{ case (data, builder) =>
        for {
          dataPrefixMap <- data.getPrefixMap
          _         <- testInfoValue(s"data", data)
@@ -271,7 +274,10 @@ trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with Opti
              _         <- testInfoValue(s"shapeMap", shapeMap)
              resolvedSchema <- ResolvedSchema.resolve(schema, Some(fa.schema))
              _         <- testInfoValue(s"resolvedSchema", resolvedSchema)
-             resultVal <- Validator(resolvedSchema, ExternalIRIResolver(fa.shapeExterns)).validateShapeMap(data, shapeMap)
+             resultVal <- Validator(schema = resolvedSchema, 
+                externalResolver = ExternalIRIResolver(fa.shapeExterns),
+                builder = builder
+               ).validateShapeMap(data, shapeMap)
              resultShapeMap <- resultVal.toResultShapeMap
              _         <- testInfoValue(s"resultShapeMap", resultShapeMap)
              ok <- if (resultShapeMap.getConformantShapes(focus) contains lbl) {
@@ -296,8 +302,8 @@ trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with Opti
              }
            } yield ok
          }
-        } yield ok)
-       } yield result
+        } yield ok }
+     } yield result
   }
 
   private def getLabel(fa: FocusAction): ShapeMapLabel =
@@ -335,16 +341,19 @@ trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with Opti
           fixedShapeMap <- ShapeMap.fixShapeMap(sm, emptyRdf, PrefixMap.empty, PrefixMap.empty)
           dataUri = mkLocal(mr.data, schemasBase, folderURI)
           strData        <- derefUriIO(dataUri)
-          rr      <- RDFAsJenaModel.fromString(strData, "TURTLE", None).use(data =>
+          rr      <- (
+            RDFAsJenaModel.fromString(strData, "TURTLE", None), 
+            RDFAsJenaModel.empty
+           ).tupled.use{ case (data,builder) =>
            for {
-             resultVal <- Validator(resolvedSchema).validateShapeMap(data, fixedShapeMap)
+             resultVal <- Validator(schema = resolvedSchema, builder = builder).validateShapeMap(data, fixedShapeMap)
              resultShapeMap <- resultVal.toResultShapeMap
              jsonResult     <- fromES(JsonResult.fromJsonString(resultMapStr))
              r <- if (jsonResult.compare(resultShapeMap))
                     result(name, true, "Json results match")
                   else
                     result(name,false, s"Json results are different. Expected: ${jsonResult.asJson.spaces2}\nObtained: ${resultShapeMap.toString}")
-           } yield r)
+           } yield r }
           } yield rr)
         r
       }

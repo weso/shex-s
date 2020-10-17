@@ -2,7 +2,6 @@ package es.weso.shex.validator
 
 import es.weso.rdf.nodes._
 import es.weso.shex._
-import es.weso.shex.validator.Table.CTable
 import org.scalatest._
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers

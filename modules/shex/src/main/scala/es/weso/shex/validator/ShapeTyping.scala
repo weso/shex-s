@@ -11,9 +11,14 @@ import io.circe.Json
 import es.weso.shex.shexR.PREFIXES.sx_start
 import io.circe._
 import io.circe.syntax._
+import es.weso.rdf.RDFBuilder
+import cats.effect._
+import cats.effect.concurrent._
+
 
 case class ShapeTyping(
-   t: Typing[RDFNode, ShapeType, ShExError, String]
+   t: Typing[RDFNode, ShapeType, ShExError, String],
+//   checked: Ref[IO,RDFBuilder]
 ) extends LazyLogging {
 
   def getOkValues(node: RDFNode): Set[ShapeType] =

@@ -18,8 +18,7 @@ object ShExChecker extends CheckerCats {
   type Err = ShExError
   type Evidence = (NodeShape, String)
   type Log = List[Action]
-  type CheckTyping = Check[ShapeTyping]
-
+  
   implicit val logMonoid: Monoid[Log] = new Monoid[Log] {
     def combine(l1: Log, l2: Log): Log = l1 ++ l2
     def empty: Log = List()

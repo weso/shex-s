@@ -10,21 +10,22 @@ import es.weso.shex.ResolvedSchema
 import es.weso.shapeMaps.QueryShapeMap
 import es.weso.shapeMaps.ShapeMap
 import cats.data._  
+import cats.implicits._ 
 import es.weso.utils.IOUtils._
 import es.weso.shex.validator.Validator
 import es.weso.shapeMaps.ResultShapeMap
 import es.weso.rdf.nodes.IRI
 import es.weso.rdf.PREFIXES._
 import es.weso.shapeMaps.IRILabel
+import es.weso.rdf.jena.RDFAsJenaModel
 
 class WikibaseRDFTest extends AnyFunSpec with Matchers {
 
   describe(s"Test Wikidata subjects") {
     it(s"Should obtain triples for an item") {
-      val r: IO[List[RDFTriple]] = for {
-        wikibase <- WikibaseRDF.wikidata
+      val r: IO[List[RDFTriple]] = WikibaseRDF.wikidata.use(wikibase => for {
         ts <- wikibase.triplesWithSubject(wd + "Q42").compile.toList
-      } yield ts
+      } yield ts)
       r.attempt.unsafeRunSync.fold(
         s => s"Error: ${s.getMessage}",
         vs => info(s"Triples: ${vs.length}")
@@ -34,13 +35,13 @@ class WikibaseRDFTest extends AnyFunSpec with Matchers {
 
   describe(s"Test Wikidata subjects twice") {
     it(s"Should obtain triples for an item") {
-      val r: IO[(List[RDFTriple],List[RDFTriple],List[RDFTriple],CachedState)] = for {
-        wikibase <- WikibaseRDF.wikidata
+      val r: IO[(List[RDFTriple],List[RDFTriple],List[RDFTriple],CachedState)] = WikibaseRDF.wikidata.use(wikibase => 
+      for {
         ts1 <- wikibase.triplesWithSubject(wd + "Q42").compile.toList
         ts2 <- wikibase.triplesWithSubject(wd + "Q42").compile.toList
         ts3 <- wikibase.triplesWithSubject(wd + "Q42").compile.toList
         cs <- wikibase.refCached.get
-      } yield (ts1,ts2,ts3,cs)
+      } yield (ts1,ts2,ts3,cs))
       r.attempt.unsafeRunSync.fold(
         s => s"Error: ${s.getMessage}",
         tuple => { 
@@ -110,32 +111,31 @@ class WikibaseRDFTest extends AnyFunSpec with Matchers {
   } 
   }
 
+ private def fromEitherES[A](e: Either[String,A]): IO[A] =
+   IO.fromEither(e.leftMap(s => new RuntimeException(s"Error: $s")))
+
  def shouldValidateWikidata(entity: IRI, label: IRI, schemaStr: String, expected: Boolean, base: Option[IRI]): Unit = {
 
   // TODO: We ignore this test because it takes a lot of time
    ignore(s"Should validate ${entity} with ${schemaStr} and obtain ${expected}") {
      println(s"Inside should...")
-     val r: EitherT[IO,String,ResultShapeMap] = for {
-        wikibase <- io2es(WikibaseRDF.wikidata)
-        schema <- io2es(Schema.fromString(schemaStr, "ShExC", base))
-        resolvedSchema <- io2es(ResolvedSchema.resolve(schema, base))
+     val r: IO[ResultShapeMap] = (WikibaseRDF.wikidata, RDFAsJenaModel.empty).tupled.use{ case (wikibase,builder) => 
+       for {
+        schema <- Schema.fromString(schemaStr, "ShExC", base)
+        resolvedSchema <- ResolvedSchema.resolve(schema, base)
         shapeMapStr = s"<${entity.str}>@<${label.str}>"
-        shapeMap <- either2es(
-          ShapeMap.fromString(shapeMapStr,
+        shapeMap <- fromEitherES(ShapeMap.fromString(shapeMapStr,
             "Compact",
             base,
             wikibase.prefixMap,
-            resolvedSchema.prefixMap)
-        ).leftMap(s => s"Error parsing shapeMap: $s\nShapeMap: $shapeMapStr")
-        _ <- io2es(IO { println(s"ShapeMap obtained ${shapeMap}"); IO.pure(()) })
-        fixedShapeMap <- io2es(ShapeMap.fixShapeMap(shapeMap,wikibase,wikibase.prefixMap,resolvedSchema.prefixMap))
-        result <- io2es(Validator.validate(resolvedSchema,fixedShapeMap,wikibase))
-        resultShapeMap <- io2es(result.toResultShapeMap)
-      } yield (resultShapeMap)
-      run_es(r).attempt.unsafeRunSync.fold(
+            resolvedSchema.prefixMap))
+        _ <- IO { println(s"ShapeMap obtained ${shapeMap}"); IO.pure(()) }
+        fixedShapeMap <- ShapeMap.fixShapeMap(shapeMap,wikibase,wikibase.prefixMap,resolvedSchema.prefixMap)
+        result <- Validator.validate(resolvedSchema,fixedShapeMap,wikibase,builder)
+        resultShapeMap <- result.toResultShapeMap
+      } yield (resultShapeMap) }
+      r.attempt.unsafeRunSync.fold(
         s => fail(s"Error running validation: ${s}"), 
-        _.fold(
-          s => fail(s"Error: $s"),
         result => { 
           val iriLabel = IRILabel(base.fold(label)(_.resolve(label)))
           println(s"Result: ${result}\nExpected label:${iriLabel}\nEntity: ${entity}\nConformant shapes: ${result.getConformantShapes(entity)}")
@@ -147,9 +147,8 @@ class WikibaseRDFTest extends AnyFunSpec with Matchers {
             case (true,false) => fail(s"${entity} conforms to ${label} but it was expected to fail\nResult: ${result}")
           }
           }
-      ))
+      )
    }
  }
-
 
 }

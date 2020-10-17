@@ -8,7 +8,7 @@ import cats.effect._
 import cats.effect.Console.io._
 import cats.implicits._
 import cats.~>
-import es.weso.rdf.RDFReader
+import es.weso.rdf._
 import es.weso.rdf.jena.RDFAsJenaModel
 import es.weso.shapeMaps.ShapeMap
 import es.weso.shex.{ResolvedSchema, Schema}
@@ -53,8 +53,8 @@ object Main extends IOApp {
     for {
       _ <- ifOpt(opts.manifest, mf => StateT.liftF(runManifest(mf)))
       _ <- ifOpt(opts.dataFormat, setDataFormat)
-      _ <- getData(opts).use(
-        rdf =>
+      _ <- getData(opts).use {
+        case (rdf,builder) =>
           for {
             _              <- ifOpt(opts.showDataFormat, setShowDataFormat)
             _              <- ifOpt(opts.showSchemaFormat, setShowSchemaFormat)
@@ -66,11 +66,11 @@ object Main extends IOApp {
             _              <- ifOptB(opts.showSchema, showSchema)
             resolvedSchema <- getResolvedSchema()
             fixedMap       <- getFixedMap(rdf, resolvedSchema)
-            result         <- fromIO(Validator.validate(resolvedSchema, fixedMap, rdf))
+            result         <- fromIO(Validator.validate(resolvedSchema, fixedMap, rdf, builder))
             resultShapeMap <- fromIO(result.toResultShapeMap)
             _              <- showResult(resultShapeMap) // putStrLn(s"Result\n${resultShapeMap.toString}"))
           } yield ()
-      )
+        }
     } yield ExitCode.Success
 
   private def showSchema: IOS[Unit] =
@@ -110,19 +110,27 @@ object Main extends IOApp {
       fixedMap  <- fromIO(ShapeMap.fixShapeMap(state.shapeMap, rdf, prefixMap, resolvedSchema.prefixMap))
     } yield fixedMap
 
-  private def getData(opts: MainOpts): Resource[IOS, RDFReader] =
-    Resource
+  private def cnvResource[A](r: Resource[IO,A]): Resource[IOS,A] = 
+    r.mapK(cnv)
+
+  private def getData(opts: MainOpts): Resource[IOS, (RDFReader,RDFBuilder)] = for {
+    state <- Resource.liftF(getState)
+    rdf <- if (opts.data.isDefined) {
+            getRDFData(opts.data(), state.dataFormat)
+          } else if (opts.dataFile.isDefined) {
+            getRDFDataFromFile(opts.dataFile(), state.dataFormat)
+          } else {
+            cnvResource(RDFAsJenaModel.empty)
+          }
+    builder <- cnvResource(RDFAsJenaModel.empty)
+  } yield (rdf,builder)
+    
+/*    Resource
       .liftF(getState)
       .flatMap(
         s =>
-          if (opts.data.isDefined) {
-            getRDFData(opts.data(), s.dataFormat)
-          } else if (opts.dataFile.isDefined) {
-            getRDFDataFromFile(opts.dataFile(), s.dataFormat)
-          } else {
-            RDFAsJenaModel.empty.mapK(cnv)
-          }
-      )
+          
+      ) */
 
   /*  private def infoState(): IOS[Unit] = for {
    state <- getState

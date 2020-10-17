@@ -1,6 +1,7 @@
 package es.weso.shex.validator
 
 // import es.weso.rdf.RDFReader
+import cats.implicits._
 import es.weso.rdf.jena._
 import es.weso.rdf.nodes._
 import es.weso.shex._
@@ -27,12 +28,12 @@ class ValidatorTest extends AnyFunSpec with Matchers with EitherValues {
   }
 
   def shouldValidate(node: RDFNode, label: ShapeLabel, rdfStr: String, schema: Schema, ok: Boolean): Unit = {
-    val result = RDFAsJenaModel.fromChars(rdfStr, "TURTLE").use(rdf => for {
+    val result = (RDFAsJenaModel.fromChars(rdfStr, "TURTLE"), RDFAsJenaModel.empty).tupled.use{ case (rdf,builder) => for {
       resolved <- ResolvedSchema.resolve(schema,None)
-      v = Validator(resolved)
+      v = Validator(resolved,NoAction,builder)
       check: ShExChecker.Check[ShapeTyping] = v.checkNodeLabel(node, label)
       r <- ShExChecker.runCheck(check, rdf)
-    } yield r)
+    } yield r }
     result.attempt.unsafeRunSync.fold(
       e => fail(s"Failed: $e"), 
       r => r.toEither.fold(

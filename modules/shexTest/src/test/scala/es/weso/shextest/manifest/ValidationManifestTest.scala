@@ -140,7 +140,10 @@ class ValidationManifestTest extends ValidateManifest {
       schemaStr <- derefUriIO(schemaUri)
       dataStr <- derefUriIO(dataUri)
       schema <- Schema.fromString(schemaStr, "SHEXC", Some(fa.schema))
-      ss   <- RDFAsJenaModel.fromChars(dataStr, "TURTLE", Some(fa.data)).use(data =>
+      ss   <- (
+         RDFAsJenaModel.fromChars(dataStr, "TURTLE", Some(fa.data)),
+         RDFAsJenaModel.empty
+        ).tupled.use{case (data,builder) =>
         for {
           dataPrefixMap <- data.getPrefixMap
           resolvedSchema <- ResolvedSchema.resolve(schema, Some(fa.schema))
@@ -150,7 +153,7 @@ class ValidationManifestTest extends ValidateManifest {
           } else {
             val shapeMap = FixedShapeMap(Map(focus -> Map(lbl -> Info())), dataPrefixMap, schema.prefixMap)
             for {
-              result <- Validator(resolvedSchema, ExternalIRIResolver(fa.shapeExterns))
+              result <- Validator(resolvedSchema, ExternalIRIResolver(fa.shapeExterns), builder)
                 .validateShapeMap(data, shapeMap)
               resultShapeMap <- result.toResultShapeMap
               r <- if (resultShapeMap.getConformantShapes(focus) contains lbl)
@@ -170,7 +173,7 @@ class ValidationManifestTest extends ValidateManifest {
               }
             } yield r
            }
-          } yield rr)
+          } yield rr}
     } yield ss
   }
 
@@ -195,10 +198,13 @@ class ValidationManifestTest extends ValidateManifest {
           )
           dataUri = mkLocal(mr.data,schemasBase,shexFolderURI)
           strData        <- derefUriIO(dataUri)
-          r           <- RDFAsJenaModel.fromChars(strData, "TURTLE", None).use(data =>
+          r           <- (
+            RDFAsJenaModel.fromChars(strData, "TURTLE", None), 
+            RDFAsJenaModel.empty
+           ).tupled.use{ case (data,builder) =>
            for {
              resolvedSchema <- ResolvedSchema.resolve(schema, None)
-             resultVal <- Validator(resolvedSchema).validateShapeMap(data, fixedShapeMap)
+             resultVal <- Validator(schema = resolvedSchema, builder = builder).validateShapeMap(data, fixedShapeMap)
              resultShapeMap <- resultVal.toResultShapeMap
              jsonResult     <- fromES(JsonResult.fromJsonString(resultMapStr))
              result <- if (jsonResult.compare(resultShapeMap))
@@ -206,7 +212,7 @@ class ValidationManifestTest extends ValidateManifest {
              else
                IO.raiseError(new RuntimeException(s"Json results are different. Expected: ${jsonResult.asJson.spaces2}\nObtained: ${resultShapeMap.toString}"))
            } yield result
-          )
+        }
         } yield r
         r
       }

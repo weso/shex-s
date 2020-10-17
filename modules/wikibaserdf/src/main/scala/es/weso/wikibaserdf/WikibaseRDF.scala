@@ -25,7 +25,7 @@ import io.circe.parser.parse
 case class CachedState(iris: Set[IRI], rdf: RDFAsJenaModel) 
 
 object CachedState {
-  def initial: IO[CachedState] = RDFAsJenaModel.empty.use(rdf => IO(CachedState(Set(),rdf)))
+  def initial: Resource[IO,CachedState] = RDFAsJenaModel.empty.map(rdf => CachedState(Set(),rdf))
 }
 
 case class WikibaseRDF(
@@ -240,9 +240,10 @@ object WikibaseRDF {
   val wd = IRI("http://www.wikidata.org/entity/")
   val wdt = IRI("http://www.wikidata.org/prop/direct/")
   val wikidataEndpoint = IRI("https://query.wikidata.org/sparql")
-  val wikidata : IO[WikibaseRDF] = for {
+
+  val wikidata : Resource[IO,WikibaseRDF] = for {
     initial <- CachedState.initial
-    ref <- Ref[IO].of(initial)
+    ref <- Resource.liftF(Ref[IO].of(initial))
   } yield WikibaseRDF(wikidataEndpoint,prefixMap = PrefixMap(Map(
     Prefix("wd") -> wd,
     Prefix("wdt") -> wdt

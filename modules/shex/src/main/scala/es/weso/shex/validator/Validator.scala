@@ -14,7 +14,7 @@ import es.weso.rbe.{BagChecker, Empty, Rbe}
 import es.weso.utils.{SeqUtils, SetUtils}
 import es.weso.shex.implicits.showShEx._
 import es.weso.rdf.PREFIXES._
-import es.weso.shex.validator.Table._
+//import es.weso.shex.validator.Table._
 import ShExChecker._
 import es.weso.rdf.triples.RDFTriple
 import es.weso.shapeMaps.{BNodeLabel => BNodeMapLabel, IRILabel => IRIMapLabel, Start => StartMapLabel, _}
@@ -28,20 +28,15 @@ import es.weso.shex.validator.ConstraintRef.{showConstraintRef => _}
   * ShEx validator
   */
 case class Validator(schema: ResolvedSchema,
-                     externalResolver: ExternalResolver = NoAction)
+                     externalResolver: ExternalResolver = NoAction,
+                     builder: RDFBuilder)
     extends ShowValidator(schema)
     with LazyLogging {
 
   type ShapeChecker     = ShapeExpr => CheckTyping
   type NodeShapeChecker = (RDFNode, Shape) => CheckTyping
   type NodeChecker      = Attempt => RDFNode => CheckTyping
-  type Neighs           = List[Arc]
-  type Candidates       = List[Candidate]
-  type NoCandidates     = List[Arc]
-  type Bag_             = Bag[ConstraintRef]
-  type Rbe_             = Rbe[ConstraintRef]
-  type BagChecker_      = BagChecker[ConstraintRef]
-  type ES[A]            = Either[ShExError, A]
+
 
   private lazy val `sh:targetNode` = sh + "targetNode"
 
@@ -474,7 +469,7 @@ case class Validator(schema: ResolvedSchema,
           checkNoStrangeProperties(node, paths.toList, attempt)
         } else ok(())
       }
-      _ <- info(s"Before checkCandidates:\n ${candidates.map(_.show).mkString(",")}\nTable:${cTable.show}\n")
+      _ <- info(s"Before checkCandidates:\n ${candidates.cs.map(_.show).mkString(",")}\nTable:${cTable.show}\n")
       typing <- checkCandidates(attempt, bagChecker, cTable)(candidates)
       _ <- info(s"After checkCandidates: $typing")
       _ <- checkOptSemActs(attempt,node, s.actions)
@@ -556,7 +551,7 @@ case class Validator(schema: ResolvedSchema,
 
 
   private[validator] def checkRests(
-      rests: List[Arc],
+      rests: NoCandidates,
       extras: List[Path],
       isClosed: Boolean,
       ignoredPathsClosed: List[Path]
@@ -568,7 +563,7 @@ case class Validator(schema: ResolvedSchema,
         case (_, Left(str2))        => Left(str2)
         case (Right(()), Right(())) => Right(())
       }
-    val ts: List[Either[String, Unit]] = rests.map(checkRest(_, extras, isClosed, ignoredPathsClosed))
+    val ts: List[Either[String, Unit]] = rests.cs.map(checkRest(_, extras, isClosed, ignoredPathsClosed))
     val r: Either[String, Unit]        = ts.foldLeft(zero)(combine)
     r.fold(e => errStr(e), _ => ok(()))
   }
@@ -617,33 +612,31 @@ case class Validator(schema: ResolvedSchema,
     */
   private[validator] def calculateCandidates(neighs: Neighs, table: CTable): Check[(Candidates, NoCandidates)] = {
     val candidates = table.neighs2Candidates(neighs)
-    val (cs, rs)   = candidates.partition(matchable)
+    val (cs, rs)   = candidates.cs.partition(matchable)
     // println(s"Candidates partitioned: cs:\n${cs.map(_.show).mkString(s"\n")}\nrs:${rs.map(_.show).mkString(s"\n")}\n")
-    ok((cs, rs.map(_.arc)))
+    ok((Candidates(cs), NoCandidates(rs.map(_.arc))))
   }
 
   private def matchable(c: Candidate): Boolean = {
     c.crefs.nonEmpty
   }
 
+  private[validator] def checkCandidates(attempt: Attempt, 
+                     bagChecker: BagChecker_, 
+                     table: CTable)
+                     (candidates: Candidates): CheckTyping = {
+    val as: List[CandidateLine] = 
+      SeqUtils.transpose(
+       candidates.cs.map(c => (c.arc, c.crefs))).map(CandidateLine(_))
 
-
-  private[validator] def checkCandidates(attempt: Attempt, bagChecker: BagChecker_, table: CTable)(
-      cs: Candidates
-  ): CheckTyping = {
-    // println(s"checkCandidates: Candidates: $cs")
-    val as: List[CandidateLine] = SeqUtils.transpose(cs.map(c => (c.arc, c.crefs))).map(CandidateLine(_))
-
-    // println(s"Candidate lines: $as, ${as.length}")
     as.length match {
       case 1 => { // Deterministic
         checkCandidateLine(attempt, bagChecker, table)(as.head)
       }
       case 0 => {
-        errStr(s"${attempt.show} Empty list of candidates")
+        err(NoCandidateLine(attempt, table))
       }
       case n => {
-        // println(s"Non deterministic")
         val checks: List[CheckTyping] =
           as.map(checkCandidateLine(attempt, bagChecker, table)(_))
         checkSome(checks, NoCandidate(attempt,bagChecker,as,table))
@@ -791,15 +784,23 @@ case class Validator(schema: ResolvedSchema,
       result      <- shapeTyping.toShapeMap(rdfPrefixMap, schema.prefixMap).leftMap(StringError)
     } yield result
   )
-
 }
 
 object Validator {
 
-  def empty: Validator = Validator(schema = ResolvedSchema.empty)
+  def empty(builder: RDFBuilder): Validator = Validator(schema = ResolvedSchema.empty, builder = builder)
 
-  def validate(schema: ResolvedSchema, fixedShapeMap: FixedShapeMap, rdf: RDFReader): IO[Result] = {
-    val validator = Validator(schema)
+  /**
+    * Validate RDF according to a Shapes Schema
+    *
+    * @param schema: ShEx schema
+    * @param fixedShapeMap: Shape map
+    * @param rdf: RDF to validate
+    * @param builder: RDF builder to return subgraph validated
+    * @return Result of validation
+    */
+  def validate(schema: ResolvedSchema, fixedShapeMap: FixedShapeMap, rdf: RDFReader, builder: RDFBuilder): IO[Result] = {
+    val validator = Validator(schema, NoAction, builder)
     validator.validateShapeMap(rdf, fixedShapeMap)
   }
 

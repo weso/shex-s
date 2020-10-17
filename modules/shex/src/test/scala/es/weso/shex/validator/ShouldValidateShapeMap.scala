@@ -1,4 +1,6 @@
 package es.weso.shex.validator
+
+
 import es.weso.rdf.jena.RDFAsJenaModel
 import es.weso.rdf.nodes.IRI
 import es.weso.shapeMaps.ShapeMap
@@ -8,7 +10,7 @@ import es.weso.shex.Schema
 import scala.util._
 import org.scalatest.funspec.AnyFunSpecLike
 import org.scalatest.matchers.should.Matchers
-// import cats.data._
+import cats.implicits._
 import cats.effect._
 import es.weso.shex.ResolvedSchema
 import es.weso.utils.IOUtils.fromES
@@ -28,8 +30,12 @@ trait ShouldValidateShapeMap extends AnyFunSpecLike with Matchers {
         // IO(println(msg)
         IO.pure(())
 
-      val validate: IO[Boolean] = RDFAsJenaModel.fromChars(rdfStr, "Turtle",None).use(rdf =>
-        for {
+      val validate: IO[Boolean] = (
+         RDFAsJenaModel.fromChars(rdfStr, "Turtle",None), 
+         RDFAsJenaModel.empty
+       ).tupled.use{ 
+        case (rdf,builder) =>
+         for {
         _ <- info(s"RDF: ${rdf}")
         shex <- Schema.fromString(shexStr, "ShExC", Some(IRI("")))
         _ <- info(s"Schema: ${shex}")
@@ -38,12 +44,12 @@ trait ShouldValidateShapeMap extends AnyFunSpecLike with Matchers {
         _ <- info(s"ShapeMap: ${shapeMap}") 
         fixedShapeMap <- ShapeMap.fixShapeMap(shapeMap, rdf, rdfPrefixMap, shex.prefixMap)
         resolved <- ResolvedSchema.resolve(shex,Some(IRI("")))
-        result <- Validator.validate(resolved, fixedShapeMap, rdf)
+        result <- Validator.validate(resolved, fixedShapeMap, rdf, builder)
         resultShapeMap <- result.toResultShapeMap
         expectedShapeMap <- ShapeMap.parseResultMap(expected, shex.base, rdf, shex.prefixMap)
         _ <- info(s"Expected shapeMap parsed: $expectedShapeMap") 
         compare <- fromES(resultShapeMap.compareWith(expectedShapeMap))
-      } yield compare)
+      } yield compare }
       validate.attempt.unsafeRunSync match {
         case Left(msg) => fail(s"Error: $msg")
         case Right(v) => v should be(true)

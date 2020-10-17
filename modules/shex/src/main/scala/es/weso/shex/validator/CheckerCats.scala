@@ -15,10 +15,11 @@ abstract class CheckerCats {
 
   implicit val logMonoid: Monoid[Log]
 
-  type ReaderConfig[A] = Kleisli[IO, Config, A]
-  type ReaderEC[A] = Kleisli[ReaderConfig, Env, A]
-  type WriterEC[A] = WriterT[ReaderEC, Log, A]
-  type Check[A] = EitherT[WriterEC, Err, A]
+  type ReaderConfig[A]  = Kleisli[IO, Config, A]
+  type ReaderEC[A]      = Kleisli[ReaderConfig, Env, A]
+  type WriterEC[A]      = WriterT[ReaderEC, Log, A]
+  type Check[A]         = EitherT[WriterEC, Err, A]
+  type CheckTyping      = Check[ShapeTyping]
 
   def getConfig: Check[Config] = {
     readerConfig2check(Kleisli.ask[IO, Config])
