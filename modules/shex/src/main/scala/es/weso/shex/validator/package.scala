@@ -5,7 +5,7 @@ import es.weso.collection.Bag
 
 package object validator {
   
-  type Rbe_            = Rbe[ConstraintRef]  
+  type Rbe_             = Rbe[ConstraintRef]  
   type ConstraintsMap   = Map[ConstraintRef, CheckExpr]
   type PathsMap         = Map[Path, Set[ConstraintRef]]
   type ResultPair       = (CTable, Rbe_)

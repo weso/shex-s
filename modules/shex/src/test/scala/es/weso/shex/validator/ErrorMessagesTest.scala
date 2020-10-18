@@ -29,7 +29,10 @@ class ErrorMessagesTest extends AnyFunSpec with Matchers with EitherValues {
          """.stripMargin
       val x: RDFNode = IRI(s"http://example.org/x")
       val s: ShapeMapLabel = IRILabel(IRI(s"http://example.org/S"))
-      val eitherResult = (RDFAsJenaModel.fromChars(rdfStr,"TURTLE", None), RDFAsJenaModel.empty).tupled.use{ case (rdf,builder) => for {
+      val eitherResult = for {
+        res1 <- RDFAsJenaModel.fromChars(rdfStr,"TURTLE", None)
+        res2 <- RDFAsJenaModel.empty
+        vv <- (res1,res2).tupled.use{ case (rdf,builder) => for {
         shex <- Schema.fromString(shexStr,"SHEXC",None)
         pm <- rdf.getPrefixMap
         shapeMap <- eitherStr2IO(ShapeMap.fromCompact(smapStr, None, pm, shex.prefixMap))
@@ -38,6 +41,9 @@ class ErrorMessagesTest extends AnyFunSpec with Matchers with EitherValues {
         result <- Validator.validate(resolved, fixedShapeMap, rdf,builder)
         resultShapeMap <- result.toResultShapeMap
       } yield resultShapeMap }
+
+      } yield vv
+
       eitherResult.attempt.unsafeRunSync.fold(e =>
         fail(s"Error: $e"),
         r => {

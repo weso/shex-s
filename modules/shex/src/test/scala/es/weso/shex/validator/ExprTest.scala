@@ -65,7 +65,10 @@ class ExprTest extends AnyFunSpec with Matchers with EitherValues {
           |:good@:R,:bad@:R
         """.stripMargin
 
-      val eitherResult = (RDFAsJenaModel.fromChars(strRdf,"TURTLE",None), RDFAsJenaModel.empty).tupled.use{ 
+      val eitherResult = for {
+        res1 <- RDFAsJenaModel.fromChars(strRdf,"TURTLE",None)
+        res2 <- RDFAsJenaModel.empty
+        vv <- (res1,res2).tupled.use{ 
         case (rdf,builder) => for {
          schema <- Schema.fromString(strSchema,"ShExC",None)
          rdfPm <- rdf.getPrefixMap
@@ -79,6 +82,8 @@ class ExprTest extends AnyFunSpec with Matchers with EitherValues {
          compare <- eitherStr2IO(expectedShapeMap.compareWith(resultShapeMap))
       } yield result}
 
+      } yield vv 
+        
       eitherResult.attempt.unsafeRunSync.fold(
         e => fail(s"Error: $e"),
         r => info(s"Result: $r")

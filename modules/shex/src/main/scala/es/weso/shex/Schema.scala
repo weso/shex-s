@@ -1,6 +1,6 @@
 package es.weso.shex
 
-import java.io.File
+//import java.io.File
 import java.nio.file.{Files, Paths}
 
 import cats.implicits._
@@ -240,11 +240,11 @@ object Schema {
         case None => err(s"Not implemented ShEx parser for format $format and no rdfReader provided")
         case Some(rdfBuilder) =>
          if (rdfDataFormats(rdfBuilder).contains(formatUpperCase))
-           rdfBuilder.fromString(cs.toString, formatUpperCase, base).use(rdf =>
+           rdfBuilder.fromString(cs.toString, formatUpperCase, base).flatMap(_.use(rdf =>
              for {
               eitherSchema <- RDF2ShEx.rdf2Schema(rdf)
               schema <- eitherSchema.fold(e => err(e), ok)
-             } yield schema)
+             } yield schema))
          else err(s"Not implemented ShEx parser for format $format")
        }
     }
@@ -270,11 +270,11 @@ object Schema {
         IO.pure(relativeSchema.asJson.spaces2)
       }
       case _ if (rdfDataFormats(rdfBuilder).contains(formatUpperCase)) =>
-        rdfBuilder.empty.use(empty =>
+        rdfBuilder.empty.flatMap(_.use(empty =>
          for {
           rdf <- ShEx2RDF(relativeSchema, None, empty)
           str <- rdf.serialize(formatUpperCase, base)
-         } yield str)
+         } yield str))
       case _ =>
         err(s"Not implemented conversion to $format. Schema: $schema")
     }

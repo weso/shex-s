@@ -30,10 +30,10 @@ trait ShouldValidateShapeMap extends AnyFunSpecLike with Matchers {
         // IO(println(msg)
         IO.pure(())
 
-      val validate: IO[Boolean] = (
-         RDFAsJenaModel.fromChars(rdfStr, "Turtle",None), 
-         RDFAsJenaModel.empty
-       ).tupled.use{ 
+      val validate: IO[Boolean] = for {
+        res1 <- RDFAsJenaModel.fromChars(rdfStr, "Turtle",None)
+        res2 <- RDFAsJenaModel.empty
+        vv <- (res1,res2).tupled.use{ 
         case (rdf,builder) =>
          for {
         _ <- info(s"RDF: ${rdf}")
@@ -50,6 +50,7 @@ trait ShouldValidateShapeMap extends AnyFunSpecLike with Matchers {
         _ <- info(s"Expected shapeMap parsed: $expectedShapeMap") 
         compare <- fromES(resultShapeMap.compareWith(expectedShapeMap))
       } yield compare }
+      } yield vv
       validate.attempt.unsafeRunSync match {
         case Left(msg) => fail(s"Error: $msg")
         case Right(v) => v should be(true)
