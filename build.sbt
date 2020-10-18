@@ -4,7 +4,7 @@ lazy val supportedScalaVersions = List(scala213, scala212)
 
 // Local dependencies
 lazy val srdfVersion           = "0.1.74"
-lazy val shapeMapsVersion      = "0.1.59"
+lazy val shapeMapsVersion      = "0.1.60"
 lazy val utilsVersion          = "0.1.69"
 lazy val documentVersion       = "0.0.11"
 
