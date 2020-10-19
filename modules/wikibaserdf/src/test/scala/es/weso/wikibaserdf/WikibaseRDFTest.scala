@@ -22,26 +22,29 @@ import es.weso.rdf.jena.RDFAsJenaModel
 class WikibaseRDFTest extends AnyFunSpec with Matchers {
 
   describe(s"Test Wikidata subjects") {
-    it(s"Should obtain triples for an item") {
-      val r: IO[List[RDFTriple]] = WikibaseRDF.wikidata.use(wikibase => for {
+    ignore(s"Should obtain triples for an item") {
+      val r: IO[List[RDFTriple]] = WikibaseRDF.wikidata.flatMap(_.use(wikibase => for {
         ts <- wikibase.triplesWithSubject(wd + "Q42").compile.toList
-      } yield ts)
+      } yield ts))
       r.attempt.unsafeRunSync.fold(
         s => s"Error: ${s.getMessage}",
         vs => info(s"Triples: ${vs.length}")
       )
     }
-  }
+  } 
 
   describe(s"Test Wikidata subjects twice") {
-    it(s"Should obtain triples for an item") {
-      val r: IO[(List[RDFTriple],List[RDFTriple],List[RDFTriple],CachedState)] = WikibaseRDF.wikidata.use(wikibase => 
+
+    val item = IRI("http://www.wikidata.org/entity/Q29377880")
+
+    ignore(s"Should obtain triples for an item") {
+      val r: IO[(List[RDFTriple],List[RDFTriple],List[RDFTriple],CachedState)] = WikibaseRDF.wikidata.flatMap(_.use(wikibase => 
       for {
         ts1 <- wikibase.triplesWithSubject(wd + "Q42").compile.toList
         ts2 <- wikibase.triplesWithSubject(wd + "Q42").compile.toList
         ts3 <- wikibase.triplesWithSubject(wd + "Q42").compile.toList
         cs <- wikibase.refCached.get
-      } yield (ts1,ts2,ts3,cs))
+      } yield (ts1,ts2,ts3,cs)))
       r.attempt.unsafeRunSync.fold(
         s => s"Error: ${s.getMessage}",
         tuple => { 
@@ -49,7 +52,65 @@ class WikibaseRDFTest extends AnyFunSpec with Matchers {
           info(s"Triples: ${ts1.length}, ${ts2.length}\nCachedState: ${cs.iris.mkString(",")}") 
       }
       )
-    }
+    } 
+   
+    it(s"Should use wikibase rdf once with the same item cached") {
+       val r: IO[(Int,Int)] = WikibaseRDF.wikidata.flatMap(_.use(wd => for {
+           ts1 <- wd.triplesWithSubject(item).compile.toList
+           ts2 <- wd.triplesWithSubject(item).compile.toList
+       } yield ((ts1.length, ts2.length))))
+       r.attempt.unsafeRunSync.fold(
+         s => s"Error: ${s.getMessage}",
+         pair => {
+          val (n1,n2) = pair
+          n1 should be (n2)
+         }
+       )
+   } 
+
+   it(s"Should use wikibase rdf twice") {
+       val r: IO[((Int,Int),(Int,Int))] = for { 
+         res <- WikibaseRDF.wikidata   
+         pair1 <- res.use(wd => for {
+           _ <- wd.showRDFId("1st use")
+           ts1 <- wd.triplesWithSubject(item).compile.toList
+           ts2 <- wd.triplesWithSubject(item).compile.toList
+         } yield ((ts1.length, ts2.length)))
+         _ <- IO(pprint.pprintln("======================="))
+         res2 <- WikibaseRDF.wikidata
+         pair2 <- res2.use(wd => for {
+           _ <- wd.showRDFId("2nd use")
+           ts1 <- wd.triplesWithSubject(item).compile.toList
+           ts2 <- wd.triplesWithSubject(item).compile.toList
+         } yield ((ts1.length, ts2.length))) 
+       } yield (pair1,pair2)
+       r.attempt.unsafeRunSync.fold(
+         s => fail(s"Error: ${s.getMessage}"),
+         ppair => {
+          val (n1,n2) = ppair
+          info(s"Pairs: $ppair")
+          n1 should be (n2)
+         }
+       )
+   }
+
+  ignore(s"Should obtain 2 empty RDFAsJenaModel's...")  {
+
+     val r: IO[Unit] = RDFAsJenaModel.empty.flatMap(_.use { case rdf1 => for {
+         model1 <- rdf1.getModel
+         _ <- IO (pprint.log(s"RDF1: ${rdf1}. IsClosed?: ${model1.isClosed}"))
+         _ <- RDFAsJenaModel.empty.flatMap(_.use { rdf2 => for {
+          model2 <- rdf2.getModel
+          _ <- IO(pprint.log(s"RDF1 (inside for): ${rdf1}. IsClosed?: ${model1.isClosed}"))
+          _ <- IO(pprint.log(s"RDF2 (inside for): ${rdf2}. IsClosed?: ${model2.isClosed}"))
+         } yield () })
+      } yield () })
+      r.attempt.unsafeRunSync.fold(
+          s => fail(s"Error: $s"), 
+          _ => info(s"Finnished")
+      ) 
+  } 
+
   }
 
   describe(s"Validate Wikidata items") {
@@ -119,21 +180,25 @@ class WikibaseRDFTest extends AnyFunSpec with Matchers {
   // TODO: We ignore this test because it takes a lot of time
    ignore(s"Should validate ${entity} with ${schemaStr} and obtain ${expected}") {
      println(s"Inside should...")
-     val r: IO[ResultShapeMap] = (WikibaseRDF.wikidata, RDFAsJenaModel.empty).tupled.use{ case (wikibase,builder) => 
-       for {
-        schema <- Schema.fromString(schemaStr, "ShExC", base)
-        resolvedSchema <- ResolvedSchema.resolve(schema, base)
-        shapeMapStr = s"<${entity.str}>@<${label.str}>"
-        shapeMap <- fromEitherES(ShapeMap.fromString(shapeMapStr,
+     val r: IO[ResultShapeMap] = for {
+       res1 <- WikibaseRDF.wikidata
+       res2 <- RDFAsJenaModel.empty
+       vv <- (res1, res2).tupled.use{ case (wikibase,builder) => 
+        for {
+         schema <- Schema.fromString(schemaStr, "ShExC", base)
+         resolvedSchema <- ResolvedSchema.resolve(schema, base)
+         shapeMapStr = s"<${entity.str}>@<${label.str}>"
+         shapeMap <- fromEitherES(ShapeMap.fromString(shapeMapStr,
             "Compact",
             base,
             wikibase.prefixMap,
             resolvedSchema.prefixMap))
-        _ <- IO { println(s"ShapeMap obtained ${shapeMap}"); IO.pure(()) }
-        fixedShapeMap <- ShapeMap.fixShapeMap(shapeMap,wikibase,wikibase.prefixMap,resolvedSchema.prefixMap)
-        result <- Validator.validate(resolvedSchema,fixedShapeMap,wikibase,builder)
-        resultShapeMap <- result.toResultShapeMap
-      } yield (resultShapeMap) }
+         _ <- IO { println(s"ShapeMap obtained ${shapeMap}"); IO.pure(()) }
+         fixedShapeMap <- ShapeMap.fixShapeMap(shapeMap,wikibase,wikibase.prefixMap,resolvedSchema.prefixMap)
+         result <- Validator.validate(resolvedSchema,fixedShapeMap,wikibase,builder)
+         resultShapeMap <- result.toResultShapeMap
+        } yield (resultShapeMap) }
+      } yield vv
       r.attempt.unsafeRunSync.fold(
         s => fail(s"Error running validation: ${s}"), 
         result => { 
@@ -149,6 +214,7 @@ class WikibaseRDFTest extends AnyFunSpec with Matchers {
           }
       )
    }
- }
+
+ } 
 
 }

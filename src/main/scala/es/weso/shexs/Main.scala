@@ -53,7 +53,8 @@ object Main extends IOApp {
     for {
       _ <- ifOpt(opts.manifest, mf => StateT.liftF(runManifest(mf)))
       _ <- ifOpt(opts.dataFormat, setDataFormat)
-      _ <- getData(opts).use {
+      res <- getData(opts)
+      _ <- res.use {
         case (rdf,builder) =>
           for {
             _              <- ifOpt(opts.showDataFormat, setShowDataFormat)
@@ -76,7 +77,7 @@ object Main extends IOApp {
   private def showSchema: IOS[Unit] =
     for {
       state <- getState
-      str   <- fromIO(RDFAsJenaModel.empty.use(empty => Schema.serialize(state.schema,state.schemaFormat, None, empty)))
+      str   <- fromIO(RDFAsJenaModel.empty.flatMap(_.use(empty => Schema.serialize(state.schema,state.schemaFormat, None, empty))))
       _     <- fromIO(putStrLn(str))
     } yield ()
 
@@ -113,24 +114,25 @@ object Main extends IOApp {
   private def cnvResource[A](r: Resource[IO,A]): Resource[IOS,A] = 
     r.mapK(cnv)
 
-  private def getData(opts: MainOpts): Resource[IOS, (RDFReader,RDFBuilder)] = for {
-    state <- Resource.liftF(getState)
+  private def pairResource[A,B](r1: Resource[IOS,A], r2: Resource[IOS,B]): Resource[IOS,(A,B)] = for {
+    v1 <- r1
+    v2 <- r2
+  } yield (v1,v2)
+
+  private def getData(opts: MainOpts): IOS[Resource[IOS, (RDFReader,RDFBuilder)]] = 
+  for {
+    state <- getState
     rdf <- if (opts.data.isDefined) {
-            getRDFData(opts.data(), state.dataFormat)
-          } else if (opts.dataFile.isDefined) {
-            getRDFDataFromFile(opts.dataFile(), state.dataFormat)
-          } else {
-            cnvResource(RDFAsJenaModel.empty)
-          }
-    builder <- cnvResource(RDFAsJenaModel.empty)
-  } yield (rdf,builder)
-    
-/*    Resource
-      .liftF(getState)
-      .flatMap(
-        s =>
-          
-      ) */
+      getRDFData(opts.data(), state.dataFormat)
+    } else if (opts.dataFile.isDefined) {
+      getRDFDataFromFile(opts.dataFile(), state.dataFormat)
+    } else for {
+      re <- fromIO(RDFAsJenaModel.empty)
+      e = cnvResource(re)  
+    } yield e
+    emptyRes <- fromIO(RDFAsJenaModel.empty)
+    builder = cnvResource(emptyRes)
+  } yield pairResource(rdf,builder)  
 
   /*  private def infoState(): IOS[Unit] = for {
    state <- getState
@@ -208,11 +210,12 @@ object Main extends IOApp {
     def apply[A](io: IO[A]): IOS[A] = fromIO(io)
   }
 
-  private def getRDFData(data: String, dataFormat: String): Resource[IOS, RDFReader] = {
-    RDFAsJenaModel.fromString(data, dataFormat).mapK(cnv)
-  }
+  private def getRDFData(data: String, dataFormat: String): IOS[Resource[IOS, RDFReader]] = 
+  for {
+   res <- fromIO(RDFAsJenaModel.fromString(data, dataFormat)) 
+  } yield cnvResource(res)
 
-  private def getRDFDataFromFile(fileName: String, dataFormat: String): Resource[IOS, RDFReader] = {
+  private def getRDFDataFromFile(fileName: String, dataFormat: String): IOS[Resource[IOS, RDFReader]] = ok {
     RDFAsJenaModel.fromFile(Paths.get(fileName).toFile, dataFormat).mapK(cnv)
   }
 

@@ -11,9 +11,9 @@ import io.circe.Json
 import es.weso.shex.shexR.PREFIXES.sx_start
 import io.circe._
 import io.circe.syntax._
-import es.weso.rdf.RDFBuilder
-import cats.effect._
-import cats.effect.concurrent._
+// import es.weso.rdf.RDFBuilder
+// import cats.effect._
+// import cats.effect.concurrent._
 
 
 case class ShapeTyping(

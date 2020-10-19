@@ -257,10 +257,10 @@ trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with Opti
       _         <- testInfo(s"dataStr:\n$dataStr\n-----end dataStr")
       schema    <- Schema.fromString(schemaStr, "SHEXC", Some(fa.schema))
       _         <- testInfoValue(s"schema", schema)
-      result      <- (
-         RDFAsJenaModel.fromChars(dataStr, "TURTLE", Some(fa.data)),
-         RDFAsJenaModel.empty
-        ).tupled.use{ case (data, builder) =>
+      result      <- for {
+        res1 <- RDFAsJenaModel.fromChars(dataStr, "TURTLE", Some(fa.data))
+        res2 <- RDFAsJenaModel.empty
+        vv <- (res1,res2).tupled.use{ case (data, builder) =>
        for {
          dataPrefixMap <- data.getPrefixMap
          _         <- testInfoValue(s"data", data)
@@ -303,6 +303,7 @@ trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with Opti
            } yield ok
          }
         } yield ok }
+      } yield vv 
      } yield result
   }
 
@@ -329,7 +330,7 @@ trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with Opti
         val schemaUri    = mkLocal(mr.schema, validationBase, folderURI)
         val shapeMapUri  = mkLocal(mr.shapeMap, validationBase, folderURI)
         val resultMapUri = mkLocal(resultIRI, validationBase, folderURI)
-        val r: IO[Option[Result]] = RDFAsJenaModel.empty.use(emptyRdf =>
+        val r: IO[Option[Result]] = RDFAsJenaModel.empty.flatMap(_.use(emptyRdf =>
           for {
           //_             <- testInfo(s"Validating mapResult: $name")
           schemaStr     <- derefUriIO(schemaUri)
@@ -341,10 +342,10 @@ trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with Opti
           fixedShapeMap <- ShapeMap.fixShapeMap(sm, emptyRdf, PrefixMap.empty, PrefixMap.empty)
           dataUri = mkLocal(mr.data, schemasBase, folderURI)
           strData        <- derefUriIO(dataUri)
-          rr      <- (
-            RDFAsJenaModel.fromString(strData, "TURTLE", None), 
-            RDFAsJenaModel.empty
-           ).tupled.use{ case (data,builder) =>
+          rr      <- for {
+            res1 <- RDFAsJenaModel.fromString(strData, "TURTLE", None)
+            res2 <- RDFAsJenaModel.empty
+            vv <- ( res1, res2).tupled.use{ case (data,builder) =>
            for {
              resultVal <- Validator(schema = resolvedSchema, builder = builder).validateShapeMap(data, fixedShapeMap)
              resultShapeMap <- resultVal.toResultShapeMap
@@ -354,7 +355,8 @@ trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with Opti
                   else
                     result(name,false, s"Json results are different. Expected: ${jsonResult.asJson.spaces2}\nObtained: ${resultShapeMap.toString}")
            } yield r }
-          } yield rr)
+          } yield vv 
+          } yield rr))
         r
       }
     }

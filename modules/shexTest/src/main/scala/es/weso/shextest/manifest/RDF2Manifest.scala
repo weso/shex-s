@@ -393,7 +393,7 @@ object RDF2Manifest extends LazyLogging {
     val n : RDFNode = IRI("http://internal.base/")
     val r: IO[ShExManifest] = for {
       cs <- getContents(fileName)
-      sm <- getRDF(cs.toString, format, base).use(rdf => for {
+      sm <- getRDF(cs.toString, format, base).flatMap(_.use(rdf => for {
         iriBase <- getIriBase(base)
         mfs <- {
           val ctx = ManifestContext(iriBase, derefIncludes, List())
@@ -404,7 +404,7 @@ object RDF2Manifest extends LazyLogging {
         manifest <-
           if (mfs.size == 1) mfs.head.pure[IO]
           else IO.raiseError(new RuntimeException(s"Number of manifests != 1: ${mfs}"))
-      } yield manifest)
+      } yield manifest))
     } yield sm
     r
   }
@@ -417,7 +417,7 @@ object RDF2Manifest extends LazyLogging {
     ))
   }
 
-  private def getRDF(cs: String, format: String, base: Option[String]): Resource[IO, RDFReader] = {
+  private def getRDF(cs: String, format: String, base: Option[String]): IO[Resource[IO, RDFReader]] = {
     RDFAsJenaModel.fromChars(cs, format, base.map(IRI(_)))
   }
 

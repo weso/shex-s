@@ -21,11 +21,35 @@ import scala.util._
 import java.io.ByteArrayOutputStream
 import io.circe.Json
 import io.circe.parser.parse
+import org.apache.jena.rdf.model.ModelFactory
+import org.apache.jena.rdf.model.Model
 
 case class CachedState(iris: Set[IRI], rdf: RDFAsJenaModel) 
 
 object CachedState {
-  def initial: Resource[IO,CachedState] = RDFAsJenaModel.empty.map(rdf => CachedState(Set(),rdf))
+
+  private def closeJenaModel(m: RDFAsJenaModel): IO[Unit] = for {
+    _ <- IO(pprint.log(m, s"Closing Model"))  
+    model <- m.getModel
+  } yield model.close()
+
+  def initial: IO[Resource[IO,CachedState]] = for {
+    res <- RDFAsJenaModel.empty
+    /*newModel <- IO {
+      val model = ModelFactory.createDefaultModel
+      pprint.pprintln(s"NewModel id:${System.identityHashCode(model)}")
+      model
+    }
+    newRef <- Ref.of[IO,Model](newModel) 
+    newRdf = RDFAsJenaModel(newRef,None,None)
+    model <- newRdf.getModel
+    _ <- IO { pprint.pprintln(s"NewRDFID: ${System.identityHashCode(model)}")}
+    res <- IO(Resource.make(IO(newRdf))(closeJenaModel)) */
+  } yield res.evalMap(rdf => for {
+    modelRef <- rdf.getModel
+    _ <- IO {pprint.pprintln(s"CachedState.initial: Model: ${System.identityHashCode(modelRef)}, closed?: ${modelRef.isClosed()}}") }
+  } yield CachedState(Set(),rdf))
+//    RDFAsJenaModel.empty.map(rdf => CachedState(Set(),rdf)))
 }
 
 case class WikibaseRDF(
@@ -65,6 +89,15 @@ case class WikibaseRDF(
  } yield (())
 
     
+ private def getTriplesAndCache(subj:IRI): RDFStream[RDFTriple] = {
+   val r: IO[List[RDFTriple]] = 
+     derefRDFJava(subj).flatMap(_.use(rdf => for {
+             _ <- addNodeCache(subj, rdf)
+             ts <- rdf.triplesWithSubject(subj).compile.toList
+     } yield ts))
+   Stream.eval(r).flatMap(Stream.emits(_))
+ }
+   
 
  override def triplesWithSubject(node: RDFNode): RDFStream[RDFTriple] = for {
    cachedState <- Stream.eval(refCached.get)
@@ -74,13 +107,8 @@ case class WikibaseRDF(
          r <- if (cachedState.iris contains subj) {
            println(s"Node ${node} already in cache")
            cachedState.rdf.triplesWithSubject(node) 
-         } else for {
-//           _ <- Stream.eval { IO { println(s"Dereferentiating ${node}") ; IO.pure(())} }
-           rdfNode <- Stream.resource(derefRDFJava(subj))
-           _ <- Stream.eval(addNodeCache(subj, rdfNode))
-           rs <- rdfNode.triplesWithSubject(subj)
-           } yield rs
-          } yield r   
+         } else getTriplesAndCache(subj) 
+        } yield r   
      case other => cachedState.rdf.triplesWithSubject(other)
    }
  } yield ts
@@ -233,6 +261,12 @@ case class WikibaseRDF(
 
  override def subjectsWithPath(p: SHACLPath,o: RDFNode): Stream[IO,RDFNode] = errStream(s"Not implemented subjectsWithPath for WikibaseRDF")
 
+ def showRDFId(msg:String): IO[Unit] = for {
+     cs <- getCachedState
+     model <- cs.rdf.getModel
+     _ <- IO(pprint.log(System.identityHashCode(model), msg))
+ } yield ()
+
 
 }
 
@@ -241,12 +275,18 @@ object WikibaseRDF {
   val wdt = IRI("http://www.wikidata.org/prop/direct/")
   val wikidataEndpoint = IRI("https://query.wikidata.org/sparql")
 
-  val wikidata : Resource[IO,WikibaseRDF] = for {
-    initial <- CachedState.initial
-    ref <- Resource.liftF(Ref[IO].of(initial))
-  } yield WikibaseRDF(wikidataEndpoint,prefixMap = PrefixMap(Map(
-    Prefix("wd") -> wd,
-    Prefix("wdt") -> wdt
-   )), ref)
+  val wikidata : IO[Resource[IO,WikibaseRDF]] = for {
+    res <- CachedState.initial
+  } yield res.evalMap(initial => for {
+    ref <- Ref[IO].of(initial)
+    r = WikibaseRDF(wikidataEndpoint,
+     prefixMap = PrefixMap(Map(
+     Prefix("wd") -> wd,
+     Prefix("wdt") -> wdt
+    )), ref)
+    _ <- r.showRDFId("Initialization")
+  } yield { 
+    r
+  })
 
 }

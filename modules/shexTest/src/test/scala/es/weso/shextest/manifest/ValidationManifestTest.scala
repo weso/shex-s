@@ -140,10 +140,10 @@ class ValidationManifestTest extends ValidateManifest {
       schemaStr <- derefUriIO(schemaUri)
       dataStr <- derefUriIO(dataUri)
       schema <- Schema.fromString(schemaStr, "SHEXC", Some(fa.schema))
-      ss   <- (
-         RDFAsJenaModel.fromChars(dataStr, "TURTLE", Some(fa.data)),
-         RDFAsJenaModel.empty
-        ).tupled.use{case (data,builder) =>
+      ss   <- for {
+        res1 <- RDFAsJenaModel.fromChars(dataStr, "TURTLE", Some(fa.data))
+        res2 <- RDFAsJenaModel.empty  
+        vv <- (res1,res2).tupled.use{case (data,builder) =>
         for {
           dataPrefixMap <- data.getPrefixMap
           resolvedSchema <- ResolvedSchema.resolve(schema, Some(fa.schema))
@@ -174,6 +174,7 @@ class ValidationManifestTest extends ValidateManifest {
             } yield r
            }
           } yield rr}
+      } yield vv 
     } yield ss
   }
 
@@ -193,15 +194,15 @@ class ValidationManifestTest extends ValidateManifest {
           smapStr       <- derefUriIO(shapeMapUri)
           sm            <- fromES(ShapeMap.fromJson(smapStr))
           schema        <- Schema.fromString(schemaStr, "SHEXC", None)
-          fixedShapeMap <- RDFAsJenaModel.empty.use(emptyRdf =>
+          fixedShapeMap <- RDFAsJenaModel.empty.flatMap(_.use(emptyRdf =>
             ShapeMap.fixShapeMap(sm, emptyRdf, PrefixMap.empty, PrefixMap.empty)
-          )
+          ))
           dataUri = mkLocal(mr.data,schemasBase,shexFolderURI)
           strData        <- derefUriIO(dataUri)
-          r           <- (
-            RDFAsJenaModel.fromChars(strData, "TURTLE", None), 
-            RDFAsJenaModel.empty
-           ).tupled.use{ case (data,builder) =>
+          r           <- for {
+            res1 <- RDFAsJenaModel.fromChars(strData, "TURTLE", None)
+            res2 <- RDFAsJenaModel.empty
+            vv <- (res1, res2).tupled.use{ case (data,builder) =>
            for {
              resolvedSchema <- ResolvedSchema.resolve(schema, None)
              resultVal <- Validator(schema = resolvedSchema, builder = builder).validateShapeMap(data, fixedShapeMap)
@@ -213,6 +214,7 @@ class ValidationManifestTest extends ValidateManifest {
                IO.raiseError(new RuntimeException(s"Json results are different. Expected: ${jsonResult.asJson.spaces2}\nObtained: ${resultShapeMap.toString}"))
            } yield result
         }
+          } yield vv 
         } yield r
         r
       }
