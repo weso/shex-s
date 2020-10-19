@@ -7,9 +7,9 @@ import com.typesafe.scalalogging.LazyLogging
 import es.weso.shex._
 import es.weso.rdf._
 import es.weso.rdf.nodes._
-import es.weso.collection.Bag
+//import es.weso.collection.Bag
 import es.weso.rbe.interval.IntervalChecker
-import es.weso.rbe.{BagChecker, Empty, Rbe}
+import es.weso.rbe.Empty
 // import es.weso.rbe.BagChecker._
 import es.weso.utils.{SeqUtils, SetUtils}
 import es.weso.shex.implicits.showShEx._
@@ -129,7 +129,7 @@ case class Validator(schema: ResolvedSchema,
 
   private[validator] def getShape(label: ShapeLabel): Check[ShapeExpr] =
     schema.getShape(label) match {
-      case Left(e)      => errStr[ShapeExpr](e)
+      case Left(e)      => err(ShExError.LabelNotFound(label,schema.labels))
       case Right(shape) => ok(shape)
     }
 
@@ -148,7 +148,7 @@ case class Validator(schema: ResolvedSchema,
     schema.start match {
       case None => err(NoStart(node))
       case Some(shape) => {
-        logger.debug(s"nodeStart. Node: ${node.show}")
+        // logger.debug(s"nodeStart. Node: ${node.show}")
         val shapeType = ShapeType(shape, Some(Start), schema)
         val attempt   = Attempt(NodeShape(node, shapeType), None)
         runLocalSafeTyping(checkNodeShapeExpr(attempt, node, shape), _.addType(node, shapeType), (err, t) => {
@@ -202,8 +202,7 @@ case class Validator(schema: ResolvedSchema,
   }
 
   private[validator] def checkNodeShapeExpr(attempt: Attempt, node: RDFNode, s: ShapeExpr): CheckTyping = 
-   info(s"CheckNodeShapeExpr $node ") *> {
-     s match {
+    s match {
        case so: ShapeOr => checkOr(attempt, node, so.shapeExprs)
        case sa: ShapeAnd => checkAnd(attempt, node, sa.shapeExprs)
        case sn: ShapeNot => checkNot(attempt, node, sn.shapeExpr)
@@ -211,8 +210,7 @@ case class Validator(schema: ResolvedSchema,
        case s: Shape => checkShape(attempt, node, s)
        case sr: ShapeRef => checkRef(attempt, node, sr.reference)
        case se: ShapeExternal => checkExternal(attempt, node, se)
-     }
-   }
+    }
 
   private[validator] def checkAnd(attempt: Attempt, node: RDFNode, ses: List[ShapeExpr]): CheckTyping =
     for {
@@ -391,8 +389,8 @@ case class Validator(schema: ResolvedSchema,
       pair: (Set[Arc], Set[Arc])
   ): Check[(ShapeTyping, Boolean)] = {
     val (neighs1, neighs2) = pair
-    // println(s"Checking partition ($neighs1,$neighs2)\n$neighs1 with ${base.show}\nand\n$neighs2 with ${s.show}")
     (for {
+      _ <- info(s"Checking partition ($neighs1,$neighs2)\n$neighs1 with ${base.show}\nand\n$neighs2 with ${s.show}")
       pair <- checkNeighsShapeExpr(attempt, node, neighs1.toList, base)
       (typing1, flag) = pair
       // _ <- { println(s"Typing1: $typing1"); ok(()) }
@@ -416,7 +414,7 @@ case class Validator(schema: ResolvedSchema,
      label: ShapeLabel,
      neighs: Neighs
      ): Check[(ShapeTyping, Boolean)] =
-     errStr(s"No partition of $neighs conforms. Node: $node")
+     err(NoPartition(node,attempt,s,label,neighs))
 
   private[validator] def checkNeighsShapeExpr(
       attempt: Attempt,
@@ -797,6 +795,13 @@ case class Validator(schema: ResolvedSchema,
       result      <- shapeTyping.toShapeMap(rdfPrefixMap, schema.prefixMap).leftMap(StringError)
     } yield result
   )
+
+  private def infoNode(node: RDFNode, pm: PrefixMap):String = pm.qualify(node)
+  private def infoShapeExpr(se: ShapeExpr, pm: PrefixMap): String = 
+    se.id match {
+      case None => se.showPrefixMap(pm)
+      case Some(lbl) => pm.qualify(lbl.toRDFNode)
+    }
 }
 
 object Validator {

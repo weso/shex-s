@@ -69,7 +69,10 @@ object ShExError {
 
   }
 
-  case class LabelNotFound(label: ShapeLabel, availableLabels: List[ShapeLabel]) extends ShExError(s"Label not found: ${label}") {
+  case class LabelNotFound(
+    label: ShapeLabel, 
+    availableLabels: List[ShapeLabel]
+    ) extends ShExError(s"Label not found: ${label}") {
     override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
       s"""Label not found: ${shapesPrefixMap.qualify(label.toRDFNode)}
       Available labels: ${availableLabels.map(label => shapesPrefixMap.qualify(label.toRDFNode)).mkString(",")}"""
@@ -80,6 +83,29 @@ object ShExError {
       ) 
 
   }
+
+
+  case class NoPartition(
+    node: RDFNode,
+    attempt: Attempt, 
+    s: Shape,
+    lbl: ShapeLabel,
+    neighs: Neighs
+    ) extends ShExError(s"No partition of ${neighs} matches shape ${s}") {
+    override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
+      s"""|No partition of neighs matches shape ${shapesPrefixMap.qualify(lbl.toRDFNode)}
+      |Available Neighs: ${neighs}
+      |Attempt: ${attempt.show}
+      |""".stripMargin
+    }
+
+    override def toJson: Json = Json.obj(
+       ("type", Json.fromString("NoPartition")),
+       ("attempt", attempt.asJson)
+      ) 
+
+  }
+
 
   case class NoStart(node: RDFNode) extends ShExError(s"No Start. Node $node") {
     override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
@@ -293,7 +319,7 @@ object ShExError {
       ) 
   }
 
-  case class NoPartition(
+/*  case class NoPartition(
     attempt: Attempt, 
     node: RDFNode, 
     shape: Shape, 
@@ -311,7 +337,7 @@ object ShExError {
        ("type", Json.fromString("NoPartition")),
        ("node", Json.fromString(node.getLexicalForm))
       ) 
-  }
+  } */
   
   private def showCandidateLines(cs: List[CandidateLine], table: CTable): String = {
     cs.length match {

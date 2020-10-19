@@ -19,6 +19,14 @@ import es.weso.shextest.manifest._
 import es.weso.shextest.manifest.ShExManifest
 import es.weso.shapeMaps.FixedShapeMap
 import es.weso.shapeMaps.ResultShapeMap
+import es.weso.shapeMaps.NodeSelector
+import es.weso.shapeMaps.RDFNodeSelector
+import es.weso.shapeMaps.ShapeMapLabel
+import es.weso.shapeMaps.IRILabel
+import es.weso.shapeMaps.Association
+import es.weso.shapeMaps.Conformant
+import es.weso.shapeMaps.NonConformant
+import es.weso.shapeMaps.Undefined
 
 object Main extends IOApp {
 
@@ -56,7 +64,7 @@ object Main extends IOApp {
       res <- getData(opts)
       _ <- res.use {
         case (rdf,builder) =>
-          for {
+          (for {
             _              <- ifOpt(opts.showDataFormat, setShowDataFormat)
             _              <- ifOpt(opts.showSchemaFormat, setShowSchemaFormat)
             _              <- ifOpt(opts.showResultFormat, setShowResultFormat)
@@ -70,7 +78,7 @@ object Main extends IOApp {
             result         <- fromIO(Validator.validate(resolvedSchema, fixedMap, rdf, builder))
             resultShapeMap <- fromIO(result.toResultShapeMap)
             _              <- showResult(resultShapeMap) // putStrLn(s"Result\n${resultShapeMap.toString}"))
-          } yield ()
+          } yield ()).handleErrorWith(t => ok { println(s"Error obtaining RDF data: ${t.getMessage}")})
         }
     } yield ExitCode.Success
 
@@ -88,16 +96,40 @@ object Main extends IOApp {
       _     <- fromIO(putStrLn(str))
     } yield ()
 
+  private def sep: String = ("=" * 10) + "\n"  
+
   private def showResult(result: ResultShapeMap): IOS[Unit] =
     for {
       state <- getState
       str = state.showResultFormat.toUpperCase match {
-        case "COMPACT" => result.toString
+        case "COMPACT" =>
+          sep ++ 
+          resultShapeMap2String(result)
+
         case "JSON"    => result.toJson.spaces2
       }
       _ <- fromIO(putStrLn(str))
     } yield ()
 
+  private def resultShapeMap2String(result: ResultShapeMap): String = {
+    def showNodeSelector(node: NodeSelector): String = node match {
+      case RDFNodeSelector(node) => result.nodesPrefixMap.qualify(node)
+      case _ => node.toString
+    }
+    def showShapeLabel(lbl: ShapeMapLabel): String = lbl match {
+      case IRILabel(iri) => result.shapesPrefixMap.qualify(iri)
+      case _ => lbl.show
+    }
+    def showOk(a: Association): String = a.info.status match {
+      case Conformant => ""
+      case NonConformant => "!"
+      case Undefined => "?"
+    }
+    result.associations.map(a => {
+      s"${showNodeSelector(a.node)}@${showOk(a)}${showShapeLabel{a.shape}} |\nReason: ${a.info.reason.getOrElse("")}"
+    }).mkString("\n" + "-" * 10 + "\n")  
+  }
+    
   private def getResolvedSchema(): IOS[ResolvedSchema] =
     for {
       state          <- getState

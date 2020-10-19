@@ -1,0 +1,13 @@
+prefix : <http://example.org/>
+prefix schema: <http://schema.org/>
+
+:alice schema:name "Alice";
+       schema:knows :bob, :carol .
+:bob   schema:name "Robert";
+       schema:knows :bob .
+:carol :role :Root .
+
+:bad1  schema:name 23 ;
+       schema:knows :bob, :carol .
+
+       
