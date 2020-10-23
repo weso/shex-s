@@ -32,7 +32,7 @@ lazy val scalaGraphVersion     = "1.11.5"
 // lazy val scalatagsVersion      = "0.6.7"
 lazy val scallopVersion        = "3.3.1"
 lazy val sextVersion           = "0.2.6"
-lazy val typesafeConfigVersion = "1.3.4"
+lazy val typesafeConfigVersion = "1.4.1"
 lazy val xercesVersion         = "2.12.0"
 
 // Compiler plugin dependency versions
