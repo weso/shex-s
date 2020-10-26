@@ -9,7 +9,7 @@ lazy val utilsVersion          = "0.1.69"
 lazy val documentVersion       = "0.0.11"
 
 // Dependency versions
-lazy val antlrVersion          = "4.7.1"
+lazy val antlrVersion          = "4.7.2"
 lazy val catsVersion           = "2.2.0"
 lazy val catsEffectVersion     = "2.2.0"
 // lazy val catsMacrosVersion     = "2.1.1"
