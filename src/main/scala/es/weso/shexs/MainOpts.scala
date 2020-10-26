@@ -23,6 +23,17 @@ class MainOpts(arguments: Array[String],
     descr = "ShapeMap",
     short = 'm')
 
+  val shapeMapFile: ScallopOption[String] = opt[String](
+    name = "shapeMapFile",
+    descr = "ShapeMap file",
+    noshort = true)
+
+  val shapeMapFormat: ScallopOption[String] = opt[String](
+    name = "shapeMapFormat",
+    descr = "ShapeMap format",
+    default = Some("Compact"),
+    noshort = true)
+
   val schema: ScallopOption[String] = opt[String](
     name = "schema",
     descr = "Schema",
