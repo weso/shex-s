@@ -104,7 +104,10 @@ object Main extends IOApp {
       str = state.showResultFormat.toUpperCase match {
         case "COMPACT" =>
           sep ++ 
-          resultShapeMap2String(result)
+          resultShapeMap2String(result, Compact)
+        case "DETAILS" =>
+          sep ++ 
+          resultShapeMap2String(result, Details)
 
         case "JSON"    => result.toJson.spaces2
       }
