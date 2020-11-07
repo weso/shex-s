@@ -1,7 +1,6 @@
 *.class
 *.log
 .bloop
-.bsp
 
 # sbt specific
 dist/*
@@ -10,6 +9,8 @@ lib_managed/
 src_managed/
 project/boot/
 project/plugins/project/
+.bsp/*
+
 
 # Metals
 .metals

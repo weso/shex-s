@@ -149,16 +149,20 @@ trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with Opti
     } else None.pure[IO]
   }
 
-//  private def testFail[A](msg: String): EitherT[IO, String, A] = EitherT.fromEither(Left(msg))
   private def result[A](name: String, isOk: Boolean, reason: String): IO[Option[Result]] =
     IO.pure(Some(Result(name, isOk, reason)))
 
-  private def fromEither[A](e: Either[String, A]): EitherT[IO, String, A] = EitherT.fromEither(e)
+  //  private def testFail[A](msg: String): EitherT[IO, String, A] = EitherT.fromEither(Left(msg))
+  // private def fromEither[A](e: Either[String, A]): EitherT[IO, String, A] = EitherT.fromEither(e)
   // private def testInfo(msg: String): EitherT[IO, String, Unit] = EitherT.liftF(IO(println(msg)))
 
   def getContents(name: String, folder: String, value: Option[IRI]): EitherT[IO, String, String] = value match {
     case None      => EitherT.fromEither[IO](s"No value for $name".asLeft)
-    case Some(iri) => FileUtils.getContents(folder + "/" + iri.str).map(_.toString)
+    case Some(iri) => getContentsEIO(folder + "/" + iri.str)
+  }
+
+  private def getContentsEIO(name: String): EitherT[IO, String, String] = {
+    EitherT.liftF(FileUtils.getContents(Paths.get(name)))
   }
 
   def eq(s1: String, s2: String): Boolean = s1 == s2
