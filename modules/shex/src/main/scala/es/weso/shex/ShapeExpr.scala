@@ -10,7 +10,7 @@ trait ShapeExpr extends Product with Serializable {
   def id: Option[ShapeLabel]
   def addId(lbl: ShapeLabel): ShapeExpr
 
-  def showPrefixMap(pm: PrefixMap) = {
+  def showQualified(pm: PrefixMap) = {
     import es.weso.shex.compact.CompactShow._
     showShapeExpr(this, pm)
   }

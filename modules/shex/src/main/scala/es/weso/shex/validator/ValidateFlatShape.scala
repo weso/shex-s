@@ -13,11 +13,16 @@ import es.weso.rdf.triples.RDFTriple
 import es.weso.rdf.RDFReader
 import es.weso.utils.eitherios.EitherIOUtils._
 import es.weso.shex.validator.ShExError._
+import es.weso.rdf.PrefixMap
 
 /**
   * ShEx validator
   */
-case class ValidateFlatShape(validator: Validator) {
+case class ValidateFlatShape(
+  validator: Validator,
+  nodesPrefixMap: PrefixMap,
+  shapesPrefixMap: PrefixMap
+) {
 
   private[validator] def checkFlatShape(attempt: Attempt, node: RDFNode, s: FlatShape): CheckTyping = {
     val zero = getTyping
@@ -53,9 +58,9 @@ case class ValidateFlatShape(validator: Validator) {
 
   private[validator] def checkConstraint(attempt: Attempt, node: RDFNode, path: Path, constraint: Constraint): CheckTyping =
     for {
-      _ <- info(s"checkConstraint: ${constraint.show} for ${node.show} with path ${path.show}")
+      _ <- info(s"checkConstraint: ${constraint.show} for ${showNode(node)} with path ${path.show}")
       values <- getValuesPath(node, path)
-      _ <- info(s"values for path: ${node.show} with path ${path.show} = [${values.map(_.show).mkString(",")}]")
+      _ <- info(s"values for path: ${showNode(node)} with path ${path.show} = [${values.map(_.show).mkString(",")}]")
       typing <- checkValuesConstraint(values, constraint, node, path, attempt)
     } yield typing
 
@@ -82,7 +87,7 @@ case class ValidateFlatShape(validator: Validator) {
     val card: Cardinality = constraint.card
     constraint.shape match {
       case None =>
-        if (card.contains(values.size)) addEvidence(attempt.nodeShape, s"Number of values fits $card")
+        if (card.contains(values.size)) addEvidence(attempt.nodeShape, s"# of values fits $card")
         else err(ErrCardinality(attempt, node, path, values.size, card))
       case Some(se) =>
         if (constraint.hasExtra) {
@@ -99,7 +104,7 @@ case class ValidateFlatShape(validator: Validator) {
                 t <- if (card.contains(passed.size)) {
                   addEvidence(
                     attempt.nodeShape,
-                    s"Number of values for ${node.show} with ${path.show} that satisfy ${constraint.shape} = ${passed.size} matches cardinality ${constraint.card}"
+                    s"Number of values for ${showNode(node)} with ${path.showQualified(nodesPrefixMap)} that satisfy ${constraint.shape} = ${passed.size} matches cardinality ${constraint.card}"
                   )
                 } else {
                   err(ErrCardinalityWithExtra(attempt, node, path, passed.size, notPassed.size, card))
@@ -124,7 +129,7 @@ case class ValidateFlatShape(validator: Validator) {
                 setPartitionMap(values.map(v => (v, checkNodeShapeExprBasic(v, se, rdf))))(mapFun) */
                 _ <- info(s"Passed: \n${passed.map(_.toString).mkString(s"\n")}\nNo passed\n${notPassed.map(_.toString).mkString(s"\n")}")
                 newt <- if (notPassed.isEmpty) {
-                  addEvidence(attempt.nodeShape, s"${node.show} passed ${constraint.show} for path ${path.show}")
+                  addEvidence(attempt.nodeShape, s"${showNode(node)} passed ${constraint.showQualified(shapesPrefixMap)} for path ${path.showQualified(nodesPrefixMap)}")
                 } else
                   err(ValuesNotPassed(attempt, node, path, passed.size, notPassed.toSet))
               } yield newt
@@ -161,5 +166,8 @@ case class ValidateFlatShape(validator: Validator) {
   private def cmb(els: List[EitherT[IO, String, String]]): EitherT[IO, String, String] = {
     els.sequence.map(_.mkString("\n"))
   }
+
+  def showNode(node: RDFNode): String = nodesPrefixMap.qualify(node)
+  def showShape(shapeLabel: ShapeLabel): String = shapesPrefixMap.qualify(shapeLabel.toRDFNode)
 
 }

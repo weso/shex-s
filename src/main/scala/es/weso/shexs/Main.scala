@@ -15,8 +15,9 @@ import org.rogach.scallop._
 import org.rogach.scallop.exceptions._
 import es.weso.shextest.manifest._
 import es.weso.shextest.manifest.ShExManifest
-import es.weso.shapeMaps.FixedShapeMap
-import es.weso.shapeMaps.ResultShapeMap
+import es.weso.shapeMaps._ 
+import fs2._
+
 
 object Main extends IOApp {
 
@@ -59,16 +60,18 @@ object Main extends IOApp {
             _              <- ifOpt(opts.showSchemaFormat, setShowSchemaFormat)
             _              <- ifOpt(opts.showResultFormat, setShowResultFormat)
             _              <- ifOpt(opts.schemaFormat, setSchemaFormat)
+            _              <- ifOpt(opts.shapeMapFormat, setShapeMapFormat)
             _              <- ifOpt(opts.schemaFile, setSchemaFile)
             _              <- ifOptB(opts.showData, showData(rdf))
             _              <- ifOpt(opts.shapeMap, setShapeMap(rdf))
+            _              <- ifOpt(opts.shapeMapFile, setShapeMapFromFile(rdf))
             _              <- ifOptB(opts.showSchema, showSchema)
             resolvedSchema <- getResolvedSchema()
             fixedMap       <- getFixedMap(rdf, resolvedSchema)
             result         <- fromIO(Validator.validate(resolvedSchema, fixedMap, rdf, builder))
             resultShapeMap <- fromIO(result.toResultShapeMap)
             _              <- showResult(resultShapeMap) // putStrLn(s"Result\n${resultShapeMap.toString}"))
-          } yield ()).handleErrorWith(t => ok { println(s"Error obtaining RDF data: ${t.getMessage}")})
+          } yield ()).handleErrorWith(t => ok { println(s"Error: ${t.getMessage}")})
         }
     } yield ExitCode.Success
 
@@ -164,10 +167,8 @@ object Main extends IOApp {
   private def setShowResultFormat(sf: String): IOS[Unit] =
     StateT.modify(s => s.copy(showResultFormat = sf))
 
-  /* private def setData(dataStr: String): IOS[Unit] = for {
-    state <- getState
-    // _ <- modifyData(getRDFData(dataStr, state.dataFormat))
-  } yield () */
+  private def setShapeMapFormat(sf: String): IOS[Unit] =
+    StateT.modify(s => s.copy(shapeMapFormat = sf))
 
   private def setShapeMap(rdf: RDFReader)(shapeMap: String): IOS[Unit] =
     for {
@@ -177,6 +178,16 @@ object Main extends IOApp {
       sm <- fromEither(ShapeMap.fromString(shapeMap, state.shapeMapFormat, None, pm, state.schema.prefixMap))
       _  <- modifyS(s => s.copy(shapeMap = sm))
     } yield ()
+
+  private def setShapeMapFromFile(rdf: RDFReader)(shapeMapFile: String): IOS[Unit] =
+    for {
+      state <- getState
+      // _ <- fromIO(putStrLn(s"PrefixMap: ${pm.toString}"))
+      pm <- fromIO(rdf.getPrefixMap)
+      sm <- getShapeMapFromFile(shapeMapFile, state.shapeMapFormat, pm, state.schema.prefixMap)
+      _  <- modifyS(s => s.copy(shapeMap = sm))
+    } yield ()
+
 
   private def fromEither[A](either: Either[String, A]): IOS[A] =
     either.fold(
@@ -220,6 +231,16 @@ object Main extends IOApp {
   private def getSchemaFromFile(fileName: String, schemaFormat: String): IOS[Schema] =
     fromIO(Schema.fromFile(fileName, schemaFormat))
 
+  private def getShapeMapFromFile(fileName: String, 
+                                  shapeMapFormat: String,
+                                  nodesPrefixMap: PrefixMap,
+                                  shapesPrefixMap: PrefixMap): IOS[ShapeMap] =
+    for {
+      str <- fromIO(getContents(fileName).handleErrorWith(e => IO.raiseError(new RuntimeException(s"Error obtaining shapeMap from file: ${fileName} with format ${shapeMapFormat}: ${e.getMessage()}"))))
+      sm <- fromEither(ShapeMap.fromString(str.toString, shapeMapFormat, None, nodesPrefixMap,shapesPrefixMap))
+    } yield sm 
+
+
   private def errorDriver(e: Throwable, scallop: Scallop) = e match {
     case Help(s) =>
       println(s"Help: $s")
@@ -254,5 +275,15 @@ object Main extends IOApp {
           )
       )
     } yield ()
+
+  // TODO: Move to utils  
+  def getContents(fileName: String): IO[CharSequence] = {
+    val path = Paths.get(fileName)
+    val decoder: Pipe[IO,Byte,String] = fs2.text.utf8Decode
+    Stream.resource(Blocker[IO]).flatMap(blocker =>
+      fs2.io.file.readAll[IO](path, blocker,4096).through(decoder)
+    ).compile.string
+  }
+
 
 }

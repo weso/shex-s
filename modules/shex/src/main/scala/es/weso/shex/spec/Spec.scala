@@ -312,7 +312,6 @@ object Spec extends LazyLogging {
     inArcs = inTriples.map(t => Arc(Inverse(t.pred),t.obj))
   } yield {
     val allArcs = outArcs ++ inArcs
-    logInfo(s"neighs($n): ${allArcs.map(_.show).mkString(",")}",0)
     allArcs.toSet
   }
 
