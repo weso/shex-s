@@ -9,6 +9,7 @@ import es.weso.utils.FileUtils._
 import org.scalatest.EitherValues
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+import java.nio.file.Paths
 
 class ParseSchemaFileSingleTest extends AnyFunSpec with JsonTest with Matchers with EitherValues {
 
@@ -20,7 +21,7 @@ class ParseSchemaFileSingleTest extends AnyFunSpec with JsonTest with Matchers w
     it(s"Should read Schema from file ${name}") {
       val parsed = for {
         file <- EitherT.liftF[IO,String,File](getFileFromFolderWithExt(schemasFolder, name, "shex"))
-        cs <- getContents(file)
+        cs <- EitherT.liftF[IO,String,String](getContents(Paths.get(file.getAbsolutePath())))
         schema <- EitherT.fromEither[IO](Parser.parseSchema(cs.toString,None))
       } yield schema
       parsed.value.unsafeRunSync match {

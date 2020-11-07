@@ -319,26 +319,6 @@ object ShExError {
       ) 
   }
 
-/*  case class NoPartition(
-    attempt: Attempt, 
-    node: RDFNode, 
-    shape: Shape, 
-    label: ShapeLabel,
-    neighs: List[Arc]
-    ) extends ShExError(s"No partition matches") {
-
-    override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
-      s"""No partition found for node ${nodesPrefixMap.qualify(node)}
-          Attempt: ${attempt.show} 
-        """"
-    }
-
-    override def toJson: Json = Json.obj(
-       ("type", Json.fromString("NoPartition")),
-       ("node", Json.fromString(node.getLexicalForm))
-      ) 
-  } */
-  
   private def showCandidateLines(cs: List[CandidateLine], table: CTable): String = {
     cs.length match {
       case 0 => "No candidate lines"
