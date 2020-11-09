@@ -455,13 +455,13 @@ blankNode
  ;
 
 extension
- : KW_EXTENDS shapeExprLabel
- | '&' shapeExprLabel
+ : KW_EXTENDS shapeRef +
+ | '&' shapeRef +
  ;
 
 restrictions
- : KW_RESTRICTS shapeExprLabel+
- | '-' shapeExprLabel+
+ : KW_RESTRICTS shapeRef +
+ | '-' shapeRef +
  ;
 
 
@@ -596,7 +596,7 @@ SKIP_
  ;
 
 fragment COMMENT
- : ('#' ~[\r\n]* | '/*' (~[*] | '*' ('\\/' | ~[/]))* '*/') -> skip
+ : ('#' ~[\r\n]* | '/*' (~[*] | '*' ('\\/' | ~[/]))* '*/') 
  ;
 
 // A white space is defined as '\t' or '\r' or '\n'.

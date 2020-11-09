@@ -41,8 +41,7 @@ case class Validator(schema: ResolvedSchema,
 
   private lazy val `sh:targetNode` = sh + "targetNode"
 
-  private lazy val ignoredPathsClosed: List[Path] =
-    List(Inverse(`sh:targetNode`))
+  private lazy val ignoredPathsClosed: List[Path] = List(Inverse(`sh:targetNode`))
 
   private[validator] def checkTargetNodeDeclarations: CheckTyping =
     for {
@@ -390,22 +389,15 @@ case class Validator(schema: ResolvedSchema,
   ): Check[(ShapeTyping, Boolean)] = {
     val (neighs1, neighs2) = pair
     (for {
-      // _ <- info(s"Checking partition ($neighs1,$neighs2)\n$neighs1 with ${base.show}\nand\n$neighs2 with ${s.show}")
       pair <- checkNeighsShapeExpr(attempt, node, neighs1.toList, base)
       (typing1, flag) = pair
-      // _ <- { println(s"Typing1: $typing1"); ok(()) }
       typing2 <- checkNeighsShape(attempt, node, neighs2.toList, s)
-      // _ <- { println(s"Typing2: $typing2"); ok(()) }
     } yield (typing2, true)) orElse
       (for {
-        // _ <- {println(s"partition ($neighs1,$neighs2) failed"); ok(()) }
         t <- getTyping
       } yield (t, false))
   }
 
-  /*  private def orElseDebug[A](c1: Check[A], c2:Check[A]): Check[A] = {
-    c1.orElse(c2)
-  } */
 
   private[validator] def noPartition(
      attempt: Attempt, 
@@ -486,8 +478,8 @@ case class Validator(schema: ResolvedSchema,
   } yield pm  
 
   private[validator] def checkShapeBase(attempt: Attempt, node: RDFNode, s: Shape): CheckTyping = {
-    // info(s"CheckShapeBase $node FlatShape? ${s.isFlatShape(schema)}") *> 
-    s match {
+    info(s"checkShapeBase $node FlatShape? ${s.isFlatShape(schema)}") *> 
+    (s match {
       case _ if s.isEmpty => addEvidence(attempt.nodeShape, s"Node $node matched empty shape")
       case _ if s.isFlatShape(schema) =>
         for {
@@ -501,8 +493,7 @@ case class Validator(schema: ResolvedSchema,
           neighs <- getNeighPaths(node, paths)
           typing <- checkNeighsShape(attempt, node, neighs, s)
         } yield typing
-    }
-  
+    })
 }
 
   private def checkNoStrangeProperties(node: RDFNode, paths: List[Path], attempt: Attempt): Check[Unit] =
@@ -645,16 +636,10 @@ case class Validator(schema: ResolvedSchema,
       cl: CandidateLine
   ): CheckTyping = {
     val bag = cl.mkBag
-    //val s = implicitly[Show[ConstraintRef]]
     bagChecker
       .check(bag, false)
       .fold(
-        e => {
-          // println(s"Does not match RBE. ${bag} with ${bagChecker.show}")
-          err(ErrRBEMatch(attempt,cl,table,bag,bagChecker.rbe,e.head))
-/*          errStr(s"${attempt.show} Candidate line ${showCandidateLine(cl,table)} which corresponds to ${bag} does not match ${Rbe
-            .show(bagChecker.rbe)}\nTable:${table.show}\nErr: $e") */
-        },
+        e => err(ErrRBEMatch(attempt,cl,table,bag,bagChecker.rbe,e.head)),
         bag => {
           // println(s"Matches RBE...")
           val nodeConstraints = cl.nodeConstraints(table)
@@ -708,7 +693,6 @@ case class Validator(schema: ResolvedSchema,
   }
 
   private def getTriplesWithSubjectPredicates(rdf: RDFReader, node: RDFNode, preds: List[IRI]): IO[List[RDFTriple]] = {
-    // println(s"GetTriplesWithSubjectPredicate...${node.show} \nPreds=${preds.map(_.show)}")
     node match {
       case _: IRI => { 
        // println(s"IRI...$node")

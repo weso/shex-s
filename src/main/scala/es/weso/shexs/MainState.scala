@@ -1,8 +1,5 @@
 package es.weso.shexs
 
-import cats.effect._
-import es.weso.rdf.RDFReader
-import es.weso.rdf.jena.RDFAsJenaModel
 import es.weso.shapeMaps.ShapeMap
 import es.weso.shex.Schema
 

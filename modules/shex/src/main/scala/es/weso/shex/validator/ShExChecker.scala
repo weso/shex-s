@@ -42,8 +42,8 @@ object ShExChecker extends CheckerCats {
 
   def info(msg:String): Check[Unit] = {
     fromIO(
-      IO.pure(())
-      // IO(println(s"$msg"))
+      // IO.pure(())
+      IO(println(s"$msg"))
     )
   }
 
