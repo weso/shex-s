@@ -30,6 +30,10 @@ case class Shape(
   def isFlatShape(schema: AbstractSchema): Boolean =
     FlatShape.fromShape(this, schema).isRight
 
+  /**
+   * If the shape can be flatten, returns a FlatShape
+   * 
+   * */  
   def flattenShape(schema: AbstractSchema): Either[String, FlatShape] =
     FlatShape.fromShape(this, schema)
 
@@ -113,6 +117,9 @@ case class Shape(
       annotations.map(_.map(_.relativize(base))),
       actions.map(_.map(_.relativize(base)))
     )
+
+   def getExtendsSorted: List[ShapeExpr] = ???
+
 }
 
 object Shape {

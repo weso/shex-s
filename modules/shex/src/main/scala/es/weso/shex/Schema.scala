@@ -12,10 +12,7 @@ import es.weso.shex.shexR.{RDF2ShEx, ShEx2RDF}
 import scala.io.Source
 import scala.util._
 import cats.effect._
-// import es.weso.utils.FileUtilsIO.getContents
-import fs2.{Stream,Pipe}
-
-import scala.concurrent.ExecutionContext
+import es.weso.utils.FileUtils
 
 case class Schema private
                 ( id: IRI,
@@ -56,8 +53,6 @@ case class Schema private
   lazy val localShapes: List[ShapeExpr] = shapes.getOrElse(List())
 
   lazy val shapeList: List[ShapeExpr] = shapes.getOrElse(List())
-   /* eitherResolvedShapesMap.fold(_ => localShapes,
-     sm => sm.values.toList) */
 
   override def labels: List[ShapeLabel] = localShapes.map(_.id).flatten
 
@@ -77,13 +72,6 @@ case class Schema private
     case Left(e) => e
     case Right(ss) => ss.map(s => s.map(_.toString).mkString(",")).mkString("\n")
   }
-/*  lazy val listNegCycles: List[String] = negCycles.fold(
-    e => List(e),
-    ns => if (ns.isEmpty) List()
-    else
-      List(s"Negative cycles found: [${ns.map(s => s.map(_.toString).mkString(",")).mkString(",")}]")
-  ) */
-
 
  private def checkShapeLabel(lbl: ShapeLabel): Either[String, Unit] = for {
    se <- getShape(lbl)
@@ -196,20 +184,6 @@ object Schema {
    } yield schema
   }
 
-  import java.net.URI
-
-  def derefUri(uri: URI): IO[String] = {
-    Try {
-        val urlCon = uri.toURL.openConnection()
-        urlCon.setConnectTimeout(10000)
-        urlCon.setReadTimeout(10000)
-        val is = urlCon.getInputStream()
-        Source.fromInputStream(is).mkString
-    }.fold(e => {
-      println(s"Error trying to access $uri: ${e.getMessage()}\n${e.getClass()}\n")
-      IO.raiseError(e)
-    }, IO(_))
-  }
 
 
   /**
@@ -285,18 +259,25 @@ object Schema {
                base: Option[IRI] = None,
                maybeRDFBuilder: Option[RDFBuilder] = None
               ): IO[Schema] = for {
-    cs <- getContents(fileName)
+    cs <- FileUtils.getContents(Paths.get(fileName))
     schema <- fromString(cs,format,base,maybeRDFBuilder)
   } yield schema
 
-  def getContents(fileName: String): IO[CharSequence] = {
-    val path = Paths.get(fileName)
-    implicit val cs = IO.contextShift(ExecutionContext.global)
-    val decoder: Pipe[IO,Byte,String] = fs2.text.utf8Decode
-    Stream.resource(Blocker[IO]).flatMap(blocker =>
-      fs2.io.file.readAll[IO](path, blocker,4096).through(decoder)
-    ).compile.string
+  import java.net.URI
+
+  private def derefUri(uri: URI): IO[String] = {
+    Try {
+        val urlCon = uri.toURL.openConnection()
+        urlCon.setConnectTimeout(10000)
+        urlCon.setReadTimeout(10000)
+        val is = urlCon.getInputStream()
+        Source.fromInputStream(is).mkString
+    }.fold(e => {
+      println(s"Error trying to access $uri: ${e.getMessage()}\n${e.getClass()}\n")
+      IO.raiseError(e)
+    }, IO(_))
   }
+
 
 //  def resolveSchema: IO[ResolvedSchema] = ???
 
