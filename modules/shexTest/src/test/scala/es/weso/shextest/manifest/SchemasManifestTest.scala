@@ -20,8 +20,8 @@ import cats.implicits._
 class SchemasManifestTest extends ValidateManifest {
 
   val nameIfSingle: Option[String] =
-     None
-     // Some("_all")
+     // None
+     Some("1dotAbstractShapeCode1")
 
   val conf: Config = ConfigFactory.load()
   val shexFolder = conf.getString("schemasFolder")
