@@ -31,6 +31,7 @@
 // ~ s/unaryShape/unaryTripleExpr/ (EGP 20160930)
 // ~ s/encapsulatedShape/bracketedTripleExpr/ (EGP 20160930)
 // Jul 26, 2018 - Replace extensions by includeSet, added extends/restricts
+// Nov 14, 2020 - Replace shapeExprLabel in extends/restricts by shapeRef
 
 grammar ShExDoc;
 

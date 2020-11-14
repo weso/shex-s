@@ -16,7 +16,7 @@ class ParserTest extends AnyFunSpec with JsonTest with Matchers with EitherValue
         Some(List(Shape(Some(IRILabel(IRI("S"))),None,Some(false),None,None,None,None,None))),None,List())
     )
 
-    shouldParse(s"<S> extends <T> { }", None,
+    shouldParse(s"<S> extends @<T> { }", None,
       Schema.empty.addShape(Shape.empty.copy(
         id = Some(IRILabel(IRI("S"))),
         closed = Some(false),

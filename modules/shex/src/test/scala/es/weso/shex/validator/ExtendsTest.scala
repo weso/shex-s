@@ -11,7 +11,7 @@ class ExtendsTest extends ShouldValidateShapeMap {
         val shex =
           """|prefix : <http://e#>
              |:B { :p [1 2] }
-             |:A extends :B {
+             |:A extends @:B {
              | :p [3 4]
              |}""".stripMargin
 //        shouldValidateWithShapeMap(rdf, shex, "<x>@<B>", "<x>@!<B>")
@@ -25,7 +25,7 @@ class ExtendsTest extends ShouldValidateShapeMap {
       val shex =
         """|prefix : <http://e#>
            |:B { :p [1 2] } AND { :p [3 4] }
-           |:A extends :B {
+           |:A extends @:B {
            | :p [2 3]
            |}""".stripMargin
       //        shouldValidateWithShapeMap(rdf, shex, "<x>@<B>", "<x>@!<B>")
