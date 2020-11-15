@@ -153,8 +153,11 @@ class SchemaMaker extends ShExDocBaseVisitor[Any] with LazyLogging {
     for {
       label <- visitShapeExprLabel(ctx.shapeExprLabel())
       shapeExpr <- obtainShapeExpr(ctx)
-      _ <- addShape(label, shapeExpr)
-    } yield (label, shapeExpr)
+      se <- if (isDefined(ctx.KW_ABSTRACT())) 
+        ok(ShapeDecl(Some(label), true, shapeExpr))
+      else ok(shapeExpr)
+      _ <- addShape(label, se)
+    } yield (label, se) 
 
   def obtainShapeExpr(ctx: ShapeExprDeclContext): Builder[ShapeExpr] =
     if (isDefined(ctx.KW_EXTERNAL())) {
@@ -1007,7 +1010,7 @@ class SchemaMaker extends ShExDocBaseVisitor[Any] with LazyLogging {
     val inheritList = qualifiers.map(_.getIncluded).flatten
     val shape =
       Shape.empty.copy(
-      closed = containsClosed,
+      closed = if (qualifiers.isEmpty) None else containsClosed,
       extra = extras,
       expression = tripleExpr,
       _extends = if (inheritList.isEmpty) None else Some(inheritList),
@@ -1138,7 +1141,7 @@ class SchemaMaker extends ShExDocBaseVisitor[Any] with LazyLogging {
         emptyPred(predicate).copy(
           optInverse = sense.optInverse,
           optNegated = sense.optNegated,
-          valueExpr = Some(shapeExpr),
+          valueExpr = if (shapeExpr == ShapeExpr.any) None else Some(shapeExpr),
           optMin = cardinality._1,
           optMax = cardinality._2,
           // optVariableDecl = varDecl,

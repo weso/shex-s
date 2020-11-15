@@ -10,7 +10,7 @@ import es.weso.utils.OptionListUtils._
 // import cats.data._
 // import cats.implicits._
 
-case class NodeConstraint(
+/*case class NodeConstraint(
     id: Option[ShapeLabel],
     nodeKind: Option[NodeKind],
     datatype: Option[IRI],
@@ -86,3 +86,4 @@ object NodeConstraint {
 
 }
 
+*/

@@ -17,9 +17,17 @@ import io.circe.syntax._
 
 
 case class ShapeTyping(
-   t: Typing[RDFNode, ShapeType, ShExError, String],
-//   checked: Ref[IO,RDFBuilder]
+   t: Typing[RDFNode, ShapeType, ShExError, String]
 ) extends LazyLogging {
+   
+  def showShort(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
+    def showPos(ls: Set[ShapeType]): String = 
+      ls.map(st => st.label.map(sl => "+" + shapesPrefixMap.qualify(sl.toRDFNode)).getOrElse("")).mkString(",")
+    val vs = t.getKeys.map(k => (nodesPrefixMap.qualify(k), 
+        showPos(t.getOkValues(k)))
+      ).map{ case (v1,v2) => v1 + ": " + v2 }.mkString("\n")
+    vs
+  }
 
   def getOkValues(node: RDFNode): Set[ShapeType] =
     t.getOkValues(node)
@@ -54,6 +62,9 @@ case class ShapeTyping(
 
   def getMap: Map[RDFNode, Map[ShapeType, TypingResult[ShExError, String]]] =
     t.getMap
+
+  def removeShapeTypesWith(cond: ShapeType => Boolean): ShapeTyping = 
+    ShapeTyping(t.)
 
   override def toString: String = showShapeTyping
 
@@ -152,7 +163,9 @@ object ShapeTyping {
   }
 
   def combineTypings(ts: Seq[ShapeTyping]): ShapeTyping = {
-    ShapeTyping(Typing.combineTypings(ts.map(_.t)))
+    ShapeTyping(
+      Typing.combineTypings(ts.map(_.t))
+    )
   }
 
   implicit def showPair = new Show[(ShapeTyping, Evidences)] {
@@ -160,5 +173,6 @@ object ShapeTyping {
       s"Typing: ${e._1.show}\n Evidences:\n${e._2.show}"
     }
   }
+
 
 }

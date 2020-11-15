@@ -226,16 +226,18 @@ object ShExError {
        ("type", Json.fromString("ErrorObtainingTotalDigits")),
       ) 
     }
+
     case class TotalDigitsAppliedUnknownDatatype(node: RDFNode, d: IRI) extends ShExError(s"Total digits applied to unknown datatye: ${d}") {
       override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
         s"""TotalDigits(${nodesPrefixMap.qualify(node)}) Error: Applied to wrong type: ${nodesPrefixMap.qualify(d)}"""
       }
 
-    override def toJson: Json = Json.obj(
+     override def toJson: Json = Json.obj(
        ("type", Json.fromString("TotalDigitsAppliedUnknownDatatype")),
       ) 
 
     }
+
 
     case class TotalDigitsAppliedNonLiteral(node: RDFNode) extends ShExError(s"Total digits applied to non literal: ${node}") {
       override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
@@ -365,7 +367,6 @@ object ShExError {
       )
   }
 
-
   case class NoCandidateLine(
     attempt: Attempt,
     table: CTable) extends ShExError(s"No candidate line found: ${attempt.show}") {
@@ -382,4 +383,18 @@ object ShExError {
        ("attempt", attempt.asJson),
        ("table", table.asJson)
       )
+  }
+
+
+  case class AbstractShapeErr(node: RDFNode, attempt: Attempt, sd: ShapeDecl) extends ShExError(s"Node cannot conform to abstract shape: ${sd.id}") {
+      override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
+        s"""AbstractShapeError(${nodesPrefixMap.qualify(node)}) cannot conform to abstract shape: ${sd}"""
+      }
+
+     override def toJson: Json = Json.obj(
+       ("type", Json.fromString("AbstractShapeErr")),
+       ("node", Json.fromString(node.getLexicalForm)),
+       ("shape", Json.fromString(attempt.nodeShape.shape.label.map(_.toRDFNode.getLexicalForm).getOrElse("?")))
+      ) 
+
   }

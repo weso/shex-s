@@ -174,7 +174,7 @@ _:a·̀ͯ‿.⁀ a sx:Shape ; sx:closed true ;
   sx:expression _:a·̀ͯ‿.⁀e .
 _:a·̀ͯ‿.⁀e a sx:EachOf ;
     sx:expressions (
-      _:a·̀ͯ‿.⁀e
+      a:S1e
       <http://all.example/S2e> ) .
 
 _:AZazÀÖØöø˿ͰͽͿ῿‌‍⁰↏Ⰰ⿯、퟿豈﷏ﷰ�𐀀󯿽 a sx:Shape ;

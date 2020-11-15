@@ -142,7 +142,14 @@ object CompactShow {
       case ShapeExternal(id, acts, anns) =>
         idDoc(id, pm) :: space ::
           str("EXTERNAL")
+      case ShapeDecl(id,_abstract,se) => 
+        abstractDoc(_abstract) :: idDoc(id,pm) :: space :: shapeExprDoc(pm)(se)
+      case other => str(s"ERROR: Unknown type of ShapeExpr: ${other}")
     }
+
+  private def abstractDoc(_abstract: Boolean): Doc = 
+  if (_abstract) str("ABSTRACT") :: space
+  else empty
 
   private def nodeConstraintDoc(pm: PrefixMap)(nc: NodeConstraint): Doc =
     if (nc == NodeConstraint.empty) {

@@ -3,7 +3,7 @@ package es.weso.shex.validator
 class ExtendsTest extends ShouldValidateShapeMap {
 
   describe("Simple Extends") {
-
+/*
       {
         val rdf  =
           """|prefix : <http://e#>
@@ -28,7 +28,17 @@ class ExtendsTest extends ShouldValidateShapeMap {
            |:A extends @:B {
            | :p [2 3]
            |}""".stripMargin
-      //        shouldValidateWithShapeMap(rdf, shex, "<x>@<B>", "<x>@!<B>")
+      shouldValidateWithShapeMap(rdf, shex, ":x@:A", ":x@!:A")
+    }
+ */
+     {
+      val rdf  =
+        """|prefix : <http://e#>
+           |:x :p 1 .""".stripMargin
+      val shex =
+        """|prefix : <http://e#>
+           |abstract :A { :p [1 2] }
+           |""".stripMargin
       shouldValidateWithShapeMap(rdf, shex, ":x@:A", ":x@!:A")
     }
 /*  Not implemented yet AND  {

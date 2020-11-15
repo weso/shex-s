@@ -9,7 +9,7 @@ class RDF2ManifestTest extends AnyFunSpec with ValidateManifest {
 
   val conf: Config = ConfigFactory.load()
 
-/*  describe("RDF2Manifest schemas") {
+  describe("RDF2Manifest schemas") {
     val validationFolder = conf.getString("testsFolder")
     parseManifest("manifest", "schemas", validationFolder, None, List(), false)
   }
@@ -39,16 +39,41 @@ class RDF2ManifestTest extends AnyFunSpec with ValidateManifest {
       ),
       false
     )
-  } */
+  } 
 
   describe("RDF2Manifest validating") {
     val validationFolder = conf.getString("testsFolder")
     parseManifest("manifest", 
        "validation", 
        validationFolder, 
-       // None,
-       Some("startCode1fail_abort"),
-       List(), 
+       None,
+       // Some("1dotNoCode1_pass"),
+       List(
+         "startNoCode1_pass",
+         "1dotNoCode1_pass",
+         "extends-abstract-multi-empty_pass-missingOptRef1",
+         "extends-abstract-multi-empty_pass",
+         "ExtendsRepeatedP-pass",
+         "ANDAbstract-pass",
+         "AND3G-pass",
+         "ExtendAND3G-pass",
+         "Extend3G-pass",
+         "ExtendANDExtend3GAND3G-pass",
+         "ExtendANDExtend3GAND3G-t33",
+         "vitals-RESTRICTS-pass_lie-Vital",
+         "vitals-RESTRICTS-pass_lie-BP",
+         "vitals-RESTRICTS-pass_lie-PostureVital",
+         "vitals-RESTRICTS-pass_lie-ReclinedVital",
+         "vitals-RESTRICTS-pass_lie-PostureBP",
+         "vitals-RESTRICTS-pass_lie-ReclinedBP",
+         "vitals-RESTRICTS-pass_lie-Posture",
+         "vitals-RESTRICTS-pass_lie-Reclined",
+         "vitals-RESTRICTS-pass_sit-Vital",
+         "vitals-RESTRICTS-pass_sit-BP",
+         "vitals-RESTRICTS-pass_sit-PostureVital",
+         "vitals-RESTRICTS-pass_sit-PostureBP",
+         "vitals-RESTRICTS-pass_sit-Posture"
+       ), 
        false)
   }
 

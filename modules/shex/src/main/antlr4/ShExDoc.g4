@@ -75,7 +75,7 @@ statement
  ;
 
 shapeExprDecl
- : /* KW_ABSTRACT? */ shapeExprLabel /* restrictions* */ (shapeExpression | KW_EXTERNAL)
+ : KW_ABSTRACT? shapeExprLabel /* restrictions* */ (shapeExpression | KW_EXTERNAL)
  ;
 
 shapeExpression
@@ -506,6 +506,7 @@ KW_START
 KW_VIRTUAL
  : V I R T U A L
  ;
+
 
 KW_CLOSED
  : C L O S E D

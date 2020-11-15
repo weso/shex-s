@@ -1,3 +1,6 @@
+# Negated circular reference to :S.
 PREFIX :       <http://example.org/>
 
-:S NOT { :a @:S }
+:S NOT {
+  :a @:S
+}

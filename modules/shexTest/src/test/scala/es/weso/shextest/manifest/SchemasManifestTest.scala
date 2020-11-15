@@ -13,15 +13,15 @@ import Utils._
 import es.weso.utils.IOUtils.fromES
 // import es.weso.utils.UriUtils._
 //import cats._
-import cats.data._
+// import cats.data._
 import cats.effect.IO
 import cats.implicits._
 
 class SchemasManifestTest extends ValidateManifest {
 
   val nameIfSingle: Option[String] =
-     // None
-     Some("1dotAbstractShapeCode1")
+     None
+     // Some("1dotAbstractShapeCode1")
 
   val conf: Config = ConfigFactory.load()
   val shexFolder = conf.getString("schemasFolder")
@@ -51,11 +51,22 @@ class SchemasManifestTest extends ValidateManifest {
 
                     expectedSchema <- fromES(decode[Schema](jsonStr).leftMap(_.getMessage()))
                     _ <- IO { println(s"Expected schema: ${expectedSchema}") }
-                    _ <- if (CompareSchemas.compareSchemas(schema, expectedSchema)) IO.pure("Schemas are ")
-                         else ioErr(s"Schemas are different. Parsed:\n${schema}\n-----Expected:\n${expectedSchema}")
+                    _ <- if (CompareSchemas.compareSchemas(schema, expectedSchema)) 
+                           IO.pure("Schemas are equal")
+                         else 
+                           IO { pprint.log(schema,"Parsed schema")} *>
+                           IO { pprint.log(expectedSchema, "Expected schema") } *>
+                           ioErr(s"""|Schemas are different. 
+                                     |Parsed:
+                                     |${schema}
+                                     |Expected:
+                                     |${expectedSchema}
+                                     |""".stripMargin)
                     json <- fromES(parse(jsonStr).leftMap(_.message))
-                    check <- if (json.equals(schema.asJson)) IO.pure(s"Schemas are equal")
-                             else ioErr(s"Json's are different\nSchema:${schema}\nJson generated: ${schema.asJson.spaces2}\nExpected: ${json.spaces2}")
+                    check <- if (json.equals(schema.asJson)) 
+                                 IO.pure(s"Schemas are equal")
+                             else 
+                               ioErr(s"Json's are different\nSchema:${schema}\nJson generated: ${schema.asJson.spaces2}\nExpected: ${json.spaces2}")
                   } yield check
                   either.attempt.unsafeRunSync().fold(
                     e => fail(s"Error: $e"),

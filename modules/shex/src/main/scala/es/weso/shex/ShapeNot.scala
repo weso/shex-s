@@ -10,7 +10,7 @@ import es.weso.utils.OptionListUtils._
 // import cats.data._
 // import cats.implicits._
 
-case class ShapeNot(
+/*case class ShapeNot(
     id: Option[ShapeLabel],
     shapeExpr: ShapeExpr,
     annotations: Option[List[Annotation]],
@@ -41,4 +41,4 @@ object ShapeNot {
   def fromShapeExpr(se: ShapeExpr): ShapeNot =
     ShapeNot(None, se, None, None)
 }
-
+*/

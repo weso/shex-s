@@ -29,7 +29,7 @@ case class ValidateFlatShape(
     def cmb(ct: CheckTyping, slot: (Path, Constraint)): CheckTyping = {
       val (path, constraint) = slot
       for {
-        _ <- { info(s"CheckFlatShape/Constraint: path: $path\nConstraint: ${constraint.show}\nConstraint:${constraint}") }
+        _ <- { info(s"CheckFlatShape path: ${path.show}\nConstraint: ${constraint.show}") }
         typing1 <- ct
         typing2 <- checkConstraint(attempt, node, path, constraint)
         typing  <- combineTypings(List(typing1, typing2))
@@ -39,12 +39,12 @@ case class ValidateFlatShape(
       }
     }
     for {
-      _ <- info(s"### FlatShape:\n $s")
+      _ <- info(s"### FlatShape applied to node: ${node.show}:\n ${s.show}")
       extra <- extraPreds(node, s.preds)
       _ <- info(s"Extra preds: $extra. Closed? ${s.closed}")
-      // _ <- ok(extra)
       typing <- if (s.closed && extra.nonEmpty) {
-        err(ClosedButExtraPreds(extra))  // TODO: Not sure about this check
+        err(ClosedButExtraPreds(extra))  
+        // TODO: Not sure about this check
       } else 
         s.slots.foldLeft(zero)(cmb)
     } yield typing
@@ -62,6 +62,7 @@ case class ValidateFlatShape(
       values <- getValuesPath(node, path)
       _ <- info(s"values for path: ${showNode(node)} with path ${path.show} = [${values.map(_.show).mkString(",")}]")
       typing <- checkValuesConstraint(values, constraint, node, path, attempt)
+      _ <- info(s"After checkConstraint: typing = ${typing.show}")
     } yield typing
 
   private def getExistingPredicates(node: RDFNode): Check[Set[IRI]] =
@@ -153,9 +154,11 @@ case class ValidateFlatShape(
       case s: Shape if s.isEmpty => mkOk(s"$node matches empty shape")
       case s: Shape              =>
         // checkShapeBase(Attempt(NodeShape(node, ShapeType(s,s.id, schema)),None), node, s)
-        mkErr(s"Not implemented yet")
+        mkErr(s"checkNodeShapeExprBasic: Not implemented yet Shape ")
       case _: ShapeExternal   => mkErr(s"Still don't know what to do with external shapes")
       case nk: NodeConstraint => NodeConstraintChecker(validator.schema, rdf).nodeConstraintChecker(node, nk)
+      case sd: ShapeDecl => mkErr(s"checkNodeShapeExprBasic: Not implemented yet ShapeDecl($sd)")
+      case _ => mkErr(s"checkNodeShapeExprBasic: Not implemented yet ShapeDecl($se)")
     }
 
   private def mkErr(s: String): EitherT[IO, String, String] =

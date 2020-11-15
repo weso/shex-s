@@ -63,11 +63,16 @@ case class Validator(schema: ResolvedSchema,
       r  <- checkAll(ts.map(t => (t.obj, mkShapeLabel(t.subj))).toList.map(checkPair2nd))
     } yield r
 
-  private[validator] def checkNodesShapes(fixedMap: FixedShapeMap): CheckTyping =
+  private def checkNodesShapes(fixedMap: FixedShapeMap): CheckTyping =
     for {
       ts <- checkAll(fixedMap.shapeMap.toList.map(tupled(checkNodeShapesMap)))
       t  <- combineTypings(ts)
+      newT <- removeAbstractShapes(t)
     } yield t
+
+  private def removeAbstractShapes(t: ShapeTyping): CheckTyping = {
+    t.removeShapeTypesWith(_.isAbstract)
+  }
 
   private[validator] def checkNodeShapeMapLabel(node: RDFNode, label: ShapeMapLabel, info: Info): CheckTyping =
     info.status match {
@@ -201,16 +206,29 @@ case class Validator(schema: ResolvedSchema,
     } yield newTyping
   }
 
-  private[validator] def checkNodeShapeExpr(attempt: Attempt, node: RDFNode, s: ShapeExpr): CheckTyping = 
-    s match {
+  private[validator] def checkNodeShapeExpr(attempt: Attempt, node: RDFNode, s: ShapeExpr): CheckTyping = {
+   val shapesPrefixMap = schema.prefixMap
+   val shapeExprShown  = s.id.map(sl => shapesPrefixMap.qualify(sl.toRDFNode)).getOrElse(s.show)
+   for {
+     nodesPrefixMap <- getNodesPrefixMap
+     _ <- info(s"checkNodeShapeExpr(${node.show},${shapeExprShown}")
+     typing <- s match {
        case so: ShapeOr => checkOr(attempt, node, so.shapeExprs)
        case sa: ShapeAnd => checkAnd(attempt, node, sa.shapeExprs)
        case sn: ShapeNot => checkNot(attempt, node, sn.shapeExpr)
        case nc: NodeConstraint => checkNodeConstraint(attempt, node, nc)
-       case s: Shape => checkShape(attempt, node, s)
+       case s: Shape => 
+        checkShape(attempt, node, s)
        case sr: ShapeRef => checkRef(attempt, node, sr.reference)
        case se: ShapeExternal => checkExternal(attempt, node, se)
-    }
+       case sd: ShapeDecl => 
+         info(s"checkShapeDecl(${node.show}, ${sd})") *>
+         checkShapeDecl(attempt,node, sd)
+       // case _ => errStr(s"checkNodeShapeExpr: Unsupported type of ShapeExpr: ${s}")
+     }
+     _ <- info(s"end of checkNodeShapeExpr(${node.show},${shapeExprShown}): typing = ${typing.showShort(nodesPrefixMap, shapesPrefixMap)}")
+   } yield typing
+  }
 
   private[validator] def checkAnd(attempt: Attempt, node: RDFNode, ses: List[ShapeExpr]): CheckTyping =
     for {
@@ -249,6 +267,19 @@ case class Validator(schema: ResolvedSchema,
       errStr(s"Failed NOT(${s.show}) because node ${node.show} satisfies it")
     cond(check, handleNotError, handleError)
   }
+
+  private def checkShapeDecl(attempt: Attempt, node: RDFNode, sd: ShapeDecl): CheckTyping = for {
+    t <- checkNodeShapeExpr(attempt,node,sd.shapeExpr)
+  } yield if (sd._abstract) {
+    //    t.addNotEvidence(node,ShapeType(sd,sd.id,schema), AbstractShapeErr(node,attempt,sd))
+    t 
+    // If sd is abstract then node should not conform to it
+    // However, we keep the node@sd association here and remove it when reporting the result
+    // The goal of maintaining here the association is for cases like
+    // abstract <A> { }
+    // <B> @<A> 
+    // When validating node@<B> we ask for node@<A> and node@<A> is required for node to conform to <B>
+  } else t
 
   private def checkNodeHasType(node: RDFNode, shapeLabel: ShapeLabel, typing: ShapeTyping, attempt: Attempt): Check[Unit] =
     if (typing.hasNoType(node, shapeLabel)) {

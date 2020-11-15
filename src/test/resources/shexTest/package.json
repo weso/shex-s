@@ -1,7 +1,11 @@
 {
   "name": "shex-test",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "Shape Expressions library tests.",
+  "scripts": {
+    "dist": "for d in schemas/ negativeSyntax/ negativeStructure/ validation/; do (cd $d && make); done",
+    "test": "echo no tests for tests"
+  },
   "author": {
     "name": "Eric Prud'hommeaux",
     "email": "eric@w3.org",
@@ -19,6 +23,7 @@
     "node": ">=0.10.0"
   },
   "dependencies": {
+    "json-grammar": "^0.2.3",
     "n3": "^0.4.5",
     "xlsx": "^0.8.0"
   },
@@ -29,11 +34,17 @@
     "validation",
     "ASTs"
   ],
+  "np": {
+    "branch": "extends"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/shexSpec/shexTest.git"
   },
   "bugs": {
     "url": "https://github.com/shexSpec/shexTest/issues"
+  },
+  "devDependencies": {
+    "np": "^6.4.0"
   }
 }
