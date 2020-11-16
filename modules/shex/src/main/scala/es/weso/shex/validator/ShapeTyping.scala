@@ -64,7 +64,7 @@ case class ShapeTyping(
     t.getMap
 
   def removeShapeTypesWith(cond: ShapeType => Boolean): ShapeTyping = 
-    ShapeTyping(t.)
+    ShapeTyping(t.removeValuesWith(cond))
 
   override def toString: String = showShapeTyping
 

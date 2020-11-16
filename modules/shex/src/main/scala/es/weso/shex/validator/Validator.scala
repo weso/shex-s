@@ -71,7 +71,7 @@ case class Validator(schema: ResolvedSchema,
     } yield t
 
   private def removeAbstractShapes(t: ShapeTyping): CheckTyping = {
-    t.removeShapeTypesWith(_.isAbstract)
+    ok(t.removeShapeTypesWith(_.isAbstract))
   }
 
   private[validator] def checkNodeShapeMapLabel(node: RDFNode, label: ShapeMapLabel, info: Info): CheckTyping =
