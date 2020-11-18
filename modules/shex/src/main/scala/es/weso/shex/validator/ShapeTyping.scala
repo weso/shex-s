@@ -67,6 +67,10 @@ case class ShapeTyping(
   def removeShapeTypesWith(cond: ShapeType => Boolean): ShapeTyping = 
     ShapeTyping(t.removeValuesWith(cond))
 
+  def negateShapeTypesWith(cond: ShapeType => Boolean, err: ShExError): ShapeTyping = 
+    ShapeTyping(t.negateValuesWith(cond, err))
+
+
   override def toString: String = showShapeTyping
 
   private def cnvShapeType(s: ShapeType): Either[String, ShapeMapLabel] = s.label match {

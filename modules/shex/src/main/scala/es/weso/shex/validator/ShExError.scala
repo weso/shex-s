@@ -386,15 +386,13 @@ object ShExError {
   }
 
 
-  case class AbstractShapeErr(node: RDFNode, attempt: Attempt, sd: ShapeDecl) extends ShExError(s"Node cannot conform to abstract shape: ${sd.id}") {
+  case class AbstractShapeErr() extends ShExError(s"Node cannot conform to abstract shape") {
       override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
-        s"""AbstractShapeError(${nodesPrefixMap.qualify(node)}) cannot conform to abstract shape: ${sd}"""
+        s"""AbstractShapeError cannot conform to abstract shape"""
       }
 
      override def toJson: Json = Json.obj(
-       ("type", Json.fromString("AbstractShapeErr")),
-       ("node", Json.fromString(node.getLexicalForm)),
-       ("shape", Json.fromString(attempt.nodeShape.shape.label.map(_.toRDFNode.getLexicalForm).getOrElse("?")))
+       ("type", Json.fromString("AbstractShapeErr"))
       ) 
 
   }

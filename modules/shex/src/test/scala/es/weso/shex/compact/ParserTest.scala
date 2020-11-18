@@ -12,8 +12,7 @@ class ParserTest extends AnyFunSpec with JsonTest with Matchers with EitherValue
   describe("ShEx Parser test") {
 
     shouldParse(s"<S> {}", None,
-      Schema(IRI(""),None,None,None,None,
-        Some(List(Shape(Some(IRILabel(IRI("S"))),None,Some(false),None,None,None,None,None))),None,List())
+      Schema.empty.addShape(Shape.empty.copy(id = Some(IRILabel(IRI("S")))))  
     )
 
     shouldParse(s"<S> extends @<T> { }", None,
@@ -27,8 +26,12 @@ class ParserTest extends AnyFunSpec with JsonTest with Matchers with EitherValue
     def shouldParse(str:String, base: Option[String], expected: Schema): Unit = {
       it(s"Should parse $str and obtain $expected") {
         Parser.parseSchema(str, base.map(IRI(_))) match {
-          case Left(e) => fail(s"Failed to parse with error: $e")
+          case Left(e) => {
+            pprint.log(e,"Error parsing")
+            fail(s"Failed to parse with error: $e")
+          }
           case Right(parsedSchema) => {
+            pprint.log(parsedSchema,"parsedSchema")
             info(s"Parsed as $parsedSchema")
             parsedSchema should be(expected)
           }

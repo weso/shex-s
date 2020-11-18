@@ -7,22 +7,18 @@ import com.typesafe.scalalogging.LazyLogging
 import es.weso.shex._
 import es.weso.rdf._
 import es.weso.rdf.nodes._
-//import es.weso.collection.Bag
 import es.weso.rbe.interval.IntervalChecker
 import es.weso.rbe.Empty
-// import es.weso.rbe.BagChecker._
 import es.weso.utils.{SeqUtils, SetUtils}
 import es.weso.shex.implicits.showShEx._
-import es.weso.rdf.PREFIXES._
-//import es.weso.shex.validator.Table._
 import ShExChecker._
-import es.weso.rdf.triples.RDFTriple
+// import es.weso.rdf.triples.RDFTriple
 import es.weso.shapeMaps.{BNodeLabel => BNodeMapLabel, IRILabel => IRIMapLabel, Start => StartMapLabel, _}
 import es.weso.shex.actions.TestSemanticAction
 import Function.tupled
 import es.weso.shex.validator.ShExError._
 import es.weso.shex.validator.ConstraintRef.{showConstraintRef => _}
-
+import ValidationUtils._
 
 /**
   * ShEx validator
@@ -39,11 +35,7 @@ case class Validator(schema: ResolvedSchema,
   type NodeChecker      = Attempt => RDFNode => CheckTyping
 
 
-  private lazy val `sh:targetNode` = sh + "targetNode"
-
-  private lazy val ignoredPathsClosed: List[Path] = List(Inverse(`sh:targetNode`))
-
-  private[validator] def checkTargetNodeDeclarations: CheckTyping =
+  private def checkTargetNodeDeclarations: CheckTyping =
     for {
       rdf        <- getRDF
       nodeLabels <- getTargetNodeDeclarations(rdf)
@@ -53,28 +45,25 @@ case class Validator(schema: ResolvedSchema,
       t <- combineTypings(ts)
     } yield t
 
-  private[validator] def checkShapeMap(shapeMap: FixedShapeMap): CheckTyping = {
+  private def checkShapeMap(shapeMap: FixedShapeMap): CheckTyping = {
     checkNodesShapes(shapeMap)
   }
-
-  private[validator] def getTargetNodeDeclarations(rdf: RDFReader): Check[List[(RDFNode, ShapeLabel)]] =
-    for {
-      ts <- fromStream(rdf.triplesWithPredicate(`sh:targetNode`))
-      r  <- checkAll(ts.map(t => (t.obj, mkShapeLabel(t.subj))).toList.map(checkPair2nd))
-    } yield r
 
   private def checkNodesShapes(fixedMap: FixedShapeMap): CheckTyping =
     for {
       ts <- checkAll(fixedMap.shapeMap.toList.map(tupled(checkNodeShapesMap)))
       t  <- combineTypings(ts)
+      nodesPrefixMap <- getNodesPrefixMap
+      _ <- info(s"end of checkNodeShapes: ${t.showShort(nodesPrefixMap,schema.prefixMap)}")
       newT <- removeAbstractShapes(t)
-    } yield t
+      _ <- info(s"after removing abstract shapes: ${newT.showShort(nodesPrefixMap,schema.prefixMap)}")
+    } yield newT
 
   private def removeAbstractShapes(t: ShapeTyping): CheckTyping = {
-    ok(t.removeShapeTypesWith(_.isAbstract))
+    ok(t.negateShapeTypesWith(_.isAbstract, AbstractShapeErr()))
   }
 
-  private[validator] def checkNodeShapeMapLabel(node: RDFNode, label: ShapeMapLabel, info: Info): CheckTyping =
+  private def checkNodeShapeMapLabel(node: RDFNode, label: ShapeMapLabel, info: Info): CheckTyping =
     info.status match {
       case Conformant =>
         label match {
@@ -103,9 +92,6 @@ case class Validator(schema: ResolvedSchema,
         errStr(s"Cannot check $node against undefined status")
     }
 
-  private def mkLabel(label: ShapeMapLabel): ShapeLabel =
-    ShapeLabel.fromShapeMapLabel(label)
-
   private def checkNotConformant(node: RDFNode, label: ShapeLabel, c: ShapeTyping): CheckTyping =
     if (c.hasNoType(node, label)) ok(c)
     else errStr(s"Node $node should not conform to $label but it does")
@@ -115,21 +101,11 @@ case class Validator(schema: ResolvedSchema,
     checkNodeShapeMapLabel(node, label, info)
   }
 
-  private[validator] def checkNodeShapesMap(node: RDFNode, shapesMap: Map[ShapeMapLabel, Info]): CheckTyping = {
+  private def checkNodeShapesMap(node: RDFNode, shapesMap: Map[ShapeMapLabel, Info]): CheckTyping = {
     for {
       ts <- checkAll(shapesMap.map(checkLabelInfo(node)).toList)
       t  <- combineTypings(ts)
     } yield t
-  }
-
-  private[validator] def mkShapeLabel(n: RDFNode): Check[ShapeLabel] = {
-    n match {
-      case i: IRI   => ok(IRILabel(i))
-      case b: BNode => ok(BNodeLabel(b))
-      case _ => {
-        errStr(s"mkShapeLabel: Node ${n.show} can't be a shape")
-      }
-    }
   }
 
   private[validator] def getShape(label: ShapeLabel): Check[ShapeExpr] =
@@ -402,35 +378,46 @@ case class Validator(schema: ResolvedSchema,
   private[validator] def checkShapeExtend(
       attempt: Attempt,
       node: RDFNode,
-      s: Shape,
-      baseLabel: ShapeLabel
+      shape: Shape,
+      extendLabel: ShapeLabel
   ): CheckTyping =
     for {
-      base  <- getShape(baseLabel)
-      paths <- fromEither(s.paths(schema).leftMap(StringError(_)))
-      // _ <- { println(s"checkShapeExtend(node=$node,shape=${s.show},base=$baseLabel). \npaths=$paths") ; ok(()) }
-      neighs <- getNeighPaths(node, paths.toList)
+      extendSe  <- getShape(extendLabel)
+      _ <- { println(s"extendSe: ${extendSe}\ns: ${shape}"); ok(())       } 
+      // pathsExtended <- fromEither(extendSe.paths(schema).leftMap(StringError(_)))
+      // pathsCurrent <- fromEither(shape.paths(schema).leftMap(StringError(_)))
+      _ <- { println(s"checkShapeExtend(node=$node,shape=${shape.show},base=$extendLabel") ; ok(()) }
+      neighs <- getNeighs(node)
+      _ <- { println(s"Neighs of ${node} = ${neighs}") ; ok(()) }
       partitions = SetUtils.pSet(neighs.toSet)
-      _      <- checkSomeFlag(partitions, checkPartition(base, s, attempt, node), noPartition(attempt, node, s, baseLabel, neighs))
+      _      <- checkSomeFlag(partitions, checkPartitionPair(extendSe, shape, attempt, node), noPartition(attempt, node, shape, extendLabel, neighs))
       typing <- getTyping
     } yield typing
 
-  private[validator] def checkPartition(base: ShapeExpr, s: Shape, attempt: Attempt, node: RDFNode)(
-      pair: (Set[Arc], Set[Arc])
-  ): Check[(ShapeTyping, Boolean)] = {
+  private def checkPartitionPair(extended: ShapeExpr, 
+                                 shape: Shape, 
+                                 attempt: Attempt, 
+                                 node: RDFNode)
+                                 (pair: (Set[Arc], Set[Arc])
+                                ): Check[(ShapeTyping, Boolean)] = {
     val (neighs1, neighs2) = pair
     (for {
-      pair <- checkNeighsShapeExpr(attempt, node, neighs1.toList, base)
-      (typing1, flag) = pair
-      typing2 <- checkNeighsShape(attempt, node, neighs2.toList, s)
+      _ <- info(s"""|------------------------
+                    |checkPartitionPair
+                    |neighs1=$neighs1
+                    |neighs2=$neighs2
+                    |""".stripMargin)
+      pair <- runLocal(checkNodeShapeExpr(attempt, node, extended), _.addLocalNeighs(node, neighs1.toList))
+      // (typing1, flag) = pair
+      _ <- infoTyping(pair, s"checkPartitionPair: result of checkNeighsShapeExpr", schema.prefixMap)
+      typing2 <- checkNeighsShape(attempt, node, neighs2.toList, shape)
     } yield (typing2, true)) orElse
       (for {
         t <- getTyping
       } yield (t, false))
   }
 
-
-  private[validator] def noPartition(
+  private def noPartition(
      attempt: Attempt, 
      node: RDFNode, 
      s: Shape, 
@@ -439,7 +426,7 @@ case class Validator(schema: ResolvedSchema,
      ): Check[(ShapeTyping, Boolean)] =
      err(NoPartition(node,attempt,s,label,neighs))
 
-  private[validator] def checkNeighsShapeExpr(
+/*  private def checkNeighsShapeExpr(
       attempt: Attempt,
       node: RDFNode,
       neighs: Neighs,
@@ -449,20 +436,21 @@ case class Validator(schema: ResolvedSchema,
       case s: Shape =>
         (for {
           t <- checkNeighsShape(attempt, node, neighs, s)
-          // _ <- { println(s"Failed checkNeighsShape(node=${node.show}, neighs=$neighs, se=${se.show} passed with $t") ; ok(())}
+          _ <- { println(s"Failed checkNeighsShape(node=${node.show}, neighs=$neighs, se=${se.show} passed with $t") ; ok(())}
         } yield (t, true)) orElse {
           for {
-            // _ <- { println(s"Failed checkNeighsShape(node=${node.show}, neighs=$neighs, se=${se.show} failed") ; ok(())}
+            _ <- { println(s"Failed checkNeighsShape(node=${node.show}, neighs=$neighs, se=${se.show} failed") ; ok(())}
             t <- getTyping
           } yield (t, false)
         }
+      case sd: ShapeDecl => ???  
       case _ => {
-        // println(s"Not implemented yet extends with a non shape base: $se")
+        println(s"Not implemented yet extends with a non shape base: $se")
         errStr(s"Not implemented yet extends with a non shape base: $se")
       }
-    }
+    } */
 
-  private[validator] def checkNeighsShape(attempt: Attempt, node: RDFNode, neighs: Neighs, s: Shape): CheckTyping =
+  private def checkNeighsShape(attempt: Attempt, node: RDFNode, neighs: Neighs, s: Shape): CheckTyping =
     if (s.hasRepeatedProperties(schema))
       checkNeighsShapeWithTable(attempt, node, neighs, s)
     else {
@@ -470,7 +458,7 @@ case class Validator(schema: ResolvedSchema,
       checkNeighsShapeWithTable(attempt, node, neighs, s)
     }
 
-  private[validator] def checkNeighsShapeWithTable(
+  private def checkNeighsShapeWithTable(
       attempt: Attempt,
       node: RDFNode,
       neighs: Neighs,
@@ -500,15 +488,7 @@ case class Validator(schema: ResolvedSchema,
     }
   }
 
-  private def getPaths(s: Shape): Check[List[Path]] =
-    fromEitherString(s.paths(schema).map(_.toList))
-
-  private def getNodesPrefixMap: Check[PrefixMap] = for {
-    rdf <- getRDF
-    pm <- fromIO(rdf.getPrefixMap)
-  } yield pm  
-
-  private[validator] def checkShapeBase(attempt: Attempt, node: RDFNode, s: Shape): CheckTyping = {
+  private def checkShapeBase(attempt: Attempt, node: RDFNode, s: Shape): CheckTyping = {
     info(s"checkShapeBase $node FlatShape? ${s.isFlatShape(schema)}") *> 
     (s match {
       case _ if s.isEmpty => addEvidence(attempt.nodeShape, s"Node $node matched empty shape")
@@ -520,7 +500,7 @@ case class Validator(schema: ResolvedSchema,
         } yield typing
       case _ =>
         for {
-          paths <- getPaths(s)  
+          paths <- getPaths(s, schema)  
           neighs <- getNeighPaths(node, paths)
           typing <- checkNeighsShape(attempt, node, neighs, s)
         } yield typing
@@ -533,25 +513,25 @@ case class Validator(schema: ResolvedSchema,
       _ <- checkCond(s.isEmpty, attempt, ExtraPropertiesClosedShape(node,s.toList), "Closed properties with no extra property")
     } yield ()
 
-  private[validator] def checkOptSemActs(attempt: Attempt, node: RDFNode, maybeActs: Option[List[SemAct]]): Check[Unit] =
+  private def checkOptSemActs(attempt: Attempt, node: RDFNode, maybeActs: Option[List[SemAct]]): Check[Unit] =
     maybeActs match {
       case None     => ok(())
       case Some(as) => checkSemActs(attempt,node, as)
     }
 
-  private[validator] def checkSemActs(attempt: Attempt, node: RDFNode, as: List[SemAct]): Check[Unit] =
+  private def checkSemActs(attempt: Attempt, node: RDFNode, as: List[SemAct]): Check[Unit] =
     for {
       _ <- checkAll(as.map(checkSemAct(attempt,node, _)))
     } yield ()
 
-  private[validator] def checkSemAct(attempt: Attempt, node: RDFNode, a: SemAct): Check[Unit] =
+  private def checkSemAct(attempt: Attempt, node: RDFNode, a: SemAct): Check[Unit] =
     for {
       rdf <- getRDF
       eitherResult   <- runAction(a.name, a.code, node, rdf)
       _ <- fromEither(eitherResult.leftMap(exc => SemanticActionException(attempt, node, a, exc)))
     } yield ()
 
-  private[validator] def runAction(name: IRI, code: Option[String], node: RDFNode, rdf: RDFReader): Check[Either[Throwable,Unit]] = {
+  private def runAction(name: IRI, code: Option[String], node: RDFNode, rdf: RDFReader): Check[Either[Throwable,Unit]] = {
     // println(s"Semantic action: $name/$code")
     for {
       r <- name match {
@@ -569,7 +549,7 @@ case class Validator(schema: ResolvedSchema,
   }
 
 
-  private[validator] def checkRests(
+  private def checkRests(
       rests: NoCandidates,
       extras: List[Path],
       isClosed: Boolean,
@@ -587,7 +567,7 @@ case class Validator(schema: ResolvedSchema,
     r.fold(e => errStr(e), _ => ok(()))
   }
 
-  private[validator] def checkRest(
+  private def checkRest(
       rest: Arc,
       extras: List[Path],
       isClosed: Boolean,
@@ -608,7 +588,7 @@ case class Validator(schema: ResolvedSchema,
     } else Right(())
   }
 
-  private[validator] def mkTable(maybeTe: Option[TripleExpr], extra: List[IRI], prefixMap: PrefixMap): Check[(CTable, Rbe_)] = {
+  private def mkTable(maybeTe: Option[TripleExpr], extra: List[IRI], prefixMap: PrefixMap): Check[(CTable, Rbe_)] = {
     maybeTe match {
       case None => ok((CTable.empty, Empty))
       case Some(te) =>
@@ -629,7 +609,7 @@ case class Validator(schema: ResolvedSchema,
     * @param table
     * @return a tuple (cs,rs) where cs is the list of candidates and rs is the nodes that didn't match any
     */
-  private[validator] def calculateCandidates(neighs: Neighs, table: CTable): Check[(Candidates, NoCandidates)] = {
+  private def calculateCandidates(neighs: Neighs, table: CTable): Check[(Candidates, NoCandidates)] = {
     val candidates = table.neighs2Candidates(neighs)
     val (cs, rs)   = candidates.cs.partition(matchable)
     // println(s"Candidates partitioned: cs:\n${cs.map(_.show).mkString(s"\n")}\nrs:${rs.map(_.show).mkString(s"\n")}\n")
@@ -663,7 +643,7 @@ case class Validator(schema: ResolvedSchema,
     }
   }
 
-  private[validator] def checkCandidateLine(attempt: Attempt, bagChecker: BagChecker_, table: CTable)(
+  private def checkCandidateLine(attempt: Attempt, bagChecker: BagChecker_, table: CTable)(
       cl: CandidateLine
   ): CheckTyping = {
     val bag = cl.mkBag
@@ -696,79 +676,6 @@ case class Validator(schema: ResolvedSchema,
       )
   }
 
-  private[validator] def getNeighs(node: RDFNode): Check[Neighs] =
-    for {
-      rdf        <- getRDF
-      outTriples <- fromStream(rdf.triplesWithSubject(node))
-      outgoing = outTriples.map(t => Arc(Direct(t.pred), t.obj)).toList
-      inTriples <- fromStream(rdf.triplesWithObject(node))
-      incoming = inTriples.map(t => Arc(Inverse(t.pred), t.subj)).toList
-    } yield {
-      val neighs = outgoing ++ incoming
-      neighs
-    }
-
-  private[validator] def getNeighPaths(node: RDFNode, paths: List[Path]): Check[Neighs] = {
-    val outgoingPredicates = paths.collect { case Direct(p) => p }
-    for {
-      rdf        <- getRDF
-      outTriples <- fromIO(getTriplesWithSubjectPredicates(rdf,node,outgoingPredicates))
-      strRdf <- fromIO(rdf.serialize("TURTLE"))
-      outgoing = outTriples.map(t => Arc(Direct(t.pred), t.obj)).toList
-      inTriples <- fromStream(rdf.triplesWithObject(node))
-      incoming = inTriples.map(t => Arc(Inverse(t.pred), t.subj)).toList
-    } yield {
-      val neighs = outgoing ++ incoming
-      neighs
-    }
-  }
-
-  private def getTriplesWithSubjectPredicates(rdf: RDFReader, node: RDFNode, preds: List[IRI]): IO[List[RDFTriple]] = {
-    node match {
-      case _: IRI => { 
-       // println(s"IRI...$node")
-        val vs = triplesWithSubjectPredicates(node,preds,rdf)
-       // println(s"Triples obtained: ${vs.unsafeRunSync()}")
-       // println(s"Triples for node: ${rdf.triplesWithSubject(node).compile.toList.unsafeRunSync()}")
-       // println(s"Preds: $preds")
-        //preds.map(p => 
-        //  println(s"Triples for ${node.show}/${p.show}: ${rdf.triplesWithSubjectPredicate(node,p).compile.toList.unsafeRunSync()}")
-        //) 
-        vs
-      }
-      case _: BNode => triplesWithSubjectPredicates(node,preds,rdf)
-      case _ => { 
-        // println(s"Literal node? ${node}")
-        IO(List())
-      }
-    }
-  }
-
-  private def triplesWithSubjectPredicates(n: RDFNode, ps: List[IRI], rdf: RDFReader): IO[List[RDFTriple]] = {
-    // println(s"TriplesWithSubjectPredicates ${n.show}, ${ps.map(_.show).mkString(",")}")
-    val ss = mkSeq(ps, (p: IRI) => {
-      // println(s"TriplesWithSubjectPredicates ${n.show}/${p.show}")
-      val ts: IO[List[RDFTriple]] = rdf.triplesWithSubjectPredicate(n,p).compile.toList
-      // println(s"TriplesWithSubjectPredicates ${n.show}/${p.show} = ${ts.unsafeRunSync().map(_.show).mkString(",")}")
-      ts
-    })
-    ss
-  } 
-
-  private def mkSeq[A,B](vs: List[A], f: A => IO[List[B]]): IO[List[B]] = {
-    vs.traverse(f).map((_.flatten))
-  }
-
-  private[validator] def getNotAllowedPredicates(node: RDFNode, paths: List[Path]): Check[Set[IRI]] =
-    for {
-      rdf <- getRDF
-      ts  <- fromStream(rdf.triplesWithSubject(node))
-    } yield {
-      val allowedPreds = paths.collect { case Direct(p) => p }
-      ts.toSet[RDFTriple].collect {
-        case s if !(allowedPreds contains s.pred) => s.pred
-      }
-    }
 
   def validateNodeStart(rdf: RDFReader, node: IRI): IO[Result] = {
     runValidator(checkNodeStart(node), rdf)

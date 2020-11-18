@@ -89,16 +89,16 @@ class FlattenShapeTest extends AnyFunSpec with Matchers with EitherValues {
     val q: Path              = Direct(ex + "q")
     val a                    = ex + "S"
     val iri                  = NodeConstraint.nodeKind(IRIKind, List())
-    val any                  = ShapeExpr.any
+//    val any                  = ShapeExpr.any
     val tc1: TripleConstraint = TripleConstraint.valueExpr(ex + "p", iri)
-    val tc2: TripleConstraint = TripleConstraint.valueExpr(ex + "q", any)
+    val tc2: TripleConstraint = TripleConstraint.emptyPred(ex + "q") // TripleConstraint.valueExpr(ex + "q", any)
 
     shouldFlattenShape(
       shexStr,
       a,
       Some(FlatShape(Map(
         p -> Constraint(Some(iri), true, Cardinality(1, IntMax(1)), None, tc1),
-        q -> Constraint(Some(any), false, Cardinality(1, IntMax(1)), None, tc2)
+        q -> Constraint(None, false, Cardinality(1, IntMax(1)), None, tc2)
         ), false))
     )
   }

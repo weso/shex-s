@@ -29,7 +29,7 @@ sealed abstract trait ShapeExpr extends Product with Serializable {
     getShapeRefs(schema).fold(e => false, _.isEmpty)
   }
 
-  def isSimple(schema: AbstractSchema): Boolean = this match {
+  def isSimple: Boolean = this match {
     case s: Shape if (s == Shape.empty) => true
     case _: Shape          => false
     case _: NodeConstraint => true
@@ -121,6 +121,10 @@ sealed abstract trait ShapeExpr extends Product with Serializable {
 
     val (_, ls) = getShapeExprRefsAux(this).value.run(initialState)
     ls
+  }
+
+  def children(schema: AbstractSchema): List[Shape] = {
+    List()
   }
 }
 

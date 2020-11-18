@@ -10,6 +10,13 @@ import es.weso.shex.validator.Action._
 import es.weso.shex.validator.Context._
 import cats.effect.IO
 import fs2.Stream
+import es.weso.rdf.nodes.RDFNode
+import es.weso.shex.Direct
+import es.weso.shex.Inverse
+import es.weso.shex.Path
+import ValidationUtils._
+import es.weso.rdf.triples.RDFTriple
+import es.weso.rdf.nodes.BNode
 
 object ShExChecker extends CheckerCats {
 
@@ -75,22 +82,28 @@ object ShExChecker extends CheckerCats {
     } yield t.addNotEvidence(node, shape, e)
   }
 
-  def runLocalTyping[A](c: Check[A],
-                        f: ShapeTyping => ShapeTyping): Check[A] = {
-    def liftedF(c: Context): Context = Context.updateTyping(c,f)
+  def runLocalNeighs[A](c: Check[A],
+                        node: RDFNode,
+                        neighs: Neighs): Check[A] = {
+    def liftedF(c: Context): Context = 
+       c.addLocalNeighs(node,neighs)
     runLocal(c, liftedF)
   }
 
-  def bind[A,Other](c1: Check[Other], c2: Check[A]): Check[A] = c1 >> c2 /* for {
-    _ <- c1
-    v <- c2
-  } yield v */
+
+  def runLocalTyping[A](c: Check[A],
+                        f: ShapeTyping => ShapeTyping): Check[A] = {
+    def liftedF(c: Context): Context = c.updateTyping(f)
+    runLocal(c, liftedF)
+  }
+
+  def bind[A,Other](c1: Check[Other], c2: Check[A]): Check[A] = c1 >> c2 
 
   def runLocalSafeTyping[A](c: Check[A],
                             f: ShapeTyping => ShapeTyping,
                             safe: (Err, ShapeTyping) => A
                            ): Check[A] = {
-    def liftedF(c: Context): Context = Context.updateTyping(c,f)
+    def liftedF(c: Context): Context = c.updateTyping(f)
     def liftedSafe(e: Err, c: Context): A = safe(e,c.typing)
     runLocalSafe(c,liftedF,liftedSafe)
   }
@@ -101,6 +114,86 @@ object ShExChecker extends CheckerCats {
   def getTyping: Check[ShapeTyping] = for {
     env <- getEnv
   } yield env.typing
+
+  def getNeighs(node: RDFNode): Check[Neighs] = for {
+    context <- getEnv
+    neighs <- context.localNeighs.get(node) match {
+      case Some(ns) => ok(ns)
+      case None => for {
+      rdf        <- getRDF
+      outTriples <- fromStream(rdf.triplesWithSubject(node))
+      outgoing = outTriples.map(t => Arc(Direct(t.pred), t.obj)).toList
+      inTriples <- fromStream(rdf.triplesWithObject(node))
+      incoming = inTriples.map(t => Arc(Inverse(t.pred), t.subj)).toList
+     } yield {
+      val neighs = outgoing ++ incoming
+      neighs
+     }
+    }
+  } yield neighs
+
+
+  def getNeighPaths(node: RDFNode, paths: List[Path]): Check[Neighs] = {
+    val outgoingPredicates = paths.collect { case Direct(p) => p }
+    for {
+      rdf        <- getRDF
+      outTriples <- fromIO(getTriplesWithSubjectPredicates(rdf,node,outgoingPredicates))
+      strRdf <- fromIO(rdf.serialize("TURTLE"))
+      outgoing = outTriples.map(t => Arc(Direct(t.pred), t.obj)).toList
+      inTriples <- fromStream(rdf.triplesWithObject(node))
+      incoming = inTriples.map(t => Arc(Inverse(t.pred), t.subj)).toList
+    } yield {
+      val neighs = outgoing ++ incoming
+      neighs
+    }
+  }
+
+    private def getTriplesWithSubjectPredicates(rdf: RDFReader, 
+       node: RDFNode, 
+       preds: List[IRI]): IO[List[RDFTriple]] = {
+    node match {
+      case _: IRI => { 
+       // println(s"IRI...$node")
+        val vs = triplesWithSubjectPredicates(node,preds,rdf)
+       // println(s"Triples obtained: ${vs.unsafeRunSync()}")
+       // println(s"Triples for node: ${rdf.triplesWithSubject(node).compile.toList.unsafeRunSync()}")
+       // println(s"Preds: $preds")
+        //preds.map(p => 
+        //  println(s"Triples for ${node.show}/${p.show}: ${rdf.triplesWithSubjectPredicate(node,p).compile.toList.unsafeRunSync()}")
+        //) 
+        vs
+      }
+      case _: BNode => triplesWithSubjectPredicates(node,preds,rdf)
+      case _ => { 
+        // println(s"Literal node? ${node}")
+        IO(List())
+      }
+    }
+  }
+
+  private def triplesWithSubjectPredicates(n: RDFNode, ps: List[IRI], rdf: RDFReader): IO[List[RDFTriple]] = {
+    // println(s"TriplesWithSubjectPredicates ${n.show}, ${ps.map(_.show).mkString(",")}")
+    val ss = mkSeq(ps, (p: IRI) => {
+      // println(s"TriplesWithSubjectPredicates ${n.show}/${p.show}")
+      val ts: IO[List[RDFTriple]] = rdf.triplesWithSubjectPredicate(n,p).compile.toList
+      // println(s"TriplesWithSubjectPredicates ${n.show}/${p.show} = ${ts.unsafeRunSync().map(_.show).mkString(",")}")
+      ts
+    })
+    ss
+  } 
+
+
+  def getNotAllowedPredicates(node: RDFNode, paths: List[Path]): Check[Set[IRI]] =
+    for {
+      rdf <- getRDF
+      ts  <- fromStream(rdf.triplesWithSubject(node))
+    } yield {
+      val allowedPreds = paths.collect { case Direct(p) => p }
+      ts.toSet[RDFTriple].collect {
+        case s if !(allowedPreds contains s.pred) => s.pred
+      }
+    }
+
 
   def combineTypings(ts: Seq[ShapeTyping]): Check[ShapeTyping] = {
     ok(ShapeTyping.combineTypings(ts))
@@ -115,13 +208,6 @@ object ShExChecker extends CheckerCats {
     } yield CheckResult(result)
   }
 
-/*  def runCheckWithTyping[A: Show](
-    c: Check[A],
-    rdf: RDFReader,
-    typing: ShapeTyping): CheckResult[ShExError, A, Log] = {
-    val ctx = Context.fromTyping(typing)
-    val r = run(c)(rdf)(ctx)
-    CheckResult(r)
-  } */
+ 
 
 }
