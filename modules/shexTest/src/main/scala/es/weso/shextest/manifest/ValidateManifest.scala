@@ -249,30 +249,30 @@ trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with Opti
     val schemaUri = mkLocal(fa.schema, schemasBase, folderURI)
     val dataUri   = mkLocal(fa.data, schemasBase, folderURI)
     for {
-      _         <- testInfo(s"Validating focusAction: $name",verbose)
+      //_         <- testInfo(s"Validating focusAction: $name",verbose)
       schemaStr <- derefUriIO(schemaUri)
-      _         <- testInfo(s"schemaStr:\n$schemaStr\n-----end schemaStr\nNest step: deref: $dataUri", verbose)
+      //_         <- testInfo(s"schemaStr:\n$schemaStr\n-----end schemaStr\nNest step: deref: $dataUri", verbose)
       dataStr   <- derefUriIO(dataUri)
-      _         <- testInfo(s"dataStr:\n$dataStr\n-----end dataStr", verbose)
+      //_         <- testInfo(s"dataStr:\n$dataStr\n-----end dataStr", verbose)
       schema    <- Schema.fromString(schemaStr, "SHEXC", Some(fa.schema))
-      _         <- testInfoValue(s"schema", schema.asJson.spaces2, verbose)
+      //_         <- testInfoValue(s"schema", schema.asJson.spaces2, verbose)
       result      <- for {
         res1 <- RDFAsJenaModel.fromChars(dataStr, "TURTLE", Some(fa.data))
         res2 <- RDFAsJenaModel.empty
         vv <- (res1,res2).tupled.use{ case (data, builder) =>
        for {
          dataPrefixMap <- data.getPrefixMap
-         _         <- testInfoValue(s"data", data, verbose)
+         // _         <- testInfoValue(s"data", data, verbose)
          lbl = getLabel(fa)
-         _         <- testInfoValue(s"label", lbl, verbose)
+         // _         <- testInfoValue(s"label", lbl, verbose)
          ok <- if (v.traits contains sht_Greedy) {
            result(name, true, "Ignored sht:Greedy")
          } else {
            val shapeMap = FixedShapeMap(Map(focus -> Map(lbl -> Info())), dataPrefixMap, schema.prefixMap)
            for {
-             _         <- testInfoValue(s"shapeMap", shapeMap, verbose)
+             // _         <- testInfoValue(s"shapeMap", shapeMap, verbose)
              resolvedSchema <- ResolvedSchema.resolve(schema, Some(fa.schema))
-             _         <- testInfoValue(s"resolvedSchema", resolvedSchema, verbose)
+             // _         <- testInfoValue(s"resolvedSchema", resolvedSchema, verbose)
              resultVal <- Validator(schema = resolvedSchema, 
                 externalResolver = ExternalIRIResolver(fa.shapeExterns),
                 builder = builder
@@ -284,9 +284,9 @@ trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with Opti
                else
                  result(name, false, s"Focus $focus conforms to $lbl but should not" ++
                    s"\nData: \n${dataStr}\nSchema: ${schemaStr}\n" ++
-                   s"${resultShapeMap.getInfo(focus, lbl)}\n" ++
-                   s"Schema: ${schema}\n" ++
-                   s"Data: ${data}"
+                   s"${resultShapeMap.getInfo(focus, lbl)}\n" // ++
+                   // s"Schema: ${schema}\n" ++
+                   // s"Data: ${data}"
                  )
              } else {
                if (!shouldValidate) result(name, true, "Doesn't validate as expected")
@@ -294,9 +294,9 @@ trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with Opti
                  result(name, false,
                    s"Focus $focus does not conform to $lbl but should" ++
                      s"\nData: \n${dataStr}\nSchema: ${schemaStr}\n" ++
-                     s"${resultShapeMap.getInfo(focus, lbl)}\n" ++
+                     s"${resultShapeMap.getInfo(focus, lbl)}\n" /* ++
                      s"Schema: ${schema}\n" ++
-                     s"Data: ${data}"
+                     s"Data: ${data}" */
                  )
              }
            } yield ok

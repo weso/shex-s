@@ -46,21 +46,19 @@ class RDF2ManifestTest extends AnyFunSpec with ValidateManifest {
     parseManifest("manifest", 
        "validation", 
        validationFolder, 
-       None,
-       // Some("1dotNoCode1_pass"),
+       // None,
+       Some("vitals-RESTRICTS-pass_lie-BP"),
        List(
          "startNoCode1_pass",
          "1dotNoCode1_pass",
-         "extends-abstract-multi-empty_pass-missingOptRef1",
-         "extends-abstract-multi-empty_pass",
+         "vitals-RESTRICTS-pass_lie-Vital", // Ignored because it shouldn't conform as Vital is abstract
+        /* "extends-abstract-multi-empty_pass",
          "ExtendsRepeatedP-pass",
-         "ANDAbstract-pass",
          "AND3G-pass",
          "ExtendAND3G-pass",
          "Extend3G-pass",
          "ExtendANDExtend3GAND3G-pass",
          "ExtendANDExtend3GAND3G-t33",
-         "vitals-RESTRICTS-pass_lie-Vital",
          "vitals-RESTRICTS-pass_lie-BP",
          "vitals-RESTRICTS-pass_lie-PostureVital",
          "vitals-RESTRICTS-pass_lie-ReclinedVital",
@@ -72,7 +70,7 @@ class RDF2ManifestTest extends AnyFunSpec with ValidateManifest {
          "vitals-RESTRICTS-pass_sit-BP",
          "vitals-RESTRICTS-pass_sit-PostureVital",
          "vitals-RESTRICTS-pass_sit-PostureBP",
-         "vitals-RESTRICTS-pass_sit-Posture"
+         "vitals-RESTRICTS-pass_sit-Posture" */
        ), 
        false)
   }

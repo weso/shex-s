@@ -16,7 +16,7 @@ class RDF2ManifestSingleTest extends ValidateManifest {
        "validation", 
        validationFolder, 
        // None, 
-       Some("ANDAbstract-pass"),
+       Some("vitals-RESTRICTS-pass_lie-BP"),
        List(),
        verbose = true)
   }
