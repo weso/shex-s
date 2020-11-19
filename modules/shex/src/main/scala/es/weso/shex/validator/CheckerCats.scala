@@ -74,6 +74,13 @@ abstract class CheckerCats {
     cs.foldRight(z)(comb)
   }
 
+  def checkSomeLazyList[A](cs: LazyList[Check[A]], errIfNone: Err): Check[A] = {
+    lazy val z: Check[A] = err(errIfNone)
+    def comb(c1: Check[A], c2: Check[A]) = orElse(c1, c2)
+    cs.foldRight(z)(comb)
+  }
+
+
   /**
    * Given a computation check that returns a pair of value and a flag, returns the first value whose flag is true
    * If none is true, returns the value of the computation parameter last

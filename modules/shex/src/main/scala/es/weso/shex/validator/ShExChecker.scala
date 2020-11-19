@@ -194,8 +194,12 @@ object ShExChecker extends CheckerCats {
       }
     }
 
+  def combineTypings(ts: List[ShapeTyping]): Check[ShapeTyping] = {
+    ok(ShapeTyping.combineTypings(ts))
+  }
 
-  def combineTypings(ts: Seq[ShapeTyping]): Check[ShapeTyping] = {
+
+  def combineTypings(ts: ShapeTyping*): Check[ShapeTyping] = {
     ok(ShapeTyping.combineTypings(ts))
   }
 

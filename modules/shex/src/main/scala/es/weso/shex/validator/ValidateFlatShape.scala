@@ -24,12 +24,15 @@ case class ValidateFlatShape(
   shapesPrefixMap: PrefixMap
 ) {
 
-  private[validator] def checkFlatShape(attempt: Attempt, node: RDFNode, s: FlatShape): CheckTyping = {
+  private[validator] def checkFlatShape(
+    attempt: Attempt, 
+    node: RDFNode, 
+    shape: FlatShape): CheckTyping = {
     val zero = getTyping
     def cmb(ct: CheckTyping, slot: (Path, Constraint)): CheckTyping = {
       val (path, constraint) = slot
       for {
-        _ <- { info(s"CheckFlatShape path: ${path.show}\nConstraint: ${constraint.show}") }
+        _ <- { info(s"""|CheckFlatShape (slot path=${path.show}, constraint=${constraint.show}""".stripMargin) }
         typing1 <- ct
         typing2 <- checkConstraint(attempt, node, path, constraint)
         typing  <- combineTypings(List(typing1, typing2))
@@ -39,14 +42,14 @@ case class ValidateFlatShape(
       }
     }
     for {
-      _ <- info(s"### FlatShape applied to node: ${node.show}:\n ${s.show}")
-      extra <- extraPreds(node, s.preds)
-      _ <- info(s"Extra preds: $extra. Closed? ${s.closed}")
-      typing <- if (s.closed && extra.nonEmpty) {
+      _ <- info(s"### FlatShape applied to node: ${node.show}:\n ${shape.show}")
+      extra <- extraPreds(node, shape.preds)
+      _ <- info(s"Extra preds: $extra. Closed? ${shape.closed}")
+      typing <- if (shape.closed && extra.nonEmpty) {
         err(ClosedButExtraPreds(extra))  
         // TODO: Not sure about this check
       } else 
-        s.slots.foldLeft(zero)(cmb)
+        shape.slots.foldLeft(zero)(cmb)
     } yield typing
   }
 
@@ -60,7 +63,7 @@ case class ValidateFlatShape(
     for {
       _ <- info(s"checkConstraint: ${constraint.show} for ${showNode(node)} with path ${path.show}")
       values <- getValuesPath(node, path)
-      _ <- info(s"values for path: ${showNode(node)} with path ${path.show} = [${values.map(_.show).mkString(",")}]")
+      _ <- info(s"Values of node ${showNode(node)} with path ${path.show} = [${values.map(_.show).mkString(",")}]")
       typing <- checkValuesConstraint(values, constraint, node, path, attempt)
       _ <- info(s"After checkConstraint: typing = ${typing.show}")
     } yield typing
@@ -73,6 +76,8 @@ case class ValidateFlatShape(
 
   private def getValuesPath(node: RDFNode, path: Path): Check[Set[RDFNode]] =
     for {
+      // @@@@TODO!!
+
       rdf   <- getRDF
       nodes <- fromStream(path.getValues(node, rdf))
     } yield nodes.toSet
@@ -89,7 +94,10 @@ case class ValidateFlatShape(
     constraint.shape match {
       case None =>
         if (card.contains(values.size)) addEvidence(attempt.nodeShape, s"# of values fits $card")
-        else err(ErrCardinality(attempt, node, path, values.size, card))
+        else {
+          info(s"Cardinality error ${values.size} $card") >>
+          err(ErrCardinality(attempt, node, path, values.size, card))
+        }
       case Some(se) =>
         if (constraint.hasExtra) {
           for {
@@ -108,6 +116,7 @@ case class ValidateFlatShape(
                     s"Number of values for ${showNode(node)} with ${path.showQualified(nodesPrefixMap)} that satisfy ${constraint.shape} = ${passed.size} matches cardinality ${constraint.card}"
                   )
                 } else {
+                  info(s"Cardinality with Extra: ${passed.size} ${card}") >>
                   err(ErrCardinalityWithExtra(attempt, node, path, passed.size, notPassed.size, card))
                 }
               } yield t
@@ -135,7 +144,9 @@ case class ValidateFlatShape(
                   err(ValuesNotPassed(attempt, node, path, passed.size, notPassed.toSet))
               } yield newt
               ct
-            } else err(ErrCardinality(attempt, node, path, values.size, card))
+            } else 
+             info(s"Cardinality error: ${values.size}<>${card}") >>
+             err(ErrCardinality(attempt, node, path, values.size, card))
           } yield t
     }
   }

@@ -182,12 +182,15 @@ case class Validator(schema: ResolvedSchema,
     } yield newTyping
   }
 
-  private[validator] def checkNodeShapeExpr(attempt: Attempt, node: RDFNode, s: ShapeExpr): CheckTyping = {
+  private[validator] def checkNodeShapeExpr(
+     attempt: Attempt, 
+     node: RDFNode, 
+     s: ShapeExpr): CheckTyping = {
    val shapesPrefixMap = schema.prefixMap
    val shapeExprShown  = s.id.map(sl => shapesPrefixMap.qualify(sl.toRDFNode)).getOrElse(s.show)
    for {
      nodesPrefixMap <- getNodesPrefixMap
-     _ <- info(s"checkNodeShapeExpr(${node.show},${shapeExprShown}")
+     _ <- info(s"checkNodeShapeExpr(${node.show},${shapeExprShown})")
      typing <- s match {
        case so: ShapeOr => checkOr(attempt, node, so.shapeExprs)
        case sa: ShapeAnd => checkAnd(attempt, node, sa.shapeExprs)
@@ -222,7 +225,7 @@ case class Validator(schema: ResolvedSchema,
         )
       )
       t2 <- addEvidence(attempt.nodeShape, s"${node.show} passes OR")
-      t3 <- combineTypings(Seq(t1, t2))
+      t3 <- combineTypings(t1, t2)
     } yield t3
   }
 
@@ -383,14 +386,18 @@ case class Validator(schema: ResolvedSchema,
   ): CheckTyping =
     for {
       extendSe  <- getShape(extendLabel)
-      _ <- { println(s"extendSe: ${extendSe}\ns: ${shape}"); ok(())       } 
-      // pathsExtended <- fromEither(extendSe.paths(schema).leftMap(StringError(_)))
-      // pathsCurrent <- fromEither(shape.paths(schema).leftMap(StringError(_)))
-      _ <- { println(s"checkShapeExtend(node=$node,shape=${shape.show},base=$extendLabel") ; ok(()) }
+      _ <- { println(s"""|checkShapeExtend(
+                         |  node=${node.show},
+                         |  shape=${shape.show},
+                         |  base=${extendLabel.show}
+                         |""".stripMargin) ; ok(()) }
       neighs <- getNeighs(node)
-      _ <- { println(s"Neighs of ${node} = ${neighs}") ; ok(()) }
+      _ <- { println(s"Neighs of ${node.show} = ${neighs}") ; ok(()) }
       partitions = SetUtils.pSet(neighs.toSet)
-      _      <- checkSomeFlag(partitions, checkPartitionPair(extendSe, shape, attempt, node), noPartition(attempt, node, shape, extendLabel, neighs))
+      _      <- checkSomeLazyList(
+        partitions.map(checkPartitionPair(extendSe, shape, attempt, node)), 
+        NoPartition(node,attempt,shape,extendLabel,neighs)
+      )
       typing <- getTyping
     } yield typing
 
@@ -399,7 +406,7 @@ case class Validator(schema: ResolvedSchema,
                                  attempt: Attempt, 
                                  node: RDFNode)
                                  (pair: (Set[Arc], Set[Arc])
-                                ): Check[(ShapeTyping, Boolean)] = {
+                                ): Check[ShapeTyping] = {
     val (neighs1, neighs2) = pair
     (for {
       _ <- info(s"""|------------------------
@@ -407,24 +414,27 @@ case class Validator(schema: ResolvedSchema,
                     |neighs1=$neighs1
                     |neighs2=$neighs2
                     |""".stripMargin)
-      pair <- runLocal(checkNodeShapeExpr(attempt, node, extended), _.addLocalNeighs(node, neighs1.toList))
-      // (typing1, flag) = pair
-      _ <- infoTyping(pair, s"checkPartitionPair: result of checkNeighsShapeExpr", schema.prefixMap)
-      typing2 <- checkNeighsShape(attempt, node, neighs2.toList, shape)
-    } yield (typing2, true)) orElse
+      typing1 <- runLocal(checkNodeShapeExpr(attempt, node, extended), _.addLocalNeighs(node, neighs1.toList))
+      _ <- infoTyping(typing1, s"checkPartitionPair: result of checkNodeShapeExpr(${extended.show},${neighs1.toList.map(_.show).mkString(",")}", schema.prefixMap)
+      typing2 <- runLocal(checkNeighsShape(attempt, node, neighs2.toList, shape), _.addLocalNeighs(node,neighs2.toList))
+      _ <- infoTyping(typing2, s"checkPartitionPair: result of checkNeighsShape(${shape.show}, ${neighs2.toList.map(_.show).mkString(",")}})", schema.prefixMap)
+      typing <- combineTypings(typing1,typing2)
+      _ <- infoTyping(typing, s"result of checkPartitionPair", schema.prefixMap)
+    } yield typing /*(typing2, true)) orElse
       (for {
         t <- getTyping
-      } yield (t, false))
+      } yield (t, false)) */
+    )  
   }
 
-  private def noPartition(
+/*  private def noPartition(
      attempt: Attempt, 
      node: RDFNode, 
      s: Shape, 
      label: ShapeLabel,
      neighs: Neighs
      ): Check[(ShapeTyping, Boolean)] =
-     err(NoPartition(node,attempt,s,label,neighs))
+     err(NoPartition(node,attempt,s,label,neighs)) */
 
 /*  private def checkNeighsShapeExpr(
       attempt: Attempt,
@@ -714,9 +724,9 @@ case class Validator(schema: ResolvedSchema,
 
 object Validator {
 
-  def empty(builder: RDFBuilder): Validator = {
-      Validator(schema = ResolvedSchema.empty, builder = builder)
-    }
+  def empty(builder: RDFBuilder): IO[Validator] = for {
+    schema <- ResolvedSchema.empty
+  } yield Validator(schema = schema, builder = builder)
 
   /**
     * Validate RDF according to a Shapes Schema
