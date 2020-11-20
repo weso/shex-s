@@ -17,6 +17,7 @@ import es.weso.shex.Path
 import ValidationUtils._
 import es.weso.rdf.triples.RDFTriple
 import es.weso.rdf.nodes.BNode
+import es.weso.shex.ShapeLabel
 
 object ShExChecker extends CheckerCats {
 
@@ -116,8 +117,8 @@ object ShExChecker extends CheckerCats {
   } yield env.typing
 
   def getNeighs(node: RDFNode): Check[Neighs] = for {
-    context <- getEnv
-    neighs <- context.localNeighs.get(node) match {
+    localNeighs <- getLocalNeighs
+    neighs <- localNeighs.get(node) match {
       case Some(ns) => ok(ns)
       case None => for {
       rdf        <- getRDF
@@ -127,28 +128,56 @@ object ShExChecker extends CheckerCats {
       incoming = inTriples.map(t => Arc(Inverse(t.pred), t.subj)).toList
      } yield {
       val neighs = outgoing ++ incoming
-      neighs
+      Neighs.fromList(neighs)
      }
     }
   } yield neighs
 
+  def getVisited: Check[Set[ShapeLabel]] = for {
+    context <- getEnv
+  } yield context.visited
+    
 
-  def getNeighPaths(node: RDFNode, paths: List[Path]): Check[Neighs] = {
+  def getLocalNeighs: Check[LocalNeighs] = for {
+    context <- getEnv
+  } yield context.localNeighs
+
+  def getNeighPaths(node: RDFNode, paths: List[Path]): Check[Neighs] = 
+  {
     val outgoingPredicates = paths.collect { case Direct(p) => p }
     for {
-      rdf        <- getRDF
-      outTriples <- fromIO(getTriplesWithSubjectPredicates(rdf,node,outgoingPredicates))
-      strRdf <- fromIO(rdf.serialize("TURTLE"))
-      outgoing = outTriples.map(t => Arc(Direct(t.pred), t.obj)).toList
-      inTriples <- fromStream(rdf.triplesWithObject(node))
-      incoming = inTriples.map(t => Arc(Inverse(t.pred), t.subj)).toList
-    } yield {
-      val neighs = outgoing ++ incoming
-      neighs
-    }
+      localNeighs <- getLocalNeighs
+      neighs <- localNeighs.get(node) match {
+        case Some(ns) => 
+         ok(ns.filterPaths(paths))
+        case None =>     for {
+         rdf        <- getRDF
+         outTriples <- fromIO(getTriplesWithSubjectPredicates(rdf,node,outgoingPredicates))
+         strRdf <- fromIO(rdf.serialize("TURTLE"))
+         outgoing = outTriples.map(t => Arc(Direct(t.pred), t.obj)).toList
+        inTriples <- fromStream(rdf.triplesWithObject(node))
+        incoming = inTriples.map(t => Arc(Inverse(t.pred), t.subj)).toList
+        } yield {
+         val neighs = outgoing ++ incoming
+         Neighs.fromList(neighs)
+        }
+      }
+    } yield neighs
   }
 
-    private def getTriplesWithSubjectPredicates(rdf: RDFReader, 
+  def getValuesPath(node: RDFNode, path: Path): Check[Set[RDFNode]] = for {
+    localNeighs <- getLocalNeighs
+    vs <- localNeighs.get(node) match {
+      case Some(ns) => 
+       ok(ns.values(path))
+      case None =>     for {
+       rdf   <- getRDF
+       nodes <- fromStream(path.getValues(node, rdf))
+      } yield nodes.toSet
+    }
+  } yield vs
+
+  private def getTriplesWithSubjectPredicates(rdf: RDFReader, 
        node: RDFNode, 
        preds: List[IRI]): IO[List[RDFTriple]] = {
     node match {

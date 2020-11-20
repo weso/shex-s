@@ -15,4 +15,6 @@ trait Inheritance[Node] {
 
   def ancestors(node: Node): IO[Set[Node]]
 
+  def show(showNode: Node => String): IO[String]
+
 }

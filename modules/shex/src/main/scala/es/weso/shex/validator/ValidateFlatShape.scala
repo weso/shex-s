@@ -74,13 +74,6 @@ case class ValidateFlatShape(
       ps  <- fromStream(rdf.triplesWithSubject(node))
     } yield ps.toSet[RDFTriple].map(_.pred)
 
-  private def getValuesPath(node: RDFNode, path: Path): Check[Set[RDFNode]] =
-    for {
-      // @@@@TODO!!
-
-      rdf   <- getRDF
-      nodes <- fromStream(path.getValues(node, rdf))
-    } yield nodes.toSet
 
   // We assume that the shape has no reference to other shapes
   private def checkValuesConstraint(

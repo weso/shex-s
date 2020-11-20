@@ -2,10 +2,14 @@ package es.weso.depgraphs
 
 import org.jgrapht.graph._
 import es.weso.utils.internal.CollectionCompat.CollectionConverters._
+// import cats.implicits._
 import cats.effect._
 import cats.effect.concurrent._
 
-case class Edge[Node](sub:Node, sup:Node)
+case class Edge[Node](sub:Node, sup:Node) {
+  def show(showNode: Node => String): String = 
+    s"${showNode(sub)}->${showNode(sup)}"
+}
 
 case class InheritanceJGraphT[Node](refGraph: Ref[IO,DirectedAcyclicGraph[Node,Edge[Node]]]) extends Inheritance[Node] {
 
@@ -43,15 +47,23 @@ case class InheritanceJGraphT[Node](refGraph: Ref[IO,DirectedAcyclicGraph[Node,E
 
   override def descendants(node: Node): IO[Set[Node]] = for {
     graph <- getGraph
-  } yield graph.getDescendants(node).asScala.toSet
+  } yield if (graph.containsVertex(node))
+     graph.getDescendants(node).asScala.toSet
+  else Set()   
 
   override def ancestors(node: Node): IO[Set[Node]] = for {
     graph <- getGraph
-  } yield graph.getAncestors(node).asScala.toSet
+  } yield if (graph.containsVertex(node)) 
+      graph.getAncestors(node).asScala.toSet
+  else Set()
 
 
-  def getGraph: IO[DirectedAcyclicGraph[Node,Edge[Node]]] =
+  private def getGraph: IO[DirectedAcyclicGraph[Node,Edge[Node]]] =
     refGraph.get
+
+  override def show(showNode: Node => String): IO[String] = for {
+    graph <- getGraph
+  } yield graph.edgeSet().asScala.toList.map(edge => edge.show(showNode)).mkString(",")
 
 }
 

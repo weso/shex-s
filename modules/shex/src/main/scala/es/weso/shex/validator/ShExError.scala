@@ -11,6 +11,7 @@ import es.weso.collection.Bag
 import es.weso.rbe.BagChecker
 import scala.util.control.NoStackTrace
 import es.weso.rbe.ShowRbe._
+import es.weso.shex.implicits.encoderShEx._
 import Attempt._
 
 sealed  abstract class ShExError protected (val msg: String) extends Exception(msg) with NoStackTrace with Product with Serializable {
@@ -94,7 +95,7 @@ object ShExError {
     ) extends ShExError(s"No partition of ${neighs} matches shape ${s}") {
     override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
       s"""|No partition of neighs matches shape ${shapesPrefixMap.qualify(lbl.toRDFNode)}
-      |Available Neighs: ${neighs}
+      |Available Neighs: ${neighs.showQualified(nodesPrefixMap)}
       |Attempt: ${attempt.show}
       |""".stripMargin
     }
@@ -386,9 +387,9 @@ object ShExError {
   }
 
 
-  case class AbstractShapeErr() extends ShExError(s"Node cannot conform to abstract shape") {
+  case class AbstractShapeErr(node: RDFNode, shape: ShapeExpr) extends ShExError(s"Node ${node.show} cannot conform to abstract shape ${shape}") {
       override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
-        s"""AbstractShapeError cannot conform to abstract shape"""
+        s"""AbstractShapeError ${nodesPrefixMap.qualify(node)} cannot conform to abstract shape ${shape.showQualified(shapesPrefixMap)}"""
       }
 
      override def toJson: Json = Json.obj(
@@ -396,3 +397,33 @@ object ShExError {
       ) 
 
   }
+
+  case class AbstractShapeErrNoArgs() extends ShExError(s"Node cannot conform to abstract shape ") {
+      override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
+        s"""AbstractShapeError cannot conform to abstract shape """
+      }
+
+     override def toJson: Json = Json.obj(
+       ("type", Json.fromString("AbstractShapeErr"))
+      ) 
+
+  }
+
+
+
+  case class NoDescendant(node: RDFNode, s:ShapeExpr, attempt: Attempt) extends ShExError(s"No descendant of shapeExpr ${s} matches node ${node.show}") {
+      override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
+        s"""|No descendant of ${s.showQualified(shapesPrefixMap)} matches ${nodesPrefixMap.qualify(node)}
+            |Attempt: ${attempt.showQualified(nodesPrefixMap,shapesPrefixMap)}
+            |""".stripMargin
+      }
+
+     override def toJson: Json = Json.obj(
+       ("type", Json.fromString("NoDescendantMatches")),
+       ("attempt", attempt.asJson),
+       ("node", Json.fromString(node.getLexicalForm)),
+       ("shapeExpr", s.asJson)
+      ) 
+
+  }
+

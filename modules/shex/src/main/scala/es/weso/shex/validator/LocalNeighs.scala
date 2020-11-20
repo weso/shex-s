@@ -27,7 +27,7 @@ object LocalNeighs {
 
   implicit val localNeighsShow: Show[LocalNeighs] = new Show[LocalNeighs] {
     def show(e: LocalNeighs): String = "{" +
-      e.neighsMap.map{ case (v,ls) => s"${v.show}->[${ls.map(_.show).mkString(",")}]}" } +
+      e.neighsMap.map{ case (v,ns) => s"${v.show}->[${ns.toList.map(_.show).mkString(",")}]}" } +
       "}"
   }
 

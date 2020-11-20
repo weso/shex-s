@@ -1,7 +1,7 @@
 package es.weso.shex
 
-//import cats._
-//import cats.implicits._
+// import cats._
+import cats.implicits._
 //import es.weso.rdf._
 import es.weso.rdf.nodes._
 import scala.util._
@@ -81,15 +81,13 @@ object ResolvedSchema {
         cnvMap(schema.tripleExprMap, (v: TripleExpr) => ResolvedTripleExpr(v))
         ),
       base)
-     inheritanceGraph <- InheritanceJGraphT.empty  
+     inheritanceGraph <- mkInheritanceGraph(mapsImported.shapeExprMaps)
    } yield ResolvedSchema(
     source = schema, 
     resolvedMapShapeExprs = mapsImported.shapeExprMaps,
     resolvedMapTripleExprs = mapsImported.tripleExprMaps,
     inheritanceGraph
   )
-
-
 
   // TODO: make the following method tailrecursive
   private def closureImports(imports: List[IRI],
@@ -103,6 +101,29 @@ object ResolvedSchema {
       schema <- Schema.fromIRI(i,base)
       sm <- closureImports(is ++ schema.imports, i :: visited, current.merge(schema,i),base)
     } yield sm
+  }
+
+  private def mkInheritanceGraph(
+    m: Map[ShapeLabel,ResolvedShapeExpr]
+  ): IO[Inheritance[ShapeLabel]] = {
+   def cmb(g: Inheritance[ShapeLabel])(u: Unit, pair: (ShapeLabel,ResolvedShapeExpr)): IO[Unit] = {
+     val (shapeLabel,rse) = pair
+     rse.se match {
+       case s: Shape => s._extends match {
+         case None => ().pure[IO]
+         case Some(es) => {
+           def cmb(c: Unit, e: ShapeLabel): IO[Unit] = 
+             g.addInheritance(shapeLabel,e)
+           es.foldM(())(cmb)
+         }
+       }
+       case _ => ().pure[IO]
+     }
+   }
+   for {
+    g <- InheritanceJGraphT.empty[ShapeLabel]
+    _ <- m.toList.foldM(())(cmb(g))
+   } yield g
   }
 
   def empty: IO[ResolvedSchema] = for {

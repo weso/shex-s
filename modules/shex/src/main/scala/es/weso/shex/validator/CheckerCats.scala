@@ -29,6 +29,8 @@ abstract class CheckerCats {
     readerEC2check(Kleisli.ask[ReaderConfig, Env])
   }
 
+  
+
   def addLog(log: Log): Check[Unit] = {
     writerEC2check(WriterT.tell[ReaderEC, Log](log))
   }

@@ -92,7 +92,21 @@ class InheritanceTest
         ps => fail(s"Should fail but obtained ${ps}")
       ) 
     }    
+
+      it("Should fail without nodes") {
+      val cmp = for {
+        g <- InheritanceJGraphT.empty[String]
+        asA <- g.ancestors("A")
+      } yield (asA)
+      cmp.attempt.unsafeRunSync().fold(
+        e => info(s"Failure detected: ${e.getMessage}"),
+        ps => fail(s"Should fail but obtained ${ps}")
+      ) 
+    }    
+
+
   }
+
 
 }
 
