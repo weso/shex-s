@@ -63,7 +63,7 @@ case class InheritanceJGraphT[Node](refGraph: Ref[IO,DirectedAcyclicGraph[Node,E
 
   override def show(showNode: Node => String): IO[String] = for {
     graph <- getGraph
-  } yield graph.edgeSet().asScala.toList.map(edge => edge.show(showNode)).mkString(",")
+  } yield graph.edgeSet().asScala.toList.map(edge => edge.show(showNode)).mkString("\n")
 
 }
 

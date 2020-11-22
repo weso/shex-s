@@ -29,20 +29,28 @@ case class ValidateFlatShape(
     node: RDFNode, 
     shape: FlatShape): CheckTyping = {
     val zero = getTyping
-    def cmb(ct: CheckTyping, slot: (Path, Constraint)): CheckTyping = {
+    def cmb(checkTyping: CheckTyping, 
+            slot: (Path, Constraint)
+            ): CheckTyping = {
       val (path, constraint) = slot
       for {
-        _ <- { info(s"""|CheckFlatShape (slot path=${path.show}, constraint=${constraint.show}""".stripMargin) }
-        typing1 <- ct
+        _ <- { info(s"""|CheckFlatShape 
+                        |  Slot path=${path.show}, 
+                        |  constraint=${constraint.show}
+                        |  Attempt: ${attempt}
+                        |""".stripMargin) }
+        typing1 <- checkTyping
         typing2 <- checkConstraint(attempt, node, path, constraint)
-        typing  <- combineTypings(List(typing1, typing2))
+        typing  <- combineTypings(typing1, typing2)
       } yield {
-        //println(s"Typing: ${typing.getMap}")
         typing
       }
     }
     for {
-      _ <- info(s"### FlatShape applied to node: ${node.show}:\n ${shape.show}")
+      _ <- info(s"""|FlatShape 
+                    | shape: ${shape.show}
+                    | node: ${node.show}
+                    |""".stripMargin)
       extra <- extraPreds(node, shape.preds)
       _ <- info(s"Extra preds: $extra. Closed? ${shape.closed}")
       typing <- if (shape.closed && extra.nonEmpty) {
@@ -50,16 +58,17 @@ case class ValidateFlatShape(
         // TODO: Not sure about this check
       } else 
         shape.slots.foldLeft(zero)(cmb)
+      _ <- info(s"FlatShape(${node.show}@${shape.show}}) successful")  
     } yield typing
   }
 
   // Returns the list of paths that are different from a given list
-  private[validator] def extraPreds(node: RDFNode, preds: Set[IRI]): Check[Set[IRI]] =
+  private def extraPreds(node: RDFNode, preds: Set[IRI]): Check[Set[IRI]] =
     for {
       existingPreds <- getExistingPredicates(node)
     } yield existingPreds -- preds
 
-  private[validator] def checkConstraint(attempt: Attempt, node: RDFNode, path: Path, constraint: Constraint): CheckTyping =
+  private def checkConstraint(attempt: Attempt, node: RDFNode, path: Path, constraint: Constraint): CheckTyping =
     for {
       _ <- info(s"checkConstraint: ${constraint.show} for ${showNode(node)} with path ${path.show}")
       values <- getValuesPath(node, path)

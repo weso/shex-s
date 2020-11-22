@@ -42,6 +42,10 @@ object ValidationUtils {
   def getPaths(s: Shape, schema: ResolvedSchema): Check[List[Path]] =
     fromEitherString(s.paths(schema).map(_.toList))
 
+  def showCurrentTyping(msg:String, shapesPrefixMap: PrefixMap): Check[Unit] = for {
+    typing <- getTyping
+    _ <- infoTyping(typing,msg,shapesPrefixMap)
+  } yield () 
 
   def infoTyping(t: ShapeTyping, msg: String, shapesPrefixMap: PrefixMap): Check[Unit] = for {
    nodesPrefixMap <- getNodesPrefixMap

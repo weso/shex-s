@@ -42,8 +42,10 @@ abstract class CheckerCats {
   def ok[A](x: A): Check[A] =
     EitherT.pure[WriterEC, Err](x)
 
-  def err[A](e: Err): Check[A] =
+  def err[A](e: Err): Check[A] = {
+    // pprint.log(s"@@@err($e)")
     EitherT.left[A](mkErr[WriterEC](e))
+  }
 
   def fromEither[A](e: Either[Err,A]): Check[A] = EitherT.fromEither[WriterEC](e)
 
@@ -58,8 +60,6 @@ abstract class CheckerCats {
       r <- either.fold(err(_), ok)
     } yield r
   }
-
-
 
   def orElse[A](c1: Check[A], c2: => Check[A]): Check[A] =
     c1.orElse(c2)
@@ -76,7 +76,7 @@ abstract class CheckerCats {
     cs.foldRight(z)(comb)
   }
 
-  def checkSomeLazyList[A](cs: LazyList[Check[A]], errIfNone: Err): Check[A] = {
+  def checkSomeLazyList[A](cs: LazyList[Check[A]], errIfNone: => Err): Check[A] = {
     lazy val z: Check[A] = err(errIfNone)
     def comb(c1: Check[A], c2: Check[A]) = orElse(c1, c2)
     cs.foldRight(z)(comb)
@@ -287,7 +287,7 @@ abstract class CheckerCats {
 
   /**
    * Checks all elements in a list
-   * If any of the elements fail, fails
+   * If any of the elements fails, it fails
    */
   def checkAll[A](xs: List[Check[A]]): Check[List[A]] =
     sequence(xs)  // Question: Is this stack safe?

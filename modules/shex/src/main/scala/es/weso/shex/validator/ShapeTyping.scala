@@ -24,8 +24,12 @@ case class ShapeTyping(
   def showShort(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
     def showPos(ls: Set[ShapeType]): String = 
       ls.map(st => st.label.map(sl => "+" + shapesPrefixMap.qualify(sl.toRDFNode)).getOrElse("")).mkString(",")
-    val vs = t.getKeys.map(k => (nodesPrefixMap.qualify(k), 
-        showPos(t.getOkValues(k).toSet))
+    def showNeg(ls: Set[ShapeType]): String = 
+      ls.map(st => st.label.map(sl => "-" + shapesPrefixMap.qualify(sl.toRDFNode)).getOrElse("")).mkString(",")
+    val vs = t.getKeys.map(k => 
+       (nodesPrefixMap.qualify(k), 
+        s"${showPos(t.getOkValues(k).toSet)} | ${showNeg(t.getFailedValues(k).toSet)}"
+       )
       ).map{ case (v1,v2) => v1 + ": " + v2 }.mkString("\n")
     vs
   }

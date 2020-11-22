@@ -18,7 +18,7 @@ case class Neighs(m: Map[Path,Set[RDFNode]]) {
    m.getOrElse(path, Set())
 
   def filterPaths(paths: List[Path]): Neighs = 
-   Neighs(m.filterKeys(paths.contains(_)))
+   Neighs(m.filterKeys(paths.contains(_)).toMap)
 
   def showQualified(pm: PrefixMap): String = {
     m.toList.map { case (p,vs) => s"${p.showQualified(pm)} ${vs.map(pm.qualify(_)).mkString(", ")}"}.mkString(s";\n")

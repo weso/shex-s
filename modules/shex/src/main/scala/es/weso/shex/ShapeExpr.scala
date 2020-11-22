@@ -521,6 +521,7 @@ case class ShapeDecl(
   override def addAnnotations(as: List[Annotation]): ShapeExpr = {
     this.copy(shapeExpr = shapeExpr.addAnnotations(as))
   }
+  
   override def addSemActs(as: List[SemAct]): ShapeExpr = {
     this.copy(shapeExpr = shapeExpr.addSemActs(as))
   }

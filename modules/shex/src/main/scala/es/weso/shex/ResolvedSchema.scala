@@ -103,28 +103,51 @@ object ResolvedSchema {
     } yield sm
   }
 
-  private def mkInheritanceGraph(
-    m: Map[ShapeLabel,ResolvedShapeExpr]
-  ): IO[Inheritance[ShapeLabel]] = {
-   def cmb(g: Inheritance[ShapeLabel])(u: Unit, pair: (ShapeLabel,ResolvedShapeExpr)): IO[Unit] = {
-     val (shapeLabel,rse) = pair
-     rse.se match {
-       case s: Shape => s._extends match {
-         case None => ().pure[IO]
-         case Some(es) => {
-           def cmb(c: Unit, e: ShapeLabel): IO[Unit] = 
-             g.addInheritance(shapeLabel,e)
-           es.foldM(())(cmb)
-         }
-       }
-       case _ => ().pure[IO]
+  private def addExtends(g: Inheritance[ShapeLabel],
+                         sub: ShapeLabel,
+                         shape: Shape
+                         ): IO[Unit] = 
+    shape._extends match {
+      case None => ().pure[IO]
+      case Some(es) => {
+        def cmb(c: Unit, e: ShapeLabel): IO[Unit] = 
+             g.addInheritance(sub,e)
+        es.foldM(())(cmb)
+      }
+   }
+
+   private def addShapeExpr(g: Inheritance[ShapeLabel], 
+                sub: ShapeLabel, 
+                se: ShapeExpr
+                ): IO[Unit] = {
+    se match {
+      case s: Shape => addExtends(g,sub, s) 
+      case s: ShapeAnd => {
+         def f(x: Unit, shape: Shape): IO[Unit] = 
+           addExtends(g,sub,shape)
+         s.shapeExprs.collect { case s: Shape => s}.foldM(())(f)
+      }
+      case ShapeDecl(l,_,se) => se match {
+        case _ => { 
+          pprint.log(s"ShapeDecl(l = ${l}, sub=${sub} ")
+          addShapeExpr(g,sub, se)  
+        }
+      }
+      case _ => ().pure[IO]
      }
    }
-   for {
+  
+  private def addPair(g: Inheritance[ShapeLabel])(u: Unit, pair: (ShapeLabel,ResolvedShapeExpr)): IO[Unit] = {
+     val (shapeLabel,rse) = pair
+     addShapeExpr(g, shapeLabel, rse.se)
+   }
+
+  private def mkInheritanceGraph(
+    m: Map[ShapeLabel,ResolvedShapeExpr]
+  ): IO[Inheritance[ShapeLabel]] = for {
     g <- InheritanceJGraphT.empty[ShapeLabel]
-    _ <- m.toList.foldM(())(cmb(g))
+    _ <- m.toList.foldM(())(addPair(g))
    } yield g
-  }
 
   def empty: IO[ResolvedSchema] = for {
     ig <- InheritanceJGraphT.empty[ShapeLabel]

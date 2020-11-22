@@ -21,7 +21,10 @@ case class Context(
 
   def addVisited(maybeLabel: Option[ShapeLabel]) = 
     maybeLabel match {
-      case None => this
+      case None => {
+        pprint.log(s"No Label!!")
+        this
+      }
       case Some(label) => this.copy(visited = this.visited + label)
     }
 

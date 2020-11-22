@@ -33,6 +33,7 @@ object ShExChecker extends CheckerCats {
   }
 
   def errStr[A](msg: String): Check[A] =
+    info(s"errorStr($msg)") >> 
     err[A](ShExError.msgErr(msg))
 
   def fromEitherString[A](e: Either[String,A]): Check[A] =
