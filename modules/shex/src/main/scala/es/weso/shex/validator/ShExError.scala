@@ -414,10 +414,14 @@ object ShExError {
 
   }
 
-  case class ExtendFails(node: RDFNode, extended:ShapeLabel, attempt: Attempt) extends ShExError(s"${node.show} doesn't conform to extended shape ${extended.toRDFNode.show}") {
+  case class ExtendFails(node: RDFNode, extended:ShapeLabel, attempt: Attempt, err: ShExError)
+    extends ShExError(
+      s"""|ExtendFails: ${node.show} doesn't conform to extended shape ${extended.toRDFNode.show}
+          |  Error obtained: ${err.msg}""".stripMargin) {
       override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
         s"""|Node ${nodesPrefixMap.qualify(node)} doesn't conform to extended shape ${shapesPrefixMap.qualify(extended.toRDFNode)}
             |Attempt: ${attempt.showQualified(nodesPrefixMap,shapesPrefixMap)}
+            |Error: ${err.showQualified(nodesPrefixMap, shapesPrefixMap)}
             |""".stripMargin
       }
 
@@ -425,7 +429,8 @@ object ShExError {
        ("type", Json.fromString("NoDescendantMatches")),
        ("attempt", attempt.asJson),
        ("node", Json.fromString(node.getLexicalForm)),
-       ("shape", Json.fromString(extended.toRDFNode.getLexicalForm))
+       ("shape", Json.fromString(extended.toRDFNode.getLexicalForm)),
+       ("error", err.asJson)
       ) 
   }
 
