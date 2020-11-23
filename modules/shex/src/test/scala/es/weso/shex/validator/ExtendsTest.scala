@@ -158,7 +158,22 @@ class ExtendsTest extends ShouldValidateShapeMap {
            |""".stripMargin
       shouldValidateWithShapeMap(rdf, shex, ":x@:R", ":x@!:R")
     }
-  }
+
+    {
+      val rdf =
+        """|prefix : <http://e#>
+           |:x :p 0 .""".stripMargin
+      val shex =
+        """|prefix : <http://e#>
+           |
+           |abstract :A { }
+           |:B @:A AND { :p . }
+           |""".stripMargin
+      shouldValidateWithShapeMap(rdf, shex, ":x@:B", ":x@:B,:x@:A")
+    }
+
+
+  } // describe
 
   describe(s"Vitals example") {
     val rdf = """|PREFIX : <http://a.example/#>

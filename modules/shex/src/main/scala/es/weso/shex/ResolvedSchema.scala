@@ -128,10 +128,7 @@ object ResolvedSchema {
          s.shapeExprs.collect { case s: Shape => s}.foldM(())(f)
       }
       case ShapeDecl(l,_,se) => se match {
-        case _ => { 
-          pprint.log(s"ShapeDecl(l = ${l}, sub=${sub} ")
-          addShapeExpr(g,sub, se)  
-        }
+        case _ => addShapeExpr(g,sub, se)  
       }
       case _ => ().pure[IO]
      }

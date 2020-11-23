@@ -51,6 +51,7 @@ class RDF2ManifestTest extends AnyFunSpec with ValidateManifest {
        List(
          "startNoCode1_pass",
          "1dotNoCode1_pass",
+         "ANDAbstract-pass",  // ABSTRACT and conjunction
         /* "vitals-RESTRICTS-pass_lie-Vital", // Ignored because it shouldn't conform as Vital is abstract
          "extends-abstract-multi-empty_pass",
          "ExtendsRepeatedP-pass",
