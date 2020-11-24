@@ -216,7 +216,7 @@ case class Validator(schema: ResolvedSchema,
     node: RDFNode,
     s: ShapeExpr, 
     attempt: Attempt
-   ): Check[(ShapeTyping, Boolean)] = for {
+   ): Check[(ShapeTyping, Option[ShapeLabel])] = for {
      descendants <- fromIO(s.id.map(schema.inheritanceGraph.ancestors(_)).getOrElse(IO(Set[ShapeLabel]())))
      visited <- getVisited
      filteredDescendants = descendants.diff(visited)
@@ -228,9 +228,9 @@ case class Validator(schema: ResolvedSchema,
      result <- if (filteredDescendants.isEmpty) for {
          _ <- info(s"No descendants to check")
          t <- getTyping
-       } yield (t,false)
+       } yield (t,None)
       else 
-       checkSomeFlag(descendants.toList.to[LazyList],
+       checkSomeFlagValue(filteredDescendants.toList.toLazyList,
          (d: ShapeLabel) => for {
            se <- getShape(d)
            st = ShapeType(se,se.id,schema)
@@ -240,9 +240,12 @@ case class Validator(schema: ResolvedSchema,
                _.addType(node,st),
                (err,tt) => tt.addNotEvidence(node,st,err)
              )
-           b = t.getOkValues(node) contains ShapeType(se,Some(d),schema)
-         } yield (t,b), 
-         getTyping.flatMap(t => ok((t,false))))
+           _ <- if (t.getOkValues(node) contains ShapeType(se,Some(d),schema)) ok(())
+                else 
+                  info(s"Descendant ${d.toRDFNode.show} failed on node ${node.show}") *>
+                  errStr(s"Descendant ${d.toRDFNode.show} failed on node ${node.show}") 
+         } yield t, 
+         getTyping)
   } yield result
 
   private def checkNodeShapeExpr(
@@ -252,15 +255,16 @@ case class Validator(schema: ResolvedSchema,
    for {
      pair <- checkDescendants(node, s, attempt)
      (t,b) = pair
-     newT <- if (b) 
-               infoTyping(t,s"Descendants passed with typing",schema.prefixMap) *>
-               ok(t.addEvidence(node,ShapeType(s,s.id,schema),"Descendants of shapes passed it"))
-             else {
-               info(s"Descendants failed") *>
+     newT <- b match {
+              case Some(label) => infoTyping(t,s"Descendant passed (${label.toRDFNode.show}) with typing ",schema.prefixMap) *>
+               ok(t.addEvidence(node,ShapeType(s,s.id,schema),s"Descendant ${label.toRDFNode.show} of shape passed it"))
+              case None => {
+               info(s"All descendants failed") *>
                runLocalTyping(
                  checkNodeShapeExprNoDescendants(attempt,node,s),
                  _ => t)
              }
+            }
     _ <- infoTyping(newT,s"Result of checkNodeShapeExpr($node,${s.id.map(_.toRDFNode.show).getOrElse("?")} = ", schema.prefixMap)             
    } yield newT
   }
