@@ -611,39 +611,6 @@ case class Validator(schema: ResolvedSchema,
     } yield pair 
   }
 
-/*  private def noPartition(
-     attempt: Attempt, 
-     node: RDFNode, 
-     s: Shape, 
-     label: ShapeLabel,
-     neighs: Neighs
-     ): Check[(ShapeTyping, Boolean)] =
-     err(NoPartition(node,attempt,s,label,neighs)) */
-
-/*  private def checkNeighsShapeExpr(
-      attempt: Attempt,
-      node: RDFNode,
-      neighs: Neighs,
-      se: ShapeExpr
-  ): Check[(ShapeTyping, Boolean)] =
-    se match {
-      case s: Shape =>
-        (for {
-          t <- checkNeighsShape(attempt, node, neighs, s)
-          _ <- { println(s"Failed checkNeighsShape(node=${node.show}, neighs=$neighs, se=${se.show} passed with $t") ; ok(())}
-        } yield (t, true)) orElse {
-          for {
-            _ <- { println(s"Failed checkNeighsShape(node=${node.show}, neighs=$neighs, se=${se.show} failed") ; ok(())}
-            t <- getTyping
-          } yield (t, false)
-        }
-      case sd: ShapeDecl => ???  
-      case _ => {
-        println(s"Not implemented yet extends with a non shape base: $se")
-        errStr(s"Not implemented yet extends with a non shape base: $se")
-      }
-    } */
-
   private def checkNeighsShape(attempt: Attempt, node: RDFNode, neighs: Neighs, s: Shape): CheckTyping =
     if (s.hasRepeatedProperties(schema))
       checkNeighsShapeWithTable(attempt, node, neighs, s)
@@ -659,6 +626,10 @@ case class Validator(schema: ResolvedSchema,
       s: Shape
   ): CheckTyping = {
     for {
+      _ <- info(s"""|checkNeighsShapeWithTable: ${node.show}
+                    |neighs=${neighs}
+                    |shape=${s.showQualified(schema.prefixMap)}
+                    |""".stripMargin)
       tableRbe <- mkTable(s.expression, s.extra.getOrElse(List()), schema.prefixMap)
       (cTable, rbe) = tableRbe
       // _ <- info(s"cTable: $cTable")
@@ -667,9 +638,10 @@ case class Validator(schema: ResolvedSchema,
       (candidates, rest) = csRest
       _     <- checkRests(rest, s.extraPaths, s.isClosed, ignoredPathsClosed)
       paths <- fromEither(s.paths(schema).leftMap(StringError(_)))
+      _ <- info(s"Checking closed condition with paths=${paths}, neighs=${neighs}")
       _ <- {
         if (s.isClosed) {
-          checkNoStrangeProperties(node, paths.toList, attempt)
+          checkNoStrangeProperties(node, paths.toList, attempt, neighs)
         } else ok(())
       }
       // _ <- info(s"Before checkCandidates:\n ${candidates.cs.map(_.show).mkString(",")}\nTable:${cTable.show}\n")
@@ -702,10 +674,12 @@ case class Validator(schema: ResolvedSchema,
     })
 }
 
-  private def checkNoStrangeProperties(node: RDFNode, paths: List[Path], attempt: Attempt): Check[Unit] =
+  private def checkNoStrangeProperties(node: RDFNode, paths: List[Path], attempt: Attempt, neighs: Neighs): Check[Unit] =
     for {
-      s   <- getNotAllowedPredicates(node, paths)
-      _ <- checkCond(s.isEmpty, attempt, ExtraPropertiesClosedShape(node,s.toList), "Closed properties with no extra property")
+      s   <- getNotAllowedPredicates(node, paths, neighs: Neighs)
+      _ <- info(s"NotAllowedPredicates: ${s}")
+      _ <- checkCond(s.isEmpty, attempt, 
+            ExtraPropertiesClosedShape(node,s.toList), "Closed properties with no extra property")
     } yield ()
 
   private def checkOptSemActs(attempt: Attempt, node: RDFNode, maybeActs: Option[List[SemAct]]): Check[Unit] =

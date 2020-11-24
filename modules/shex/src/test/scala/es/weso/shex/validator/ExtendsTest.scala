@@ -179,24 +179,91 @@ class ExtendsTest extends ShouldValidateShapeMap {
 
   } // describe
 
-  describe(s"Users example") {
+  ignore(s"Users example") {
     val rdf="""|prefix : <http://e/>
                |
                |:alice :name "Alice" ;
                |       :rep :bob .
                |
                |:bob :name "Robert" ;
-               |     :code "123" ;
+               |     :code "123" .
+               |
+               |:carol :name "Carol" ;
+               |       :rep :dave .
+               |:dave :code "234" ;
+               |      :p    :other .
                |""".stripMargin
     val shex="""|prefix : <http://e/>
                 |
                 |abstract :Person { :name . }
-                |:User extends @:Person closed { :rep . } # @:Employee }
+                |:User extends @:Person closed { :rep @:Employee } 
                 |
-                |#abstract :Rep { :code . }
-                |#:Employee extends @:Person extends @:Rep closed { }
+                |abstract :Rep { :code . }
+                |:Employee extends @:Person extends @:Rep closed { }
                 |""".stripMargin
-    shouldValidateWithShapeMap(rdf, shex, ":alice@:User", ":alice@:User, :alice@:Person") // ,:bob@:Person,:bob@:Employee,:bob@:Rep")
+    shouldValidateWithShapeMap(rdf, shex, ":alice@:User", ":alice@:User, :alice@:Person, :bob@:Employee, :bob@:Rep, :bob@:Person") 
+    shouldValidateWithShapeMap(rdf, shex, ":dave@:Employee", ":dave@!:Employee") 
+  }
+
+  describe("People") {
+    val shex = """|PREFIX ex: <http://ex.example/#>
+                  |PREFIX foaf: <http://xmlns.com/foaf/>
+                  |PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+                  |PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+                  |
+                  |<http://a.example/IssueShape> CLOSED {
+                  |  ex:reportedBy @<http://a.example/PersonShape>;
+                  |  ex:reproducedBy @<http://a.example/EmployeeShape>?
+                  |}
+                  |
+                  |ABSTRACT <http://a.example/PersonShape> {
+                  |  (  foaf:name xsd:string |
+                  |     foaf:givenName xsd:string+;
+                  |     foaf:familyName xsd:string);
+                  |  foaf:mbox IRI
+                  |}
+                  |
+                  |<http://a.example/UserShape>
+                  |    EXTENDS @<http://a.example/PersonShape> CLOSED {
+                  |  ex:representative @<http://a.example/EmployeeShape>
+                  |}
+                  |
+                  |ABSTRACT <http://a.example/RepShape> {
+                  |  foaf:phone IRI+
+                  |}
+                  |
+                  |<http://a.example/EmployeeShape>
+                  |    EXTENDS @<http://a.example/PersonShape>
+                  |    EXTENDS @<http://a.example/RepShape> CLOSED {
+                  |}
+                  |""".stripMargin
+
+    val rdf = """|PREFIX ex: <http://ex.example/#>
+                 |PREFIX foaf: <http://xmlns.com/foaf/>
+                 |PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+                 |
+                 |<http://a.example/Issue1>
+                 |    ex:reportedBy   <http://a.example/User2> ;
+                 |    ex:reproducedBy <http://a.example/Thompson.J> ;
+                 |.
+                 |
+                 |<http://a.example/User2>
+                 |    foaf:givenName "Bob" ;
+                 |    foaf:familyName "Smith" ;
+                 |    foaf:mbox <mail:bob@example.org> ;
+                 |    ex:representative <http://a.example/Thompson.J>
+                 |.
+                 |
+                 |<http://a.example/Thompson.J>
+                 |    foaf:givenName "Joe", "Joseph" ;
+                 |    foaf:familyName "Thompson" ;
+                 |    foaf:phone <tel:+456> ;
+                 |    foaf:mbox <mail:joe@example.org> ;
+                 |    ex:p 1 .
+                 |""".stripMargin
+
+    shouldValidateWithShapeMap(rdf, shex, "<http://a.example/Thompson.J>@<http://a.example/EmployeeShape>", "<http://a.example/Thompson.J>@!<http://a.example/EmployeeShape>") 
+
   }
 
   ignore(s"Vitals example") {

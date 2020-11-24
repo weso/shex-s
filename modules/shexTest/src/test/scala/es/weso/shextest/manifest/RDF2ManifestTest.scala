@@ -51,9 +51,10 @@ class RDF2ManifestTest extends AnyFunSpec with ValidateManifest {
        List(
          "startNoCode1_pass",
          "1dotNoCode1_pass",
-         "ANDAbstract-pass",  
-         "extends-abstract-multi-empty_pass-missingOptRef1",
-         "extends-abstract-multi-empty_pass",
+         "extends-abstract-multi-empty_fail-Ref2ExtraP",
+         "extends-abstract-multi-empty_fail-Ref1ExtraP",
+         "extends-abstract-multi-empty_fail-ReferrerExtraP",
+         "ANDAbstract-pass",
          "AND3G-pass",
          "ExtendAND3G-pass",
          "Extend3G-pass",

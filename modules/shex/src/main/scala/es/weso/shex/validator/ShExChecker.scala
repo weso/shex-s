@@ -213,15 +213,13 @@ object ShExChecker extends CheckerCats {
   } 
 
 
-  def getNotAllowedPredicates(node: RDFNode, paths: List[Path]): Check[Set[IRI]] =
-    for {
-      rdf <- getRDF
-      ts  <- fromStream(rdf.triplesWithSubject(node))
-    } yield {
-      val allowedPreds = paths.collect { case Direct(p) => p }
-      ts.toSet[RDFTriple].collect {
-        case s if !(allowedPreds contains s.pred) => s.pred
+  def getNotAllowedPredicates(node: RDFNode, 
+       paths: List[Path],
+       neighs: Neighs): Check[Set[IRI]] = {
+      def getPredicate: PartialFunction[Path,IRI] = p => p match {
+       case Direct(pred) => pred
       }
+      ok(neighs.filterPathCond(p => !(paths contains p)).toList.map(_.path).toSet.collect(getPredicate))
     }
 
   def combineTypings(ts: List[ShapeTyping]): Check[ShapeTyping] = {

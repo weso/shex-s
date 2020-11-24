@@ -16,7 +16,7 @@ class RDF2ManifestSingleTest extends ValidateManifest {
        "validation", 
        validationFolder, 
        // None, 
-       Some("extends-abstract-multi-empty_pass"),
+       Some("extends-abstract-multi-empty_fail-Ref2ExtraP"),
        List(),
        verbose = true)
   }
