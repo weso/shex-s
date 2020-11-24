@@ -159,7 +159,11 @@ class ExtendsTest extends ShouldValidateShapeMap {
       shouldValidateWithShapeMap(rdf, shex, ":x@:R", ":x@!:R")
     }
 
-    {
+    { /* This test is different from Eric's implementation
+         We assume that a node n conforms to an abstract shape S if there is a subshape T such that T extends @S and n conforms to T
+         In this example, Eric assumes that :B extends :A
+         */
+
       val rdf =
         """|prefix : <http://e#>
            |:x :p 0 .""".stripMargin
@@ -169,11 +173,31 @@ class ExtendsTest extends ShouldValidateShapeMap {
            |abstract :A { }
            |:B @:A AND { :p . }
            |""".stripMargin
-      shouldValidateWithShapeMap(rdf, shex, ":x@:B", ":x@:B,:x@:A")
+      shouldValidateWithShapeMap(rdf, shex, ":x@:B", ":x@!:B")
     }
 
 
   } // describe
+
+  ignore(s"Users example") {
+    val rdf="""|prefix : <http://e/>
+               |
+               |:alice :name "Alice" ;
+               |       :rep :bob .
+               |
+               |:bob :name "Robert" ;
+               |     :code "123" ;
+               |""".stripMargin
+    val shex="""|prefix : <http://e/>
+                |
+                |abstract :Person { :name . }
+                |:User extends @:Person { :rep @:Employee }
+                |
+                |abstract :Rep { :code . }
+                |:Employee extends @:Person extends @:Rep { }
+                |""".stripMargin
+    shouldValidateWithShapeMap(rdf, shex, ":alice@:User", ":alice@:User, :alice@:Person,:bob@:Person,:bob@:Employee,:bob@:Rep")
+  }
 
   describe(s"Vitals example") {
     val rdf = """|PREFIX : <http://a.example/#>

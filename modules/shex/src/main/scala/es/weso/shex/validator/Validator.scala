@@ -509,8 +509,8 @@ case class Validator(schema: ResolvedSchema,
       extendLabel: ShapeLabel
   ): CheckTyping = {
 
-    def noPartition(neighs:Neighs, extendSe: ShapeExpr): Check[(ShapeTyping,Boolean)] = 
-      err[(ShapeTyping,Boolean)](NoPartition(node,attempt,shape,extendLabel,neighs))
+    def noPartition(neighs:Neighs, extendSe: ShapeExpr): Check[ShapeTyping] = 
+      err[ShapeTyping](NoPartition(node,attempt,shape,extendLabel,neighs))
     /* for {
       current <- getTyping
       _ <- infoTyping(current,"No Partition, currentTyping: ", schema.prefixMap)
@@ -544,12 +544,16 @@ case class Validator(schema: ResolvedSchema,
       _ <- { println(s"Neighs of ${node.show} = ${neighs}") ; ok(()) }
       // TODO: Move the following code to Neighs.scala
       partitions = SetUtils.pSet(neighs.toList.toSet)
-      pair      <- checkSomeFlag[(Set[Arc],Set[Arc]),ShapeTyping,Check](
+      pair      <- checkSomeFlagValue[(Set[Arc],Set[Arc]),ShapeTyping](
         ls = partitions,
         check = checkPartitionPair(extendSe, extendLabel, shape, attempt, node), 
         last = noPartition(neighs,extendSe)
       )
       (t,b) = pair
+      _ <- b match {
+        case Some(ns) => info(s"Passed with neighs: ${ns}")
+        case None => info(s"No partition passed")
+      }
       _ <- infoTyping(t,s"<<<Typing after checkSomeFlag(${node.show}@${shape.id.map(_.toRDFNode.show).getOrElse("?")}) (b=${b})",schema.prefixMap)
     } yield t
   }
@@ -560,7 +564,7 @@ case class Validator(schema: ResolvedSchema,
                                  attempt: Attempt, 
                                  node: RDFNode)
                                  (pair: (Set[Arc], Set[Arc])
-                                ): Check[(ShapeTyping,Boolean)] = {
+                                ): Check[ShapeTyping] = {
     val (neighs1, neighs2) = pair
     for {
       _ <- info(s"""|------------------------
@@ -580,22 +584,25 @@ case class Validator(schema: ResolvedSchema,
         _.addLocalNeighs(node, Neighs.fromSet(neighs1))
          .addVisited(label)),
          _.addType(node,st),
-        (err,t)  => t.addNotEvidence(node,st,ExtendFails(node,extendLabel,attempt,err))
+        (e,t)  => t.addNotEvidence(node,st,ExtendFails(node,extendLabel,attempt,e))
       )
       pair <- if (typing1.getOkValues(node) contains st) for {
-      _ <- infoTyping(typing1, s"""| step1/checkPartitionPair(${node.show}@${extendLabel.toRDFNode.show}) / typing1 = """.stripMargin, schema.prefixMap)
-      typing2 <- runLocalTyping(runLocal(
-        checkNeighsShape(attempt, node, Neighs.fromSet(neighs2), shape), 
-        _.addLocalNeighs(node,Neighs.fromSet(neighs2))
-        ), _ => typing1)
-      _ <- infoTyping(typing2, s"""| step2/checkPartitionPair(${node.show}@${extendLabel.toRDFNode.show}) / typing2= """.stripMargin, schema.prefixMap)
-      typing = typing2 // <- combineTypings(typing1,typing2)
-      _ <- infoTyping(typing, s"""| step3/checkPartitionPair(${node.show}@${extendLabel.toRDFNode.show}) / typing  = """.stripMargin, schema.prefixMap)
-      _ <- info(s"#### Partition successful############")
-      } yield (typing,true)
+       _ <- infoTyping(typing1, s"""| step1/checkPartitionPair(${node.show}@${extendLabel.toRDFNode.show}) / typing1 = """.stripMargin, schema.prefixMap)
+       typing2 <- runLocalTyping(runLocal(
+         checkNeighsShape(attempt, node, Neighs.fromSet(neighs2), shape), 
+         _.addLocalNeighs(node,Neighs.fromSet(neighs2))
+         ), _ => typing1)
+       _ <- infoTyping(typing2, s"""| step2/checkPartitionPair(${node.show}@${extendLabel.toRDFNode.show}) / typing2= """.stripMargin, schema.prefixMap)
+       typing = typing2 // <- combineTypings(typing1,typing2)
+       _ <- infoTyping(typing, s"""| step3/checkPartitionPair(${node.show}@${extendLabel.toRDFNode.show}) / typing  = """.stripMargin, schema.prefixMap)
+       _ <- info(s"#### Partition successful############")
+       } yield typing
       else {
-        info(s"@@@Failing ${node.show}@${shape.id.map(_.toRDFNode.show).getOrElse("?")}|extend(${extendLabel.toRDFNode.show})") *>
-        ok((typing1, false)) // addNotEvidence(NodeShape(node,st),ExtendFails(node,extendLabel,attempt),s"Node ${node.show} doesn't conform to extended shape ${extendLabel.show}").map(t => (t,false))
+        info(s"""|@@@Failing ${node.show}@${shape.id.map(_.toRDFNode.show).getOrElse("?")}|extend(${extendLabel.toRDFNode.show})
+                 |neighs1=${neighs1}
+                 |neighs2=${neighs2}
+                 |""".stripMargin) *>
+        errStr("Failing partition") // addNotEvidence(NodeShape(node,st),ExtendFails(node,extendLabel,attempt),s"Node ${node.show} doesn't conform to extended shape ${extendLabel.show}").map(t => (t,false))
       }
     } yield pair 
   }

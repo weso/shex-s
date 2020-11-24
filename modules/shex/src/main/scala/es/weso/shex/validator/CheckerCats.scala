@@ -104,11 +104,22 @@ abstract class CheckerCats {
         for {
           r <- check(x)
           n <- if (r._2) Monad[F].pure(r)
-          else next.value
+               else next.value
         } yield n
       )
     Foldable[LazyList].foldRight(ls,z)(cmb).value
   }
+
+  def checkSomeFlagValue[A,B](ls: => LazyList[A],
+                                     check: A => Check[B],
+                                     last: Check[B]
+                                    ): Check[(B,Option[A])] = {
+    val z : Eval[Check[(B, Option[A])]] = Eval.later(last.map(x => (x,None)))
+    def cmb(x : A, next: Eval[Check[(B,Option[A])]]): Eval[Check[(B,Option[A])]] =
+      Eval.later(check(x).map(r => (r,Some(x))) orElse next.value)
+    Foldable[LazyList].foldRight(ls,z)(cmb).value
+  }
+
 
   def checkSomeFlagCount[A,B: Monoid](ls: => LazyList[A],
                                       check: A => Check[(B,Boolean)],
