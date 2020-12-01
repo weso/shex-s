@@ -445,7 +445,7 @@
       "id": "http://a.example/J",
       "type": "ShapeAnd",
       "shapeExprs": [
-        "http://a.example/H",
+        { "type": "Shape", "extends": ["http://a.example/H"] },
         {
           "type": "NodeConstraint",
           "pattern": "s.........J.$"

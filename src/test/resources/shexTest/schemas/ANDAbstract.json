@@ -74,7 +74,7 @@
       "id": "http://a.example/B",
       "type": "ShapeAnd",
       "shapeExprs": [
-        "http://a.example/A",
+        { "type": "Shape", "extends": ["http://a.example/A"] },
         {
           "type": "NodeConstraint",
           "pattern": "s.B.........$"

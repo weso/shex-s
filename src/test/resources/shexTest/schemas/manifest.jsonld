@@ -3838,6 +3838,42 @@
           "ttl": "1valExprRef-IV1.ttl"
         },
         {
+          "@id": "#1list0PlusDot",
+          "@type": "sht:RepresentationTest",
+          "name": "1list0PlusDot",
+          "trait": [
+            "Import"
+          ],
+          "status": "mf:Proposed",
+          "shex": "1list0PlusDot.shex",
+          "json": "1list0PlusDot.json",
+          "ttl": "1list0PlusDot.ttl"
+        },
+        {
+          "@id": "#1list0PlusIri",
+          "@type": "sht:RepresentationTest",
+          "name": "1list0PlusIri",
+          "trait": [
+            "Import"
+          ],
+          "status": "mf:Proposed",
+          "shex": "1list0PlusIri.shex",
+          "json": "1list0PlusIri.json",
+          "ttl": "1list0PlusIri.ttl"
+        },
+        {
+          "@id": "#1list1PlusIri",
+          "@type": "sht:RepresentationTest",
+          "name": "1list1PlusIri",
+          "trait": [
+            "Import"
+          ],
+          "status": "mf:Proposed",
+          "shex": "1list1PlusIri.shex",
+          "json": "1list1PlusIri.json",
+          "ttl": "1list1PlusIri.ttl"
+        },
+        {
           "@id": "#0Extends1",
           "@type": "sht:RepresentationTest",
           "name": "0Extends1",

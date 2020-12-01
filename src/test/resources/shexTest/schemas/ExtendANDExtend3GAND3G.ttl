@@ -175,7 +175,7 @@ PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 <http://a.example/J> a sx:ShapeAnd ;
     sx:shapeExprs (
-        <http://a.example/H>
+        [ a sx:Shape ; sx:extends ( <http://a.example/H> ) ]
         [ a sx:NodeConstraint ;
             sx:pattern "s.........J.$"
         ]

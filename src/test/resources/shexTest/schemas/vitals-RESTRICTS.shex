@@ -46,3 +46,4 @@ ABSTRACT <#ReclinedVital> @<#PostureVital> AND EXTENDS @<#Reclined> {}
     fhir:value ["reclined"]
   }
 }
+

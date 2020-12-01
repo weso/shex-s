@@ -26,7 +26,7 @@ PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 <http://a.example/B> a sx:ShapeAnd ;
     sx:shapeExprs (
-        <http://a.example/A>
+        [ a sx:Shape ; sx:extends ( <http://a.example/A> ) ]
         [ a sx:NodeConstraint ;
             sx:pattern "s.B.........$"
         ]

@@ -199,7 +199,7 @@
       "id": "http://a.example/D",
       "type": "ShapeAnd",
       "shapeExprs": [
-        "http://a.example/B",
+        { "type": "Shape", "extends": ["http://a.example/B"] },
         "http://a.example/C",
         {
           "type": "NodeConstraint",

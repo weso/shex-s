@@ -19033,6 +19033,234 @@
           "status": "mf:Approved"
         },
         {
+          "@id": "#1list0PlusDot-empty_pass",
+          "@type": "sht:ValidationTest",
+          "action": {
+            "schema": "../schemas/1list0PlusDot.shex",
+            "shape": "http://a.example/S1",
+            "data": "In1_Ip1_list_empty.ttl",
+            "focus": "http://a.example/n1"
+          },
+          "extensionResults": [],
+          "name": "1list0PlusDot-empty_pass",
+          "trait": [
+            "Include",
+            "EachOf",
+            "Import"
+          ],
+          "comment": "<S1> { <p1> (DOT*) } on { <n1> <p1> () }",
+          "status": "mf:Proposed"
+        },
+        {
+          "@id": "#1list0PlusDot-list_Iv1,Iv2,Iv3_pass",
+          "@type": "sht:ValidationTest",
+          "action": {
+            "schema": "../schemas/1list0PlusDot.shex",
+            "shape": "http://a.example/S1",
+            "data": "In1_Ip1_list_Iv1,Iv2,Iv3.ttl",
+            "focus": "http://a.example/n1"
+          },
+          "extensionResults": [],
+          "name": "1list0PlusDot-list_Iv1,Iv2,Iv3_pass",
+          "trait": [
+            "Include",
+            "EachOf",
+            "Import"
+          ],
+          "comment": "<S1> { <p1> (DOT*) } on { <n1> <p1> (<v1> <v2> <v3>) }",
+          "status": "mf:Proposed"
+        },
+        {
+          "@id": "#1list0PlusDot-list_Iv1,Iv2,Lx_pass",
+          "@type": "sht:ValidationTest",
+          "action": {
+            "schema": "../schemas/1list0PlusDot.shex",
+            "shape": "http://a.example/S1",
+            "data": "In1_Ip1_list_Iv1,Iv2,LX.ttl",
+            "focus": "http://a.example/n1"
+          },
+          "extensionResults": [],
+          "name": "1list0PlusDot-list_Iv1,Iv2,Lx_pass",
+          "trait": [
+            "Include",
+            "EachOf",
+            "Import"
+          ],
+          "comment": "<S1> { <p1> (DOT*) } on { <n1> <p1> (<v1> <v2> \"X\") }",
+          "status": "mf:Proposed"
+        },
+        {
+          "@id": "#1list0PlusDot-manualList_Iv1,Iv2,Iv3_pass",
+          "@type": "sht:ValidationTest",
+          "action": {
+            "schema": "../schemas/1list0PlusDot.shex",
+            "shape": "http://a.example/S1",
+            "data": "In1_Ip1_manualList_Iv1,Iv2,Iv3.ttl",
+            "focus": "http://a.example/n1"
+          },
+          "extensionResults": [],
+          "name": "1list0PlusDot-manualList_Iv1,Iv2,Iv3_pass",
+          "trait": [
+            "Include",
+            "EachOf",
+            "Import"
+          ],
+          "comment": "<S1> { <p1> (DOT*) } on { <n1> <p1> (<v1> <v2> <v3>) }",
+          "status": "mf:Proposed"
+        },
+        {
+          "@id": "#1list0PlusDot-manualList_extraArc_Iv1,Iv2,Iv3_fail",
+          "@type": "sht:ValidationFailure",
+          "action": {
+            "schema": "../schemas/1list0PlusDot.shex",
+            "shape": "http://a.example/S1",
+            "data": "In1_Ip1_manualList_extraArc_Iv1,Iv2,Iv3.ttl",
+            "focus": "http://a.example/n1"
+          },
+          "extensionResults": [],
+          "name": "1list0PlusDot-manualList_extraArc_Iv1,Iv2,Iv3_fail",
+          "trait": [
+            "Include",
+            "EachOf",
+            "Import"
+          ],
+          "comment": "<S1> { <p1> (DOT*) } on { <n1> <p1> (<v1> <v2> <v3>) }",
+          "status": "mf:Proposed"
+        },
+        {
+          "@id": "#1list0PlusDot-manualList_2firsts_Iv1,Iv2,Iv3_fail",
+          "@type": "sht:ValidationFailure",
+          "action": {
+            "schema": "../schemas/1list0PlusDot.shex",
+            "shape": "http://a.example/S1",
+            "data": "In1_Ip1_manualList_2firsts_Iv1,Iv2,Iv3.ttl",
+            "focus": "http://a.example/n1"
+          },
+          "extensionResults": [],
+          "name": "1list0PlusDot-manualList_2firsts_Iv1,Iv2,Iv3_fail",
+          "trait": [
+            "Include",
+            "EachOf",
+            "Import"
+          ],
+          "comment": "<S1> { <p1> (DOT*) } on { <n1> <p1> (<v1> <v2> <v3>) }",
+          "status": "mf:Proposed"
+        },
+        {
+          "@id": "#1list0PlusIri-empty_pass",
+          "@type": "sht:ValidationTest",
+          "action": {
+            "schema": "../schemas/1list0PlusIri.shex",
+            "shape": "http://a.example/S1",
+            "data": "In1_Ip1_list_empty.ttl",
+            "focus": "http://a.example/n1"
+          },
+          "extensionResults": [],
+          "name": "1list0PlusIri-empty_pass",
+          "trait": [
+            "Include",
+            "EachOf",
+            "Import"
+          ],
+          "comment": "<S1> { <p1> (IRI*) } on { <n1> <p1> () }",
+          "status": "mf:Proposed"
+        },
+        {
+          "@id": "#1list0PlusIri-list_Iv1,Iv2,Iv3_pass",
+          "@type": "sht:ValidationTest",
+          "action": {
+            "schema": "../schemas/1list0PlusIri.shex",
+            "shape": "http://a.example/S1",
+            "data": "In1_Ip1_list_Iv1,Iv2,Iv3.ttl",
+            "focus": "http://a.example/n1"
+          },
+          "extensionResults": [],
+          "name": "1list0PlusIri-list_Iv1,Iv2,Iv3_pass",
+          "trait": [
+            "Include",
+            "EachOf",
+            "Import"
+          ],
+          "comment": "<S1> { <p1> (IRI*) } on { <n1> <p1> (<v1> <v2> <v3>) }",
+          "status": "mf:Proposed"
+        },
+        {
+          "@id": "#1list0PlusIri-list_Iv1,Iv2,Lx_fail",
+          "@type": "sht:ValidationFailure",
+          "action": {
+            "schema": "../schemas/1list0PlusIri.shex",
+            "shape": "http://a.example/S1",
+            "data": "In1_Ip1_list_Iv1,Iv2,LX.ttl",
+            "focus": "http://a.example/n1"
+          },
+          "extensionResults": [],
+          "name": "1list0PlusIri-list_Iv1,Iv2,Lx_fail",
+          "trait": [
+            "Include",
+            "EachOf",
+            "Import"
+          ],
+          "comment": "<S1> { <p1> (IRI*) } on { <n1> <p1> (<v1> <v2> \"X\") }",
+          "status": "mf:Proposed"
+        },
+        {
+          "@id": "#1list1PlusIri-empty_pass",
+          "@type": "sht:ValidationFailure",
+          "action": {
+            "schema": "../schemas/1list1PlusIri.shex",
+            "shape": "http://a.example/S1",
+            "data": "In1_Ip1_list_empty.ttl",
+            "focus": "http://a.example/n1"
+          },
+          "extensionResults": [],
+          "name": "1list1PlusIri-empty_pass",
+          "trait": [
+            "Include",
+            "EachOf",
+            "Import"
+          ],
+          "comment": "<S1> { <p1> (IRI*) } on { <n1> <p1> () }",
+          "status": "mf:Proposed"
+        },
+        {
+          "@id": "#1list1PlusIri-list_Iv1,Iv2,Iv3_pass",
+          "@type": "sht:ValidationTest",
+          "action": {
+            "schema": "../schemas/1list1PlusIri.shex",
+            "shape": "http://a.example/S1",
+            "data": "In1_Ip1_list_Iv1,Iv2,Iv3.ttl",
+            "focus": "http://a.example/n1"
+          },
+          "extensionResults": [],
+          "name": "1list1PlusIri-list_Iv1,Iv2,Iv3_pass",
+          "trait": [
+            "Include",
+            "EachOf",
+            "Import"
+          ],
+          "comment": "<S1> { <p1> (IRI*) } on { <n1> <p1> (<v1> <v2> <v3>) }",
+          "status": "mf:Proposed"
+        },
+        {
+          "@id": "#1list1PlusIri-list_Iv1,Iv2,Lx_fail",
+          "@type": "sht:ValidationFailure",
+          "action": {
+            "schema": "../schemas/1list1PlusIri.shex",
+            "shape": "http://a.example/S1",
+            "data": "In1_Ip1_list_Iv1,Iv2,LX.ttl",
+            "focus": "http://a.example/n1"
+          },
+          "extensionResults": [],
+          "name": "1list1PlusIri-list_Iv1,Iv2,Lx_fail",
+          "trait": [
+            "Include",
+            "EachOf",
+            "Import"
+          ],
+          "comment": "<S1> { <p1> (IRI*) } on { <n1> <p1> (<v1> <v2> \"X\") }",
+          "status": "mf:Proposed"
+        },
+        {
           "@id": "#node_kind_example",
           "@type": "sht:ValidationFailure",
           "action": {

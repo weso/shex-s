@@ -78,10 +78,7 @@ case class ValidateFlatShape(
     } yield typing
 
   private def getExistingPredicates(node: RDFNode): Check[Set[IRI]] =
-    for {
-      rdf <- getRDF
-      ps  <- fromStream(rdf.triplesWithSubject(node))
-    } yield ps.toSet[RDFTriple].map(_.pred)
+    getNeighs(node).map(_.getPredicates())
 
 
   // We assume that the shape has no reference to other shapes

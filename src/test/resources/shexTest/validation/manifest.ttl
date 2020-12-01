@@ -1272,6 +1272,22 @@
 
  # could steal from: <#2EachInclude1-after_pass> <#2OneInclude1_pass> <#2OneInclude1-after_pass>
 
+## lists
+
+        <#1list0PlusDot-empty_pass>
+        <#1list0PlusDot-list_Iv1,Iv2,Iv3_pass>
+        <#1list0PlusDot-list_Iv1,Iv2,Lx_pass>
+        <#1list0PlusDot-manualList_Iv1,Iv2,Iv3_pass>
+        <#1list0PlusDot-manualList_extraArc_Iv1,Iv2,Iv3_fail>
+        # <#1list0PlusDot-manualList_circular_Iv1,Iv2,Iv3_fail>
+        <#1list0PlusDot-manualList_2firsts_Iv1,Iv2,Iv3_fail>
+        <#1list0PlusIri-empty_pass>
+        <#1list0PlusIri-list_Iv1,Iv2,Iv3_pass>
+        <#1list0PlusIri-list_Iv1,Iv2,Lx_fail>
+        <#1list1PlusIri-empty_pass>
+        <#1list1PlusIri-list_Iv1,Iv2,Iv3_pass>
+        <#1list1PlusIri-list_Iv1,Iv2,Lx_fail>
+
 ## ShapeMaps
         <#node_kind_example>
         <#dependent_shape>
@@ -16241,6 +16257,178 @@
 
 ### } include
 ## } imports
+## lists {
+
+<#1list0PlusDot-empty_pass> a sht:ValidationTest ;
+    mf:name "1list0PlusDot-empty_pass" ;
+    sht:trait sht:Include , sht:EachOf , sht:Import ;
+    rdfs:comment "<S1> { <p1> (DOT*) } on { <n1> <p1> () }" ;
+    mf:status mf:Proposed ;
+    mf:action [
+      sht:schema <../schemas/1list0PlusDot.shex> ;
+      sht:shape <http://a.example/S1> ;
+      sht:data <In1_Ip1_list_empty.ttl> ;
+      sht:focus <http://a.example/n1>
+    ]
+    .
+
+<#1list0PlusDot-list_Iv1,Iv2,Iv3_pass> a sht:ValidationTest ;
+    mf:name "1list0PlusDot-list_Iv1,Iv2,Iv3_pass" ;
+    sht:trait sht:Include , sht:EachOf , sht:Import ;
+    rdfs:comment "<S1> { <p1> (DOT*) } on { <n1> <p1> (<v1> <v2> <v3>) }" ;
+    mf:status mf:Proposed ;
+    mf:action [
+      sht:schema <../schemas/1list0PlusDot.shex> ;
+      sht:shape <http://a.example/S1> ;
+      sht:data <In1_Ip1_list_Iv1,Iv2,Iv3.ttl> ;
+      sht:focus <http://a.example/n1>
+    ]
+    .
+
+<#1list0PlusDot-list_Iv1,Iv2,Lx_pass> a sht:ValidationTest ;
+    mf:name "1list0PlusDot-list_Iv1,Iv2,Lx_pass" ;
+    sht:trait sht:Include , sht:EachOf , sht:Import ;
+    rdfs:comment "<S1> { <p1> (DOT*) } on { <n1> <p1> (<v1> <v2> \"X\") }" ;
+    mf:status mf:Proposed ;
+    mf:action [
+      sht:schema <../schemas/1list0PlusDot.shex> ;
+      sht:shape <http://a.example/S1> ;
+      sht:data <In1_Ip1_list_Iv1,Iv2,LX.ttl> ;
+      sht:focus <http://a.example/n1>
+    ]
+    .
+
+<#1list0PlusDot-manualList_Iv1,Iv2,Iv3_pass> a sht:ValidationTest ;
+    mf:name "1list0PlusDot-manualList_Iv1,Iv2,Iv3_pass" ;
+    sht:trait sht:Include , sht:EachOf , sht:Import ;
+    rdfs:comment "<S1> { <p1> (DOT*) } on { <n1> <p1> (<v1> <v2> <v3>) }" ;
+    mf:status mf:Proposed ;
+    mf:action [
+      sht:schema <../schemas/1list0PlusDot.shex> ;
+      sht:shape <http://a.example/S1> ;
+      sht:data <In1_Ip1_manualList_Iv1,Iv2,Iv3.ttl> ;
+      sht:focus <http://a.example/n1>
+    ]
+    .
+
+<#1list0PlusDot-manualList_extraArc_Iv1,Iv2,Iv3_fail> a sht:ValidationFailure ;
+    mf:name "1list0PlusDot-manualList_extraArc_Iv1,Iv2,Iv3_fail" ;
+    sht:trait sht:Include , sht:EachOf , sht:Import ;
+    rdfs:comment "<S1> { <p1> (DOT*) } on { <n1> <p1> (<v1> <v2> <v3>) }" ;
+    mf:status mf:Proposed ;
+    mf:action [
+      sht:schema <../schemas/1list0PlusDot.shex> ;
+      sht:shape <http://a.example/S1> ;
+      sht:data <In1_Ip1_manualList_extraArc_Iv1,Iv2,Iv3.ttl> ;
+      sht:focus <http://a.example/n1>
+    ]
+    .
+
+# <#1list0PlusDot-manualList_circular_Iv1,Iv2,Iv3_fail> a sht:ValidationFailure ;
+#     mf:name "1list0PlusDot-manualList_circular_Iv1,Iv2,Iv3_fail" ;
+#     sht:trait sht:Include , sht:EachOf , sht:Import ;
+#     rdfs:comment "<S1> { <p1> (DOT*) } on { <n1> <p1> (<v1> <v2> <v3>) }" ;
+#     mf:status mf:Proposed ;
+#     mf:action [
+#       sht:schema <../schemas/1list0PlusDot.shex> ;
+#       sht:shape <http://a.example/S1> ;
+#       sht:data <In1_Ip1_manualList_circular_Iv1,Iv2,Iv3.ttl> ;
+#       sht:focus <http://a.example/n1>
+#     ]
+#     .
+
+<#1list0PlusDot-manualList_2firsts_Iv1,Iv2,Iv3_fail> a sht:ValidationFailure ;
+    mf:name "1list0PlusDot-manualList_2firsts_Iv1,Iv2,Iv3_fail" ;
+    sht:trait sht:Include , sht:EachOf , sht:Import ;
+    rdfs:comment "<S1> { <p1> (DOT*) } on { <n1> <p1> (<v1> <v2> <v3>) }" ;
+    mf:status mf:Proposed ;
+    mf:action [
+      sht:schema <../schemas/1list0PlusDot.shex> ;
+      sht:shape <http://a.example/S1> ;
+      sht:data <In1_Ip1_manualList_2firsts_Iv1,Iv2,Iv3.ttl> ;
+      sht:focus <http://a.example/n1>
+    ]
+    .
+
+<#1list0PlusIri-empty_pass> a sht:ValidationTest ;
+    mf:name "1list0PlusIri-empty_pass" ;
+    sht:trait sht:Include , sht:EachOf , sht:Import ;
+    rdfs:comment "<S1> { <p1> (IRI*) } on { <n1> <p1> () }" ;
+    mf:status mf:Proposed ;
+    mf:action [
+      sht:schema <../schemas/1list0PlusIri.shex> ;
+      sht:shape <http://a.example/S1> ;
+      sht:data <In1_Ip1_list_empty.ttl> ;
+      sht:focus <http://a.example/n1>
+    ]
+    .
+
+<#1list0PlusIri-list_Iv1,Iv2,Iv3_pass> a sht:ValidationTest ;
+    mf:name "1list0PlusIri-list_Iv1,Iv2,Iv3_pass" ;
+    sht:trait sht:Include , sht:EachOf , sht:Import ;
+    rdfs:comment "<S1> { <p1> (IRI*) } on { <n1> <p1> (<v1> <v2> <v3>) }" ;
+    mf:status mf:Proposed ;
+    mf:action [
+      sht:schema <../schemas/1list0PlusIri.shex> ;
+      sht:shape <http://a.example/S1> ;
+      sht:data <In1_Ip1_list_Iv1,Iv2,Iv3.ttl> ;
+      sht:focus <http://a.example/n1>
+    ]
+    .
+
+<#1list0PlusIri-list_Iv1,Iv2,Lx_fail> a sht:ValidationFailure ;
+    mf:name "1list0PlusIri-list_Iv1,Iv2,Lx_fail" ;
+    sht:trait sht:Include , sht:EachOf , sht:Import ;
+    rdfs:comment "<S1> { <p1> (IRI*) } on { <n1> <p1> (<v1> <v2> \"X\") }" ;
+    mf:status mf:Proposed ;
+    mf:action [
+      sht:schema <../schemas/1list0PlusIri.shex> ;
+      sht:shape <http://a.example/S1> ;
+      sht:data <In1_Ip1_list_Iv1,Iv2,LX.ttl> ;
+      sht:focus <http://a.example/n1>
+    ]
+    .
+
+<#1list1PlusIri-empty_pass> a sht:ValidationFailure ;
+    mf:name "1list1PlusIri-empty_pass" ;
+    sht:trait sht:Include , sht:EachOf , sht:Import ;
+    rdfs:comment "<S1> { <p1> (IRI*) } on { <n1> <p1> () }" ;
+    mf:status mf:Proposed ;
+    mf:action [
+      sht:schema <../schemas/1list1PlusIri.shex> ;
+      sht:shape <http://a.example/S1> ;
+      sht:data <In1_Ip1_list_empty.ttl> ;
+      sht:focus <http://a.example/n1>
+    ]
+    .
+
+<#1list1PlusIri-list_Iv1,Iv2,Iv3_pass> a sht:ValidationTest ;
+    mf:name "1list1PlusIri-list_Iv1,Iv2,Iv3_pass" ;
+    sht:trait sht:Include , sht:EachOf , sht:Import ;
+    rdfs:comment "<S1> { <p1> (IRI*) } on { <n1> <p1> (<v1> <v2> <v3>) }" ;
+    mf:status mf:Proposed ;
+    mf:action [
+      sht:schema <../schemas/1list1PlusIri.shex> ;
+      sht:shape <http://a.example/S1> ;
+      sht:data <In1_Ip1_list_Iv1,Iv2,Iv3.ttl> ;
+      sht:focus <http://a.example/n1>
+    ]
+    .
+
+<#1list1PlusIri-list_Iv1,Iv2,Lx_fail> a sht:ValidationFailure ;
+    mf:name "1list1PlusIri-list_Iv1,Iv2,Lx_fail" ;
+    sht:trait sht:Include , sht:EachOf , sht:Import ;
+    rdfs:comment "<S1> { <p1> (IRI*) } on { <n1> <p1> (<v1> <v2> \"X\") }" ;
+    mf:status mf:Proposed ;
+    mf:action [
+      sht:schema <../schemas/1list1PlusIri.shex> ;
+      sht:shape <http://a.example/S1> ;
+      sht:data <In1_Ip1_list_Iv1,Iv2,LX.ttl> ;
+      sht:focus <http://a.example/n1>
+    ]
+    .
+
+## } lists
 ## ShapeMaps {
 
 <#node_kind_example> a sht:ValidationFailure ; # node_kind_example

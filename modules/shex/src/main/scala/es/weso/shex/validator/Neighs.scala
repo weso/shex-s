@@ -6,6 +6,8 @@ import es.weso.shex.Path
 import es.weso.rdf.nodes.RDFNode
 import es.weso.rdf.PrefixMap
 import scala.collection.compat.immutable.LazyList
+import es.weso.shex.Direct
+import es.weso.rdf.nodes.IRI
 // import es.weso.utils.SetUtils
 
 case class Neighs(m: Map[Path,Set[RDFNode]]) {
@@ -32,6 +34,9 @@ case class Neighs(m: Map[Path,Set[RDFNode]]) {
      ??? 
      // SetUtils.pSet(this.toList.toSet).map { case (n1,n2) => (Neighs.fromSet(n1),Neighs.fromSet(n2))} 
   }
+
+  def getPredicates(): Set[IRI] = 
+    m.keySet.collect { case Direct(pred) => pred }
 
 } 
 

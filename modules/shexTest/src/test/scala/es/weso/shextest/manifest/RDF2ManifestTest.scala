@@ -51,7 +51,7 @@ class RDF2ManifestTest extends AnyFunSpec with ValidateManifest {
        List(
          "startNoCode1_pass",
          "1dotNoCode1_pass",
-         "extends-abstract-multi-empty_fail-Ref2ExtraP",
+/*         "extends-abstract-multi-empty_fail-Ref2ExtraP",
          "extends-abstract-multi-empty_fail-Ref1ExtraP",
          "extends-abstract-multi-empty_fail-ReferrerExtraP",
          "ANDAbstract-pass",
@@ -59,7 +59,28 @@ class RDF2ManifestTest extends AnyFunSpec with ValidateManifest {
          "ExtendAND3G-pass",
          "Extend3G-pass",
          "ExtendANDExtend3GAND3G-pass",
-         "ExtendANDExtend3GAND3G-t33"
+         "ExtendANDExtend3GAND3G-t33" 
+
+1list0PlusDot-manualList_extraArc_Iv1,Iv2,Iv3_fail
+[info]   extends-abstract-multi-empty_fail-Ref2ExtraP
+[info]   extends-abstract-multi-empty_fail-Ref1ExtraP
+[info]   extends-abstract-multi-empty_fail-ReferrerExtraP
+[info]   AND3G-pass
+[info]   ExtendAND3G-pass
+[info]   Extend3G-pass
+[info]   ExtendANDExtend3GAND3G-pass
+[info]   ExtendANDExtend3GAND3G-t33
+
+1list0PlusDot-manualList_extraArc_Iv1,Iv2,Iv3_fail
+[info]   extends-abstract-multi-empty_fail-Ref2ExtraP
+[info]   extends-abstract-multi-empty_fail-Ref1ExtraP
+[info]   extends-abstract-multi-empty_fail-ReferrerExtraP
+[info]   ExtendAND3G-pass
+[info]   Extend3G-pass
+[info]   ExtendANDExtend3GAND3G-pass
+[info]   ExtendANDExtend3GAND3G-t33
+         
+         */
        ), 
        false)
   }

@@ -434,6 +434,9 @@
         <#1valExprRefbnode-IV1>
         <#1valExprRef-vc1>
         <#1valExprRef-IV1>
+        <#1list0PlusDot>
+        <#1list0PlusIri>
+        <#1list1PlusIri>
 
         # extends
         <#0Extends1>
@@ -3888,6 +3891,37 @@
     .
 
 # } imports
+
+# lists {
+
+<#1list0PlusDot> a sht:RepresentationTest ;
+    mf:name "1list0PlusDot" ;
+    mf:status mf:Proposed ;
+    sht:trait sht:Import ;
+    sx:shex <1list0PlusDot.shex> ;
+    sx:json <1list0PlusDot.json> ;
+    sx:ttl <1list0PlusDot.ttl> ;
+    .
+
+<#1list0PlusIri> a sht:RepresentationTest ;
+    mf:name "1list0PlusIri" ;
+    mf:status mf:Proposed ;
+    sht:trait sht:Import ;
+    sx:shex <1list0PlusIri.shex> ;
+    sx:json <1list0PlusIri.json> ;
+    sx:ttl <1list0PlusIri.ttl> ;
+    .
+
+<#1list1PlusIri> a sht:RepresentationTest ;
+    mf:name "1list1PlusIri" ;
+    mf:status mf:Proposed ;
+    sht:trait sht:Import ;
+    sx:shex <1list1PlusIri.shex> ;
+    sx:json <1list1PlusIri.json> ;
+    sx:ttl <1list1PlusIri.ttl> ;
+    .
+
+# } lists
 
 # extends {
 
