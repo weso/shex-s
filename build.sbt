@@ -3,15 +3,15 @@ lazy val scala213 = "2.13.3"
 lazy val supportedScalaVersions = List(scala213, scala212)
 
 // Local dependencies
-lazy val srdfVersion           = "0.1.81"
-lazy val shapeMapsVersion      = "0.1.66"
+lazy val srdfVersion           = "0.1.83"
+lazy val shapeMapsVersion      = "0.1.67"
 lazy val utilsVersion          = "0.1.73"
 lazy val documentVersion       = "0.0.11"
 
 // Dependency versions
 lazy val antlrVersion          = "4.7.1"
-lazy val catsVersion           = "2.2.0"
-lazy val catsEffectVersion     = "2.2.0"
+lazy val catsVersion           = "2.3.0"
+lazy val catsEffectVersion     = "2.3.0"
 lazy val commonsTextVersion    = "1.8"
 lazy val console4catsVersion   = "0.8.1"
 lazy val circeVersion          = "0.14.0-M1"
@@ -20,11 +20,13 @@ lazy val diffsonVersion        = "4.0.0"
 lazy val fs2Version            = "2.4.0"
 // lazy val effVersion            = "4.6.1"
 lazy val jenaVersion           = "3.16.0"
+lazy val junitVersion          = "4.13.1"
+lazy val junitInterfaceVersion = "0.11"
 lazy val jgraphtVersion        = "1.3.1"
 lazy val logbackVersion        = "1.2.3"
 lazy val loggingVersion        = "3.9.2"
 lazy val pprintVersion         = "0.5.6"
-lazy val rdf4jVersion          = "3.4.0"
+lazy val rdf4jVersion          = "3.4.2"
 lazy val scalacheckVersion     = "1.14.0"
 lazy val scalacticVersion      = "3.2.0"
 lazy val scalaTestVersion      = "3.2.0"
@@ -59,6 +61,8 @@ lazy val jgraphtCore    = "org.jgrapht"       % "jgrapht-core"     % jgraphtVers
 lazy val logbackClassic = "ch.qos.logback"    % "logback-classic"  % logbackVersion
 lazy val jenaArq        = "org.apache.jena"   % "jena-arq"         % jenaVersion
 lazy val jenaFuseki     = "org.apache.jena"   % "jena-fuseki-main" % jenaVersion
+lazy val junit          = "junit"             % "junit"            % junitVersion
+lazy val junitInterface = "com.novocode"      % "junit-interface"  % junitInterfaceVersion
 lazy val rdf4j_runtime  = "org.eclipse.rdf4j" % "rdf4j-runtime"    % rdf4jVersion
 
 // WESO components
@@ -120,7 +124,7 @@ lazy val shexsRoot = project
       scalaLogging,
       scallop,
       typesafeConfig,
-      pprint
+      pprint,
     ),
     cancelable in Global := true,
     fork := true,
@@ -173,7 +177,9 @@ lazy val shex = project
       srdf,
       shapeMaps,
       srdfJena % Test,
-      srdf4j   % Test
+      srdf4j   % Test,
+      junit % Test,
+      junitInterface % Test
     )
   )
 
