@@ -34,6 +34,11 @@ object Parser extends LazyLogging {
     v
   }
 
+  def info(msg:String): Builder[Unit] = {
+    println(msg) 
+    EitherT.pure(())
+  }
+
   def fromEither[A](e: Either[String,A]): Builder[A] =
     e.fold(str => err(str), ok(_))
 

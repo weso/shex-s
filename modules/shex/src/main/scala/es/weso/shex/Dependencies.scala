@@ -104,6 +104,7 @@ object Dependencies {
         Right(List((source, posNeg, s.reference)))
       }
       case _: ShapeExternal => noDeps
+      case sd: ShapeDecl => dependencies(schema, sd.shapeExpr,source,posNeg)
     }
   }
 

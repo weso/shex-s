@@ -97,8 +97,10 @@ object Spec extends LazyLogging {
       case ShapeOr(_,ses,_,_) => satisfySome(ses.map(satisfies(n,_)))
       case ShapeNot(_,se,_,_) => satisfyNot(satisfies(n,se))
       case ShapeRef(lbl,_,_) => satisfyShapeRef(n,lbl)
-      case ShapeExternal(id,_,_) => unimplemented(s"ShapeExpternal($id)")
+      case ShapeExternal(id,_,_) => unimplemented(s"satisfies(ShapeExpternal($id))")
       case s: Shape => satisfyShape(n,s)
+      case sd: ShapeDecl => unimplemented(s"satisfies(ShapeDecl(${sd.id}))")
+      case _ => err(s"satisfies: Unknown type of ShapeExpression: ${se}")
     }
     for {
       b <- r
@@ -312,7 +314,6 @@ object Spec extends LazyLogging {
     inArcs = inTriples.map(t => Arc(Inverse(t.pred),t.obj))
   } yield {
     val allArcs = outArcs ++ inArcs
-    logInfo(s"neighs($n): ${allArcs.map(_.show).mkString(",")}",0)
     allArcs.toSet
   }
 

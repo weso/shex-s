@@ -1,10 +1,10 @@
 package es.weso.utils
-import fs2._
-import cats.implicits._
-import java.nio.file.Paths
-import cats.effect.{Blocker, IO}
+// import fs2._
+// import cats.implicits._
+// import java.nio.file.Paths
+// import cats.effect.{Blocker, IO}
 
-import scala.concurrent.ExecutionContext
+// import scala.concurrent.ExecutionContext
 
 object FileUtilsIO {
 /*  def getContents(fileName: String): IO[CharSequence] = {

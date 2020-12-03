@@ -15,7 +15,7 @@ abstract sealed trait Max {
     case Star => Star
     case IntMax(0) => IntMax(0)
     case IntMax(n) if n > 0 => IntMax(n - 1)
-    case n => throw new Exception(s"DecreaseCard: Unexpected negative valu of max card: $n")
+    case n => throw new Exception(s"DecreaseCard: Unexpected negative value of max card: $n")
   }
 
 }

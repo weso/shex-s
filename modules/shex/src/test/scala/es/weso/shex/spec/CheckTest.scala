@@ -18,10 +18,10 @@ class CheckTest extends AnyFunSpec with Matchers with EitherValues {
 
 
   def runCheckEmptyEnv[A](chk: Check[A]): IO[A] = {
-    RDFAsJenaModel.empty.use(rdf => {
+    RDFAsJenaModel.empty.flatMap(_.use(rdf => {
       val env = Env(Schema.empty, TypingMap.empty, rdf)
       runCheck(env, chk)
-    })
+    }))
   }
 
   def runCheckEnv[A](env: Env, chk: Check[A]): IO[A] = {
@@ -284,11 +284,11 @@ class CheckTest extends AnyFunSpec with Matchers with EitherValues {
         newTyping <- fromEither(typing.addConformant(x, mkLabel(v), List()))
       } yield newTyping
       val c = satisfyChain(ls,check)
-      val r : IO[ShapeTyping] = RDFAsJenaModel.empty.use(rdf => for {
+      val r : IO[ShapeTyping] = RDFAsJenaModel.empty.flatMap(_.use(rdf => for {
         typing <- fromES(emptyTyping.addNonConformant(x,mkLabel("2"), List()))
         env = Env(Schema.empty,typing,rdf)
         r <- runCheckEnv(env,c)
-      } yield r)
+      } yield r))
       r.attempt.unsafeRunSync.fold(
         e => info(s"Fails as expected"),
         typing => {

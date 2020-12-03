@@ -4,10 +4,13 @@ import es.weso.collection._
 import es.weso.rbe._
 import es.weso.rbe.deriv._
 import es.weso.rbe.interval.IntOrUnbounded._
+import cats._
+import cats.data._
+import cats.implicits._
 
-case class IntervalChecker[A](rbe: Rbe[A]) extends BagChecker[A] {
+case class IntervalChecker[A:Show](rbe: Rbe[A]) extends BagChecker[A] {
 
-  type Matched[B] = Either[String, B]
+  type Matched[B] = Either[NonEmptyList[RbeError], B]
 
   def isOk[B](m: Matched[B]): Boolean = m.isRight
 
@@ -19,18 +22,17 @@ case class IntervalChecker[A](rbe: Rbe[A]) extends BagChecker[A] {
       derivChecker.check(bag, open)
     } else {
       if (!open && extraSymbols(bag).isEmpty == false)
-        Left(s"$rbe doesn't match bag $bag. Open: $open, Extra symbols: ${extraSymbols(bag)}")
-      else {
-        val interval = IntervalChecker.interval(rbe, bag)
-        if (interval.contains(1))
-          Right(bag)
+        Left(NonEmptyList.one(MsgError(s"$rbe doesn't match bag $bag. Open: $open, Extra symbols: ${extraSymbols(bag)}")))
+      else for {
+        interval <- IntervalChecker.interval(rbe, bag)
+        v <- if (interval.contains(1))
+          bag.asRight
         else
-          // In case of fail, check using derivatives to obtain better error message
+          // In case of fail, check using derivatives to obtain better error messages
           // TODO: Could it be optimized knowing that it will fail?
-          // derivChecker.check(bag, open)
-          Left(s"Interval checker failed with value $interval")
-
-      }
+          derivChecker.check(bag, open)
+          // NonEmptyList.one(IntervalError(interval,rbe,bag,open)).asLeft
+      } yield v
     }
   }
 
@@ -42,38 +44,44 @@ case class IntervalChecker[A](rbe: Rbe[A]) extends BagChecker[A] {
 
 object IntervalChecker {
 
-  def interval[A](rbe: Rbe[A], bag: Bag[A]): Interval = {
+  def interval[A: Show](rbe: Rbe[A], bag: Bag[A]): Either[NonEmptyList[RbeError],Interval] = {
     // println(s"Interval of $rbe with $bag")
     rbe match {
-      case Fail(_) => Interval(1, 0)
-      case Empty => Interval(0, Unbounded)
+      case Fail(_) => Interval(1, 0).asRight
+      case Empty => Interval(0, Unbounded).asRight
       case Symbol(a, n, m) => {
         val wa = bag.multiplicity(a)
-        Interval(divIntLimitUp(wa, m), divIntLimitDown(wa, n))
+        Interval(divIntLimitUp(wa, m), divIntLimitDown(wa, n)).asRight
       }
-      case And(v1, v2) => interval(v1, bag) & interval(v2, bag)
-      case Or(v1, v2) => interval(v1, bag) + interval(v2, bag)
+      case And(v1, v2) => for { 
+        i1 <- interval(v1, bag) 
+        i2 <- interval(v2, bag)
+      } yield i1 & i2
+      case Or(v1, v2) => for {
+        i1 <- interval(v1, bag)
+        i2 <- interval(v2, bag)
+      } yield i1 + i2
       case Star(v) => {
-        if (rbe.noSymbolsInBag(bag)) Interval(0, Unbounded)
-        else {
-          val ie = interval(v, bag)
-          if (ie.isEmpty) ie
-          else Interval(1, Unbounded)
-        }
+        if (rbe.noSymbolsInBag(bag)) Interval(0, Unbounded).asRight
+        else for {
+          ie <- interval(v, bag)
+          v = if (ie.isEmpty) ie
+               else Interval(1, Unbounded)
+        } yield v
       }
       case Plus(v) => {
-        if (rbe.noSymbolsInBag(bag)) Interval(0, 0)
-        else {
-          val ie = interval(v, bag)
-          if (ie.isEmpty) ie
-          else Interval(1, ie.m)
-        }
+        if (rbe.noSymbolsInBag(bag)) Interval(0, 0).asRight
+        else for {
+          ie <- interval(v, bag)
+          v = if (ie.isEmpty) ie
+              else Interval(1, ie.m)
+        } yield v
       }
 
-      // Adding Repetitions on expressions breaks the single-occurrence bag expression
+      // Having repetitions on expressions breaks the single-occurrence bag expression
       // This case is handled by detecting repetitions and invoking the derivatives algorithm
-      case Repeat(_, _,_ ) =>
-        throw new Exception("Intervals algorithm does not work with repetitions. RBE expr: " + this)
+      case r@Repeat(_, _,_ ) =>
+        NonEmptyList.one(RepeatsError(r,rbe,bag)).asLeft
 
     }
 

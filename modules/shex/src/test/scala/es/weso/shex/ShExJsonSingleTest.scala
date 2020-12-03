@@ -24,7 +24,7 @@ class ShExJsonSingleTest extends AnyFunSpec with JsonTest with Matchers with Eit
   }
 
   describe("Parsing Schema from Json") {
-    val name = "1literalPattern_with_REGEXP_escapes_bare"
+    val name = "ExtendAND3G"
     val file = getJsonFile(schemasFolder, name)
     it(s"Should read Schema from file ${file.getName}") {
       val str = Source.fromFile(file)("UTF-8").mkString

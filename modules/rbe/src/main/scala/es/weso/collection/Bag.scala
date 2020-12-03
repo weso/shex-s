@@ -104,14 +104,12 @@ object Bag {
     symbols.foldLeft(e)((rest, x) => rest.add(x, bag.multiplicity(x)))
   }
 
-  implicit def showBag[A:Show](b: Bag[A]): Show[Bag[A]] = new Show[Bag[A]] {
-    def show(b: Bag[A]): String = {
-      val zero = new StringBuilder
-      def cmb(b: StringBuilder, pair:(A,Int)): StringBuilder = {
-        val (x,n) = pair
-        b.append(s"${x.show}/$n")
-      }
-      b.elems.foldLeft(zero)(cmb).toString
+  implicit def showBag[A](implicit aShow: Show[A]): Show[Bag[A]] = new Show[Bag[A]] {
+    override def show(b: Bag[A]): String = {
+      s"{| ${b.elems.map { 
+        case (x,n) => s"${x.show}/$n" 
+      }.mkString(", ")} |}"
     }
   }
+
 }
