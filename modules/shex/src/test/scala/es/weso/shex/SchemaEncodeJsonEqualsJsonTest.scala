@@ -17,6 +17,7 @@ import org.scalatest._
 import cats.effect._
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+import java.nio.file.Paths
 
 class SchemaEncodeJsonEqualsJsonTest extends AnyFunSpec with JsonTest with Matchers with EitherValues {
 
@@ -47,9 +48,9 @@ class SchemaEncodeJsonEqualsJsonTest extends AnyFunSpec with JsonTest with Match
 
   def parseSchemaEncodeJsonEqualsJson(file: File): Unit = {
     for {
-      strSchema <- getContents(file)
-      fileJson <- getFileFromFolderWithSameExt(file,".shex",".json")
-      strJson <- getContents(fileJson)
+      strSchema <- EitherT.liftF(getContents(Paths.get(file.getAbsolutePath())))
+      fileJson <- EitherT.liftF(getFileFromFolderWithSameExt(file,".shex",".json"))
+      strJson <- EitherT.liftF(getContents(Paths.get(fileJson.getAbsolutePath())))
       jsonExpected <- EitherT.fromEither[IO](parse(strJson.toString).leftMap(e => s"Error parsing $strJson: $e"))
       schema <- EitherT.liftF(Schema.fromString(strSchema)).leftMap((e: String) => s"Error obtainning Schema from string: $e\nString:\n${strSchema}")
       jsonEncoded = schema.asJson

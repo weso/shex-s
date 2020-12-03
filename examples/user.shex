@@ -4,5 +4,5 @@ prefix xsd: <http://www.w3.org/2001/XMLSchema#>
 
 :Person {
   schema:name  xsd:string;
-  schema:knows @:Person
+  schema:knows @:Person*
 }

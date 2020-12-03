@@ -10,7 +10,7 @@ import es.weso.utils.OptionListUtils._
 // import cats.data._
 // import cats.implicits._
 
-case class ShapeAnd(
+/*case class ShapeAnd(
     id: Option[ShapeLabel],
     shapeExprs: List[ShapeExpr],
     annotations: Option[List[Annotation]],
@@ -35,10 +35,10 @@ case class ShapeAnd(
     actions.map(_.map(_.relativize(base)))
   )
 
-}
+} 
 
 object ShapeAnd {
   def fromShapeExprs(ses: List[ShapeExpr]): ShapeAnd =
     ShapeAnd(None, ses, None, None)
-}
+} */
 

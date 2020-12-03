@@ -27,9 +27,20 @@ case class ExternalIRIResolver(maybeIri: Option[IRI]) extends ExternalResolver {
 
 }
 
+/**
+  * Basic external resolver that does nothing by default
+  * 
+  * 
+  */
 case object NoAction extends ExternalResolver {
+
   override def getShapeExpr(label: ShapeLabel,
                             as: Option[List[Annotation]]
                            ): IO[ShapeExpr] =
     IO.raiseError(new RuntimeException(s"NoAction resolver can't obtain external shape expression from label: $label"))
+
+  /* Hack to get the instance from Java
+     See: https://stackoverflow.com/questions/2561415/how-do-i-get-a-scala-case-object-from-java
+   */  
+  def instance: ExternalResolver = this;  
 }

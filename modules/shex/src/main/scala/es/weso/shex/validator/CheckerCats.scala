@@ -15,10 +15,11 @@ abstract class CheckerCats {
 
   implicit val logMonoid: Monoid[Log]
 
-  type ReaderConfig[A] = Kleisli[IO, Config, A]
-  type ReaderEC[A] = Kleisli[ReaderConfig, Env, A]
-  type WriterEC[A] = WriterT[ReaderEC, Log, A]
-  type Check[A] = EitherT[WriterEC, Err, A]
+  type ReaderConfig[A]  = Kleisli[IO, Config, A]
+  type ReaderEC[A]      = Kleisli[ReaderConfig, Env, A]
+  type WriterEC[A]      = WriterT[ReaderEC, Log, A]
+  type Check[A]         = EitherT[WriterEC, Err, A]
+  type CheckTyping      = Check[ShapeTyping]
 
   def getConfig: Check[Config] = {
     readerConfig2check(Kleisli.ask[IO, Config])
@@ -27,6 +28,8 @@ abstract class CheckerCats {
   def getEnv: Check[Env] = {
     readerEC2check(Kleisli.ask[ReaderConfig, Env])
   }
+
+  
 
   def addLog(log: Log): Check[Unit] = {
     writerEC2check(WriterT.tell[ReaderEC, Log](log))
@@ -39,12 +42,16 @@ abstract class CheckerCats {
   def ok[A](x: A): Check[A] =
     EitherT.pure[WriterEC, Err](x)
 
-  def err[A](e: Err): Check[A] =
+  def err[A](e: Err): Check[A] = {
+    // pprint.log(s"@@@err($e)")
     EitherT.left[A](mkErr[WriterEC](e))
+  }
 
   def fromEither[A](e: Either[Err,A]): Check[A] = EitherT.fromEither[WriterEC](e)
 
-  def fromIO[A](io: IO[A]): Check[A] = EitherT.liftF(WriterT.liftF(Kleisli.liftF(Kleisli.liftF(io))))
+  // TODO: Capture errors in EitherT
+  def fromIO[A](io: IO[A]): Check[A] = 
+    EitherT.liftF(WriterT.liftF(Kleisli.liftF(Kleisli.liftF(io))))
 
   def fromEitherIO[A](e: EitherT[IO,Err,A]): Check[A] = {
     val ea: Check[Either[Err,A]] = EitherT.liftF(WriterT.liftF(ReaderT.liftF(ReaderT.liftF(e.value))))
@@ -53,8 +60,6 @@ abstract class CheckerCats {
       r <- either.fold(err(_), ok)
     } yield r
   }
-
-
 
   def orElse[A](c1: Check[A], c2: => Check[A]): Check[A] =
     c1.orElse(c2)
@@ -70,6 +75,13 @@ abstract class CheckerCats {
     def comb(c1: Check[A], c2: Check[A]) = orElse(c1, c2)
     cs.foldRight(z)(comb)
   }
+
+  def checkSomeLazyList[A](cs: LazyList[Check[A]], errIfNone: => Err): Check[A] = {
+    lazy val z: Check[A] = err(errIfNone)
+    def comb(c1: Check[A], c2: Check[A]) = orElse(c1, c2)
+    cs.foldRight(z)(comb)
+  }
+
 
   /**
    * Given a computation check that returns a pair of value and a flag, returns the first value whose flag is true
@@ -92,11 +104,22 @@ abstract class CheckerCats {
         for {
           r <- check(x)
           n <- if (r._2) Monad[F].pure(r)
-          else next.value
+               else next.value
         } yield n
       )
     Foldable[LazyList].foldRight(ls,z)(cmb).value
   }
+
+  def checkSomeFlagValue[A,B](ls: => LazyList[A],
+                                     check: A => Check[B],
+                                     last: Check[B]
+                                    ): Check[(B,Option[A])] = {
+    val z : Eval[Check[(B, Option[A])]] = Eval.later(last.map(x => (x,None)))
+    def cmb(x : A, next: Eval[Check[(B,Option[A])]]): Eval[Check[(B,Option[A])]] =
+      Eval.later(check(x).map(r => (r,Some(x))) orElse next.value)
+    Foldable[LazyList].foldRight(ls,z)(cmb).value
+  }
+
 
   def checkSomeFlagCount[A,B: Monoid](ls: => LazyList[A],
                                       check: A => Check[(B,Boolean)],
@@ -275,7 +298,7 @@ abstract class CheckerCats {
 
   /**
    * Checks all elements in a list
-   * If any of the elements fail, fails
+   * If any of the elements fails, it fails
    */
   def checkAll[A](xs: List[Check[A]]): Check[List[A]] =
     sequence(xs)  // Question: Is this stack safe?

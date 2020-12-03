@@ -1,5 +1,6 @@
 package es.weso.shex.validator
 
+import cats.implicits._
 import es.weso.rdf.jena.RDFAsJenaModel
 import es.weso.rdf.nodes.{IRI, RDFNode}
 import es.weso.shapeMaps.{ShapeMap, ShapeMapLabel, IRILabel}
@@ -28,15 +29,21 @@ class ErrorMessagesTest extends AnyFunSpec with Matchers with EitherValues {
          """.stripMargin
       val x: RDFNode = IRI(s"http://example.org/x")
       val s: ShapeMapLabel = IRILabel(IRI(s"http://example.org/S"))
-      val eitherResult = RDFAsJenaModel.fromChars(rdfStr,"TURTLE", None).use(rdf => for {
+      val eitherResult = for {
+        res1 <- RDFAsJenaModel.fromChars(rdfStr,"TURTLE", None)
+        res2 <- RDFAsJenaModel.empty
+        vv <- (res1,res2).tupled.use{ case (rdf,builder) => for {
         shex <- Schema.fromString(shexStr,"SHEXC",None)
         pm <- rdf.getPrefixMap
         shapeMap <- eitherStr2IO(ShapeMap.fromCompact(smapStr, None, pm, shex.prefixMap))
         fixedShapeMap <- ShapeMap.fixShapeMap(shapeMap, rdf, pm, shex.prefixMap)
         resolved <- ResolvedSchema.resolve(shex,None)
-        result <- Validator.validate(resolved, fixedShapeMap, rdf)
+        result <- Validator.validate(resolved, fixedShapeMap, rdf,builder)
         resultShapeMap <- result.toResultShapeMap
-      } yield resultShapeMap)
+      } yield resultShapeMap }
+
+      } yield vv
+
       eitherResult.attempt.unsafeRunSync.fold(e =>
         fail(s"Error: $e"),
         r => {
