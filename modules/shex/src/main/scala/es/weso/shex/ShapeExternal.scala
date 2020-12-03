@@ -10,7 +10,7 @@ import es.weso.utils.OptionListUtils._
 // import cats.data._
 // import cats.implicits._
 
-case class ShapeExternal(id: Option[ShapeLabel], annotations: Option[List[Annotation]], actions: Option[List[SemAct]])
+/*case class ShapeExternal(id: Option[ShapeLabel], annotations: Option[List[Annotation]], actions: Option[List[SemAct]])
     extends ShapeExpr {
   def addId(lbl: ShapeLabel)                                     = this.copy(id = Some(lbl))
   override def paths(schema: AbstractSchema): Either[String, Set[Path]] = Right(Set())
@@ -34,3 +34,4 @@ case class ShapeExternal(id: Option[ShapeLabel], annotations: Option[List[Annota
 object ShapeExternal {
   def empty: ShapeExternal = ShapeExternal(None, None, None)
 }
+*/

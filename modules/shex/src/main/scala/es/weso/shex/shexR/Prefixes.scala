@@ -27,11 +27,14 @@ object PREFIXES {
   lazy val sx_ShapeAnd = sx + "ShapeAnd"
   lazy val sx_ShapeExternal = sx + "ShapeExternal"
   lazy val sx_ShapeNot = sx + "ShapeNot"
+  lazy val sx_ShapeDecl = sx + "ShapeDecl"
   lazy val sx_ShapeOr = sx + "ShapeOr"
   lazy val sx_TripleConstraint = sx + "TripleConstraint"
   lazy val sx_Wildcard = sx + "Wildcard"
   lazy val sx_INF = sx + "INF"
 
+
+  lazy val sx_abstract = sx + "abstract"
   lazy val sx_annotation = sx + "annotation"
   lazy val sx_bnode = sx + "bnode"
   lazy val sx_code = sx + "code"

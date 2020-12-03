@@ -22,26 +22,26 @@ import es.weso.rdf.PrefixMap
   * @param prefixMap
   */
 case class CTable(constraints: ConstraintsMap,
-                    paths: PathsMap,
-                    elems: Int,
-                    prefixMap: PrefixMap
-                   ) {
+                  paths: PathsMap,
+                  elems: Int,
+                  prefixMap: PrefixMap
+                 ) {
 
-    private[validator] def addPath(p: Path, n: ConstraintRef): PathsMap =
+    private def addPath(p: Path, n: ConstraintRef): PathsMap =
       paths.updated(p, paths.get(p).getOrElse(Set()) + n)
 
-    private[validator] def getConstraint(cref: ConstraintRef): Option[(ShapeExpr, Option[List[SemAct]])] = {
+    def getConstraint(cref: ConstraintRef): Option[(ShapeExpr, Option[List[SemAct]])] = {
       constraints.get(cref).map(ce => ce match {
         case Pos(se,sas) => (se,sas)
         case Neg(se,sas) => (ShapeNot.fromShapeExpr(se),sas)
       })
     }
 
-    private[validator] lazy val isAmbiguous: Boolean = {
+/*    private lazy val isAmbiguous: Boolean = {
       paths.values.map(_.size).exists(_ > 1)
-    }
+    } */
 
-    private[validator] def addConstraint(path: Path, expr: CheckExpr): (CTable, ConstraintRef) = {
+    private def addConstraint(path: Path, expr: CheckExpr): (CTable, ConstraintRef) = {
       val cref = ConstraintRef(this.elems, path, path.showQualified(prefixMap))
       val newTable = this.copy(
         elems = this.elems + 1,
@@ -51,7 +51,7 @@ case class CTable(constraints: ConstraintsMap,
       (newTable,cref)
     }
 
-    private[validator] def neighs2Candidates(neighs: List[Arc]): Candidates = {
+    def neighs2Candidates(neighs: List[Arc]): Candidates = {
       val rs = neighs.map(arc => Candidate(arc, paths.get(arc.path).getOrElse(Set())))
       Candidates(rs)
     }
@@ -85,7 +85,7 @@ object CTable {
       }
     }
 
-    private[validator] def appearances(iri: IRI, te: TripleExpr): List[ShapeExpr] = te match {
+    private def appearances(iri: IRI, te: TripleExpr): List[ShapeExpr] = te match {
       case tc: TripleConstraint =>
         if (tc.predicate == iri) tc.valueExpr.toList
         else List()
@@ -97,7 +97,7 @@ object CTable {
       case e: Expr => List()
     }
 
-    private[validator] def extendWithExtras(pair: ResultPair, te: TripleExpr, extras: List[IRI]): ResultPair = {
+    private def extendWithExtras(pair: ResultPair, te: TripleExpr, extras: List[IRI]): ResultPair = {
       val zero: ResultPair = pair
       def combine(current: ResultPair, extra: IRI): ResultPair = {
         val s: ShapeExpr = ShapeNot.fromShapeExpr(ShapeOr.fromShapeExprs(appearances(extra, te)))
@@ -109,11 +109,7 @@ object CTable {
       extras.foldLeft(zero)(combine)
     }
 
-    private[validator] def mkTable(te: TripleExpr,
-                                   extras: List[IRI],
-                                   tripleExprMap: TripleExprMap,
-                                   prefixMap: PrefixMap
-                                   ): Either[String, ResultPair] = {
+    def mkTable(te: TripleExpr, extras: List[IRI], tripleExprMap: TripleExprMap, prefixMap: PrefixMap): Either[String, ResultPair] = {
       // logger.info(s"mkTable from ${te.id}")
       for {
         pair <- mkTableAux(te, CTable.empty.copy(prefixMap = prefixMap), tripleExprMap)

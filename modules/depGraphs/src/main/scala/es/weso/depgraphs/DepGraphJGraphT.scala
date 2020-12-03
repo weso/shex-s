@@ -19,7 +19,7 @@ case class DepGraphJGraphT[Node]() extends DepGraph[Node] {
     * Removes all edges
     * @return <tt>true</tt> if the graph changed
     */
-  def removeAllEdges(): Boolean = {
+  private def removeAllEdges(): Boolean = {
     val edges: java.util.Set[Edge] = graph.edgeSet
     graph.removeAllEdges(edges)
   }
@@ -43,7 +43,7 @@ case class DepGraphJGraphT[Node]() extends DepGraph[Node] {
     * @param node
     * @return <tt>true</tt> if it added the node
     */
-  def checkVertex(node: Node): Boolean = {
+  private def checkVertex(node: Node): Boolean = {
     // if (!graph.containsVertex(node))
     graph.addVertex(node)
   }

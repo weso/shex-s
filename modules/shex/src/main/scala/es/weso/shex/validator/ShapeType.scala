@@ -1,6 +1,6 @@
 package es.weso.shex.validator
 import cats._
-import es.weso.shex.{AbstractSchema, Schema, ShapeExpr, ShapeLabel}
+import es.weso.shex.{AbstractSchema, Schema, ShapeExpr, ShapeLabel, ShapeDecl}
 import io.circe._
 import io.circe.syntax._
 
@@ -9,6 +9,11 @@ case class ShapeType(shape: ShapeExpr,
                      schema: AbstractSchema) {
   def hasLabel(expectedLabel: ShapeLabel): Boolean =
     label.fold(false)(_ == expectedLabel)
+
+  def isAbstract: Boolean = shape match {
+    case ShapeDecl(_,true,_) => true
+    case _ => false
+  }  
 }
 
 object ShapeType {

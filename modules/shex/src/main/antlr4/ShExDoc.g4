@@ -31,6 +31,7 @@
 // ~ s/unaryShape/unaryTripleExpr/ (EGP 20160930)
 // ~ s/encapsulatedShape/bracketedTripleExpr/ (EGP 20160930)
 // Jul 26, 2018 - Replace extensions by includeSet, added extends/restricts
+// Nov 14, 2020 - Replace shapeExprLabel in extends/restricts by shapeRef
 
 grammar ShExDoc;
 
@@ -74,7 +75,7 @@ statement
  ;
 
 shapeExprDecl
- : /* KW_ABSTRACT? */ shapeExprLabel /* restrictions* */ (shapeExpression | KW_EXTERNAL)
+ : KW_ABSTRACT? shapeExprLabel /* restrictions* */ (shapeExpression | KW_EXTERNAL)
  ;
 
 shapeExpression
@@ -455,13 +456,13 @@ blankNode
  ;
 
 extension
- : KW_EXTENDS shapeExprLabel
- | '&' shapeExprLabel
+ : KW_EXTENDS shapeRef +
+ | '&' shapeRef +
  ;
 
 restrictions
- : KW_RESTRICTS shapeExprLabel+
- | '-' shapeExprLabel+
+ : KW_RESTRICTS shapeRef +
+ | '-' shapeRef +
  ;
 
 
@@ -505,6 +506,7 @@ KW_START
 KW_VIRTUAL
  : V I R T U A L
  ;
+
 
 KW_CLOSED
  : C L O S E D
@@ -596,7 +598,7 @@ SKIP_
  ;
 
 fragment COMMENT
- : ('#' ~[\r\n]* | '/*' (~[*] | '*' ('\\/' | ~[/]))* '*/') -> skip
+ : ('#' ~[\r\n]* | '/*' (~[*] | '*' ('\\/' | ~[/]))* '*/') 
  ;
 
 // A white space is defined as '\t' or '\r' or '\n'.

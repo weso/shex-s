@@ -1,7 +1,5 @@
 package es.weso.shexs
-// import java.io.File
 import java.nio.file.Paths
-
 import cats.arrow.FunctionK
 import cats.data.StateT
 import cats.effect._
@@ -19,7 +17,6 @@ import es.weso.shextest.manifest._
 import es.weso.shextest.manifest.ShExManifest
 import es.weso.shapeMaps._ 
 import fs2._
-import scala.concurrent.ExecutionContext
 
 
 object Main extends IOApp {
@@ -92,40 +89,16 @@ object Main extends IOApp {
       _     <- fromIO(putStrLn(str))
     } yield ()
 
-  private def sep: String = ("=" * 10) + "\n"  
+  // private def sep: String = ("=" * 10) + "\n"  
 
   private def showResult(result: ResultShapeMap): IOS[Unit] =
     for {
       state <- getState
-      str = state.showResultFormat.toUpperCase match {
-        case "COMPACT" =>
-          sep ++ 
-          resultShapeMap2String(result)
-
-        case "JSON"    => result.toJson.spaces2
-      }
-      _ <- fromIO(putStrLn(str))
+      _ <- fromIO(
+        putStrLn(result.serialize(state.showResultFormat).fold(err => s"Error serializing ${result} with format ${state.showResultFormat}: $err", identity))
+      )
     } yield ()
 
-  private def resultShapeMap2String(result: ResultShapeMap): String = {
-    def showNodeSelector(node: NodeSelector): String = node match {
-      case RDFNodeSelector(node) => result.nodesPrefixMap.qualify(node)
-      case _ => node.toString
-    }
-    def showShapeLabel(lbl: ShapeMapLabel): String = lbl match {
-      case IRILabel(iri) => result.shapesPrefixMap.qualify(iri)
-      case _ => lbl.show
-    }
-    def showOk(a: Association): String = a.info.status match {
-      case Conformant => ""
-      case NonConformant => "!"
-      case Undefined => "?"
-    }
-    result.associations.map(a => {
-      s"${showNodeSelector(a.node)}@${showOk(a)}${showShapeLabel{a.shape}} |\nReason: ${a.info.reason.getOrElse("")}"
-    }).mkString("\n" + "-" * 10 + "\n")  
-  }
-    
   private def getResolvedSchema(): IOS[ResolvedSchema] =
     for {
       state          <- getState

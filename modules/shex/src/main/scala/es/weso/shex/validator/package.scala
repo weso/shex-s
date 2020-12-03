@@ -9,7 +9,6 @@ package object validator {
   type ConstraintsMap   = Map[ConstraintRef, CheckExpr]
   type PathsMap         = Map[Path, Set[ConstraintRef]]
   type ResultPair       = (CTable, Rbe_)
-  type Neighs           = List[Arc]
   type Bag_             = Bag[ConstraintRef]
   type BagChecker_      = BagChecker[ConstraintRef]
   type ES[A]            = Either[ShExError, A]

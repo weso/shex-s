@@ -114,6 +114,15 @@ object encoderShEx {
           mkObjectTyped("ShapeExternal",
             List(optField("id", id))
           )
+        case ShapeDecl(id,_abstract,se)   => mkObjectTyped("ShapeDecl",
+          List(
+            optField("id", id),
+            field("abstract", _abstract),
+            field("shapeExpr", se)
+          )
+        )
+        case other => 
+          Json.fromString(s"Error encoding as JSON: ${other} doesn't match any Shape")  
       }
   }
 

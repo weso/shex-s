@@ -1,7 +1,7 @@
 package es.weso.shextest.manifest
-import java.io.FileNotFoundException
-import java.nio.file.{Path, Paths}
-import java.util.concurrent.Executors
+// import java.io.FileNotFoundException
+import java.nio.file._
+// import java.util.concurrent.Executors
 
 import cats.effect._
 import com.typesafe.scalalogging.LazyLogging

@@ -11,11 +11,14 @@ import es.weso.collection.Bag
 import es.weso.rbe.BagChecker
 import scala.util.control.NoStackTrace
 import es.weso.rbe.ShowRbe._
+import es.weso.shex.implicits.encoderShEx._
 import Attempt._
 
 sealed  abstract class ShExError protected (val msg: String) extends Exception(msg) with NoStackTrace with Product with Serializable {
   def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String
   def toJson: Json
+
+  override def toString: String = s"err: $msg"
 }
 
 object ShExError {
@@ -85,26 +88,7 @@ object ShExError {
   }
 
 
-  case class NoPartition(
-    node: RDFNode,
-    attempt: Attempt, 
-    s: Shape,
-    lbl: ShapeLabel,
-    neighs: Neighs
-    ) extends ShExError(s"No partition of ${neighs} matches shape ${s}") {
-    override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
-      s"""|No partition of neighs matches shape ${shapesPrefixMap.qualify(lbl.toRDFNode)}
-      |Available Neighs: ${neighs}
-      |Attempt: ${attempt.show}
-      |""".stripMargin
-    }
 
-    override def toJson: Json = Json.obj(
-       ("type", Json.fromString("NoPartition")),
-       ("attempt", attempt.asJson)
-      ) 
-
-  }
 
 
   case class NoStart(node: RDFNode) extends ShExError(s"No Start. Node $node") {
@@ -184,13 +168,15 @@ object ShExError {
   }
 
     // FractionDigits
-    case class ErrorObtainingFractionDigits(node: RDFNode, e: Throwable) extends ShExError(s"Error obtaining fraction digits: ${node}: ${e.getMessage()}") {
+    case class ErrorObtainingFractionDigits(value: String, e: Throwable) extends ShExError(s"Error obtaining fraction digits: ${value}: ${e.getMessage()}") {
       override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
-        s"""FractionDigits(${nodesPrefixMap.qualify(node)}) Error: ${e.getMessage}"""
+        s"""FractionDigits(${value}) Error: ${e.getMessage}"""
       }
 
     override def toJson: Json = Json.obj(
        ("type", Json.fromString("ErrorObtainingFractionDigits")),
+       ("error", Json.fromString(e.getMessage)),
+       ("value", Json.fromString(value)),
       ) 
 
     }
@@ -217,25 +203,29 @@ object ShExError {
     }
 
     // TotalDigits
-    case class ErrorObtainingTotalDigits(node: RDFNode, e: Throwable) extends ShExError(s"Error obtaining total digits: ${node}: ${e.getMessage()}") {
+    case class ErrorObtainingTotalDigits(value: String, e: Throwable) extends ShExError(s"Error obtaining total digits: ${value}: ${e.getMessage()}") {
       override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
-        s"""TotalDigits(${nodesPrefixMap.qualify(node)}) Error: ${e.getMessage}"""
+        s"""TotalDigits(${value}) Error: ${e.getMessage}"""
       }
 
     override def toJson: Json = Json.obj(
        ("type", Json.fromString("ErrorObtainingTotalDigits")),
+       ("value", Json.fromString(value)),
+       ("error", Json.fromString(e.getMessage()))
       ) 
     }
+
     case class TotalDigitsAppliedUnknownDatatype(node: RDFNode, d: IRI) extends ShExError(s"Total digits applied to unknown datatye: ${d}") {
       override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
         s"""TotalDigits(${nodesPrefixMap.qualify(node)}) Error: Applied to wrong type: ${nodesPrefixMap.qualify(d)}"""
       }
 
-    override def toJson: Json = Json.obj(
+     override def toJson: Json = Json.obj(
        ("type", Json.fromString("TotalDigitsAppliedUnknownDatatype")),
       ) 
 
     }
+
 
     case class TotalDigitsAppliedNonLiteral(node: RDFNode) extends ShExError(s"Total digits applied to non literal: ${node}") {
       override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
@@ -319,26 +309,6 @@ object ShExError {
       ) 
   }
 
-/*  case class NoPartition(
-    attempt: Attempt, 
-    node: RDFNode, 
-    shape: Shape, 
-    label: ShapeLabel,
-    neighs: List[Arc]
-    ) extends ShExError(s"No partition matches") {
-
-    override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
-      s"""No partition found for node ${nodesPrefixMap.qualify(node)}
-          Attempt: ${attempt.show} 
-        """"
-    }
-
-    override def toJson: Json = Json.obj(
-       ("type", Json.fromString("NoPartition")),
-       ("node", Json.fromString(node.getLexicalForm))
-      ) 
-  } */
-  
   private def showCandidateLines(cs: List[CandidateLine], table: CTable): String = {
     cs.length match {
       case 0 => "No candidate lines"
@@ -385,7 +355,6 @@ object ShExError {
       )
   }
 
-
   case class NoCandidateLine(
     attempt: Attempt,
     table: CTable) extends ShExError(s"No candidate line found: ${attempt.show}") {
@@ -402,4 +371,92 @@ object ShExError {
        ("attempt", attempt.asJson),
        ("table", table.asJson)
       )
+  }
+
+
+  case class AbstractShapeErr(node: RDFNode, shape: ShapeExpr) extends ShExError(s"Node ${node.show} cannot conform to abstract shape ${shape}") {
+      override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
+        s"""AbstractShapeError ${nodesPrefixMap.qualify(node)} cannot conform to abstract shape ${shape.showQualified(shapesPrefixMap)}"""
+      }
+
+     override def toJson: Json = Json.obj(
+       ("type", Json.fromString("AbstractShapeErr"))
+      ) 
+
+  }
+
+  case class AbstractShapeErrNoArgs() extends ShExError(s"Node cannot conform to abstract shape ") {
+      override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
+        s"""AbstractShapeError cannot conform to abstract shape """
+      }
+
+     override def toJson: Json = Json.obj(
+       ("type", Json.fromString("AbstractShapeErr"))
+      ) 
+
+  }
+
+
+
+  case class NoDescendant(node: RDFNode, s:ShapeExpr, attempt: Attempt) extends ShExError(s"No descendant of shapeExpr ${s} matches node ${node.show}") {
+      override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
+        s"""|No descendant of ${s.showQualified(shapesPrefixMap)} matches ${nodesPrefixMap.qualify(node)}
+            |Attempt: ${attempt.showQualified(nodesPrefixMap,shapesPrefixMap)}
+            |""".stripMargin
+      }
+
+     override def toJson: Json = Json.obj(
+       ("type", Json.fromString("NoDescendantMatches")),
+       ("attempt", attempt.asJson),
+       ("node", Json.fromString(node.getLexicalForm)),
+       ("shapeExpr", s.asJson)
+      ) 
+
+  }
+
+  case class ExtendFails(node: RDFNode, extended:ShapeLabel, attempt: Attempt, err: ShExError)
+    extends ShExError(
+      s"""|ExtendFails: ${node.show} doesn't conform to extended shape ${extended.toRDFNode.show}
+          |  Error obtained: ${err.msg}""".stripMargin) {
+      override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
+        s"""|Node ${nodesPrefixMap.qualify(node)} doesn't conform to extended shape ${shapesPrefixMap.qualify(extended.toRDFNode)}
+            |Attempt: ${attempt.showQualified(nodesPrefixMap,shapesPrefixMap)}
+            |Error: ${err.showQualified(nodesPrefixMap, shapesPrefixMap)}
+            |""".stripMargin
+      }
+
+     override def toJson: Json = Json.obj(
+       ("type", Json.fromString("NoDescendantMatches")),
+       ("attempt", attempt.asJson),
+       ("node", Json.fromString(node.getLexicalForm)),
+       ("shape", Json.fromString(extended.toRDFNode.getLexicalForm)),
+       ("error", err.asJson)
+      ) 
+  }
+
+  case class NoPartition(
+    node: RDFNode,
+    attempt: Attempt, 
+    s: Shape,
+    extendedLabel: ShapeLabel,
+    neighs: Neighs
+    ) extends ShExError(s"""|No partition of neighs from node ${node.show} matches shape ${s.id.map(_.toRDFNode.show).getOrElse("")}. 
+                            |Neighs = ${neighs} 
+                            |Shape: ${extendedLabel.toRDFNode.show}""".stripMargin) {
+    override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
+      s"""|No partition of neighs from node ${nodesPrefixMap.qualify(node)} matches shape ${shapesPrefixMap.qualify(extendedLabel.toRDFNode)}
+      |Available Neighs: ${neighs.showQualified(nodesPrefixMap)}
+      |Shape: ${s.showQualified(shapesPrefixMap)}
+      |Attempt: ${attempt.show}
+      |""".stripMargin
+    }
+
+    override def toJson: Json = Json.obj(
+       ("type", Json.fromString("NoPartition")),
+       ("extended", Json.fromString(extendedLabel.toRDFNode.getLexicalForm)),
+       ("shape", s.asJson),
+//       ("neighs", neighs.asJson),
+       ("attempt", attempt.asJson)
+      ) 
+
   }

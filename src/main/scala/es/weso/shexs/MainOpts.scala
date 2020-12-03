@@ -1,13 +1,16 @@
 package es.weso.shexs
 
 import org.rogach.scallop._
+import es.weso.shapeMaps.ShapeMapFormat
+
+
 
 class MainOpts(arguments: Array[String], 
                onError: (Throwable, Scallop) => Nothing) extends ScallopConf(arguments) {
 
-  banner("""| shaclex: ShEx-s processor
-                | Options:
-                |""".stripMargin)
+  banner("""| shex: ShEx-s processor
+            | Options:
+            | """.stripMargin)
 
 
   footer("Enjoy!")
@@ -80,7 +83,7 @@ class MainOpts(arguments: Array[String],
   val showResultFormat: ScallopOption[String] = opt[String](
     "showResultFormat",
     default = Some("Compact"),
-    descr = "Format to show Result",
+    descr = s"Format to show Result. Available formats: ${ShapeMapFormat.availableFormatNames.mkString(",")}",
     noshort = true
   )
 

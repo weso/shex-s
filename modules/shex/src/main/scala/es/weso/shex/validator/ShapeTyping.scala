@@ -11,21 +11,34 @@ import io.circe.Json
 import es.weso.shex.shexR.PREFIXES.sx_start
 import io.circe._
 import io.circe.syntax._
+
 // import es.weso.rdf.RDFBuilder
 // import cats.effect._
 // import cats.effect.concurrent._
 
 
 case class ShapeTyping(
-   t: Typing[RDFNode, ShapeType, ShExError, String],
-//   checked: Ref[IO,RDFBuilder]
+   t: Typing[RDFNode, ShapeType, ShExError, String]
 ) extends LazyLogging {
+   
+  def showShort(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
+    def showPos(ls: Set[ShapeType]): String = 
+      ls.map(st => st.label.map(sl => "+" + shapesPrefixMap.qualify(sl.toRDFNode)).getOrElse("")).mkString(",")
+    def showNeg(ls: Set[ShapeType]): String = 
+      ls.map(st => st.label.map(sl => "-" + shapesPrefixMap.qualify(sl.toRDFNode)).getOrElse("")).mkString(",")
+    val vs = t.getKeys.map(k => 
+       (nodesPrefixMap.qualify(k), 
+        s"${showPos(t.getOkValues(k).toSet)} | ${showNeg(t.getFailedValues(k).toSet)}"
+       )
+      ).map{ case (v1,v2) => v1 + ": " + v2 }.mkString("\n")
+    vs
+  }
 
   def getOkValues(node: RDFNode): Set[ShapeType] =
-    t.getOkValues(node)
+    t.getOkValues(node).toSet
 
   def getFailedValues(node: RDFNode): Set[ShapeType] =
-    t.getFailedValues(node)
+    t.getFailedValues(node).toSet
 
   // TODO Review these definitions in case of anonymous shapes...
   def hasInfoAbout(node: RDFNode, label: ShapeLabel): Boolean =
@@ -52,8 +65,15 @@ case class ShapeTyping(
   def addNotEvidence(node: RDFNode, shapeType: ShapeType, err: ShExError): ShapeTyping =
     this.copy(t = t.addNotEvidence(node, shapeType, err))
 
-  def getMap: Map[RDFNode, Map[ShapeType, TypingResult[ShExError, String]]] =
+  def getMap: scala.collection.Map[RDFNode,scala.collection.Map[ShapeType,TypingResult[ShExError,String]]] =
     t.getMap
+
+  def removeShapeTypesWith(cond: ShapeType => Boolean): ShapeTyping = 
+    ShapeTyping(t.removeValuesWith(cond))
+
+  def negateShapeTypesWith(cond: ShapeType => Boolean, err: ShExError): ShapeTyping = 
+    ShapeTyping(t.negateValuesWith(cond, err))
+
 
   override def toString: String = showShapeTyping
 
@@ -81,7 +101,7 @@ case class ShapeTyping(
      else Json.obj(("errors", Json.fromValues(t.getErrors.getOrElse(List()).map(_.asJson))))
   }
 
-  private def typing2Labels(m: Map[ShapeType, TypingResult[ShExError, String]],
+  private def typing2Labels(m: collection.Map[ShapeType, TypingResult[ShExError, String]],
                             nodesPrefixMap: PrefixMap,
                             shapesPrefixMap: PrefixMap
                    ): Either[String, Map[ShapeMapLabel, Info]] = {
@@ -104,7 +124,7 @@ case class ShapeTyping(
   def toShapeMap(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): Either[String, ResultShapeMap] = {
     type Result = Either[String, ResultShapeMap]
     def combine(m: Result,
-                current: (RDFNode, Map[ShapeType, TypingResult[ShExError, String]])
+                current: (RDFNode, scala.collection.Map[ShapeType, TypingResult[ShExError, String]])
                ): Result = for {
       rm <- m
       ls <- typing2Labels(current._2, nodesPrefixMap, shapesPrefixMap)
@@ -116,6 +136,7 @@ case class ShapeTyping(
         addNodesPrefixMap(nodesPrefixMap).
         addShapesPrefixMap(shapesPrefixMap)
       )
+    
     getMap.foldLeft(zero)(combine)
   }
 
@@ -152,7 +173,9 @@ object ShapeTyping {
   }
 
   def combineTypings(ts: Seq[ShapeTyping]): ShapeTyping = {
-    ShapeTyping(Typing.combineTypings(ts.map(_.t)))
+    ShapeTyping(
+      Typing.combineTypings(ts.map(_.t))
+    )
   }
 
   implicit def showPair = new Show[(ShapeTyping, Evidences)] {
@@ -160,5 +183,6 @@ object ShapeTyping {
       s"Typing: ${e._1.show}\n Evidences:\n${e._2.show}"
     }
   }
+
 
 }

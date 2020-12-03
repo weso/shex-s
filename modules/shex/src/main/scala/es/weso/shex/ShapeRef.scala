@@ -10,6 +10,7 @@ import es.weso.utils.OptionListUtils._
 // import cats.data._
 // import cats.implicits._
 
+/*
 case class ShapeRef(reference: ShapeLabel, annotations: Option[List[Annotation]], actions: Option[List[SemAct]])
     extends ShapeExpr {
   def id                     = None
@@ -40,3 +41,4 @@ case class ShapeRef(reference: ShapeLabel, annotations: Option[List[Annotation]]
 object ShapeRef {
   def apply(iri: IRI): ShapeRef = ShapeRef(IRILabel(iri), None, None)
 }
+*/
