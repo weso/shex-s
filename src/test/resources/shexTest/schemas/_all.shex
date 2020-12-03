@@ -93,7 +93,7 @@ prefix1:S5 IRI
 _:a·̀ͯ‿.⁀ CLOSED # &_:a·̀ͯ‿.⁀ &<http://all.example/S2>
 {
   $_:a·̀ͯ‿.⁀e (
-   &_:a·̀ͯ‿.⁀e;
+   &a:S1e;
    &<http://all.example/S2e> )
 }
 

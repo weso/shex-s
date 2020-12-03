@@ -41,9 +41,10 @@ class RDF2ShexTest extends AnyFunSpec with Matchers with EitherValues with TryVa
         None,
         List())
 
-      val result: IO[(Boolean,String,String)] = (
-        RDFAsJenaModel.empty,
-        RDFAsJenaModel.fromChars(str, "TURTLE", None) ).tupled.use { case (builder, rdf) =>
+      val result: IO[(Boolean,String,String)] = for {
+        res1 <- RDFAsJenaModel.empty
+        res2 <- RDFAsJenaModel.fromChars(str, "TURTLE", None)
+        vv <- (res1,res2).tupled.use { case (builder, rdf) =>
         for {
           eitherSchema <- RDF2ShEx.rdf2Schema(rdf)
           schema <- eitherSchema.fold(
@@ -58,6 +59,8 @@ class RDF2ShexTest extends AnyFunSpec with Matchers with EitherValues with TryVa
         } yield (iso, str1, str2)
       }
 
+
+      } yield vv
       result.attempt.unsafeRunSync match {
         case Right(v) => {
           val (iso,s1,s2) = v
@@ -87,10 +90,10 @@ class RDF2ShexTest extends AnyFunSpec with Matchers with EitherValues with TryVa
             stripMargin
         
 
-        val result = RDFAsJenaModel.fromChars(str, "TURTLE", None).use(rdf => {
+        val result = RDFAsJenaModel.fromChars(str, "TURTLE", None).flatMap(_.use(rdf => {
           val cfg = Config(IRI("http://example.org/x"), rdf)
           rdf2Shex.opt(sx_start, rdf2Shex.iri).value.run(cfg)
-        }).unsafeRunSync
+        })).unsafeRunSync
 
         result match {
           case Right(v) => v should be(Some(IRI("http://example.org/S")))
@@ -111,11 +114,11 @@ class RDF2ShexTest extends AnyFunSpec with Matchers with EitherValues with TryVa
             stripMargin
 
         
-        val result = RDFAsJenaModel.fromChars(str, "TURTLE", None).use(rdf =>
+        val result = RDFAsJenaModel.fromChars(str, "TURTLE", None).flatMap(_.use(rdf =>
          {
           val cfg = Config(IRI("http://example.org/x"), rdf)
           rdf2Shex.opt(sx_start, rdf2Shex.iri).value.run(cfg)
-         }).unsafeRunSync
+         })).unsafeRunSync()
 
         result match {
           case Right(v) => v should be(None)
@@ -147,9 +150,9 @@ class RDF2ShexTest extends AnyFunSpec with Matchers with EitherValues with TryVa
             |:v  a sx:NodeConstraint ;
             |    sx:datatype xsd:string .
          """.stripMargin
-      val result = RDFAsJenaModel.fromChars(rdfStr, "TURTLE", None).use(rdf => {
+      val result = RDFAsJenaModel.fromChars(rdfStr, "TURTLE", None).flatMap(_.use(rdf => {
         RDF2ShEx.rdf2Schema(rdf)
-      }).unsafeRunSync
+      })).unsafeRunSync()
 
       val nc = NodeConstraint.datatype(`xsd:string`, List()).addId(v)
       val tc = TripleConstraint.valueExpr(p, nc).addId(expr)
@@ -191,9 +194,9 @@ class RDF2ShexTest extends AnyFunSpec with Matchers with EitherValues with TryVa
             |:expr2 a sx:NodeConstraint ;
             |       sx:nodeKind sx:iri .
          """.stripMargin
-      val result = RDFAsJenaModel.fromChars(rdfStr, "TURTLE", None).use(rdf =>
+      val result = RDFAsJenaModel.fromChars(rdfStr, "TURTLE", None).flatMap(_.use(rdf =>
         RDF2ShEx.rdf2Schema(rdf)
-      ).unsafeRunSync
+      )).unsafeRunSync()
 
       val nc = NodeConstraint.datatype(`xsd:string`, List()).addId(v)
       val te: TripleExpr = TripleConstraint.valueExpr(p, nc).addId(tc)

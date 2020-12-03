@@ -95,7 +95,7 @@ trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with Opti
   ): Unit = {
     it(s"Should parse manifestTest $folder/$name") {
       val r: IO[List[Result]] =
-        runManifest(name, folder, parentFolder, nameIfSingle, ignoreList, processEntryValidating)
+        runManifest(name, folder, parentFolder, nameIfSingle, ignoreList, processEntryValidating(verbose))
       r.attempt.unsafeRunSync.fold(e => {
         val currentFolder = new java.io.File(".").getCanonicalPath
         fail(s"Error: $e\nCurrent folder: $currentFolder")
@@ -109,7 +109,7 @@ trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with Opti
     }
   }
 
-  def processEntryValidating: EntryProcess = ep => {
+  def processEntryValidating(verbose: Boolean): EntryProcess = ep => {
 
     if (ep.nameIfSingle == None || 
         ep.nameIfSingle.getOrElse("") == ep.entry.name
@@ -125,7 +125,7 @@ trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with Opti
 
         case v: ValidationTest => {
           v.action match {
-            case focusAction: FocusAction => validateFocusAction(focusAction, base, v, true, v.name, folderURI)
+            case focusAction: FocusAction => validateFocusAction(focusAction, base, v, true, v.name, folderURI, verbose)
             case mr: MapResultAction      => validateMapResult(mr, base, v, v.name, folderURI)
             case ma: ManifestAction       =>
               result(v.name, false, s"Not implemented validate ManifestAction yet")
@@ -134,7 +134,7 @@ trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with Opti
        
         case v: ValidationFailure => {
           v.action match {
-            case focusAction: FocusAction => validateFocusAction(focusAction, base, v, false, v.name, folderURI)
+            case focusAction: FocusAction => validateFocusAction(focusAction, base, v, false, v.name, folderURI, verbose)
             case mr: MapResultAction      => validateMapResult(mr, base, v, v.name, folderURI)
             case ma: ManifestAction       => result(v.name, false, s"Not implemented validationFailure ManifestAction yet")
           }
@@ -149,16 +149,20 @@ trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with Opti
     } else None.pure[IO]
   }
 
-//  private def testFail[A](msg: String): EitherT[IO, String, A] = EitherT.fromEither(Left(msg))
   private def result[A](name: String, isOk: Boolean, reason: String): IO[Option[Result]] =
     IO.pure(Some(Result(name, isOk, reason)))
 
-  private def fromEither[A](e: Either[String, A]): EitherT[IO, String, A] = EitherT.fromEither(e)
+  //  private def testFail[A](msg: String): EitherT[IO, String, A] = EitherT.fromEither(Left(msg))
+  // private def fromEither[A](e: Either[String, A]): EitherT[IO, String, A] = EitherT.fromEither(e)
   // private def testInfo(msg: String): EitherT[IO, String, Unit] = EitherT.liftF(IO(println(msg)))
 
   def getContents(name: String, folder: String, value: Option[IRI]): EitherT[IO, String, String] = value match {
     case None      => EitherT.fromEither[IO](s"No value for $name".asLeft)
-    case Some(iri) => FileUtils.getContents(folder + "/" + iri.str).map(_.toString)
+    case Some(iri) => getContentsEIO(folder + "/" + iri.str)
+  }
+
+  private def getContentsEIO(name: String): EitherT[IO, String, String] = {
+    EitherT.liftF(FileUtils.getContents(Paths.get(name)))
   }
 
   def eq(s1: String, s2: String): Boolean = s1 == s2
@@ -223,20 +227,14 @@ trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with Opti
     } */
   }
 
-  def testInfo(msg: String): IO[Unit] = {
-    IO {
-      // println(msg); 
-      ()
-    }
+  def testInfo(msg: String, verbose: Boolean): IO[Unit] = 
+    if (verbose) IO {
+      println(msg); 
+    } else IO(())
 
-  }
-
-  def testInfoValue(msg: String, value: Any): IO[Unit] = {
-    IO {
-      // pprint.log(value, tag = msg);
-      ()
-    }
-  }
+  def testInfoValue(msg: String, value: Any, verbose: Boolean): IO[Unit] = 
+   if (verbose) IO { pprint.log(value, tag = msg); () }
+   else IO(())
 
   def validateFocusAction(
       fa: FocusAction,
@@ -244,44 +242,51 @@ trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with Opti
       v: ValidOrFailureTest,
       shouldValidate: Boolean,
       name: String,
-      folderURI: URI
+      folderURI: URI,
+      verbose: Boolean
   ): IO[Option[Result]] = {
     val focus     = fa.focus
     val schemaUri = mkLocal(fa.schema, schemasBase, folderURI)
     val dataUri   = mkLocal(fa.data, schemasBase, folderURI)
     for {
-      _         <- testInfo(s"Validating focusAction: $name")
+      //_         <- testInfo(s"Validating focusAction: $name",verbose)
       schemaStr <- derefUriIO(schemaUri)
-      _         <- testInfo(s"schemaStr:\n$schemaStr\n-----end schemaStr\nNest step: deref: $dataUri")
+      //_         <- testInfo(s"schemaStr:\n$schemaStr\n-----end schemaStr\nNest step: deref: $dataUri", verbose)
       dataStr   <- derefUriIO(dataUri)
-      _         <- testInfo(s"dataStr:\n$dataStr\n-----end dataStr")
+      //_         <- testInfo(s"dataStr:\n$dataStr\n-----end dataStr", verbose)
       schema    <- Schema.fromString(schemaStr, "SHEXC", Some(fa.schema))
-      _         <- testInfoValue(s"schema", schema)
-      result      <- RDFAsJenaModel.fromChars(dataStr, "TURTLE", Some(fa.data)).use(data =>
+      //_         <- testInfoValue(s"schema", schema.asJson.spaces2, verbose)
+      result      <- for {
+        res1 <- RDFAsJenaModel.fromChars(dataStr, "TURTLE", Some(fa.data))
+        res2 <- RDFAsJenaModel.empty
+        vv <- (res1,res2).tupled.use{ case (data, builder) =>
        for {
          dataPrefixMap <- data.getPrefixMap
-         _         <- testInfoValue(s"data", data)
+         // _         <- testInfoValue(s"data", data, verbose)
          lbl = getLabel(fa)
-         _         <- testInfoValue(s"label", lbl)
+         // _         <- testInfoValue(s"label", lbl, verbose)
          ok <- if (v.traits contains sht_Greedy) {
            result(name, true, "Ignored sht:Greedy")
          } else {
            val shapeMap = FixedShapeMap(Map(focus -> Map(lbl -> Info())), dataPrefixMap, schema.prefixMap)
            for {
-             _         <- testInfoValue(s"shapeMap", shapeMap)
+             // _         <- testInfoValue(s"shapeMap", shapeMap, verbose)
              resolvedSchema <- ResolvedSchema.resolve(schema, Some(fa.schema))
-             _         <- testInfoValue(s"resolvedSchema", resolvedSchema)
-             resultVal <- Validator(resolvedSchema, ExternalIRIResolver(fa.shapeExterns)).validateShapeMap(data, shapeMap)
+             // _         <- testInfoValue(s"resolvedSchema", resolvedSchema, verbose)
+             resultVal <- Validator(schema = resolvedSchema, 
+                externalResolver = ExternalIRIResolver(fa.shapeExterns),
+                builder = builder
+               ).validateShapeMap(data, shapeMap)
              resultShapeMap <- resultVal.toResultShapeMap
-             _         <- testInfoValue(s"resultShapeMap", resultShapeMap)
+             _         <- testInfoValue(s"resultShapeMap", resultShapeMap, verbose)
              ok <- if (resultShapeMap.getConformantShapes(focus) contains lbl) {
                if (shouldValidate) result(name, true, "Conformant shapes match")
                else
                  result(name, false, s"Focus $focus conforms to $lbl but should not" ++
                    s"\nData: \n${dataStr}\nSchema: ${schemaStr}\n" ++
-                   s"${resultShapeMap.getInfo(focus, lbl)}\n" ++
-                   s"Schema: ${schema}\n" ++
-                   s"Data: ${data}"
+                   s"${resultShapeMap.getInfo(focus, lbl)}\n" // ++
+                   // s"Schema: ${schema}\n" ++
+                   // s"Data: ${data}"
                  )
              } else {
                if (!shouldValidate) result(name, true, "Doesn't validate as expected")
@@ -289,15 +294,16 @@ trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with Opti
                  result(name, false,
                    s"Focus $focus does not conform to $lbl but should" ++
                      s"\nData: \n${dataStr}\nSchema: ${schemaStr}\n" ++
-                     s"${resultShapeMap.getInfo(focus, lbl)}\n" ++
+                     s"${resultShapeMap.getInfo(focus, lbl)}\n" /* ++
                      s"Schema: ${schema}\n" ++
-                     s"Data: ${data}"
+                     s"Data: ${data}" */
                  )
              }
            } yield ok
          }
-        } yield ok)
-       } yield result
+        } yield ok }
+      } yield vv 
+     } yield result
   }
 
   private def getLabel(fa: FocusAction): ShapeMapLabel =
@@ -323,7 +329,7 @@ trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with Opti
         val schemaUri    = mkLocal(mr.schema, validationBase, folderURI)
         val shapeMapUri  = mkLocal(mr.shapeMap, validationBase, folderURI)
         val resultMapUri = mkLocal(resultIRI, validationBase, folderURI)
-        val r: IO[Option[Result]] = RDFAsJenaModel.empty.use(emptyRdf =>
+        val r: IO[Option[Result]] = RDFAsJenaModel.empty.flatMap(_.use(emptyRdf =>
           for {
           //_             <- testInfo(s"Validating mapResult: $name")
           schemaStr     <- derefUriIO(schemaUri)
@@ -335,17 +341,21 @@ trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with Opti
           fixedShapeMap <- ShapeMap.fixShapeMap(sm, emptyRdf, PrefixMap.empty, PrefixMap.empty)
           dataUri = mkLocal(mr.data, schemasBase, folderURI)
           strData        <- derefUriIO(dataUri)
-          rr      <- RDFAsJenaModel.fromString(strData, "TURTLE", None).use(data =>
+          rr      <- for {
+            res1 <- RDFAsJenaModel.fromString(strData, "TURTLE", None)
+            res2 <- RDFAsJenaModel.empty
+            vv <- ( res1, res2).tupled.use{ case (data,builder) =>
            for {
-             resultVal <- Validator(resolvedSchema).validateShapeMap(data, fixedShapeMap)
+             resultVal <- Validator(schema = resolvedSchema, builder = builder).validateShapeMap(data, fixedShapeMap)
              resultShapeMap <- resultVal.toResultShapeMap
              jsonResult     <- fromES(JsonResult.fromJsonString(resultMapStr))
              r <- if (jsonResult.compare(resultShapeMap))
                     result(name, true, "Json results match")
                   else
                     result(name,false, s"Json results are different. Expected: ${jsonResult.asJson.spaces2}\nObtained: ${resultShapeMap.toString}")
-           } yield r)
-          } yield rr)
+           } yield r }
+          } yield vv 
+          } yield rr))
         r
       }
     }

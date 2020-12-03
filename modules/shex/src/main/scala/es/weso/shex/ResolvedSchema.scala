@@ -1,11 +1,13 @@
 package es.weso.shex
 
-//import cats._
-//import cats.implicits._
+// import cats._
+import cats.implicits._
 //import es.weso.rdf._
 import es.weso.rdf.nodes._
 import scala.util._
 import cats.effect.IO
+import es.weso.depgraphs.Inheritance
+import es.weso.depgraphs.InheritanceJGraphT
 
 /**
   * Represents a schema with all the imports resolved
@@ -18,6 +20,7 @@ case class ResolvedSchema(
   source: Schema,
   resolvedMapShapeExprs: Map[ShapeLabel, ResolvedShapeExpr],
   resolvedMapTripleExprs: Map[ShapeLabel, ResolvedTripleExpr],
+  inheritanceGraph: Inheritance[ShapeLabel]
   ) extends AbstractSchema {
   
  def id = source.id
@@ -70,22 +73,21 @@ object ResolvedSchema {
     * @return a resolved schema
     */
   def resolve(schema: Schema, base: Option[IRI]): IO[ResolvedSchema] =
-    for {
+   for {
      mapsImported <- closureImports(schema.imports,
       List(schema.id), 
       MapsImported(
         cnvMap(schema.shapesMap, (v: ShapeExpr) => ResolvedShapeExpr(v)),
         cnvMap(schema.tripleExprMap, (v: TripleExpr) => ResolvedTripleExpr(v))
         ),
-      base  
-     )
-  } yield ResolvedSchema(
+      base)
+     inheritanceGraph <- mkInheritanceGraph(mapsImported.shapeExprMaps)
+   } yield ResolvedSchema(
     source = schema, 
     resolvedMapShapeExprs = mapsImported.shapeExprMaps,
-    resolvedMapTripleExprs = mapsImported.tripleExprMaps
+    resolvedMapTripleExprs = mapsImported.tripleExprMaps,
+    inheritanceGraph
   )
-
-
 
   // TODO: make the following method tailrecursive
   private def closureImports(imports: List[IRI],
@@ -101,10 +103,56 @@ object ResolvedSchema {
     } yield sm
   }
 
-  def empty: ResolvedSchema = ResolvedSchema(
+  private def addExtends(g: Inheritance[ShapeLabel],
+                         sub: ShapeLabel,
+                         shape: Shape
+                         ): IO[Unit] = 
+    shape._extends match {
+      case None => ().pure[IO]
+      case Some(es) => {
+        def cmb(c: Unit, e: ShapeLabel): IO[Unit] = 
+             g.addInheritance(sub,e)
+        es.foldM(())(cmb)
+      }
+   }
+
+   private def addShapeExpr(g: Inheritance[ShapeLabel], 
+                sub: ShapeLabel, 
+                se: ShapeExpr
+                ): IO[Unit] = {
+    se match {
+      case s: Shape => addExtends(g,sub, s) 
+      case s: ShapeAnd => {
+         def f(x: Unit, shape: Shape): IO[Unit] = 
+           addExtends(g,sub,shape)
+         s.shapeExprs.collect { case s: Shape => s}.foldM(())(f)
+      }
+      case ShapeDecl(l,_,se) => se match {
+        case _ => addShapeExpr(g,sub, se)  
+      }
+      case _ => ().pure[IO]
+     }
+   }
+  
+  private def addPair(g: Inheritance[ShapeLabel])(u: Unit, pair: (ShapeLabel,ResolvedShapeExpr)): IO[Unit] = {
+     val (shapeLabel,rse) = pair
+     addShapeExpr(g, shapeLabel, rse.se)
+   }
+
+  private def mkInheritanceGraph(
+    m: Map[ShapeLabel,ResolvedShapeExpr]
+  ): IO[Inheritance[ShapeLabel]] = for {
+    g <- InheritanceJGraphT.empty[ShapeLabel]
+    _ <- m.toList.foldM(())(addPair(g))
+   } yield g
+
+  def empty: IO[ResolvedSchema] = for {
+    ig <- InheritanceJGraphT.empty[ShapeLabel]
+  } yield ResolvedSchema(
     source = Schema.empty, 
     resolvedMapShapeExprs = Map(),
-    resolvedMapTripleExprs = Map()
+    resolvedMapTripleExprs = Map(),
+    inheritanceGraph = ig
   )
 
 }

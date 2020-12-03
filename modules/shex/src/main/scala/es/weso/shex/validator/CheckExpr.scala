@@ -3,6 +3,8 @@ package es.weso.shex.validator
 import cats.Show
 import cats.implicits._
 import es.weso.shex.{SemAct, ShapeExpr}
+import io.circe._
+import io.circe.syntax._
 
 private[validator] sealed trait CheckExpr
 
@@ -21,6 +23,12 @@ private[validator] object CheckExpr {
       }
     }
   }
+
+   implicit val checkExprEncoder: Encoder[CheckExpr] = new Encoder[CheckExpr] {
+    final def apply(v: CheckExpr): Json = 
+      v.show.asJson
+  }
+
 
 }
 

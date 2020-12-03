@@ -6,41 +6,37 @@
 #   TERMINAL - a terminal, all caps in this example.
 #   [PROPTYPE] - an array of PROPTYPE.
 #   {TERMINAL->PROPTYPE} - a map from TERMINAL to PROPTYPE.
-#   (PROPTYPE1|PROPTYPE2...) - any of PROPTYPEn.
+#   (PROPTYPE1 | PROPTYPE2...) - any of PROPTYPEn.
 
-.TYPE type - ObjectLiteral labeledShapeOr labeledShapeAnd labeledShapeNot labeledNodeConstraint labeledShape labeledShapeExternal
+.TYPE type - ObjectLiteral labeledShapeDecl labeledShapeOr labeledShapeAnd labeledShapeNot labeledNodeConstraint labeledShape labeledShapeExternal
 
 ; # All objects have a type property corresponding to the production name, e.g. "Schema"
 
 Schema           {
   "@context":"http://www.w3.org/ns/shex.jsonld"?
-  imports:[IRI+]?
-  startActs:[SemAct+]? start:(shapeExpr|labeledShapeExpr)? shapes:[labeledShapeExpr+]?
+  imports:[IRIREF+]?
+  startActs:[SemAct+]? start:(shapeExpr | labeledShapeExpr)? shapes:[labeledShapeExpr+]?
  }
 
 # labeled Shape Expressions
-labeledShapeExpr        = labeledShapeOr | labeledShapeAnd | labeledShapeNot | labeledNodeConstraint | labeledShape | shapeExprLabel | labeledShapeExternal;
+labeledShapeExpr        = labeledShapeDecl | labeledShapeOr | labeledShapeAnd | labeledShapeNot | labeledNodeConstraint | labeledShape | shapeExprRef | labeledShapeExternal;
+labeledShapeDecl        { type:"ShapeDecl"      id:shapeExprLabel abstract:BOOL? specializes:[IRIREF+]? shapeExpr:shapeExpr }
 labeledShapeOr          { type:"ShapeOr"        id:shapeExprLabel shapeExprs:[shapeExpr{2,}] }
 labeledShapeAnd         { type:"ShapeAnd"       id:shapeExprLabel shapeExprs:[shapeExpr{2,}] }
 labeledShapeNot         { type:"ShapeNot"       id:shapeExprLabel shapeExpr:shapeExpr }
-labeledNodeConstraint   { type:"NodeConstraint" id:shapeExprLabel nodeKind:("iri"|"bnode"|"nonliteral"|"literal")? datatype:IRI? xsFacet* values:[valueSetValue+]? }
-labeledShape            { type:"Shape"          id:shapeExprLabel virtual:BOOL? closed:BOOL? extra:[IRI+]? expression:tripleExpr? inherit:[shapeExprLabel+]? semActs:[SemAct+]? annotations:[Annotation+]? }
+labeledNodeConstraint   { type:"NodeConstraint" id:shapeExprLabel nodeKind:("iri"|"bnode"|"nonliteral"|"literal")? datatype:IRIREF? xsFacet* values:[valueSetValue+]? }
+labeledShape            { type:"Shape"          id:shapeExprLabel abstract:BOOL? closed:BOOL? extends:[shapeExpr+]? extra:[IRIREF+]? expression:tripleExpr? semActs:[SemAct+]? annotations:[Annotation+]? }
 labeledShapeExternal    { type:"ShapeExternal"  id:shapeExprLabel  }
 
 # Shape Expressions
-shapeExpr        = ShapeOr | ShapeAnd | ShapeNot | NodeConstraint | Shape | shapeExprLabel | ShapeExternal;
+shapeExpr        = ShapeDecl | ShapeOr | ShapeAnd | ShapeNot | NodeConstraint | Shape | ShapeExternal | shapeExprRef;
 ShapeOr          { shapeExprs:[shapeExpr{2,}] }
 ShapeAnd         { shapeExprs:[shapeExpr{2,}] }
 ShapeNot         { shapeExpr:shapeExpr }
-NodeConstraint   { nodeKind:("iri"|"bnode"|"nonliteral"|"literal")? datatype:IRI? xsFacet* values:[valueSetValue+]? }
-Shape            { virtual:BOOL? closed:BOOL? extra:[IRI+]? expression:tripleExpr? inherit:[shapeExprLabel+]? semActs:[SemAct+]? }
 ShapeExternal    {  }
-
-# Triple Expressions
-tripleExpr       = EachOf | OneOf | TripleConstraint | tripleExprLabel ;
-EachOf           { id:tripleExprLabel? expressions:[tripleExpr{2,}] min:INTEGER? max:(INTEGER|"unbounded")? semActs:[SemAct+]? annotations:[Annotation+]? }
-OneOf            { id:tripleExprLabel? expressions:[tripleExpr{2,}] min:INTEGER? max:(INTEGER|"unbounded")? semActs:[SemAct+]? annotations:[Annotation+]? }
-TripleConstraint { id:tripleExprLabel? inverse:BOOL? negated:BOOL? predicate:IRI valueExpr:shapeExpr? min:INTEGER? max:(INTEGER|"unbounded")? semActs:[SemAct+]? annotations:[Annotation+]? }
+shapeExprRef     = shapeExprLabel ;
+shapeExprLabel   = IRIREF | BNODE ;
+NodeConstraint   { nodeKind:("iri"|"bnode"|"nonliteral"|"literal")? datatype:IRIREF? xsFacet* values:[valueSetValue+]? }
 
 # XML Schema facets
 xsFacet          = stringFacet | numericFacet ;
@@ -48,35 +44,45 @@ stringFacet      = (length|minlength|maxlength):INTEGER | pattern:STRING flags:S
 numericFacet     = (mininclusive|minexclusive|maxinclusive|maxexclusive):numericLiteral
                  | (totaldigits|fractiondigits):INTEGER ;
 
+numericLiteral   = INTEGER | DECIMAL | DOUBLE ;
+
 # Value Sets
 valueSetValue    = objectValue | IriStem | IriStemRange | LiteralStem | LiteralStemRange | Language | LanguageStem | LanguageStemRange ;
-objectValue      = IRI|ObjectLiteral ;
-IriStem          { stem:IRI } # IriStemRange with exclusions
-IriStemRange     { stem:(IRI|Wildcard) exclusions:[objectValue|IriStem +]? }
+objectValue      = IRIREF | ObjectLiteral ;
+ObjectLiteral    { value:STRING language:STRING? type:STRING? }
+IriStem          { stem:IRIREF } # IriStemRange with exclusions
+IriStemRange     { stem:(IRIREF | Wildcard) exclusions:[IRIREF | IriStem+]? }
 LiteralStem      { stem:STRING } # LiteralStemRange with exclusions
-LiteralStemRange { stem:(STRING|Wildcard) exclusions:[objectValue|LiteralStem +]? }
+LiteralStemRange { stem:(STRING | Wildcard) exclusions:[STRING | LiteralStem+] }
 Language         { languageTag: LANGTAG }
-LanguageStem     { stem:EMPTYLANGTAG }
-LanguageStemRange{ stem:(EMPTYLANGTAG|Wildcard) exclusions:[LANGTAG|LanguageStem +] }
+LanguageStem     { stem:(LANGTAG | EMPTY) }
+LanguageStemRange{ stem:(LANGTAG | EMPTY | Wildcard) exclusions:[LANGTAG | LanguageStem+] }
 Wildcard         {  }
 
-SemAct           { name:IRI code:STRING? }
-Annotation       { predicate:IRI object:objectValue }
+ShapeDecl        { abstract:BOOL? specializes:[IRIREF+]? shapeExpr:shapeExpr }
+Shape            { abstract:BOOL? closed:BOOL? extends:[shapeExpr+]? extra:[IRIREF+]? expression:tripleExpr? semActs:[SemAct+]? annotations:[Annotation+]? }
 
-shapeExprLabel   = IRI|BNODE ;
-tripleExprLabel  = IRI|BNODE ;
-numericLiteral   = INTEGER|DECIMAL|DOUBLE ;
-RDFLiteral       = SIMPLE_LITERAL|DATATYPE_LITERAL|LANG_LITERAL ;
-ObjectLiteral    { value:STRING language:STRING? type:STRING? }
+# Triple Expressions
+tripleExpr       = EachOf | OneOf | TripleConstraint | tripleExprRef ;
+EachOf           { id:tripleExprLabel? expressions:[tripleExpr{2,}] min:INTEGER? max:INTEGER? semActs:[SemAct+]? annotations:[Annotation+]? }
+OneOf            { id:tripleExprLabel? expressions:[tripleExpr{2,}] min:INTEGER? max:INTEGER? semActs:[SemAct+]? annotations:[Annotation+]? }
+TripleConstraint { id:tripleExprLabel? inverse:BOOL? predicate:IRIREF valueExpr:shapeExpr? min:INTEGER? max:INTEGER? semActs:[SemAct+]? annotations:[Annotation+]? }
+tripleExprRef    = tripleExprLabel ;
+tripleExprLabel  = IRIREF | BNODE ;
+
+SemAct           { name:IRIREF code:STRING? }
+Annotation       { predicate:IRIREF object:objectValue }
 
 # Terminals used in productions:
-IRI              : (PN_CHARS | '.' | ':' | '/' | '\\' | '#' | '@' | '%' | '&' | UCHAR)* ; # <http://www.w3.org/TR/turtle/#grammar-production-IRIREF> - "<>"s
+IRIREF           : (PN_CHARS | '.' | ':' | '/' | '\\' | '#' | '@' | '%' | '&' | UCHAR)* ; # <http://www.w3.org/TR/turtle/#grammar-production-IRIREF> - "<>"s
 BNODE            : '_:' (PN_CHARS_U | [0-9]) ((PN_CHARS | '.')* PN_CHARS)? ; # <http://www.w3.org/TR/turtle/#grammar-production-BLANK_NODE_LABEL>
 BOOL             : "true" | "false" ; # JSON boolean tokens
-INTEGER          : [+-]? [0-9] + ; # <http://www.w3.org/TR/turtle/#grammar-production-INTEGER>
-DECIMAL          : [+-]? [0-9]* '.' [0-9] + ; # <http://www.w3.org/TR/turtle/#grammar-production-DECIMAL>
-DOUBLE           : [+-]? ([0-9] + '.' [0-9]* EXPONENT | '.' [0-9]+ EXPONENT | [0-9]+ EXPONENT) ; # <http://www.w3.org/TR/turtle/#grammar-production-DOUBLE>
+INTEGER          : [+-]? [0-9]+ ; # <http://www.w3.org/TR/turtle/#grammar-production-INTEGER>
+DECIMAL          : [+-]? [0-9]* '.' [0-9]+ ; # <http://www.w3.org/TR/turtle/#grammar-production-DECIMAL>
+DOUBLE           : [+-]? ([0-9]+ '.' [0-9]* EXPONENT | '.' [0-9]+ EXPONENT | [0-9]+ EXPONENT) ; # <http://www.w3.org/TR/turtle/#grammar-production-DOUBLE>
+LANGTAG          : [a-zA-Z]+ ('-' [a-zA-Z0-9]+)* ;
 STRING           : .* ;
+EMPTY            : '' ;
 
 # Terminals use only in other terminals:
 PN_PREFIX        : PN_CHARS_BASE ((PN_CHARS | '.')* PN_CHARS)? ;
@@ -91,5 +97,3 @@ UCHAR            : '\\u' HEX HEX HEX HEX
                  | '\\U' HEX HEX HEX HEX HEX HEX HEX HEX ;
 HEX              : [0-9] | [A-F] | [a-f] ;
 EXPONENT 	 : [eE] [+-]? [0-9]+ ;
-LANGTAG          : [a-zA-Z] + ('-' [a-zA-Z0-9] +)* ;
-EMPTYLANGTAG     : (([a-zA-Z])+('-'([a-zA-Z0-9])+)*)? ;

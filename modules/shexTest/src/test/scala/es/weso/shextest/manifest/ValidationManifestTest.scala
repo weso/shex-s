@@ -34,8 +34,8 @@ class ValidationManifestTest extends ValidateManifest {
   // If the following variable is None, it runs all tests
   // Otherwise, it runs only the test whose name is equal to the value of this variable
   val nameIfSingle: Option[String] =
-//     Some("1val1IRIREFClosedExtra1_fail-iri2_higher")
-     None
+     Some("ExtendANDExtend3GAND3G-t23")
+//     None
 
   val conf: Config = ConfigFactory.load()
   val shexFolder = conf.getString("validationFolder")
@@ -140,7 +140,10 @@ class ValidationManifestTest extends ValidateManifest {
       schemaStr <- derefUriIO(schemaUri)
       dataStr <- derefUriIO(dataUri)
       schema <- Schema.fromString(schemaStr, "SHEXC", Some(fa.schema))
-      ss   <- RDFAsJenaModel.fromChars(dataStr, "TURTLE", Some(fa.data)).use(data =>
+      ss   <- for {
+        res1 <- RDFAsJenaModel.fromChars(dataStr, "TURTLE", Some(fa.data))
+        res2 <- RDFAsJenaModel.empty  
+        vv <- (res1,res2).tupled.use{case (data,builder) =>
         for {
           dataPrefixMap <- data.getPrefixMap
           resolvedSchema <- ResolvedSchema.resolve(schema, Some(fa.schema))
@@ -150,7 +153,7 @@ class ValidationManifestTest extends ValidateManifest {
           } else {
             val shapeMap = FixedShapeMap(Map(focus -> Map(lbl -> Info())), dataPrefixMap, schema.prefixMap)
             for {
-              result <- Validator(resolvedSchema, ExternalIRIResolver(fa.shapeExterns))
+              result <- Validator(resolvedSchema, ExternalIRIResolver(fa.shapeExterns), builder)
                 .validateShapeMap(data, shapeMap)
               resultShapeMap <- result.toResultShapeMap
               r <- if (resultShapeMap.getConformantShapes(focus) contains lbl)
@@ -170,7 +173,8 @@ class ValidationManifestTest extends ValidateManifest {
               }
             } yield r
            }
-          } yield rr)
+          } yield rr}
+      } yield vv 
     } yield ss
   }
 
@@ -190,15 +194,18 @@ class ValidationManifestTest extends ValidateManifest {
           smapStr       <- derefUriIO(shapeMapUri)
           sm            <- fromES(ShapeMap.fromJson(smapStr))
           schema        <- Schema.fromString(schemaStr, "SHEXC", None)
-          fixedShapeMap <- RDFAsJenaModel.empty.use(emptyRdf =>
+          fixedShapeMap <- RDFAsJenaModel.empty.flatMap(_.use(emptyRdf =>
             ShapeMap.fixShapeMap(sm, emptyRdf, PrefixMap.empty, PrefixMap.empty)
-          )
+          ))
           dataUri = mkLocal(mr.data,schemasBase,shexFolderURI)
           strData        <- derefUriIO(dataUri)
-          r           <- RDFAsJenaModel.fromChars(strData, "TURTLE", None).use(data =>
+          r           <- for {
+            res1 <- RDFAsJenaModel.fromChars(strData, "TURTLE", None)
+            res2 <- RDFAsJenaModel.empty
+            vv <- (res1, res2).tupled.use{ case (data,builder) =>
            for {
              resolvedSchema <- ResolvedSchema.resolve(schema, None)
-             resultVal <- Validator(resolvedSchema).validateShapeMap(data, fixedShapeMap)
+             resultVal <- Validator(schema = resolvedSchema, builder = builder).validateShapeMap(data, fixedShapeMap)
              resultShapeMap <- resultVal.toResultShapeMap
              jsonResult     <- fromES(JsonResult.fromJsonString(resultMapStr))
              result <- if (jsonResult.compare(resultShapeMap))
@@ -206,7 +213,8 @@ class ValidationManifestTest extends ValidateManifest {
              else
                IO.raiseError(new RuntimeException(s"Json results are different. Expected: ${jsonResult.asJson.spaces2}\nObtained: ${resultShapeMap.toString}"))
            } yield result
-          )
+        }
+          } yield vv 
         } yield r
         r
       }
