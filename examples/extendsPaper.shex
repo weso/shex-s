@@ -1,0 +1,35 @@
+prefix : <http://example.org/>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+
+:Issue CLOSED {
+ :reported   @:Person   ;
+ :reproduced @:User     ;
+ :related    @:Issue  *
+}
+
+:Person {
+ :name xsd:string        | 
+ :firstName xsd:string + ; 
+ :lastName xsd:string 
+}
+
+:User @:Person AND {
+  :email IRI      ;
+  :knows @:User *
+}
+
+:SolvedIssue extends @:Issue {
+ :reproduced   @:Employee   ;
+ :solved       @:Programmer 
+}
+
+abstract :InternalRep {
+ :code xsd:integer
+}
+
+:Employee extends @:Person 
+          extends @:InternalRep { }
+
+:Programmer extends @:Employee {
+ :experience [ :senior :junior ]
+}

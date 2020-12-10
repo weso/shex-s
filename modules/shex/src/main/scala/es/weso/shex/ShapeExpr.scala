@@ -13,6 +13,7 @@ import es.weso.shex.normalized.{FlatShape, NormalizedShape}
 sealed abstract trait ShapeExpr extends Product with Serializable {
   def id: Option[ShapeLabel]
   def addId(lbl: ShapeLabel): ShapeExpr
+  def rmId: ShapeExpr
 
   def showQualified(pm: PrefixMap) = {
     import es.weso.shex.compact.CompactShow._
@@ -135,7 +136,8 @@ case class ShapeOr(
     annotations: Option[List[Annotation]],
     actions: Option[List[SemAct]]
 ) extends ShapeExpr {
-  def addId(lbl: ShapeLabel) = this.copy(id = Some(lbl))
+  override def addId(lbl: ShapeLabel) = this.copy(id = Some(lbl))
+  override def rmId = this.copy(id = None)
 
   override def paths(schema: AbstractSchema): Either[String, Set[Path]] =
     sequence(shapeExprs.map(_.paths(schema))).map(_.toSet.flatten)
@@ -168,6 +170,7 @@ case class ShapeAnd(
     actions: Option[List[SemAct]]
 ) extends ShapeExpr {
   def addId(lbl: ShapeLabel) = this.copy(id = Some(lbl))
+  override def rmId = this.copy(id = None)
 
   override def paths(schema: AbstractSchema): Either[String, Set[Path]] =
     sequence(shapeExprs.map(_.paths(schema))).map(_.toSet.flatten)
@@ -230,7 +233,8 @@ case class Shape(
 
   def hasRepeatedProperties(schema: AbstractSchema): Boolean = !isNormalized(schema)
 
-  def addId(lbl: ShapeLabel): Shape = this.copy(id = Some(lbl))
+  override def addId(lbl: ShapeLabel): Shape = this.copy(id = Some(lbl))
+  override def rmId = this.copy(id = None)
 
   def isVirtual: Boolean =
     virtual.getOrElse(Shape.defaultVirtual)
@@ -350,6 +354,7 @@ case class NodeConstraint(
   override def addId(lbl: ShapeLabel): NodeConstraint = {
     this.copy(id = Some(lbl))
   }
+  override def rmId = this.copy(id = None)
 
   override def paths(schema: AbstractSchema): Either[String, Set[Path]] = Right(Set())
 
@@ -420,7 +425,8 @@ case class ShapeNot(
     annotations: Option[List[Annotation]],
     actions: Option[List[SemAct]]
 ) extends ShapeExpr {
-  def addId(lbl: ShapeLabel) = this.copy(id = Some(lbl))
+  override def addId(lbl: ShapeLabel) = this.copy(id = Some(lbl))
+  override def rmId = this.copy(id = None)
 
   override def paths(schema: AbstractSchema): Either[String, Set[Path]] =
     shapeExpr.paths(schema)
@@ -446,10 +452,14 @@ object ShapeNot {
     ShapeNot(None, se, None, None)
 }
 
-case class ShapeRef(reference: ShapeLabel, annotations: Option[List[Annotation]], actions: Option[List[SemAct]])
-    extends ShapeExpr {
+case class ShapeRef(
+  reference: ShapeLabel, 
+  annotations: Option[List[Annotation]], 
+  actions: Option[List[SemAct]]
+) extends ShapeExpr {
   def id                     = None
-  def addId(lbl: ShapeLabel) = this
+  override def addId(lbl: ShapeLabel) = this
+  override def rmId = this
 
   override def paths(schema: AbstractSchema): Either[String, Set[Path]] =
     for {
@@ -479,7 +489,9 @@ object ShapeRef {
 
 case class ShapeExternal(id: Option[ShapeLabel], annotations: Option[List[Annotation]], actions: Option[List[SemAct]])
     extends ShapeExpr {
-  def addId(lbl: ShapeLabel)                                     = this.copy(id = Some(lbl))
+  override def addId(lbl: ShapeLabel) = this.copy(id = Some(lbl))
+  override def rmId = this.copy(id = None)
+
   override def paths(schema: AbstractSchema): Either[String, Set[Path]] = Right(Set())
 
   override def addAnnotations(as: List[Annotation]): ShapeExpr = {
@@ -508,10 +520,10 @@ case class ShapeDecl(
     shapeExpr: ShapeExpr,
 ) extends ShapeExpr {
 
-  def addId(lbl: ShapeLabel): ShapeDecl = this.copy(id = Some(lbl))
+  override def addId(lbl: ShapeLabel): ShapeDecl = this.copy(id = Some(lbl))
+  override def rmId = this.copy(id = None)
 
-  def isVirtual: Boolean =
-    _abstract
+  def isVirtual: Boolean = _abstract
 
   override def paths(schema: AbstractSchema): Either[String, Set[Path]] = {
     shapeExpr.paths(schema)

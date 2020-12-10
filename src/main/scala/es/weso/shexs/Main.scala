@@ -68,7 +68,7 @@ object Main extends IOApp {
             _              <- ifOptB(opts.showSchema, showSchema)
             resolvedSchema <- getResolvedSchema()
             fixedMap       <- getFixedMap(rdf, resolvedSchema)
-            result         <- fromIO(Validator.validate(resolvedSchema, fixedMap, rdf, builder))
+            result         <- fromIO(Validator.validate(resolvedSchema, fixedMap, rdf, builder, opts.verbose()))
             resultShapeMap <- fromIO(result.toResultShapeMap)
             _              <- showResult(resultShapeMap) // putStrLn(s"Result\n${resultShapeMap.toString}"))
           } yield ()).handleErrorWith(t => ok { println(s"Error: ${t.getMessage}")})

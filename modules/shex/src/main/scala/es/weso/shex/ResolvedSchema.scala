@@ -31,7 +31,12 @@ case class ResolvedSchema(
 
  override def labels: List[ShapeLabel] = (resolvedMapShapeExprs.keySet ++ resolvedMapTripleExprs.keySet).toList
 
- def shapes = source.shapes
+ override def shapes = {
+   val se = resolvedMapShapeExprs.toList.map { case (_,rse) => rse.se }
+   if (se.isEmpty) None 
+   else Some(se)
+ }
+
  def maybeTripleExprMap = source.tripleExprMap
  def imports = source.imports
  
@@ -64,8 +69,12 @@ object ResolvedSchema {
   } 
  }
 
- // TODO: I think this can be easier with cats instances but I am not sure now how to invoke it
- private def cnvMap[A,K,B](m: Map[K,A], f: A => B): Map[K,B] = m.map { case(k,a) => (k,f(a)) } 
+ // TODO: I think this can be easier with cats instances 
+ // but I am not sure now how to invoke it
+ private def cnvMap[A,K,B](
+     m: Map[K,A], 
+     f: A => B
+    ): Map[K,B] = m.map { case(k,a) => (k,f(a)) } 
 
  /**
     * Resolves import declarations in schema

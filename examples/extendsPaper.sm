@@ -1,0 +1,6 @@
+:alice@:Person, 
+:bob@:User, 
+:issue0@:Issue, 
+:issue1@:Issue,
+:issue2@:SolvedIssue, 
+:emily@:InternalRep

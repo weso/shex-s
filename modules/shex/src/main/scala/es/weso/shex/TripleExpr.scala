@@ -5,6 +5,7 @@ import values._
 import cats.data._  
 import cats._
 import cats.implicits._
+import es.weso.rdf.PrefixMap
 
 sealed trait TripleExpr {
   def addId(label: ShapeLabel): TripleExpr
@@ -61,6 +62,12 @@ sealed trait TripleExpr {
   val (_, paths) = pathsAux(te).value.run(initialState)
   paths
  }
+
+ def showQualified(pm: PrefixMap) = {
+    import es.weso.shex.compact.CompactShow._
+    showTripleExpr(this, pm)
+ }
+
 }
 
 case class EachOf( id: Option[ShapeLabel],

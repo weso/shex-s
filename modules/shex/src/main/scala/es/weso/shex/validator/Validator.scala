@@ -19,7 +19,7 @@ import Function.tupled
 import es.weso.shex.validator.ShExError._
 import es.weso.shex.validator.ConstraintRef.{showConstraintRef => _}
 import ValidationUtils._
-import es.weso.depgraphs.Inheritance
+// import es.weso.depgraphs.Inheritance
 import es.weso.utils.internal.CollectionCompat._
 
 /**
@@ -167,11 +167,11 @@ case class Validator(schema: ResolvedSchema,
             checkNodeShapeExpr(attempt, node, shape)
           ),
           t => { 
-            println(s"checkNodeLabelSafe: adding type ${node.show}@+${shapeType.label.map(_.toRDFNode.show).getOrElse("?")}")
+            info(s"checkNodeLabelSafe: adding type ${node.show}@+${shapeType.label.map(_.toRDFNode.show).getOrElse("?")}")
             t.addType(node, shapeType)
           },
           (err, t) => {
-            println(s"checkNodeLabelSafe: Error, addNotEvidence ${node.show}@-${shapeType.label.map(_.toRDFNode.show).getOrElse("?")}")
+            info(s"checkNodeLabelSafe: Error, addNotEvidence ${node.show}@-${shapeType.label.map(_.toRDFNode.show).getOrElse("?")}")
             t.addNotEvidence(node, shapeType, err)
           }
         )
@@ -193,8 +193,7 @@ case class Validator(schema: ResolvedSchema,
       typing <- getTyping
       visited <- getVisited
       _ <- info(s"Visited: ${visited.map(_.show).mkString(",")}")
-      newTyping <- if (typing.hasInfoAbout(node, label)
-        && !(visited contains label) // visited contains the labels that have been visited by extends and should be ignored
+      newTyping <- if (typing.hasInfoAbout(node, label) && !(visited contains label) // visited contains the labels that have been visited by extends and should be ignored
       ) {
         info(s"Typing already contains label ${label.show}. Visited: ${visited}") >>
         ok(typing)
@@ -537,15 +536,15 @@ case class Validator(schema: ResolvedSchema,
     for {
       extendSe  <- getShape(extendLabel)
       nodesPrefixMap <- getNodesPrefixMap
-      _ <- { println(s"""|checkShapeExtend(
-                         |  node=${node.show},
-                         |  shape=${shape.show},
-                         |  base=${extendLabel.show}
-                         |  attempt=${attempt.showQualified(nodesPrefixMap,schema.prefixMap)}
-                         |""".stripMargin) ; ok(()) }
+      _ <- { info(s"""|checkShapeExtend(
+                      |  node=${node.show},
+                      |  shape=${shape.show},
+                      |  base=${extendLabel.show}
+                      |  attempt=${attempt.showQualified(nodesPrefixMap,schema.prefixMap)}
+                      |""".stripMargin) ; ok(()) }
       _ <- showCurrentTyping("checkShapeExtend: current typing: ", schema.prefixMap)                   
       neighs <- getNeighs(node)
-      _ <- { println(s"Neighs of ${node.show} = ${neighs}") ; ok(()) }
+      _ <- { info(s"Neighs of ${node.show} = ${neighs}") ; ok(()) }
       // TODO: Move the following code to Neighs.scala
       partitions = SetUtils.pSet(neighs.toList.toSet)
       pair      <- checkSomeFlagValue[(Set[Arc],Set[Arc]),ShapeTyping](
@@ -854,29 +853,53 @@ case class Validator(schema: ResolvedSchema,
   }
 
 
-  def validateNodeStart(rdf: RDFReader, node: IRI): IO[Result] = {
-    runValidator(checkNodeStart(node), rdf)
+  // Public methods 
+
+  /**
+   * Validate a node against the START declaration
+   **/
+  def validateNodeStart(rdf: RDFReader, node: IRI, verbose: Boolean = false): IO[Result] = {
+    runValidator(checkNodeStart(node), rdf, verbose)
   }
 
-  def validateNodeDecls(rdf: RDFReader): IO[Result] = {	
-    runValidator(checkTargetNodeDeclarations, rdf)	
+  /**
+   * Validate a node following target declarations.
+   * This methods follows SHACL convention and could be deprecated in the future
+   * 
+   **/
+  def validateNodeDecls(rdf: RDFReader, verbose: Boolean = false): IO[Result] = {	
+    runValidator(checkTargetNodeDeclarations, rdf, verbose)	
   }
 
-  def validateNodeShape(rdf: RDFReader, node: IRI, shape: String): IO[Result] = {	
+  /**
+   * Validate a node against a shape
+   **/
+  def validateNodeShape(rdf: RDFReader, node: IRI, shape: String, verbose: Boolean = false): IO[Result] = {	
     ShapeLabel	
       .fromString(shape)	
       .fold(	
         e => IO.raiseError(StringError(s"Can not obtain label from $shape")),	
-        label => runValidator(checkNodeShapeLabel(node, label), rdf)	
+        label => runValidator(checkNodeShapeLabel(node, label), rdf, verbose)	
       )	
   }
 
-  def validateShapeMap(rdf: RDFReader, shapeMap: FixedShapeMap): IO[Result] = {
-    runValidator(checkShapeMap(shapeMap), rdf)
+  /**
+   * Validate a node against a shape map
+   **/
+  def validateShapeMap(rdf: RDFReader, 
+                       shapeMap: FixedShapeMap, 
+                       verbose: Boolean = false): IO[Result] = {
+    runValidator(checkShapeMap(shapeMap), rdf, verbose)
   }
 
-  def runValidator(chk: Check[ShapeTyping], rdf: RDFReader): IO[Result] = for {
-    r <- runCheck(chk, rdf)
+  /**
+   * Execute the validator with a given checker
+   * param chk Checker
+   * param rdf RDFReader
+   * verbose boolean flag to show internal messages
+   **/
+  def runValidator(chk: Check[ShapeTyping], rdf: RDFReader, verbose: Boolean = false): IO[Result] = for {
+    r <- runCheck(chk, rdf, verbose)
     pm <- rdf.getPrefixMap
   } yield cnvResult(r, rdf, pm)
 
@@ -907,10 +930,11 @@ object Validator {
   def validate(schema: ResolvedSchema, 
                fixedShapeMap: FixedShapeMap, 
                rdf: RDFReader, 
-               builder: RDFBuilder
+               builder: RDFBuilder,
+               verbose: Boolean = false
               ): IO[Result] = {
     val validator = Validator(schema, NoAction, builder)
-    validator.validateShapeMap(rdf, fixedShapeMap)
+    validator.validateShapeMap(rdf, fixedShapeMap, verbose)
   } 
 
 }
