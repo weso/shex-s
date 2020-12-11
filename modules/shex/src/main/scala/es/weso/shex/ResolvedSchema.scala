@@ -112,30 +112,38 @@ object ResolvedSchema {
     } yield sm
   }
 
-  private def addExtends(g: Inheritance[ShapeLabel],
+  private def addLs(g: Inheritance[ShapeLabel],
+                    ls: List[ShapeLabel], 
+                    sub: ShapeLabel) = {
+    def cmb(c: Unit, e: ShapeLabel): IO[Unit] = 
+      g.addInheritance(sub,e)
+    ls.foldM(())(cmb)
+  }
+  
+
+  private def addExtendsRestricts(g: Inheritance[ShapeLabel],
                          sub: ShapeLabel,
                          shape: Shape
-                         ): IO[Unit] = 
-    shape._extends match {
-      case None => ().pure[IO]
-      case Some(es) => {
-        def cmb(c: Unit, e: ShapeLabel): IO[Unit] = 
-             g.addInheritance(sub,e)
-        es.foldM(())(cmb)
-      }
+                         ): IO[Unit] = {
+    (shape._extends,shape.restricts) match {
+      case (None,None) => ().pure[IO]
+      case (Some(es),None) => addLs(g,es,sub) 
+      case (None,Some(rs)) => addLs(g,rs,sub)
+      case (Some(es),Some(rs)) => addLs(g,es ++ rs, sub)
    }
+  }
 
    private def addShapeExpr(g: Inheritance[ShapeLabel], 
                 sub: ShapeLabel, 
                 se: ShapeExpr
                 ): IO[Unit] = {
     se match {
-      case s: Shape => addExtends(g,sub, s) 
-      case s: ShapeAnd => {
+      case s: Shape => addExtendsRestricts(g,sub, s) 
+/*      case s: ShapeAnd => {
          def f(x: Unit, shape: Shape): IO[Unit] = 
            addExtends(g,sub,shape)
          s.shapeExprs.collect { case s: Shape => s}.foldM(())(f)
-      }
+      } */
       case ShapeDecl(l,_,se) => se match {
         case _ => addShapeExpr(g,sub, se)  
       }

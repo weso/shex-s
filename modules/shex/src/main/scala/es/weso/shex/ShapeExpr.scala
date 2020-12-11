@@ -211,6 +211,7 @@ case class Shape(
     extra: Option[List[IRI]], // TODO: Extend extras to handle Paths?
     expression: Option[TripleExpr],
     _extends: Option[List[ShapeLabel]],
+    restricts: Option[List[ShapeLabel]],
     annotations: Option[List[Annotation]],
     actions: Option[List[SemAct]]
 ) extends ShapeExpr
@@ -309,6 +310,7 @@ case class Shape(
       extra.map(_.map(_.relativizeIRI(base))),
       expression.map(_.relativize(base)),
       _extends.map(_.map(_.relativize(base))),
+      restricts.map(_.map(_.relativize(base))),
       annotations.map(_.map(_.relativize(base))),
       actions.map(_.map(_.relativize(base)))
     )
@@ -325,6 +327,7 @@ object Shape {
     extra = None,
     expression = None,
     _extends = None,
+    restricts = None,
     actions = None,
     annotations = None
   )

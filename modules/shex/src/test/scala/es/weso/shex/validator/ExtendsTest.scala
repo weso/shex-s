@@ -175,8 +175,6 @@ class ExtendsTest extends ShouldValidateShapeMap {
            |""".stripMargin
       shouldValidateWithShapeMap(rdf, shex, ":x@:B", ":x@!:B")
     }
-
-
   } // describe
 */
   describe("Closed") {

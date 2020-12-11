@@ -149,6 +149,7 @@ object encoderShEx {
           optField("extra", a.extra),
           optField("expression", a.expression),
           optField("extends", a._extends),
+          optField("restricts", a.restricts),
           optField("semActs", a.actions),
           optField("annotations",a.annotations)
         ))

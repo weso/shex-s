@@ -194,7 +194,8 @@ trait RDF2ShEx extends RDFParser with LazyLogging {
     expression <- opt(sx_expression, tripleExpression)
     semActs <- opt(sx_semActs, semActList1Plus)
     annotations <- star(sx_annotation, annotationParser)
-  } yield Shape(mkId(n), None, closed, ls2Option(extras), expression, None, ls2Option(annotations), semActs)
+    // TODO: extends and restricts!!!
+  } yield Shape(mkId(n), None, closed, ls2Option(extras), expression, None, None, ls2Option(annotations), semActs)
 
   private def shapeExternal: RDFParser[ShapeExpr] = for {
     n <- getNode

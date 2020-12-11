@@ -1007,13 +1007,15 @@ class SchemaMaker extends ShExDocBaseVisitor[Any] with LazyLogging {
     val extras: Option[List[IRI]] =
       if (ls.isEmpty) None
       else Some(ls)
-    val inheritList = qualifiers.map(_.getIncluded).flatten
+    val inheritList = qualifiers.map(_.getExtends).flatten
+    val restrictsList = qualifiers.map(_.getRestricts).flatten
     val shape =
       Shape.empty.copy(
       closed = if (qualifiers.isEmpty) None else containsClosed,
       extra = extras,
       expression = tripleExpr,
       _extends = if (inheritList.isEmpty) None else Some(inheritList),
+      restricts = if (restrictsList.isEmpty) None else Some(restrictsList),
       actions = if (semActs.isEmpty) None else Some(semActs),
       annotations = if (anns.isEmpty) None else Some(anns)
     )
@@ -1025,6 +1027,8 @@ class SchemaMaker extends ShExDocBaseVisitor[Any] with LazyLogging {
       case _ if (isDefined(ctx.KW_CLOSED())) => ok(Closed)
       case _ if (isDefined(ctx.extension())) =>
         visitExtension(ctx.extension())
+      case _ if (isDefined(ctx.restriction())) =>
+        visitRestriction(ctx.restriction())
       case _ if (isDefined(ctx.extraPropertySet())) =>
         visitExtraPropertySet(ctx.extraPropertySet())
     }
@@ -1033,6 +1037,10 @@ class SchemaMaker extends ShExDocBaseVisitor[Any] with LazyLogging {
   override def visitExtension(ctx: ExtensionContext): Builder[Qualifier] = for {
     sl <- visitList(visitShapeRef,ctx.shapeRef())
   } yield Extends(sl)
+
+  override def visitRestriction(ctx: RestrictionContext): Builder[Qualifier] = for {
+    sl <- visitList(visitShapeRef,ctx.shapeRef())
+  } yield Restricts(sl)
 
   override def visitExtraPropertySet(ctx: ExtraPropertySetContext): Builder[Qualifier] = for {
     ls <- visitList(visitPredicate, ctx.predicate())
@@ -1402,18 +1410,24 @@ class SchemaMaker extends ShExDocBaseVisitor[Any] with LazyLogging {
         case _ => List()
       }
     }
-    def getIncluded: List[ShapeLabel] = {
+    def getExtends: List[ShapeLabel] = {
       this match {
         case Extends(labels) => labels
         case _ => List()
       }
     }
+    def getRestricts: List[ShapeLabel] = {
+      this match {
+        case Restricts(labels) => labels
+        case _ => List()
+      }
+    }
+
   }
 
   case class Extra(iris: List[IRI]) extends Qualifier
-
   case class Extends(labels: List[ShapeLabel]) extends Qualifier
-
+  case class Restricts(labels: List[ShapeLabel]) extends Qualifier
   case object Closed extends Qualifier
 
   // Some generic utils

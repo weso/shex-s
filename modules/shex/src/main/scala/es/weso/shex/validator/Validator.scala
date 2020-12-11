@@ -474,7 +474,7 @@ case class Validator(schema: ResolvedSchema,
 
   private def checkShape(attempt: Attempt, node: RDFNode, s: Shape): CheckTyping =
     s._extends match {
-      case None     => checkShapeBase(attempt, node, s)
+      case None     => checkShapeRestricts(attempt, node, s)
       case Some(es) => 
         info(s"checkShape(${node}@${s.id.map(_.toRDFNode.show).getOrElse("?")})") *>
         checkShapeExtendLs(attempt, node, s, es)
@@ -487,7 +487,7 @@ case class Validator(schema: ResolvedSchema,
       es: List[ShapeLabel]
   ): CheckTyping = {
     es match {
-      case Nil      => checkShapeBase(attempt, node, s)
+      case Nil      => checkShapeRestricts(attempt, node, s)
       case e :: Nil => for {
         t <- checkShapeExtend(attempt, node, s, e)
         _ <- infoTyping(t,"After checkShapeExtend",schema.prefixMap)
@@ -505,6 +505,7 @@ case class Validator(schema: ResolvedSchema,
     }
   }
 
+  // TODO: Refactor to define this in terms of checkShapeBase...
   private def checkShapeExtend(
       attempt: Attempt,
       node: RDFNode,
@@ -514,24 +515,6 @@ case class Validator(schema: ResolvedSchema,
 
     def noPartition(neighs:Neighs, extendSe: ShapeExpr): Check[ShapeTyping] = 
       err[ShapeTyping](NoPartition(node,attempt,shape,extendLabel,neighs))
-    /* for {
-      current <- getTyping
-      _ <- infoTyping(current,"No Partition, currentTyping: ", schema.prefixMap)
-      _ <- info(s"""|No partition found ${node.show}@${shape.id.map(_.toRDFNode.show).getOrElse(shape.showQualified(schema.prefixMap))} extends ${extendLabel.toRDFNode.show}
-                    |Adding not evidences: 
-                    |  ${node.show}@${shape.id.map(_.toRDFNode.show).getOrElse(shape.showQualified(schema.prefixMap))}"
-                    |  ${node.show}@${extendLabel.toRDFNode.show}"
-                    |""".stripMargin)
-      t1 <- addNotEvidence(NodeShape(node,ShapeType(shape,shape.id,schema)), 
-          NoPartition(node,attempt,shape,extendLabel,neighs),
-          s"No partition of ${node}. Neighs=${neighs} conforms to extend ${extendLabel}")
-      t2 <- addNotEvidence(NodeShape(node,ShapeType(extendSe,Some(extendLabel),schema)), 
-          NoPartition(node,attempt,shape,extendLabel,neighs),
-          s"No partition of ${node}. Neighs=${neighs} conforms to extend ${extendLabel}")          
-      t <- combineTypings(t1,t2)
-      _ <- infoTyping(t,"NoPartition, resulting type:", schema.prefixMap) 
-      _ <- err[(ShapeTyping,Boolean)](NoPartition(node,attempt,shape,extendLabel,neighs))
-    } yield (t,false) */
 
     for {
       extendSe  <- getShape(extendLabel)
@@ -653,7 +636,31 @@ case class Validator(schema: ResolvedSchema,
     }
   }
 
-  /* Check a shape without extends */
+  private def checkShapeRestricts(attempt: Attempt, node: RDFNode, s: Shape): CheckTyping = 
+   s.restricts match {
+      case None     => checkShapeBase(attempt, node, s)
+      case Some(rs) => 
+        checkShapeRestrictLs(attempt, node, s, rs)
+   }
+
+  private def checkShapeRestrictLs(attempt: Attempt, node: RDFNode, s: Shape, rs: List[ShapeLabel]): CheckTyping = 
+  rs match {
+      case Nil      => checkShapeBase(attempt, node, s)
+      case r :: Nil => for {
+        t <- checkShapeRestrict(attempt, node, s, r)
+        _ <- infoTyping(t,"After checkShapeRestrict",schema.prefixMap)
+      } yield t 
+      case e :: rs  => errStr(s"Multiple restricts not supported yet: ${rs.map(_.show).mkString(",")}")
+  }
+
+  private def checkShapeRestrict(attempt: Attempt, node: RDFNode, s: Shape, rl: ShapeLabel): CheckTyping = 
+  for {
+    t1 <- checkNodeShapeLabel(node,rl)
+    t2 <- checkShapeBase(attempt,node,s)
+    t <- combineTypings(t1,t2)
+  } yield t
+
+  /* Check a shape without extends and restricts */
   private def checkShapeBase(attempt: Attempt, node: RDFNode, s: Shape): CheckTyping = {
     info(s"checkShapeBase $node FlatShape? ${s.isFlatShape(schema)}") *> 
     (s match {
