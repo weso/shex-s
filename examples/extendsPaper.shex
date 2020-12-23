@@ -28,8 +28,10 @@ abstract :InternalRep {
 }
 
 :Employee extends @:Person 
-          extends @:InternalRep { }
+          extends @:InternalRep { 
+  :experience xsd:string           
+}
 
-:Programmer extends @:Employee {
- :experience [ :senior :junior ]
+:Programmer restricts @:Employee {
+ :experience [ "senior" "junior" ]
 }

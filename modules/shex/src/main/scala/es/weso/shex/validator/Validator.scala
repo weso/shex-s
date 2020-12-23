@@ -47,9 +47,12 @@ case class Validator(schema: ResolvedSchema,
       t <- combineTypings(ts)
     } yield t
 
-  private def checkShapeMap(shapeMap: FixedShapeMap): CheckTyping = {
-    checkNodesShapes(shapeMap)
-  }
+  private def checkShapeMap(shapeMap: FixedShapeMap): CheckTyping = 
+   for {
+    _ <- info(s"checkShapeMap")
+    r <- checkNodesShapes(shapeMap)
+    _ <- info(s"end of checkShapeMap")
+  } yield r
 
   private def checkNodesShapes(fixedMap: FixedShapeMap): CheckTyping =
     for {
@@ -57,9 +60,8 @@ case class Validator(schema: ResolvedSchema,
       t  <- combineTypings(ts)
       nodesPrefixMap <- getNodesPrefixMap
       _ <- info(s"end of checkNodeShapes: ${t.showShort(nodesPrefixMap,schema.prefixMap)}")
-      // newT <- removeAbstractShapes(t)
-      // _ <- info(s"after removing abstract shapes: ${newT.showShort(nodesPrefixMap,schema.prefixMap)}")
-    } yield t // newT
+      _ <- info(s"returning...")
+    } yield t 
 
 /*  private def removeAbstractShapes(t: ShapeTyping): CheckTyping = for {
     ls <- fromIO(abstractNoDescendants(t,schema.inheritanceGraph))
@@ -138,12 +140,12 @@ case class Validator(schema: ResolvedSchema,
     )
   }
 
-  private def checkNodeStart(node: RDFNode): CheckTyping = {
+  private def checkNodeStart(node: RDFNode): CheckTyping = getRDF.flatMap { rdf => 
     schema.start match {
-      case None => err(NoStart(node))
+      case None => err(NoStart(node,rdf))
       case Some(shape) => {
         val shapeType = ShapeType(shape, Some(Start), schema)
-        val attempt   = Attempt(NodeShape(node, shapeType), None)
+        val attempt   = Attempt(NodeShape(node, shapeType), None, rdf)
         runLocalSafeTyping(checkNodeShapeExpr(attempt, node, shape), 
           _.addType(node, shapeType), (err, t) => {
           t.addNotEvidence(node, shapeType, err)
@@ -159,8 +161,10 @@ case class Validator(schema: ResolvedSchema,
 
   private def checkNodeLabelSafe(node: RDFNode, label: ShapeLabel, shape: ShapeExpr): CheckTyping = {
     val shapeType = ShapeType(shape, Some(label), schema)
-    val attempt   = Attempt(NodeShape(node, shapeType), None)
+    
     for {
+      rdf <- getRDF
+      attempt = Attempt(NodeShape(node, shapeType), None,rdf)
       t <- runLocalSafeTyping(
           bind(
             checkOptSemActs(attempt,node, schema.startActs),
@@ -214,8 +218,7 @@ case class Validator(schema: ResolvedSchema,
   private def checkDescendants(
     node: RDFNode,
     s: ShapeExpr, 
-    attempt: Attempt
-   ): Check[(ShapeTyping, Option[ShapeLabel])] = for {
+    attempt: Attempt): Check[(ShapeTyping, Option[ShapeLabel])] = for {
      descendants <- fromIO(s.id.map(schema.inheritanceGraph.ancestors(_)).getOrElse(IO(Set[ShapeLabel]())))
      visited <- getVisited
      filteredDescendants = descendants.diff(visited)
@@ -227,7 +230,7 @@ case class Validator(schema: ResolvedSchema,
      result <- if (filteredDescendants.isEmpty) for {
          _ <- info(s"No descendants to check")
          t <- getTyping
-       } yield (t,None)
+       } yield (t,none[ShapeLabel])
       else 
        checkSomeFlagValue(filteredDescendants.toList.toLazyList,
          (d: ShapeLabel) => for {
@@ -242,9 +245,8 @@ case class Validator(schema: ResolvedSchema,
            _ <- if (t.getOkValues(node) contains ShapeType(se,Some(d),schema)) ok(())
                 else 
                   info(s"Descendant ${d.toRDFNode.show} failed on node ${node.show}") *>
-                  errStr(s"Descendant ${d.toRDFNode.show} failed on node ${node.show}") 
-         } yield t, 
-         getTyping)
+                  errStr[Unit](s"Descendant ${d.toRDFNode.show} failed on node ${node.show}") 
+         } yield t, getTyping)
   } yield result
 
   private def checkNodeShapeExpr(
@@ -416,7 +418,8 @@ case class Validator(schema: ResolvedSchema,
                                        se: ShapeExternal): CheckTyping = {
     for {
       externalShape <- getExternalShape(se)
-      newAttempt = Attempt(NodeShape(node, ShapeType(externalShape, se.id, schema)), attempt.path)
+      rdf <- getRDF
+      newAttempt = Attempt(NodeShape(node, ShapeType(externalShape, se.id, schema)), attempt.path, rdf)
       t <- checkNodeShapeExpr(newAttempt, node, externalShape)
     } yield t
   }
@@ -436,7 +439,7 @@ case class Validator(schema: ResolvedSchema,
       check <- checkCond(
         hasDatatype,
         attempt,
-        CheckDatatypeError(node, datatype),
+        CheckDatatypeError(node, datatype,rdf),
         s"${node.show} has datatype ${datatype.show}")
     } yield check
 
@@ -588,7 +591,7 @@ case class Validator(schema: ResolvedSchema,
                  |neighs1=${neighs1}
                  |neighs2=${neighs2}
                  |""".stripMargin) *>
-        errStr("Failing partition") // addNotEvidence(NodeShape(node,st),ExtendFails(node,extendLabel,attempt),s"Node ${node.show} doesn't conform to extended shape ${extendLabel.show}").map(t => (t,false))
+        errStr[ShapeTyping]("Failing partition") // addNotEvidence(NodeShape(node,st),ExtendFails(node,extendLabel,attempt),s"Node ${node.show} doesn't conform to extended shape ${extendLabel.show}").map(t => (t,false))
       }
     } yield pair 
   }
@@ -716,7 +719,6 @@ case class Validator(schema: ResolvedSchema,
     for {
       r <- name match {
         case TestSemanticAction.`iri` => {
-          println(s"Before TestSemanticAction runAction")
           fromIO(
             TestSemanticAction.runAction(code.getOrElse(""), node, rdf)
               .attempt
@@ -895,9 +897,12 @@ case class Validator(schema: ResolvedSchema,
    **/
   def validateShapeMap(rdf: RDFReader, 
                        shapeMap: FixedShapeMap, 
-                       verbose: Boolean = false): IO[Result] = {
-    runValidator(checkShapeMap(shapeMap), rdf, verbose)
-  }
+                       verbose: Boolean = false): IO[Result] = 
+  for {
+    _ <- IO { println(s"validateShapeMap") }
+    r <- runValidator(checkShapeMap(shapeMap), rdf, verbose)
+    _ <- IO { println(s"end of checkShapeMap") }
+  } yield r
 
   /**
    * Execute the validator with a given checker
@@ -908,13 +913,16 @@ case class Validator(schema: ResolvedSchema,
   def runValidator(chk: Check[ShapeTyping], rdf: RDFReader, verbose: Boolean = false): IO[Result] = for {
     r <- runCheck(chk, rdf, verbose)
     pm <- rdf.getPrefixMap
+    _ <- IO { println(s"End of runCheck") }
   } yield cnvResult(r, rdf, pm)
 
   private def cnvResult(r: CheckResult[ShExError, ShapeTyping, Log], rdf: RDFReader, rdfPrefixMap: PrefixMap): Result = Result (
     for {
       shapeTyping <- r.toEither
       result      <- shapeTyping.toShapeMap(rdfPrefixMap, schema.prefixMap).leftMap(StringError)
-    } yield result
+    } yield {
+      result
+    }
   )
 
 }

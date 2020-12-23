@@ -1,10 +1,15 @@
 lazy val scala212 = "2.12.12"
-lazy val scala213 = "2.13.3"
-lazy val supportedScalaVersions = List(scala213, scala212)
+lazy val scala213 = "2.13.4"
+lazy val scala3   = "3.0.0-M2"
+lazy val supportedScalaVersions = List(
+  scala213, 
+  scala212,
+//  scala3
+  )
 
 // Local dependencies
-lazy val srdfVersion           = "0.1.83"
-lazy val shapeMapsVersion      = "0.1.67"
+lazy val srdfVersion           = "0.1.86"
+lazy val shapeMapsVersion      = "0.1.69"
 lazy val utilsVersion          = "0.1.73"
 lazy val documentVersion       = "0.0.11"
 
@@ -15,7 +20,6 @@ lazy val catsEffectVersion     = "2.3.0"
 lazy val commonsTextVersion    = "1.8"
 lazy val console4catsVersion   = "0.8.1"
 lazy val circeVersion          = "0.14.0-M1"
-lazy val declineVersion        = ""
 lazy val diffsonVersion        = "4.0.0"
 lazy val fs2Version            = "2.4.0"
 // lazy val effVersion            = "4.6.1"
@@ -99,12 +103,16 @@ lazy val shexsRoot = project
     JavaAppPackaging, 
     LauncherJarPlugin
     )
-  .disablePlugins(RevolverPlugin)
+//  .disablePlugins(RevolverPlugin)
 //  .settings(
 //    buildInfoKeys := BuildInfoKey.ofN(name, version, scalaVersion, sbtVersion),
 //    buildInfoPackage := "es.weso.shaclex.buildinfo"
 //  )
-  .settings(commonSettings, packagingSettings, publishSettings, ghPagesSettings, wixSettings)
+  .settings(commonSettings, 
+         packagingSettings, 
+         publishSettings, 
+         // ghPagesSettings, 
+         wixSettings)
   .aggregate(depGraphs, shex, shexTest, rbe, wikibaserdf)
   .dependsOn(depGraphs, shex, shexTest, rbe, wikibaserdf)
   .settings(
@@ -141,7 +149,7 @@ def testFilter(name: String): Boolean   = /*(name endsWith "Test") && */ !compat
 lazy val shex = project
   .in(file("modules/shex"))
   .enablePlugins(Antlr4Plugin)
-  .disablePlugins(RevolverPlugin)
+//  .disablePlugins(RevolverPlugin)
   .configs(CompatTest)
   .settings(
     crossScalaVersions := supportedScalaVersions,
@@ -185,7 +193,7 @@ lazy val shex = project
 
 lazy val depGraphs = project
   .in(file("modules/depGraphs"))
-  .disablePlugins(RevolverPlugin)
+//  .disablePlugins(RevolverPlugin)
   .settings(commonSettings, publishSettings)
   .settings(
     crossScalaVersions := supportedScalaVersions,
@@ -200,7 +208,7 @@ lazy val depGraphs = project
 
 lazy val wikibaserdf = project
   .in(file("modules/wikibaserdf"))
-  .disablePlugins(RevolverPlugin)
+//  .disablePlugins(RevolverPlugin)
   .settings(commonSettings, publishSettings)
   .settings(
     crossScalaVersions := supportedScalaVersions,
@@ -217,7 +225,7 @@ lazy val wikibaserdf = project
 
 lazy val shexTest = project
   .in(file("modules/shexTest"))
-  .disablePlugins(RevolverPlugin)
+//  .disablePlugins(RevolverPlugin)
   .configs(CompatTest)
   .settings(
     crossScalaVersions := supportedScalaVersions,
@@ -261,7 +269,7 @@ def macroDependencies(scalaVersion: String) =
 
 lazy val rbe = project
   .in(file("modules/rbe"))
-  .disablePlugins(RevolverPlugin)
+//  .disablePlugins(RevolverPlugin)
   .dependsOn()
   .settings(
     commonSettings,
@@ -358,9 +366,9 @@ lazy val wixSettings = Seq(
 // wixProductUpgradeId := "4552fb0e-e257-4dbd-9ecb-dba9dbacf424"
 )
 
-lazy val ghPagesSettings = Seq(
-  git.remoteRepo := "git@github.com:labra/shaclex.git"
-)
+//lazy val ghPagesSettings = Seq(
+//  git.remoteRepo := "git@github.com:labra/shaclex.git"
+//)
 
 lazy val commonSettings = compilationSettings ++ sharedDependencies ++ Seq(
   organization := "es.weso",

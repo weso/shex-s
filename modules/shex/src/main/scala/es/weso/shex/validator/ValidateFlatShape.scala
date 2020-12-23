@@ -93,10 +93,11 @@ case class ValidateFlatShape(
     constraint.shape match {
       case None =>
         if (card.contains(values.size)) addEvidence(attempt.nodeShape, s"# of values fits $card")
-        else {
-          info(s"Cardinality error ${values.size} $card") >>
-          err(ErrCardinality(attempt, node, path, values.size, card))
-        }
+        else for {
+          rdf <- getRDF
+          _ <- info(s"Cardinality error ${values.size} $card") 
+          r <- err[ShapeTyping](ErrCardinality(attempt, node, path, values.size, card,rdf))
+        } yield r
       case Some(se) =>
         if (constraint.hasExtra) {
           for {
@@ -116,7 +117,7 @@ case class ValidateFlatShape(
                   )
                 } else {
                   info(s"Cardinality with Extra: ${passed.size} ${card}") >>
-                  err(ErrCardinalityWithExtra(attempt, node, path, passed.size, notPassed.size, card))
+                  err(ErrCardinalityWithExtra(attempt, node, path, passed.size, notPassed.size, card,rdf))
                 }
               } yield t
               p
@@ -140,12 +141,12 @@ case class ValidateFlatShape(
                 newt <- if (notPassed.isEmpty) {
                   addEvidence(attempt.nodeShape, s"${showNode(node)} passed ${constraint.showQualified(shapesPrefixMap)} for path ${path.showQualified(nodesPrefixMap)}")
                 } else
-                  err(ValuesNotPassed(attempt, node, path, passed.size, notPassed.toSet))
+                  err[ShapeTyping](ValuesNotPassed(attempt, node, path, passed.size, notPassed.toSet,rdf))
               } yield newt
               ct
             } else 
              info(s"Cardinality error: ${values.size}<>${card}") >>
-             err(ErrCardinality(attempt, node, path, values.size, card))
+             err(ErrCardinality(attempt, node, path, values.size, card,rdf))
           } yield t
     }
   }
@@ -177,6 +178,7 @@ case class ValidateFlatShape(
   private def mkOk(s: String): EitherT[IO, String, String] = EitherT.pure(s)
 
   private def cmb(els: List[EitherT[IO, String, String]]): EitherT[IO, String, String] = {
+    // val rs : EitherT[IO,String,List[String]] = 
     els.sequence.map(_.mkString("\n"))
   }
 
