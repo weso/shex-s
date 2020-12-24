@@ -1,13 +1,16 @@
 package es.weso.shexs
 
 import org.rogach.scallop._
+import es.weso.shapeMaps.ShapeMapFormat
+
+
 
 class MainOpts(arguments: Array[String], 
                onError: (Throwable, Scallop) => Nothing) extends ScallopConf(arguments) {
 
-  banner("""| shaclex: ShEx-s processor
-                | Options:
-                |""".stripMargin)
+  banner("""| shex: ShEx-s processor
+            | Options:
+            | """.stripMargin)
 
 
   footer("Enjoy!")
@@ -22,6 +25,17 @@ class MainOpts(arguments: Array[String],
     name = "shapeMap",
     descr = "ShapeMap",
     short = 'm')
+
+  val shapeMapFile: ScallopOption[String] = opt[String](
+    name = "shapeMapFile",
+    descr = "ShapeMap file",
+    noshort = true)
+
+  val shapeMapFormat: ScallopOption[String] = opt[String](
+    name = "shapeMapFormat",
+    descr = "ShapeMap format",
+    default = Some("Compact"),
+    noshort = true)
 
   val schema: ScallopOption[String] = opt[String](
     name = "schema",
@@ -44,12 +58,40 @@ class MainOpts(arguments: Array[String],
     descr = "Show RDF data",
     default = Some(false),
     noshort = true)
+  
+  val verbose: ScallopOption[Boolean] = opt[Boolean](
+    name = "verbose",
+    descr = "Show internal info about validation",
+    default = Some(false),
+    noshort = true)
 
   val showDataFormat: ScallopOption[String] = opt[String](
     name = "showDataFormat",
     descr = "Format to show RDF data",
     default = Some("Turtle"),
-    noshort = true)
+    noshort = true
+  )
+
+  val showSchema: ScallopOption[Boolean] = opt[Boolean](
+    name = "showSchema",
+    descr = "Show Schema",
+    default = Some(false),
+    noshort = true
+  )
+
+  val showSchemaFormat: ScallopOption[String] = opt[String](
+    "showSchemaFormat",
+    default = Some("ShExC"),
+    descr = "Format to show Schema",
+    noshort = true
+  )
+
+  val showResultFormat: ScallopOption[String] = opt[String](
+    "showResultFormat",
+    default = Some("Compact"),
+    descr = s"Format to show Result. Available formats: ${ShapeMapFormat.availableFormatNames.mkString(",")}",
+    noshort = true
+  )
 
   val schemaFile: ScallopOption[String] = opt[String](
     name = "schemaFile",

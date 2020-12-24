@@ -3,12 +3,13 @@ package es.weso.shex.normalized
 import cats._
 import cats.implicits._
 import es.weso.shex._
-import es.weso.shex.implicits.showShEx._
+// import es.weso.shex.implicits.showShEx._
 
 /**
   * A normalized shape consists of a list of slots where each slot is formed by a path and a list of constraints.
   * It can be represented as a map from a path to a list of constraints
   * @param slots a vector of pairs (Path, Vector[Constraint])
+  * @param closed indicates if the shape is closed
   */
 case class NormalizedShape(slots: Map[Path, Vector[Constraint]], closed: Boolean) {
   lazy val paths: Set[Path]               = slots.keySet

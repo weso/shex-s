@@ -1,7 +1,7 @@
 package es.weso.shextest.manifest
-import java.io.FileNotFoundException
-import java.nio.file.{Path, Paths}
-import java.util.concurrent.Executors
+// import java.io.FileNotFoundException
+import java.nio.file._
+// import java.util.concurrent.Executors
 
 import cats.effect._
 import com.typesafe.scalalogging.LazyLogging
@@ -274,14 +274,14 @@ class RDF2Manifest extends RDFParser with LazyLogging {
                                 ctx: ManifestContext,
                                 config: Config
                                ): ManifestParser[(IRI,Option[ShExManifest])] = {
-    val io: IO[(IRI,Option[ShExManifest])] = derefRDF(iri).use(rdf => for {
+    val io: IO[(IRI,Option[ShExManifest])] = derefRDF(iri).flatMap(_.use(rdf => for {
      eitherMfs <- parseManifest(iri,rdf).run(ctx).value.run(config)
      mf <- eitherMfs.fold(
        e => IO.raiseError(new RuntimeException(s"Error parsing $iri:${e}")),
        mfs => if (mfs.size == 1) IO(mfs.head)
        else IO.raiseError(new RuntimeException(s"More than one manifest ${mfs.size}"))
      )
-    } yield (iri,Some(mf)))
+    } yield (iri,Some(mf))))
     val xs: RDFParser[(IRI, Option[ShExManifest])] = liftIO(io)
     liftParser(xs)
 /*    resource.use(rdf =>
@@ -317,7 +317,7 @@ class RDF2Manifest extends RDFParser with LazyLogging {
 
 /*  private def derefRDF(iri: IRI): Resource[ManifestParser,RDFReader] =
     liftResource(RDFAsJenaModel.fromURI(iri.getLexicalForm, "TURTLE", Some(iri))) */
-  private def derefRDF(iri: IRI): Resource[IO,RDFReader] =
+  private def derefRDF(iri: IRI): IO[Resource[IO,RDFReader]] =
     RDFAsJenaModel.fromURI(iri.getLexicalForm, "TURTLE", Some(iri))
 
   val io2parser = new FunctionK[IO,ManifestParser] {
@@ -393,7 +393,7 @@ object RDF2Manifest extends LazyLogging {
     val n : RDFNode = IRI("http://internal.base/")
     val r: IO[ShExManifest] = for {
       cs <- getContents(fileName)
-      sm <- getRDF(cs.toString, format, base).use(rdf => for {
+      sm <- getRDF(cs.toString, format, base).flatMap(_.use(rdf => for {
         iriBase <- getIriBase(base)
         mfs <- {
           val ctx = ManifestContext(iriBase, derefIncludes, List())
@@ -404,7 +404,7 @@ object RDF2Manifest extends LazyLogging {
         manifest <-
           if (mfs.size == 1) mfs.head.pure[IO]
           else IO.raiseError(new RuntimeException(s"Number of manifests != 1: ${mfs}"))
-      } yield manifest)
+      } yield manifest))
     } yield sm
     r
   }
@@ -417,7 +417,7 @@ object RDF2Manifest extends LazyLogging {
     ))
   }
 
-  private def getRDF(cs: String, format: String, base: Option[String]): Resource[IO, RDFReader] = {
+  private def getRDF(cs: String, format: String, base: Option[String]): IO[Resource[IO, RDFReader]] = {
     RDFAsJenaModel.fromChars(cs, format, base.map(IRI(_)))
   }
 

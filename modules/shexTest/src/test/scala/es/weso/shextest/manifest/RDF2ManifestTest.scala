@@ -9,7 +9,7 @@ class RDF2ManifestTest extends AnyFunSpec with ValidateManifest {
 
   val conf: Config = ConfigFactory.load()
 
-/*  describe("RDF2Manifest schemas") {
+  describe("RDF2Manifest schemas") {
     val validationFolder = conf.getString("testsFolder")
     parseManifest("manifest", "schemas", validationFolder, None, List(), false)
   }
@@ -39,7 +39,7 @@ class RDF2ManifestTest extends AnyFunSpec with ValidateManifest {
       ),
       false
     )
-  } */
+  } 
 
   describe("RDF2Manifest validating") {
     val validationFolder = conf.getString("testsFolder")
@@ -47,8 +47,41 @@ class RDF2ManifestTest extends AnyFunSpec with ValidateManifest {
        "validation", 
        validationFolder, 
        None,
-       // Some("1literalTotaldigits_fail-malformedxsd_integer-1_2345"),
-       List(), 
+       // Some("vitals-RESTRICTS-pass_lie-BP"),
+       List(
+         "startNoCode1_pass",
+         "1dotNoCode1_pass",
+/*         "extends-abstract-multi-empty_fail-Ref2ExtraP",
+         "extends-abstract-multi-empty_fail-Ref1ExtraP",
+         "extends-abstract-multi-empty_fail-ReferrerExtraP",
+         "ANDAbstract-pass",
+         "AND3G-pass",
+         "ExtendAND3G-pass",
+         "Extend3G-pass",
+         "ExtendANDExtend3GAND3G-pass",
+         "ExtendANDExtend3GAND3G-t33" 
+
+1list0PlusDot-manualList_extraArc_Iv1,Iv2,Iv3_fail
+[info]   extends-abstract-multi-empty_fail-Ref2ExtraP
+[info]   extends-abstract-multi-empty_fail-Ref1ExtraP
+[info]   extends-abstract-multi-empty_fail-ReferrerExtraP
+[info]   AND3G-pass
+[info]   ExtendAND3G-pass
+[info]   Extend3G-pass
+[info]   ExtendANDExtend3GAND3G-pass
+[info]   ExtendANDExtend3GAND3G-t33
+
+1list0PlusDot-manualList_extraArc_Iv1,Iv2,Iv3_fail
+[info]   extends-abstract-multi-empty_fail-Ref2ExtraP
+[info]   extends-abstract-multi-empty_fail-Ref1ExtraP
+[info]   extends-abstract-multi-empty_fail-ReferrerExtraP
+[info]   ExtendAND3G-pass
+[info]   Extend3G-pass
+[info]   ExtendANDExtend3GAND3G-pass
+[info]   ExtendANDExtend3GAND3G-t33
+         
+         */
+       ), 
        false)
   }
 

@@ -1,18 +1,22 @@
 lazy val scala212 = "2.12.12"
-lazy val scala213 = "2.13.3"
-lazy val supportedScalaVersions = List(scala213, scala212)
+lazy val scala213 = "2.13.4"
+lazy val scala3   = "3.0.0-M2"
+lazy val supportedScalaVersions = List(
+  scala213, 
+  scala212,
+//  scala3
+  )
 
 // Local dependencies
-lazy val srdfVersion           = "0.1.73"
-lazy val shapeMapsVersion      = "0.1.59"
-lazy val utilsVersion          = "0.1.69"
+lazy val srdfVersion           = "0.1.86"
+lazy val shapeMapsVersion      = "0.1.69"
+lazy val utilsVersion          = "0.1.73"
 lazy val documentVersion       = "0.0.11"
 
 // Dependency versions
 lazy val antlrVersion          = "4.7.1"
-lazy val catsVersion           = "2.2.0"
-lazy val catsEffectVersion     = "2.2.0"
-lazy val catsMacrosVersion     = "2.1.1"
+lazy val catsVersion           = "2.3.0"
+lazy val catsEffectVersion     = "2.3.0"
 lazy val commonsTextVersion    = "1.8"
 lazy val console4catsVersion   = "0.8.1"
 lazy val circeVersion          = "0.14.0-M1"
@@ -20,11 +24,13 @@ lazy val diffsonVersion        = "4.0.0"
 lazy val fs2Version            = "2.4.0"
 // lazy val effVersion            = "4.6.1"
 lazy val jenaVersion           = "3.16.0"
+lazy val junitVersion          = "4.13.1"
+lazy val junitInterfaceVersion = "0.11"
 lazy val jgraphtVersion        = "1.3.1"
 lazy val logbackVersion        = "1.2.3"
 lazy val loggingVersion        = "3.9.2"
 lazy val pprintVersion         = "0.5.6"
-lazy val rdf4jVersion          = "3.4.0"
+lazy val rdf4jVersion          = "3.4.2"
 lazy val scalacheckVersion     = "1.14.0"
 lazy val scalacticVersion      = "3.2.0"
 lazy val scalaTestVersion      = "3.2.0"
@@ -44,7 +50,7 @@ lazy val scalaMacrosVersion = "2.1.1"
 lazy val antlr4            = "org.antlr"                  % "antlr4"               % antlrVersion
 lazy val catsCore          = "org.typelevel"              %% "cats-core"           % catsVersion
 lazy val catsKernel        = "org.typelevel"              %% "cats-kernel"         % catsVersion
-lazy val catsMacros        = "org.typelevel"              %% "cats-macros"         % catsMacrosVersion
+// lazy val catsMacros        = "org.typelevel"              %% "cats-macros"         % catsMacrosVersion
 lazy val catsEffect        = "org.typelevel"              %% "cats-effect"         % catsEffectVersion
 lazy val circeCore         = "io.circe"                   %% "circe-core"          % circeVersion
 lazy val circeGeneric      = "io.circe"                   %% "circe-generic"       % circeVersion
@@ -59,6 +65,8 @@ lazy val jgraphtCore    = "org.jgrapht"       % "jgrapht-core"     % jgraphtVers
 lazy val logbackClassic = "ch.qos.logback"    % "logback-classic"  % logbackVersion
 lazy val jenaArq        = "org.apache.jena"   % "jena-arq"         % jenaVersion
 lazy val jenaFuseki     = "org.apache.jena"   % "jena-fuseki-main" % jenaVersion
+lazy val junit          = "junit"             % "junit"            % junitVersion
+lazy val junitInterface = "com.novocode"      % "junit-interface"  % junitInterfaceVersion
 lazy val rdf4j_runtime  = "org.eclipse.rdf4j" % "rdf4j-runtime"    % rdf4jVersion
 
 // WESO components
@@ -95,12 +103,16 @@ lazy val shexsRoot = project
     JavaAppPackaging, 
     LauncherJarPlugin
     )
-  .disablePlugins(RevolverPlugin)
+//  .disablePlugins(RevolverPlugin)
 //  .settings(
 //    buildInfoKeys := BuildInfoKey.ofN(name, version, scalaVersion, sbtVersion),
 //    buildInfoPackage := "es.weso.shaclex.buildinfo"
 //  )
-  .settings(commonSettings, packagingSettings, publishSettings, ghPagesSettings, wixSettings)
+  .settings(commonSettings, 
+         packagingSettings, 
+         publishSettings, 
+         // ghPagesSettings, 
+         wixSettings)
   .aggregate(depGraphs, shex, shexTest, rbe, wikibaserdf)
   .dependsOn(depGraphs, shex, shexTest, rbe, wikibaserdf)
   .settings(
@@ -120,13 +132,13 @@ lazy val shexsRoot = project
       scalaLogging,
       scallop,
       typesafeConfig,
-      pprint
+      pprint,
     ),
     cancelable in Global := true,
     fork := true,
     ThisBuild / turbo := true,
     crossScalaVersions := supportedScalaVersions,
-    publish / skip := true,
+    skip in publish := true,
     Compile / run / mainClass := Some("es.weso.shexs.Main")
   )
 
@@ -137,7 +149,7 @@ def testFilter(name: String): Boolean   = /*(name endsWith "Test") && */ !compat
 lazy val shex = project
   .in(file("modules/shex"))
   .enablePlugins(Antlr4Plugin)
-  .disablePlugins(RevolverPlugin)
+//  .disablePlugins(RevolverPlugin)
   .configs(CompatTest)
   .settings(
     crossScalaVersions := supportedScalaVersions,
@@ -173,20 +185,22 @@ lazy val shex = project
       srdf,
       shapeMaps,
       srdfJena % Test,
-      srdf4j   % Test
+      srdf4j   % Test,
+      junit % Test,
+      junitInterface % Test
     )
   )
 
 lazy val depGraphs = project
   .in(file("modules/depGraphs"))
-  .disablePlugins(RevolverPlugin)
+//  .disablePlugins(RevolverPlugin)
   .settings(commonSettings, publishSettings)
   .settings(
     crossScalaVersions := supportedScalaVersions,
     libraryDependencies ++= Seq(
       catsCore,
       catsKernel,
-      catsMacros,
+      // catsMacros,
       jgraphtCore,
       utils
     )
@@ -194,14 +208,14 @@ lazy val depGraphs = project
 
 lazy val wikibaserdf = project
   .in(file("modules/wikibaserdf"))
-  .disablePlugins(RevolverPlugin)
+//  .disablePlugins(RevolverPlugin)
   .settings(commonSettings, publishSettings)
   .settings(
     crossScalaVersions := supportedScalaVersions,
     libraryDependencies ++= Seq(
       catsCore,
       catsKernel,
-      catsMacros,
+      // catsMacros,
       utils,
       srdf,
       srdfJena,
@@ -211,7 +225,7 @@ lazy val wikibaserdf = project
 
 lazy val shexTest = project
   .in(file("modules/shexTest"))
-  .disablePlugins(RevolverPlugin)
+//  .disablePlugins(RevolverPlugin)
   .configs(CompatTest)
   .settings(
     crossScalaVersions := supportedScalaVersions,
@@ -255,7 +269,7 @@ def macroDependencies(scalaVersion: String) =
 
 lazy val rbe = project
   .in(file("modules/rbe"))
-  .disablePlugins(RevolverPlugin)
+//  .disablePlugins(RevolverPlugin)
   .dependsOn()
   .settings(
     commonSettings,
@@ -270,7 +284,7 @@ lazy val rbe = project
       simulacrum,
       catsCore,
       catsKernel,
-      catsMacros,
+      // catsMacros,
       scalacheck % Test,
       srdfJena   % Test,
       utils,
@@ -352,9 +366,9 @@ lazy val wixSettings = Seq(
 // wixProductUpgradeId := "4552fb0e-e257-4dbd-9ecb-dba9dbacf424"
 )
 
-lazy val ghPagesSettings = Seq(
-  git.remoteRepo := "git@github.com:labra/shaclex.git"
-)
+//lazy val ghPagesSettings = Seq(
+//  git.remoteRepo := "git@github.com:labra/shaclex.git"
+//)
 
 lazy val commonSettings = compilationSettings ++ sharedDependencies ++ Seq(
   organization := "es.weso",
@@ -363,7 +377,7 @@ lazy val commonSettings = compilationSettings ++ sharedDependencies ++ Seq(
     Resolver.bintrayRepo("weso", "weso-releases"),
     Resolver.sonatypeRepo("snapshots")
   )
-)
+) ++ warnUnusedImport
 
 def antlrSettings(packageName: String) = Seq(
   antlr4GenListener in Antlr4 := true,
@@ -397,4 +411,10 @@ lazy val publishSettings = Seq(
   publishMavenStyle := true,
   bintrayRepository in bintray := "weso-releases",
   bintrayOrganization in bintray := Some("weso")
+)
+
+lazy val warnUnusedImport = Seq(
+  scalacOptions ++= (if (isDotty.value) Nil else Seq("-Ywarn-unused:imports")),
+  scalacOptions in (Compile, console) ~= { _.filterNot(Set("-Ywarn-unused-import", "-Ywarn-unused:imports")) },
+  scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value
 )

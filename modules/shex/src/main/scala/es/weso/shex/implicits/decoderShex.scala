@@ -12,10 +12,21 @@ import es.weso.rdf.PREFIXES.{`rdf:langString`, `xsd:string`}
 
 object decoderShEx {
 
+  // TODO: Move to Utils
+  private def optFixedFieldValue(c: HCursor, name: String, value: String): Decoder.Result[Unit] = for {
+    maybeValue <- optFieldDecode[String](c,name)
+    r <- maybeValue match {
+      case None => Either.right(())
+      case Some(v) => if (v == value) Either.right(())
+         else Either.left(DecodingFailure(s"$value for field $name should be \n$value but got\n$v", Nil))
+    } 
+  } yield r
+     
+
   implicit lazy val decodeSchema: Decoder[Schema] = Decoder.instance { c =>
     for {
       _ <- fixedFieldValue(c, "type", "Schema")
-      _ <- fixedFieldValue(c, "@context", "http://www.w3.org/ns/shex.jsonld")
+      _ <- optFixedFieldValue(c, "@context", "http://www.w3.org/ns/shex.jsonld")
       prefixes <- optFieldDecodeMap[Prefix, IRI](c, "prefixes")
       imports <- optFieldDecode[List[IRI]](c, "imports")
       base <- optFieldDecode[IRI](c, "base")
@@ -62,8 +73,20 @@ object decoderShEx {
     })
 
   implicit lazy val decodeShapeExpr: Decoder[ShapeExpr] =
-    decoderShapeRef.or(
-      decoderLabeledShapeExpr)
+    decoderShapeRef or decoderLabeledShapeExpr or decoderShapeDecl
+
+  lazy val decoderShapeDecl: Decoder[ShapeExpr] = Decoder.instance { c =>
+    c.downField("type").as[String] match {
+      case Right("ShapeDecl") => for {
+        id <- optFieldDecode[ShapeLabel](c, "id")
+        abst <- optFieldDecode[Boolean](c,"abstract")
+        se <- fieldDecode[ShapeExpr](c,"shapeExpr")
+      } yield ShapeDecl(id,abst.getOrElse(false),se)
+      case other => Either.left(DecodingFailure(s"Decoding ShapeDecl. Unexpected value $other", Nil))
+    }
+  }
+  //   Decoder[ShapeLabel].map(lbl => ShapeRef(lbl,None,None))
+
 
   lazy val decoderShapeRef: Decoder[ShapeRef] =
     Decoder[ShapeLabel].map(lbl => ShapeRef(lbl,None,None))
@@ -169,9 +192,10 @@ object decoderShEx {
       extra <- optFieldDecode[List[IRI]](c, "extra")
       expression <- optFieldDecode[TripleExpr](c, "expression")
       _extends <- optFieldDecode[List[ShapeLabel]](c, "extends")
+      restricts <- optFieldDecode[List[ShapeLabel]](c, "restricts")
       semActs <- optFieldDecode[List[SemAct]](c, "semActs")
       annotations <- optFieldDecode[List[Annotation]](c,"annotations")
-    } yield Shape(id, virtual, closed, extra, expression, _extends, annotations, semActs)
+    } yield Shape(id, virtual, closed, extra, expression, _extends, restricts, annotations, semActs)
   }
 
   implicit lazy val decodeTripleExpr: Decoder[TripleExpr] =

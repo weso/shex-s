@@ -32,22 +32,24 @@ object showShEx {
   }
 
   implicit lazy val showShapeExpr: Show[ShapeExpr] = new Show[ShapeExpr] {
-    final def show(a: ShapeExpr): String = a match {
+    final def show(se: ShapeExpr): String = se match {
       case ShapeOr(id, shapes,_,_) => s"(${optShow(id)} ${shapes.map(_.show).mkString(" OR ")})"
-      case ShapeAnd(id, shapes,_,_) => s"(${optShow(id)}, ${shapes.map(_.show).mkString(" AND ")})"
+      case ShapeAnd(id, shapes,_,_) => s"(${optShow(id)} ${shapes.map(_.show).mkString(" AND ")})"
       case ShapeNot(id, shape,_,_) => s"(${optShow(id)} NOT ${shape.show})"
       case s: Shape => s.show
       case nc: NodeConstraint => nc.show
       case ShapeRef(r,_,_) => s"@${r.show}"
-      case ShapeExternal(id,_,_) => s"${optShow(id)} EXternal"
+      case ShapeExternal(id,_,_) => s"${optShow(id)} EXTERNAL"
+      case ShapeDecl(id,abs,se) => s"${if (abs) "ABSTRACT " else ""}${optShow(id)} ${se.show}"
+      case _ => s"Error. Unknown type of ShapeExpr: ${se}"
     }
   }
 
   implicit lazy val showShape: Show[Shape] = new Show[Shape] {
     final def show(a: Shape): String = a match {
-      case Shape(None,None,None,None,None,None,None,None) => "."
+      case Shape(None,None,None,None,None,None,None,None,None) => "."
       case _ =>
-        s"${optShow(a.id)}${optShowBoolean(a.virtual, "VIRTUAL")}${optShowBoolean(a.closed," CLOSED")}${optShowExtras(a.extra)}${optShowExtends(a._extends)} { ${optShow(a.expression)} ${optShowLs(a.actions,"\n")} }"
+        s"${optShow(a.id)}${optShowBoolean(a.virtual, "VIRTUAL")}${optShowBoolean(a.closed," CLOSED")}${optShowExtras(a.extra)}${optShowExtends(a._extends)}${optShowRestricts(a.restricts)}{ ${optShow(a.expression)} ${optShowLs(a.actions,"\n")} }"
     }
   }
 
@@ -149,7 +151,7 @@ object showShEx {
       case Length(v) => s"${a.fieldName}(${v.show})"
       case MinLength(v) => s"${a.fieldName}(${v.show})"
       case MaxLength(v) => s"${a.fieldName}(${v.show})"
-      case Pattern(v, flags) => s"${a.fieldName}(${v.show},${flags.getOrElse("").show})"
+      case Pattern(v, flags) => s"/${v.show}/${flags.getOrElse("").show} "
       case MinInclusive(n) => s"${a.fieldName}(${n.show})"
       case MaxInclusive(n) => s"${a.fieldName}(${n.show})"
       case MinExclusive(n) => s"${a.fieldName}(${n.show})"
@@ -190,7 +192,7 @@ object showShEx {
 
   implicit lazy val showTripleConstraint: Show[TripleConstraint] = new Show[TripleConstraint] {
     final def show(a: TripleConstraint): String =
-      s"${optShow(a.id)}${optShow(a.optInverse)}${optShow(a.optNegated)}${a.predicate.show}${optShow(a.valueExpr)}${optShowCard(a.optMin, a.optMax)}${optShow(a.semActs)}${optShow(a.annotations)}"
+      s"${optShow(a.id)}${optShow(a.optInverse)}${optShow(a.optNegated)}${a.predicate.show} ${optShow(a.valueExpr)}${optShowCard(a.optMin, a.optMax)}${optShow(a.semActs)}${optShow(a.annotations)}"
   }
 
   implicit lazy val showAnnotation: Show[Annotation] = new Show[Annotation] {
@@ -242,13 +244,20 @@ object showShEx {
       case Some(ls) => " extends " + ls.map(_.show).mkString(",")
     }
 
+  private def optShowRestricts(maybeValues: Option[List[ShapeLabel]]): String =
+    maybeValues match {
+      case None => ""
+      case Some(ls) => " restricts " + ls.map(_.show).mkString(",")
+    }
+
+
   private def optShowCard(maybeInt: Option[Int], maybeMax: Option[Max]): String =
     (maybeInt,maybeMax) match {
       case (None,None) => ""
       case (Some(0),Some(IntMax(1))) => s"?"
       case (Some(1),Some(IntMax(1))) => s""
-      case (Some(1),Some(Star)) => s"*+"
-      case (Some(0),Some(Star)) => s"**"
+      case (Some(1),Some(Star)) => s"+"
+      case (Some(0),Some(Star)) => s"*"
       case (Some(m),None) => s"{$m,}"
       case (Some(m),Some(IntMax(n))) => s"{$m,$n}"
       case (Some(m),Some(Star)) => s"{$m,*}"

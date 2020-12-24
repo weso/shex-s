@@ -20,14 +20,4 @@ object Schema {
   def empty[Edge, Node, Label, Err, Evidence](): Schema[Edge, Node, Label, Err, Evidence] =
     Schema(Map(), Seq())
 
-  /*  def matchNode[Edge,Node,Label,Err,Evidence,Log](
-      node: Node,
-      label:Label,
-      schema:Schema[Edge,Node,Label,Err,Evidence],
-      graph: Graph[Edge,Node],
-      matcher: Matcher[Edge,Node,Label,Err,Evidence]):
-      Typing[Node,Label,Err,Evidence] = {
-    matcher.matchNode(node, label)
-  } */
-
 }

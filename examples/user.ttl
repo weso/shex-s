@@ -3,6 +3,10 @@ prefix schema: <http://schema.org/>
 
 :alice schema:name "Alice";
        schema:knows :bob, :carol .
-:bob schema:name "Robert";
-     schema:knows :bob .
+:bob   schema:name "Robert";
+       schema:knows :bob .
 :carol schema:name "Carol" .
+:dave  schema:name 23 .
+:emily schema:knows [ 
+   schema:name 23.4 
+] .

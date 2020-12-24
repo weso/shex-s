@@ -89,16 +89,15 @@ class NormalizeShapeTest extends AnyFunSpec with Matchers with EitherValues {
     val q: Path              = Direct(ex + "q")
     val a                    = ex + "S"
     val iri                  = NodeConstraint.nodeKind(IRIKind, List())
-    val any                  = ShapeExpr.any
     val tc1: TripleConstraint = TripleConstraint.valueExpr(ex + "p", iri)
-    val tc2: TripleConstraint = TripleConstraint.valueExpr(ex + "q", any)
+    val tc2: TripleConstraint = TripleConstraint.emptyPred(ex+"q")
 
     shouldNormalizeShape(
       shexStr,
       a,
       NormalizedShape(Map(
         p -> Vector(Constraint(Some(iri), true, Cardinality(1, IntMax(1)), None, tc1)),
-        q -> Vector(Constraint(Some(any), false, Cardinality(1, IntMax(1)), None, tc2)),
+        q -> Vector(Constraint(None, false, Cardinality(1, IntMax(1)), None, tc2)),
         ), false)
     )
   }
@@ -187,7 +186,16 @@ class NormalizeShapeTest extends AnyFunSpec with Matchers with EitherValues {
       } yield normalized
       result.value.unsafeRunSync.fold(e => fail(s"Error: $e"), n => 
         if (n == expected) info(s"Normalized shapes are equal")
-        else fail(s"Normalize shape different from expected\nResult:\n${n.show}\nExpected\n${expected.show}\nResult\n${n}\nExpected:\n${expected}")
+        else {
+         pprint.log(n,"obtained")
+         pprint.log(expected,"expected")
+         fail(s"""|Normalize shape different from expected
+                      |Result:
+                      |${n.show}
+                      |Expected
+                      |${expected.show}
+                      |""".stripMargin)
+        }
       )
     }
   }

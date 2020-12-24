@@ -153,8 +153,11 @@ class SchemaMaker extends ShExDocBaseVisitor[Any] with LazyLogging {
     for {
       label <- visitShapeExprLabel(ctx.shapeExprLabel())
       shapeExpr <- obtainShapeExpr(ctx)
-      _ <- addShape(label, shapeExpr)
-    } yield (label, shapeExpr)
+      se <- if (isDefined(ctx.KW_ABSTRACT())) 
+        ok(ShapeDecl(Some(label), true, shapeExpr))
+      else ok(shapeExpr)
+      _ <- addShape(label, se)
+    } yield (label, se) 
 
   def obtainShapeExpr(ctx: ShapeExprDeclContext): Builder[ShapeExpr] =
     if (isDefined(ctx.KW_EXTERNAL())) {
@@ -917,11 +920,24 @@ class SchemaMaker extends ShExDocBaseVisitor[Any] with LazyLogging {
     case _ if (isDefined(ctx.inlineShapeDefinition())) =>
       visitInlineShapeDefinition(ctx.inlineShapeDefinition())
     case _ if (isDefined(ctx.shapeRef())) =>
-      visitShapeRef(ctx.shapeRef())
+      visitShapeRef(ctx.shapeRef()).map(ShapeRef(_,None,None))
     case _ => err(s"internal Error: visitShapeOrRef. Unknown $ctx")
   }
 
-  override def visitShapeRef(ctx: ShapeRefContext): Builder[ShapeExpr] = ctx match {
+  override def visitShapeRef(ctx: ShapeRefContext): Builder[ShapeLabel] = ctx match {
+    case _ if (isDefined(ctx.ATPNAME_NS())) => {
+      val nameNS = ctx.ATPNAME_NS().getText().tail
+      resolve(nameNS).map(iri => IRILabel(iri))
+    }
+    case _ if (isDefined(ctx.ATPNAME_LN())) => {
+      val nameLN = ctx.ATPNAME_LN().getText().tail
+      resolve(nameLN).map(iri => IRILabel(iri))
+    }
+    case _ if (isDefined(ctx.shapeExprLabel())) => for {
+      lbl <- visitShapeExprLabel(ctx.shapeExprLabel())
+    } yield lbl
+  }
+/*  override def visitShapeRef(ctx: ShapeRefContext): Builder[ShapeExpr] = ctx match {
     case _ if (isDefined(ctx.ATPNAME_NS())) => {
       val nameNS = ctx.ATPNAME_NS().getText().tail
       resolve(nameNS).map(iri => ShapeRef(IRILabel(iri), None,None))
@@ -933,13 +949,13 @@ class SchemaMaker extends ShExDocBaseVisitor[Any] with LazyLogging {
     case _ if (isDefined(ctx.shapeExprLabel())) => for {
       lbl <- visitShapeExprLabel(ctx.shapeExprLabel())
     } yield ShapeRef(lbl,None,None)
-  }
+  } */
 
   override def visitShapeOrRef(ctx: ShapeOrRefContext): Builder[ShapeExpr] = ctx match {
     case _ if (isDefined(ctx.shapeDefinition())) =>
       visitShapeDefinition(ctx.shapeDefinition())
     case _ if (isDefined(ctx.shapeRef())) =>
-      visitShapeRef(ctx.shapeRef())
+      visitShapeRef(ctx.shapeRef()).map(lbl => ShapeRef(lbl,None,None)) 
     case _ => err(s"internal Error: visitShapeOrRef. Unknown $ctx")
   }
 
@@ -991,13 +1007,15 @@ class SchemaMaker extends ShExDocBaseVisitor[Any] with LazyLogging {
     val extras: Option[List[IRI]] =
       if (ls.isEmpty) None
       else Some(ls)
-    val inheritList = qualifiers.map(_.getIncluded).flatten
+    val inheritList = qualifiers.map(_.getExtends).flatten
+    val restrictsList = qualifiers.map(_.getRestricts).flatten
     val shape =
       Shape.empty.copy(
-      closed = containsClosed,
+      closed = if (qualifiers.isEmpty) None else containsClosed,
       extra = extras,
       expression = tripleExpr,
       _extends = if (inheritList.isEmpty) None else Some(inheritList),
+      restricts = if (restrictsList.isEmpty) None else Some(restrictsList),
       actions = if (semActs.isEmpty) None else Some(semActs),
       annotations = if (anns.isEmpty) None else Some(anns)
     )
@@ -1009,14 +1027,20 @@ class SchemaMaker extends ShExDocBaseVisitor[Any] with LazyLogging {
       case _ if (isDefined(ctx.KW_CLOSED())) => ok(Closed)
       case _ if (isDefined(ctx.extension())) =>
         visitExtension(ctx.extension())
+      case _ if (isDefined(ctx.restriction())) =>
+        visitRestriction(ctx.restriction())
       case _ if (isDefined(ctx.extraPropertySet())) =>
         visitExtraPropertySet(ctx.extraPropertySet())
     }
   }
 
   override def visitExtension(ctx: ExtensionContext): Builder[Qualifier] = for {
-    sl <- visitShapeExprLabel(ctx.shapeExprLabel())
+    sl <- visitList(visitShapeRef,ctx.shapeRef())
   } yield Extends(sl)
+
+  override def visitRestriction(ctx: RestrictionContext): Builder[Qualifier] = for {
+    sl <- visitList(visitShapeRef,ctx.shapeRef())
+  } yield Restricts(sl)
 
   override def visitExtraPropertySet(ctx: ExtraPropertySetContext): Builder[Qualifier] = for {
     ls <- visitList(visitPredicate, ctx.predicate())
@@ -1125,7 +1149,7 @@ class SchemaMaker extends ShExDocBaseVisitor[Any] with LazyLogging {
         emptyPred(predicate).copy(
           optInverse = sense.optInverse,
           optNegated = sense.optNegated,
-          valueExpr = Some(shapeExpr),
+          valueExpr = if (shapeExpr == ShapeExpr.any) None else Some(shapeExpr),
           optMin = cardinality._1,
           optMax = cardinality._2,
           // optVariableDecl = varDecl,
@@ -1386,18 +1410,24 @@ class SchemaMaker extends ShExDocBaseVisitor[Any] with LazyLogging {
         case _ => List()
       }
     }
-    def getIncluded: List[ShapeLabel] = {
+    def getExtends: List[ShapeLabel] = {
       this match {
-        case Extends(label) => List(label)
+        case Extends(labels) => labels
         case _ => List()
       }
     }
+    def getRestricts: List[ShapeLabel] = {
+      this match {
+        case Restricts(labels) => labels
+        case _ => List()
+      }
+    }
+
   }
 
   case class Extra(iris: List[IRI]) extends Qualifier
-
-  case class Extends(label: ShapeLabel) extends Qualifier
-
+  case class Extends(labels: List[ShapeLabel]) extends Qualifier
+  case class Restricts(labels: List[ShapeLabel]) extends Qualifier
   case object Closed extends Qualifier
 
   // Some generic utils

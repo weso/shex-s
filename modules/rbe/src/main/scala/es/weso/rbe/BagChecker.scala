@@ -1,13 +1,14 @@
 package es.weso.rbe
 import cats.Show
 import es.weso.collection._
+import cats.data.NonEmptyList
 //import es.weso.validating._
 
 trait BagChecker[A] {
 
   def rbe: Rbe[A]
 
-  def check(bag: Bag[A], open: Boolean): Either[String, Bag[A]]
+  def check(bag: Bag[A], open: Boolean): Either[NonEmptyList[RbeError], Bag[A]]
 
 }
 

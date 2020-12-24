@@ -2,8 +2,7 @@ package es.weso.collection
 
 import scala.collection.SortedMap
 
-case class BagSortedMap[A: Ordering](smap: SortedMap[A, Int])
-  extends Bag[A] {
+case class BagSortedMap[A: Ordering](smap: SortedMap[A, Int]) extends Bag[A] {
 
   def contains(elem: A): Boolean = smap.contains(elem)
 
