@@ -10,7 +10,7 @@ import es.weso.utils.OptionListUtils._
 // import cats.data._
 // import cats.implicits._
 
-case class Shape(
+/*case class Shape(
     id: Option[ShapeLabel],
     virtual: Option[Boolean],
     closed: Option[Boolean],
@@ -146,4 +146,4 @@ object Shape {
     Shape.empty.copy(expression = Some(te))
   }
 }
-
+*/

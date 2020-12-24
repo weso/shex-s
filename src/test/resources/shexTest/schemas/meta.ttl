@@ -45,7 +45,7 @@ PREFIX sht:     <http://www.w3.org/ns/shacl/test-suite#>
                                  <3groupdotExtra3NLex.shex> sht:sameAbstractSyntaxAs                  <3groupdotExtra3.shex> .
                                <startEqualSpaceInline.shex> sht:sameAbstractSyntaxAs                      <startInline.shex> .
                                <startSpaceEqualInline.shex> sht:sameAbstractSyntaxAs                      <startInline.shex> .
-                                        <1dot3Inherit.shex> sht:sameAbstractSyntaxAs                     <1dotInherit3.shex> .
+                                        <1dot3Extends.shex> sht:sameAbstractSyntaxAs                     <1dotExtend3s.shex> .
 #                                <3groupdotExtra3NLex.shex> sht:sameAbstractSyntaxAs              <3groupdotExtra3NLex.shex> .
                                <1dotLNex-HYPHEN_MINUS.shex> sht:spellingDifferentFrom                            <1dot.shex> .
                                          <1dotRefLNex.shex> sht:sameStructureAs                              <1dotRef1.shex> .

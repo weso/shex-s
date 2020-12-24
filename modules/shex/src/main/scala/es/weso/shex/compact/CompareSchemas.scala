@@ -42,7 +42,13 @@ object CompareSchemas {
       case (s1: Shape, s2: Shape)                   => compareShapes(s1, s2)
       case (ShapeRef(i1,_,_), ShapeRef(i2,_,_))             => Eq[ShapeLabel].eqv(i1,i2)
       case (ShapeExternal(id1,_,_), ShapeExternal(id2,_,_)) => id1 == id2
-      case (_, _)                                   => false
+      case (ShapeDecl(id1,abs1,se1), ShapeDecl(id2,abs2,se2)) => 
+        id1 == id2 && abs1 == abs2 && compareShapeExprs(se1,se2)
+      case (_, _)                                   => {
+        pprint.log(se1,"compareShapeExprs")
+        pprint.log(se2,"compareShapeExprs")
+        false
+      }
     }
   }
 

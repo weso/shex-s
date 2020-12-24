@@ -58,6 +58,12 @@ class MainOpts(arguments: Array[String],
     descr = "Show RDF data",
     default = Some(false),
     noshort = true)
+  
+  val verbose: ScallopOption[Boolean] = opt[Boolean](
+    name = "verbose",
+    descr = "Show internal info about validation",
+    default = Some(false),
+    noshort = true)
 
   val showDataFormat: ScallopOption[String] = opt[String](
     name = "showDataFormat",

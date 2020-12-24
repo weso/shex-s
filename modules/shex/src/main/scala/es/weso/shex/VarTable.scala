@@ -4,6 +4,7 @@ import cats._
 import cats.implicits._
 import es.weso.rdf.nodes.RDFNode
 
+
 case class VarTable(table: Map[VarName,List[RDFNode]]) {
   def set(name: VarName, nodes: List[RDFNode]): VarTable =
     VarTable(table.updated(name,nodes))

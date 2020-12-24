@@ -63,7 +63,7 @@ object FlatShape {
           case Some(se) =>
             se match {
               case _ if (!se.hasNoReference(schema)) => s"${se.show} contains a reference".asLeft
-              case _ if (!se.isSimple(schema))       => s"${se.show} is not simple".asLeft
+              case _ if (!se.isSimple)       => s"${se.show} is not simple".asLeft
               case _ =>
                 cs.updated(
                     tc.path,

@@ -68,7 +68,7 @@ object Main extends IOApp {
             _              <- ifOptB(opts.showSchema, showSchema)
             resolvedSchema <- getResolvedSchema()
             fixedMap       <- getFixedMap(rdf, resolvedSchema)
-            result         <- fromIO(Validator.validate(resolvedSchema, fixedMap, rdf, builder))
+            result         <- fromIO(Validator.validate(resolvedSchema, fixedMap, rdf, builder, opts.verbose()))
             resultShapeMap <- fromIO(result.toResultShapeMap)
             _              <- showResult(resultShapeMap) // putStrLn(s"Result\n${resultShapeMap.toString}"))
           } yield ()).handleErrorWith(t => ok { println(s"Error: ${t.getMessage}")})
@@ -224,10 +224,10 @@ object Main extends IOApp {
    res <- fromIO(RDFAsJenaModel.fromString(data, dataFormat)) 
   } yield cnvResource(res)
 
-  private def getRDFDataFromFile(fileName: String, dataFormat: String): IOS[Resource[IOS, RDFReader]] = ok {
-    RDFAsJenaModel.fromFile(Paths.get(fileName).toFile, dataFormat).mapK(cnv)
-  }
-
+  private def getRDFDataFromFile(fileName: String, dataFormat: String): IOS[Resource[IOS, RDFReader]] = for {
+    res <- fromIO(RDFAsJenaModel.fromFile(Paths.get(fileName).toFile, dataFormat))
+  } yield res.mapK(cnv)
+   
   private def getSchemaFromFile(fileName: String, schemaFormat: String): IOS[Schema] =
     fromIO(Schema.fromFile(fileName, schemaFormat))
 

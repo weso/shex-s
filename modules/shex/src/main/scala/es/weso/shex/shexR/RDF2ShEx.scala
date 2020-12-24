@@ -66,6 +66,7 @@ trait RDF2ShEx extends RDFParser with LazyLogging {
     shapeOr,
     shapeAnd,
     shapeNot,
+    shapeDecl,
     nodeConstraint,
     shape,
     shapeExternal)
@@ -93,6 +94,14 @@ trait RDF2ShEx extends RDFParser with LazyLogging {
     _ <- checkType(sx_ShapeNot)
     shapeExpr <- arc(sx_shapeExpr, shapeExpr)
   } yield ShapeNot(mkId(n), shapeExpr,None,None)
+
+  private def shapeDecl: RDFParser[ShapeExpr] = for {
+    n <- getNode
+    _ <- checkType(sx_ShapeDecl)
+    _abstract <- arc(sx_abstract, boolean)
+    shapeExpr <- arc(sx_shapeExpr, shapeExpr)
+  } yield ShapeDecl(mkId(n), _abstract, shapeExpr)
+
 
   private def nodeConstraint: RDFParser[ShapeExpr] = for {
     n <- getNode
@@ -185,7 +194,8 @@ trait RDF2ShEx extends RDFParser with LazyLogging {
     expression <- opt(sx_expression, tripleExpression)
     semActs <- opt(sx_semActs, semActList1Plus)
     annotations <- star(sx_annotation, annotationParser)
-  } yield Shape(mkId(n), None, closed, ls2Option(extras), expression, None, ls2Option(annotations), semActs)
+    // TODO: extends and restricts!!!
+  } yield Shape(mkId(n), None, closed, ls2Option(extras), expression, None, None, ls2Option(annotations), semActs)
 
   private def shapeExternal: RDFParser[ShapeExpr] = for {
     n <- getNode

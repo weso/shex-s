@@ -7,11 +7,18 @@ import com.typesafe.config.{Config, ConfigFactory}
 class RDF2ManifestSingleTest extends ValidateManifest {
 
   val conf: Config = ConfigFactory.load()
-  val shexFolder = conf.getString("localTestsFolder")
-  val shexFolderURI = Paths.get(shexFolder).normalize.toUri.toString
+  val validationFolder = conf.getString("testsFolder")
+  val shexFolderURI = Paths.get(validationFolder).normalize.toUri.toString
 
   describe("RDF2Manifest") {
-     parseManifest("manifest", "schemas", shexFolder, None,List(),false)
+     parseManifest(
+       "manifest", 
+       "validation", 
+       validationFolder, 
+       // None, 
+       Some("Extend3G-pass"),
+       List(),
+       verbose = true)
   }
 
 }
