@@ -29,7 +29,7 @@ sealed trait TripleExpr {
    val initialState = State(List())  
    type S[A] = StateT[Id, State, A]
    type E[A] = EitherT[S, String, A]
-   def getState: E[State] = EitherT.liftF(StateT.get)
+   def getState: E[State] = EitherT.liftF[S,String,State](StateT.get)
    def modifyS(f: State => State): S[Unit] = StateT.modify(f)
    def modify[A](f: State => State): E[Unit] = for {
      _ <- EitherT.liftF(modifyS(f))

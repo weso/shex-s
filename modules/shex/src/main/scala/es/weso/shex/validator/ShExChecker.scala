@@ -42,7 +42,7 @@ object ShExChecker extends CheckerCats {
   def fromStream[A](s: Stream[IO,A]): Check[List[A]] = fromIO(s.compile.toList)
 
   def fromEitherIOS[A](e: EitherT[IO,String,A]): Check[A] = {
-    val ea: Check[Either[String,A]] = EitherT.liftF(WriterT.liftF(ReaderT.liftF(ReaderT.liftF(e.value))))
+    val ea: Check[Either[String,A]] = EitherT.liftF(WriterT.liftF(ReaderT.liftF(ReaderT.liftF(e.value))))    
     for {
       either <- ea
       r <- either.fold(errStr(_), ok)
@@ -242,7 +242,10 @@ object ShExChecker extends CheckerCats {
     val initial: Context = Monoid[Context].empty
     for {
       result <- run(c)(ShExConfig(rdf, verbose))(initial)
-    } yield CheckResult(result)
+    } yield {
+      val (log,eitherTyping) = result
+      CheckResult(log, eitherTyping)
+    }
   }
 
  

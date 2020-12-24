@@ -35,9 +35,9 @@ object NodeInfo {
              `xsd:byte` => for {
           eitherB <- rdf.checkDatatype(node,l.dataType).attempt
           _ <- eitherB.fold(
-            e => IO.raiseError(CheckDatatypeError(node,l.dataType)),
+            e => IO.raiseError(CheckDatatypeError(node,l.dataType, rdf)),
             b => if (b) IO(())
-            else IO.raiseError(CheckDatatypeError(node,l.dataType))
+            else IO.raiseError(CheckDatatypeError(node,l.dataType, rdf))
           )
           td <- getTotalDigits(node.getLexicalForm)
         } yield td
@@ -54,9 +54,9 @@ object NodeInfo {
           case `xsd:decimal` | `xsd:integer` => for {
             eitherB <- rdf.checkDatatype(node,l.dataType).attempt
             _ <- eitherB.fold(
-              e => IO.raiseError(CheckDatatypeError(node,l.dataType)),
+              e => IO.raiseError(CheckDatatypeError(node,l.dataType,rdf)),
               b => if (b) IO(())
-                   else IO.raiseError(CheckDatatypeError(node,l.dataType))
+                   else IO.raiseError(CheckDatatypeError(node,l.dataType,rdf))
             )
             // _ <- { pprint.log(node.getLexicalForm); IO(()) }
             n <- getFractionDigits(node.getLexicalForm)

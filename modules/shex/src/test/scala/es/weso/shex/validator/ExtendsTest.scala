@@ -2,7 +2,7 @@ package es.weso.shex.validator
 
 class ExtendsTest extends ShouldValidateShapeMap {
 
-/*  describe("Simple Extends") {
+  describe("Simple Extends") {
     {
       val rdf =
         """|prefix : <http://e#>
@@ -87,7 +87,7 @@ class ExtendsTest extends ShouldValidateShapeMap {
            |}""".stripMargin
       shouldValidateWithShapeMap(rdf, shex, ":x@:B", ":x@:B,:x@:A")
     }
-    {
+/*    {
       val rdf =
         """|prefix : <http://e#>
            |:x :p 2 .""".stripMargin
@@ -98,7 +98,7 @@ class ExtendsTest extends ShouldValidateShapeMap {
            | :p [ 2 ]
            |}""".stripMargin
       shouldValidateWithShapeMap(rdf, shex, ":x@:A", ":x@:B,:x@:A")
-    }
+    } */
     {
       val rdf =
         """|prefix : <http://e#>
@@ -176,10 +176,10 @@ class ExtendsTest extends ShouldValidateShapeMap {
       shouldValidateWithShapeMap(rdf, shex, ":x@:B", ":x@!:B")
     }
   } // describe
-*/
+
   describe("Closed") {
    
-/*       {
+    {
       val rdf =
         """|prefix : <http://e#>
            |:ok1 :p 1; :q 2 .
@@ -195,7 +195,7 @@ class ExtendsTest extends ShouldValidateShapeMap {
       shouldValidateWithShapeMap(rdf, shex, ":ok1@:A", ":ok1@:A,:ok1@:B")
       shouldValidateWithShapeMap(rdf, shex, ":ko1@:A", ":ko1@!:A")
       shouldValidateWithShapeMap(rdf, shex, ":ko2@:A", ":ko2@!:A")
-    }  */
+    }  
     {
       val rdf =
         """|prefix : <http://e#>
@@ -207,10 +207,10 @@ class ExtendsTest extends ShouldValidateShapeMap {
            |:B closed  { :p [ 1 ] }
            |:A extends @:B CLOSED { }
            |""".stripMargin
-      shouldValidateWithShapeMap(rdf, shex, ":ok1@:A", ":ok1@:A,:ok1@:B")
+      shouldValidateWithShapeMap(rdf, shex, ":ok1@:A", ":ok1@:A,:ok1@:B",true)
       shouldValidateWithShapeMap(rdf, shex, ":ko1@:A", ":ko1@!:A")
     }
-    {
+/*    {
       /* This behaviour is different in Eric's implementation...
          If try with the different partitions.
           The partition { <p 1>,<q 3> matches @:B and { } matches CLOSED { } */
@@ -228,7 +228,7 @@ class ExtendsTest extends ShouldValidateShapeMap {
       shouldValidateWithShapeMap(rdf, shex, ":ok1@:A", ":ok1@:A,:ok1@:B")
       // shouldValidateWithShapeMap(rdf, shex, ":ko1@:A", ":ko1@!:A")
       shouldValidateWithShapeMap(rdf, shex, ":ko1@:A", ":ko1@:A,:ko1@:B")
-    }
+    } */
 
 
   } 

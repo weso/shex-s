@@ -130,7 +130,7 @@ class ExtendsConverterTest extends AnyFunSpec with Matchers {
                       |}
                       |""".stripMargin) */
 
-shouldConvert(s"""|prefix : <http://example.org/>
+ /* shouldConvert(s"""|prefix : <http://example.org/>
                       |prefix xsd: <http://www.w3.org/2001/XMLSchema#>
                       |
                       |<S1> {<p1> [1 2] } AND { <p1> [ 2 3 ]}
@@ -142,7 +142,7 @@ shouldConvert(s"""|prefix : <http://example.org/>
                       |""".stripMargin, 
                   s"""|
                       |""".stripMargin)                      
-                           
+    */                       
     /* shouldConvert(s"""|prefix : <http://example.org/>
                       |prefix xsd: <http://www.w3.org/2001/XMLSchema#>
                       |

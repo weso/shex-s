@@ -13,6 +13,10 @@ import scala.util.control.NoStackTrace
 import es.weso.rbe.ShowRbe._
 import es.weso.shex.implicits.encoderShEx._
 import Attempt._
+import es.weso.rdf.RDFReader
+import es.weso.rdf.locations.Location
+import es.weso.rdf.nodes.Literal
+import es.weso.rdf.nodes.DatatypeLiteral
 
 sealed  abstract class ShExError protected (val msg: String) extends Exception(msg) with NoStackTrace with Product with Serializable {
   def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String
@@ -22,6 +26,34 @@ sealed  abstract class ShExError protected (val msg: String) extends Exception(m
 }
 
 object ShExError {
+
+  def node2Json(node: RDFNode, rdf: RDFReader): Json = {
+    val node2search = node match {
+      case l: Literal => DatatypeLiteral(l.getLexicalForm,l.dataType)
+      case _ => node
+    }
+    val locations = rdf.nodeLocations.get(node2search) 
+    Json.fromFields(
+     List(("lexicalForm", node.getLexicalForm.asJson)) 
+       ++ (if (locations.isEmpty) List()
+              else List(("location", locations.toList.asJson))))
+  }
+
+  implicit val locationEncoder: Encoder[Location] = new Encoder[Location] {
+    
+    final def apply(loc: Location): Json = {
+      Json.fromFields(
+        List(
+         ("line", loc.line.asJson),
+         ("col", loc.col.asJson),
+         ("type",loc.tokenType.asJson),
+        ) ++ (loc.source match {
+         case None => List()
+         case Some(iri) => List(("source", iri.str.asJson))
+        }))
+    }
+  }
+
 
   def msgErr(msg: String): ShExError = StringError(msg)
 
@@ -54,10 +86,12 @@ object ShExError {
       ) 
   }
 
+  
   case class NotEnoughArcs(node: RDFNode,
                            values: Set[RDFNode],
                            path: Path,
-                           min: Int
+                           min: Int,
+                           rdf: RDFReader
                           ) extends ShExError(s"Not enough arcs for ${node}") {
     override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
       s"""Not enough values for node: ${nodesPrefixMap.qualify(node)}
@@ -67,7 +101,9 @@ object ShExError {
     }
 
     override def toJson: Json = Json.obj(
-       ("type", Json.fromString("NotEnoughArcs")),
+       ("type", Json.fromString("NotEnoughArcs")) ,
+       ("node", node2Json(node,rdf)),
+       ("path", Json.fromString(path.pred.getLexicalForm))
       ) 
 
   }
@@ -87,33 +123,34 @@ object ShExError {
 
   }
 
-
-
-
-
-  case class NoStart(node: RDFNode) extends ShExError(s"No Start. Node $node") {
+  case class NoStart(node: RDFNode, rdf: RDFReader) extends ShExError(s"No Start. Node $node") {
     override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
       s"""Checking node ${nodesPrefixMap.qualify(node)}@start but no start found"""
     }
 
     override def toJson: Json = Json.obj(
        ("type", Json.fromString("NoStart")),
+       ("node", node2Json(node,rdf))
       ) 
 
   }
 
-  case class ErrCardinality(attempt: Attempt, node: RDFNode, path: Path, values: Int, card: Cardinality) extends ShExError(s"Cardinality error. Node: $node. Cardinality: $card") {
+  case class ErrCardinality(
+     attempt: Attempt, node: RDFNode, path: Path, values: Int, card: Cardinality, rdf: RDFReader) extends ShExError(s"Cardinality error. Node: $node. Cardinality: $card") {
     override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
       s"""${attempt.showQualified(nodesPrefixMap,shapesPrefixMap)}: # of values for ${path.showQualified(shapesPrefixMap)}=$values doesn't match ${card.show}"""
     }
 
     override def toJson: Json = Json.obj(
        ("type", Json.fromString("ErrCardinality")),
+       ("node", node2Json(node,rdf)),
+       ("attempt", attempt.asJson)
       ) 
 
   }
 
-  case class ErrCardinalityWithExtra(attempt: Attempt, node: RDFNode, path: Path, values: Int, valuesFailed: Int, card: Cardinality) extends ShExError(s"Cardinality ${card} with extra. ${valuesFailed} failed. Values: ${values}") {
+  case class ErrCardinalityWithExtra(attempt: Attempt, node: RDFNode, path: Path, values: Int, valuesFailed: Int, card: Cardinality, rdf: RDFReader) 
+    extends ShExError(s"Cardinality ${card} with extra. ${valuesFailed} failed. Values: ${values}") {
     override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
       s"""${attempt.showQualified(nodesPrefixMap, shapesPrefixMap)}: # of values for ${path.showQualified(shapesPrefixMap)}=$values doesn't match ${card.show}
          | #of values that failed: $valuesFailed
@@ -122,15 +159,26 @@ object ShExError {
 
    override def toJson: Json = Json.obj(
        ("type", Json.fromString("ErrCardinalityWithExtra")),
+       ("node", node2Json(node,rdf)),
+       ("attempt", attempt.asJson)
       ) 
 
   }
 
-  case class ValuesNotPassed(attempt: Attempt, node: RDFNode, path: Path, valuesPassed: Int, valuesFailed: Set[(RDFNode, String)]
-  ) extends ShExError(s"Error: ${valuesFailed} values failed. ${valuesPassed} values passed") {
+  case class ValuesNotPassed(
+    attempt: Attempt, 
+    node: RDFNode, 
+    path: Path, 
+    valuesPassed: Int, 
+    valuesFailed: Set[(RDFNode, String)],
+    rdf: RDFReader
+  ) extends ShExError(s"""|Error for node ${node.getLexicalForm}: 
+                          |${valuesFailed} values failed. 
+                          |${valuesPassed} values passed
+                          |""".stripMargin) {
     override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
-      s"""${attempt.showQualified(nodesPrefixMap, shapesPrefixMap)}: # of values for ${path.showQualified(shapesPrefixMap)} failed}
-         | #values that failed: ${showValues(valuesFailed, nodesPrefixMap)}""".stripMargin
+      s"""|${attempt.showQualified(nodesPrefixMap, shapesPrefixMap)}: # of values for ${path.showQualified(shapesPrefixMap)} failed}
+          | #values that failed: ${showValues(valuesFailed, nodesPrefixMap)}""".stripMargin
 
     }
 
@@ -141,6 +189,8 @@ object ShExError {
 
     override def toJson: Json = Json.obj(
        ("type", Json.fromString("ValuesNotPassed")),
+       ("node", node2Json(node,rdf)),
+       ("attempt", attempt.asJson)
       ) 
 
   }
@@ -156,19 +206,24 @@ object ShExError {
 
   }
 
-  case class CheckDatatypeError(node: RDFNode, datatype: IRI) extends ShExError(s"Check datatype error: ${node}. Datatype: ${datatype}") {
+  case class CheckDatatypeError(node: RDFNode, datatype: IRI, rdf: RDFReader) 
+   extends ShExError(s"Check datatype error: ${node}. Datatype: ${datatype}") {
     override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
       s"""Node: ${nodesPrefixMap.qualify(node)} doesn't have datatype ${nodesPrefixMap.qualify(datatype)}"""
     }
 
-    override def toJson: Json = Json.obj(
-       ("type", Json.fromString("CheckDatatypeError")),
-      ) 
-
+    override def toJson: Json = { 
+     println(s"NodeLocations:${rdf.nodeLocations}") 
+     println(s"Node:${node} ${node.getClass().getName()}") 
+     Json.fromFields(
+      List(("type", Json.fromString("CheckDatatypeError")),
+           ("node", node2Json(node,rdf))
+      ))
+    }
   }
 
     // FractionDigits
-    case class ErrorObtainingFractionDigits(value: String, e: Throwable) extends ShExError(s"Error obtaining fraction digits: ${value}: ${e.getMessage()}") {
+  case class ErrorObtainingFractionDigits(value: String, e: Throwable) extends ShExError(s"Error obtaining fraction digits: ${value}: ${e.getMessage()}") {
       override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
         s"""FractionDigits(${value}) Error: ${e.getMessage}"""
       }
@@ -181,7 +236,7 @@ object ShExError {
 
     }
 
-    case class FractionDigitsAppliedUnknownDatatype(node: RDFNode, d: IRI) extends ShExError(s"Fraction digits applied to ${d} on node ${node}") {
+  case class FractionDigitsAppliedUnknownDatatype(node: RDFNode, d: IRI) extends ShExError(s"Fraction digits applied to ${d} on node ${node}") {
       override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
         s"""FractionDigits(${nodesPrefixMap.qualify(node)}) Error: Applied to wrong type: ${nodesPrefixMap.qualify(d)}"""
       }
@@ -287,7 +342,8 @@ object ShExError {
        ("bag", Json.fromString(bag.toString)),
        ("regularExpression",Json.fromString(Rbe.show(rbe))),
        ("candidateLine",cl.toJson),
-       ("table", table.toJson)
+       ("table", table.toJson),
+       ("attempt", attempt.asJson)
       ) 
   }
 

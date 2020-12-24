@@ -22,11 +22,12 @@ prefix xsd: <http://www.w3.org/2001/XMLSchema#>
         :related    :issue0 .
 :carol  :name "Carol" ;
         :email <mailto:carol@example.com> ;
-        :code 23 . 
+        :code 23 ;
+        :experience "unknown" .
 :dave   :name "Dave" ;
         :email <mailto:dave@example.com> ;
         :code 34 ;
-        :experience :junior .
+        :experience "junior" .
 
 # Bad issue
 :emily  :code 35 .
