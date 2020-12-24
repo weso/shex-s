@@ -30,6 +30,10 @@ object CompactShow {
     doc2Str(valueSetDoc(pm)(values))
   }
 
+  def showTripleExpr(tripleExpr: TripleExpr, pm: PrefixMap): String = {
+    doc2Str(tripleExprDoc(pm)(tripleExpr))
+  }
+
   def doc2Str(doc: Doc): String = {
     val writer = new java.io.StringWriter
     doc.format(1, writer)
@@ -121,7 +125,6 @@ object CompactShow {
 
   private def shapeExprDoc(pm: PrefixMap)(se: ShapeExpr): Doc =
     se match {
-      // TODO...review ids generation...
       case ShapeOr(id, es, actions, anns) =>
         idDoc(id, pm) :: space ::
           listDocIntersperse(es, shapeExprDoc(pm), space :: keyword("OR"))
@@ -137,12 +140,19 @@ object CompactShow {
           nodeConstraintDoc(pm)(nc)
       case s: Shape =>
         idDoc(s.id, pm) :: space :: shapeDoc(pm)(s)
-      case ShapeRef(r, acts, anns) =>
-        str("@") :: shapeLabelDoc(pm)(r)
-      case ShapeExternal(id, acts, anns) =>
-        idDoc(id, pm) :: space ::
-          str("EXTERNAL")
+      case ShapeRef(r, anns, acts) =>
+        str("@") :: shapeLabelDoc(pm)(r) :: optDoc(anns,annotationsDoc(pm)) :: optDoc(acts,semActsDoc(pm))
+      case ShapeExternal(id, anns, acts) =>
+        idDoc(id, pm) :: space :: str("EXTERNAL") :: optDoc(anns, annotationsDoc(pm)) :: optDoc(acts,semActsDoc(pm))
+      case ShapeDecl(id,_abstract,se) => {
+        abstractDoc(_abstract) :: idDoc(id,pm) :: space :: shapeExprDoc(pm)(se)
+      }
+      case other => str(s"ERROR: Unknown type of ShapeExpr: ${other}")
     }
+
+  private def abstractDoc(_abstract: Boolean): Doc = 
+  if (_abstract) str("abstract") :: space
+  else empty
 
   private def nodeConstraintDoc(pm: PrefixMap)(nc: NodeConstraint): Doc =
     if (nc == NodeConstraint.empty) {
@@ -306,6 +316,7 @@ object CompactShow {
     }
     else {
     optDocConst(s.virtual, keyword("VIRTUAL")) ::
+    optDoc(s._extends,extends2doc(pm)) ::
     maybeClosed(s.isClosed) ::
     optDoc(s.extra, extraDoc(pm)) ::
     optDoc(
@@ -314,6 +325,12 @@ object CompactShow {
           text("{") :: newline :: tripleExprDoc(pm)(te) :: newline :: text("}") :: newline) ::
         optDoc(s.actions, semActsDoc(pm))
   }
+
+  private def extends2doc(pm: PrefixMap)(ls: List[ShapeLabel]): Doc = 
+    listDocSep(ls,extendLabel2Doc(pm),space)
+
+  private def extendLabel2Doc(pm:PrefixMap)(lbl: ShapeLabel): Doc =
+    keyword("extends") :: space :: text("@") :: shapeLabelDoc(pm)(lbl)
 
   private def extraDoc(pm: PrefixMap)(ls: List[IRI]): Doc =
     keyword("EXTRA") :: listDocSep(ls, iriDoc(pm), space)
@@ -358,7 +375,7 @@ object CompactShow {
     optDocConst(t.optInverse, str("^")) ::
       optDocConst(t.optNegated, str("!")) ::
       iriDoc(pm)(t.predicate) :: space ::
-      optDoc(t.valueExpr, shapeExprDoc(pm)) ::
+      optDocOrElse(t.valueExpr, shapeExprDoc(pm), dot) ::
       cardinalityDoc(t.optMin, t.optMax) ::
       optDoc(t.semActs, semActsDoc(pm)) ::
       optDoc(t.annotations, annotationsDoc(pm))
@@ -443,6 +460,9 @@ object CompactShow {
 
   private def optDocConst[A](x: Option[A], c: Doc): Doc =
     x.fold(none)(_ => c)
+
+  private def optDocOrElse[A](x: Option[A], f: A => Doc, other: Doc): Doc =
+    x.fold(other)(f(_))
 
   private def eq = str("=")
 

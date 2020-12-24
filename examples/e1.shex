@@ -1,0 +1,11 @@
+prefix : <http://example.org/>
+
+:A1 { :p [1 2] } AND { :p [3 4 ] }
+:B1 extends :A1 { :p [2 3 ]}
+
+# No node should match @:B1 because the and condition should fail in :A1
+
+:A2 { :p [1 2] } AND { :p [2 3 ] }
+:B2 extends :A2 { :p [2 3] }
+
+# :x :p 2, 3 . should conform to :B2 because :x :p 2 conforms to @:A2 and :x :p 3 conforms to { :p [2 3] }

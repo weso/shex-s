@@ -92,6 +92,14 @@ trait ShEx2RDF extends RDFSaver with LazyLogging {
       _ <- maybeAddListContent(sr.actions, shapeId, sx_semActs, semAct)
       _ <- maybeAddStarContent(sr.annotations, shapeId, sx_annotation, annotation)
      } yield shapeId
+
+    case sd: ShapeDecl => for {
+      shapeId <- mkId(sd.id)
+      _ <- addTriple(shapeId, `rdf:type`, sx_ShapeDecl)
+      _ <- addContent(sd._abstract, shapeId, sx_abstract, rdfBoolean)
+      _ <- addContent(sd.shapeExpr, shapeId, sx_shapeExpr, shapeExpr)
+     } yield shapeId
+
   }
 
   private def xsFacet(facet: XsFacet, node: RDFNode): RDFSaver[Unit] = facet match {

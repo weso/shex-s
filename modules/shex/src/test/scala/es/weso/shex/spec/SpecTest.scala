@@ -7,7 +7,7 @@ import es.weso.shex.{IRILabel => ShExIriLabel, _}
 import org.scalatest._
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-import cats.data._
+// import cats.data._
 import cats.effect._
 import es.weso.utils.IOUtils.fromES
 
@@ -194,7 +194,7 @@ class SpecTest extends AnyFunSpec with Matchers with EitherValues {
     def info(msg:String): IO[Unit] = IO(println(msg))
 
     it(s"Should validate RDF\n$strRDF\nSchema:\n$strSchema\nShapeMap:$strShapeMap\nExpected shape map: $strExpectedShapeMap") {
-        val r: IO[Boolean] = RDFAsJenaModel.fromChars(strRDF, "Turtle", None).use(rdf => for {
+        val r: IO[Boolean] = RDFAsJenaModel.fromChars(strRDF, "Turtle", None).flatMap(_.use(rdf => for {
           _ <- { info(s"RDF: $rdf") }
           schema <- Schema.fromString(strSchema, "ShExC", None)
           _ <- { info(s"Schema: $schema") }
@@ -209,7 +209,7 @@ class SpecTest extends AnyFunSpec with Matchers with EitherValues {
             str => IO.raiseError(new RuntimeException(s"Error comparing: $str")),
             IO(_)
           )
-        } yield compare)
+        } yield compare))
 
         r.attempt.unsafeRunSync.fold(
           e => fail(s"Error $e"),

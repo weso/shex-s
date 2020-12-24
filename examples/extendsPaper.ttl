@@ -1,0 +1,33 @@
+prefix : <http://example.org/>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+
+# Two issues based on basic ShEx 
+
+:issue0 :reported   :alice ;
+        :reproduced :bob   .
+:issue1 :reported   :bob ;
+        :reproduced :bob ;
+        :related    :issue0 .
+:alice  :name "Alice" .
+:bob    :firstName "Robert", "Bob" ;
+        :lastName  "Smith" ;
+        :email <mailto:bob@example.com> .
+
+# Good issue based in extends definitions
+:issue2 :reported   :alice ;
+        :reproduced :bob   ;
+        :reproduced :carol ;
+        :solved     :dave  ;
+        :date "2020-11-20"^^xsd:date ;
+        :related    :issue0 .
+:carol  :name "Carol" ;
+        :email <mailto:carol@example.com> ;
+        :code 23 ;
+        :experience "unknown" .
+:dave   :name "Dave" ;
+        :email <mailto:dave@example.com> ;
+        :code 34 ;
+        :experience "junior" .
+
+# Bad issue
+:emily  :code 35 .

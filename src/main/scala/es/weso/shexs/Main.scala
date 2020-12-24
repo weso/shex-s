@@ -1,14 +1,12 @@
 package es.weso.shexs
-// import java.io.File
 import java.nio.file.Paths
-
 import cats.arrow.FunctionK
 import cats.data.StateT
 import cats.effect._
 import cats.effect.Console.io._
 import cats.implicits._
 import cats.~>
-import es.weso.rdf.RDFReader
+import es.weso.rdf._
 import es.weso.rdf.jena.RDFAsJenaModel
 import es.weso.shapeMaps.ShapeMap
 import es.weso.shex.{ResolvedSchema, Schema}
@@ -17,8 +15,9 @@ import org.rogach.scallop._
 import org.rogach.scallop.exceptions._
 import es.weso.shextest.manifest._
 import es.weso.shextest.manifest.ShExManifest
-import es.weso.shapeMaps.FixedShapeMap
-import es.weso.shapeMaps.ResultShapeMap
+import es.weso.shapeMaps._ 
+import fs2._
+
 
 object Main extends IOApp {
 
@@ -53,30 +52,33 @@ object Main extends IOApp {
     for {
       _ <- ifOpt(opts.manifest, mf => StateT.liftF(runManifest(mf)))
       _ <- ifOpt(opts.dataFormat, setDataFormat)
-      _ <- getData(opts).use(
-        rdf =>
-          for {
+      res <- getData(opts)
+      _ <- res.use {
+        case (rdf,builder) =>
+          (for {
             _              <- ifOpt(opts.showDataFormat, setShowDataFormat)
             _              <- ifOpt(opts.showSchemaFormat, setShowSchemaFormat)
             _              <- ifOpt(opts.showResultFormat, setShowResultFormat)
             _              <- ifOpt(opts.schemaFormat, setSchemaFormat)
+            _              <- ifOpt(opts.shapeMapFormat, setShapeMapFormat)
             _              <- ifOpt(opts.schemaFile, setSchemaFile)
             _              <- ifOptB(opts.showData, showData(rdf))
             _              <- ifOpt(opts.shapeMap, setShapeMap(rdf))
+            _              <- ifOpt(opts.shapeMapFile, setShapeMapFromFile(rdf))
             _              <- ifOptB(opts.showSchema, showSchema)
             resolvedSchema <- getResolvedSchema()
             fixedMap       <- getFixedMap(rdf, resolvedSchema)
-            result         <- fromIO(Validator.validate(resolvedSchema, fixedMap, rdf))
+            result         <- fromIO(Validator.validate(resolvedSchema, fixedMap, rdf, builder, opts.verbose()))
             resultShapeMap <- fromIO(result.toResultShapeMap)
             _              <- showResult(resultShapeMap) // putStrLn(s"Result\n${resultShapeMap.toString}"))
-          } yield ()
-      )
+          } yield ()).handleErrorWith(t => ok { println(s"Error: ${t.getMessage}")})
+        }
     } yield ExitCode.Success
 
   private def showSchema: IOS[Unit] =
     for {
       state <- getState
-      str   <- fromIO(RDFAsJenaModel.empty.use(empty => Schema.serialize(state.schema,state.schemaFormat, None, empty)))
+      str   <- fromIO(RDFAsJenaModel.empty.flatMap(_.use(empty => Schema.serialize(state.schema,state.schemaFormat, None, empty))))
       _     <- fromIO(putStrLn(str))
     } yield ()
 
@@ -87,14 +89,14 @@ object Main extends IOApp {
       _     <- fromIO(putStrLn(str))
     } yield ()
 
+  // private def sep: String = ("=" * 10) + "\n"  
+
   private def showResult(result: ResultShapeMap): IOS[Unit] =
     for {
       state <- getState
-      str = state.showResultFormat.toUpperCase match {
-        case "COMPACT" => result.toString
-        case "JSON"    => result.toJson.spaces2
-      }
-      _ <- fromIO(putStrLn(str))
+      _ <- fromIO(
+        putStrLn(result.serialize(state.showResultFormat).fold(err => s"Error serializing ${result} with format ${state.showResultFormat}: $err", identity))
+      )
     } yield ()
 
   private def getResolvedSchema(): IOS[ResolvedSchema] =
@@ -110,19 +112,28 @@ object Main extends IOApp {
       fixedMap  <- fromIO(ShapeMap.fixShapeMap(state.shapeMap, rdf, prefixMap, resolvedSchema.prefixMap))
     } yield fixedMap
 
-  private def getData(opts: MainOpts): Resource[IOS, RDFReader] =
-    Resource
-      .liftF(getState)
-      .flatMap(
-        s =>
-          if (opts.data.isDefined) {
-            getRDFData(opts.data(), s.dataFormat)
-          } else if (opts.dataFile.isDefined) {
-            getRDFDataFromFile(opts.dataFile(), s.dataFormat)
-          } else {
-            RDFAsJenaModel.empty.mapK(cnv)
-          }
-      )
+  private def cnvResource[A](r: Resource[IO,A]): Resource[IOS,A] = 
+    r.mapK(cnv)
+
+  private def pairResource[A,B](r1: Resource[IOS,A], r2: Resource[IOS,B]): Resource[IOS,(A,B)] = for {
+    v1 <- r1
+    v2 <- r2
+  } yield (v1,v2)
+
+  private def getData(opts: MainOpts): IOS[Resource[IOS, (RDFReader,RDFBuilder)]] = 
+  for {
+    state <- getState
+    rdf <- if (opts.data.isDefined) {
+      getRDFData(opts.data(), state.dataFormat)
+    } else if (opts.dataFile.isDefined) {
+      getRDFDataFromFile(opts.dataFile(), state.dataFormat)
+    } else for {
+      re <- fromIO(RDFAsJenaModel.empty)
+      e = cnvResource(re)  
+    } yield e
+    emptyRes <- fromIO(RDFAsJenaModel.empty)
+    builder = cnvResource(emptyRes)
+  } yield pairResource(rdf,builder)  
 
   /*  private def infoState(): IOS[Unit] = for {
    state <- getState
@@ -156,10 +167,8 @@ object Main extends IOApp {
   private def setShowResultFormat(sf: String): IOS[Unit] =
     StateT.modify(s => s.copy(showResultFormat = sf))
 
-  /* private def setData(dataStr: String): IOS[Unit] = for {
-    state <- getState
-    // _ <- modifyData(getRDFData(dataStr, state.dataFormat))
-  } yield () */
+  private def setShapeMapFormat(sf: String): IOS[Unit] =
+    StateT.modify(s => s.copy(shapeMapFormat = sf))
 
   private def setShapeMap(rdf: RDFReader)(shapeMap: String): IOS[Unit] =
     for {
@@ -169,6 +178,16 @@ object Main extends IOApp {
       sm <- fromEither(ShapeMap.fromString(shapeMap, state.shapeMapFormat, None, pm, state.schema.prefixMap))
       _  <- modifyS(s => s.copy(shapeMap = sm))
     } yield ()
+
+  private def setShapeMapFromFile(rdf: RDFReader)(shapeMapFile: String): IOS[Unit] =
+    for {
+      state <- getState
+      // _ <- fromIO(putStrLn(s"PrefixMap: ${pm.toString}"))
+      pm <- fromIO(rdf.getPrefixMap)
+      sm <- getShapeMapFromFile(shapeMapFile, state.shapeMapFormat, pm, state.schema.prefixMap)
+      _  <- modifyS(s => s.copy(shapeMap = sm))
+    } yield ()
+
 
   private def fromEither[A](either: Either[String, A]): IOS[A] =
     either.fold(
@@ -200,16 +219,27 @@ object Main extends IOApp {
     def apply[A](io: IO[A]): IOS[A] = fromIO(io)
   }
 
-  private def getRDFData(data: String, dataFormat: String): Resource[IOS, RDFReader] = {
-    RDFAsJenaModel.fromString(data, dataFormat).mapK(cnv)
-  }
+  private def getRDFData(data: String, dataFormat: String): IOS[Resource[IOS, RDFReader]] = 
+  for {
+   res <- fromIO(RDFAsJenaModel.fromString(data, dataFormat)) 
+  } yield cnvResource(res)
 
-  private def getRDFDataFromFile(fileName: String, dataFormat: String): Resource[IOS, RDFReader] = {
-    RDFAsJenaModel.fromFile(Paths.get(fileName).toFile, dataFormat).mapK(cnv)
-  }
-
+  private def getRDFDataFromFile(fileName: String, dataFormat: String): IOS[Resource[IOS, RDFReader]] = for {
+    res <- fromIO(RDFAsJenaModel.fromFile(Paths.get(fileName).toFile, dataFormat))
+  } yield res.mapK(cnv)
+   
   private def getSchemaFromFile(fileName: String, schemaFormat: String): IOS[Schema] =
     fromIO(Schema.fromFile(fileName, schemaFormat))
+
+  private def getShapeMapFromFile(fileName: String, 
+                                  shapeMapFormat: String,
+                                  nodesPrefixMap: PrefixMap,
+                                  shapesPrefixMap: PrefixMap): IOS[ShapeMap] =
+    for {
+      str <- fromIO(getContents(fileName).handleErrorWith(e => IO.raiseError(new RuntimeException(s"Error obtaining shapeMap from file: ${fileName} with format ${shapeMapFormat}: ${e.getMessage()}"))))
+      sm <- fromEither(ShapeMap.fromString(str.toString, shapeMapFormat, None, nodesPrefixMap,shapesPrefixMap))
+    } yield sm 
+
 
   private def errorDriver(e: Throwable, scallop: Scallop) = e match {
     case Help(s) =>
@@ -245,5 +275,15 @@ object Main extends IOApp {
           )
       )
     } yield ()
+
+  // TODO: Move to utils  
+  def getContents(fileName: String): IO[CharSequence] = {
+    val path = Paths.get(fileName)
+    val decoder: Pipe[IO,Byte,String] = fs2.text.utf8Decode
+    Stream.resource(Blocker[IO]).flatMap(blocker =>
+      fs2.io.file.readAll[IO](path, blocker,4096).through(decoder)
+    ).compile.string
+  }
+
 
 }

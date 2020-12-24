@@ -44,7 +44,7 @@ class NodeInfoTest extends AnyFunSpec with Matchers with EitherValues {
   }
 
   def checkOK[A,B](x: A, f: (A, RDFReader) => IO[B], expected: B): Unit = {
-    val ioa = RDFAsJenaModel.empty.use(rdf => f(x,rdf))
+    val ioa = RDFAsJenaModel.empty.flatMap(_.use(rdf => f(x,rdf)))
     ioa.attempt.unsafeRunSync.fold(
       e => fail("Failed"),
       v => v should be(expected)
@@ -52,7 +52,7 @@ class NodeInfoTest extends AnyFunSpec with Matchers with EitherValues {
   }
 
   def checkFails[A,B](x: A, f: (A, RDFReader) => IO[B]): Unit = {
-    val iob = RDFAsJenaModel.empty.use(rdf => f(x,rdf))
+    val iob = RDFAsJenaModel.empty.flatMap(_.use(rdf => f(x,rdf)))
     iob.attempt.unsafeRunSync.fold(
       e => info("Failed as expected"),
       v => fail(s"Should have failed")

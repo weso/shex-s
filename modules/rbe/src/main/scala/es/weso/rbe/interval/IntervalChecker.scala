@@ -44,7 +44,7 @@ case class IntervalChecker[A:Show](rbe: Rbe[A]) extends BagChecker[A] {
 
 object IntervalChecker {
 
-  def interval[A](rbe: Rbe[A], bag: Bag[A]): Either[NonEmptyList[RbeError],Interval] = {
+  def interval[A: Show](rbe: Rbe[A], bag: Bag[A]): Either[NonEmptyList[RbeError],Interval] = {
     // println(s"Interval of $rbe with $bag")
     rbe match {
       case Fail(_) => Interval(1, 0).asRight

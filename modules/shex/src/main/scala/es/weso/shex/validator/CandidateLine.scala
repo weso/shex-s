@@ -5,7 +5,6 @@ package es.weso.shex.validator
 import es.weso.collection.Bag
 import es.weso.rdf.nodes.RDFNode
 import es.weso.shex.{SemAct, ShapeExpr}
-import es.weso.shex.validator.Table.CTable
 import es.weso.utils.SeqUtils.filterOptions
 import ConstraintRef._
 import io.circe.Json

@@ -262,8 +262,6 @@ case class Repeat[A](v: Rbe[A], n: Int, m: IntOrUnbounded) extends Rbe[A]
 
 object Rbe {
 
-  // implicit def showRbe[A:Show]: Show[Rbe[A]] = Show.show(show(_))
-
   def show[A:Show](r: Rbe[A]): String = {
     import ShowRbe._
     Show[Rbe[A]].show(r)

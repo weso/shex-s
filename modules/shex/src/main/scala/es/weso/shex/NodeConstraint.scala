@@ -1,16 +1,16 @@
 package es.weso.shex
 
 //import es.weso.rdf.PrefixMap
-import es.weso.rdf.nodes.IRI
+// import es.weso.rdf.nodes.IRI
 // import es.weso.shex.extend.Extend
 // import es.weso.shex.normalized.{FlatShape, NormalizedShape}
 // import es.weso.utils.EitherUtils._
-import es.weso.utils.OptionListUtils._
+// import es.weso.utils.OptionListUtils._
 // import cats._
 // import cats.data._
 // import cats.implicits._
 
-case class NodeConstraint(
+/*case class NodeConstraint(
     id: Option[ShapeLabel],
     nodeKind: Option[NodeKind],
     datatype: Option[IRI],
@@ -86,3 +86,4 @@ object NodeConstraint {
 
 }
 
+*/

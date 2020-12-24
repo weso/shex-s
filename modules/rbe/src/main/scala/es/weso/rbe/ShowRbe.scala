@@ -31,7 +31,7 @@ object ShowRbe {
     case (1,Unbounded) => "+"
     case (0,Unbounded) => "*"
     case (m,Unbounded) => s"{${m.show},}"
-    case (m,IntLimit(n)) => s"{${m.show},${n.show}"
+    case (m,IntLimit(n)) => s"{${m.show},${n.show}}"
     case (m,n) => s"{${m.show},${n.show}}"
   }
 }
