@@ -318,7 +318,9 @@ object ShExError {
     table: CTable, 
     bag: Bag[ConstraintRef], 
     rbe: Rbe[ConstraintRef],
-    err: RbeError
+    err: RbeError,
+    node: RDFNode,
+    rdf: RDFReader
     ) extends ShExError(s"Error matching RBE: ${err.msg}") {
 
     override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
@@ -336,7 +338,7 @@ object ShExError {
 
     override def toJson: Json = Json.obj(
        ("type", Json.fromString("ErrorMatchingRegularExpression")),
-       ("node", Json.fromString(attempt.nodeShape.node.getLexicalForm)),
+       ("node", node2Json(node,rdf)),
        ("error", err.toJson),
        ("shape", Json.fromString(attempt.nodeShape.shape.label.map(_.toRDFNode.getLexicalForm).getOrElse("?"))),
        ("bag", Json.fromString(bag.toString)),
@@ -350,7 +352,9 @@ object ShExError {
   case class NoCandidate(attempt: Attempt, 
        bagChecker: BagChecker[ConstraintRef], 
        as: List[CandidateLine], 
-       ctable: CTable
+       ctable: CTable,
+       node: RDFNode,
+       rdf: RDFReader
       ) extends ShExError(s"No candidate matches") {
     
     override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
@@ -413,10 +417,13 @@ object ShExError {
 
   case class NoCandidateLine(
     attempt: Attempt,
-    table: CTable) extends ShExError(s"No candidate line found: ${attempt.show}") {
+    table: CTable,
+    node: RDFNode,
+    rdf: RDFReader) extends ShExError(s"No candidate line found: ${attempt.show}") {
     
     override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
       s"""|No candidates found to match
+          |Node: ${node.show}
           |Atempt: ${attempt.show}
           |Table: ${table.show}
           |""".stripMargin
@@ -424,22 +431,41 @@ object ShExError {
 
     override def toJson: Json = Json.obj(
        ("type", Json.fromString("NoCandidateLine")),
+       ("node", ShExError.node2Json(node,rdf)),
        ("attempt", attempt.asJson),
        ("table", table.asJson)
       )
   }
 
 
-  case class AbstractShapeErr(node: RDFNode, shape: ShapeExpr) extends ShExError(s"Node ${node.show} cannot conform to abstract shape ${shape}") {
+  case class AbstractShapeErr(node: RDFNode, shape: ShapeExpr, rdf: RDFReader) extends ShExError(s"Node ${node.show} cannot conform to abstract shape ${shape}") {
       override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
         s"""AbstractShapeError ${nodesPrefixMap.qualify(node)} cannot conform to abstract shape ${shape.showQualified(shapesPrefixMap)}"""
       }
 
      override def toJson: Json = Json.obj(
-       ("type", Json.fromString("AbstractShapeErr"))
+       ("type", Json.fromString("AbstractShapeErr")),
+       ("shape", shape.asJson),
+       ("node", ShExError.node2Json(node,rdf))
       ) 
 
   }
+
+  case class HasNoType(node: RDFNode, label: ShapeLabel, shapeTyping: ShapeTyping, rdf: RDFReader) 
+    extends ShExError(s"Node ${node.show} has not type ${label.toRDFNode.show} in ${shapeTyping.showShapeTyping}") {
+      override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
+        s"""HasNoType ${nodesPrefixMap.qualify(node)} has not type ${shapesPrefixMap.qualify(label.toRDFNode)} in ${shapeTyping.showShort(nodesPrefixMap,shapesPrefixMap)}"""
+      }
+
+     override def toJson: Json = Json.obj(
+       ("type", Json.fromString("HasNoType")),
+       ("label", label.asJson),
+       ("node", ShExError.node2Json(node,rdf)),
+       ("shapeTyping", shapeTyping.showShapeTyping.asJson)
+      ) 
+
+  }
+
 
   case class AbstractShapeErrNoArgs() extends ShExError(s"Node cannot conform to abstract shape ") {
       override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
@@ -454,7 +480,7 @@ object ShExError {
 
 
 
-  case class NoDescendant(node: RDFNode, s:ShapeExpr, attempt: Attempt) extends ShExError(s"No descendant of shapeExpr ${s} matches node ${node.show}") {
+  case class NoDescendant(node: RDFNode, s:ShapeExpr, attempt: Attempt, rdf: RDFReader) extends ShExError(s"No descendant of shapeExpr ${s} matches node ${node.show}") {
       override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
         s"""|No descendant of ${s.showQualified(shapesPrefixMap)} matches ${nodesPrefixMap.qualify(node)}
             |Attempt: ${attempt.showQualified(nodesPrefixMap,shapesPrefixMap)}
@@ -464,14 +490,19 @@ object ShExError {
      override def toJson: Json = Json.obj(
        ("type", Json.fromString("NoDescendantMatches")),
        ("attempt", attempt.asJson),
-       ("node", Json.fromString(node.getLexicalForm)),
+       ("node", ShExError.node2Json(node,rdf)),
        ("shapeExpr", s.asJson)
       ) 
 
   }
 
-  case class ExtendFails(node: RDFNode, extended:ShapeLabel, attempt: Attempt, err: ShExError)
-    extends ShExError(
+  case class ExtendFails(
+    node: RDFNode, 
+    extended:ShapeLabel, 
+    attempt: Attempt, 
+    err: ShExError,
+    rdf: RDFReader
+    ) extends ShExError(
       s"""|ExtendFails: ${node.show} doesn't conform to extended shape ${extended.toRDFNode.show}
           |  Error obtained: ${err.msg}""".stripMargin) {
       override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
@@ -484,7 +515,7 @@ object ShExError {
      override def toJson: Json = Json.obj(
        ("type", Json.fromString("NoDescendantMatches")),
        ("attempt", attempt.asJson),
-       ("node", Json.fromString(node.getLexicalForm)),
+       ("node", ShExError.node2Json(node,rdf)),
        ("shape", Json.fromString(extended.toRDFNode.getLexicalForm)),
        ("error", err.asJson)
       ) 

@@ -51,6 +51,7 @@ object Main extends IOApp {
   private def runS(opts: MainOpts): IOS[ExitCode] =
     for {
       _ <- ifOpt(opts.manifest, mf => StateT.liftF(runManifest(mf)))
+      _ <- ifOpt(opts.folder, setFolder)
       _ <- ifOpt(opts.dataFormat, setDataFormat)
       res <- getData(opts)
       _ <- res.use {
@@ -152,6 +153,10 @@ object Main extends IOApp {
     } yield ())
   } yield () */
 
+  private def setFolder(folder: String): IOS[Unit] = 
+    fromIO(IO(Paths.get(folder))).flatMap(path => 
+    StateT.modify(s => s.copy(folder = path)))
+
   private def setDataFormat(df: String): IOS[Unit] =
     StateT.modify(s => s.copy(dataFormat = df))
 
@@ -225,18 +230,28 @@ object Main extends IOApp {
   } yield cnvResource(res)
 
   private def getRDFDataFromFile(fileName: String, dataFormat: String): IOS[Resource[IOS, RDFReader]] = for {
-    res <- fromIO(RDFAsJenaModel.fromFile(Paths.get(fileName).toFile, dataFormat))
+    resolvedName <- resolve(fileName)
+    res <- fromIO(RDFAsJenaModel.fromFile(Paths.get(resolvedName).toFile, dataFormat))
   } yield res.mapK(cnv)
    
   private def getSchemaFromFile(fileName: String, schemaFormat: String): IOS[Schema] =
-    fromIO(Schema.fromFile(fileName, schemaFormat))
+    resolve(fileName).flatMap(resolvedName =>  
+    fromIO(Schema.fromFile(resolvedName, schemaFormat)))
+
+  private def resolve(filename: String): IOS[String] = 
+  for {
+      state <- getState
+      resolvedName <- fromIO(IO(state.folder.resolve(filename).toAbsolutePath().toString()))
+  } yield resolvedName
+
 
   private def getShapeMapFromFile(fileName: String, 
                                   shapeMapFormat: String,
                                   nodesPrefixMap: PrefixMap,
                                   shapesPrefixMap: PrefixMap): IOS[ShapeMap] =
     for {
-      str <- fromIO(getContents(fileName).handleErrorWith(e => IO.raiseError(new RuntimeException(s"Error obtaining shapeMap from file: ${fileName} with format ${shapeMapFormat}: ${e.getMessage()}"))))
+      resolvedName <- resolve(fileName)
+      str <- fromIO(getContents(resolvedName).handleErrorWith(e => IO.raiseError(new RuntimeException(s"Error obtaining shapeMap from file: ${resolvedName} with format ${shapeMapFormat}: ${e.getMessage()}"))))
       sm <- fromEither(ShapeMap.fromString(str.toString, shapeMapFormat, None, nodesPrefixMap,shapesPrefixMap))
     } yield sm 
 
