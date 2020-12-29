@@ -16,24 +16,37 @@ import es.weso.utils.IOUtils.fromES
 // import cats.data._
 import cats.effect.IO
 import cats.implicits._
+import org.scalatest._
+import funspec.AnyFunSpec
 
-class SchemasManifestTest extends ValidateManifest {
+class SchemasManifestTest extends AnyFunSpec with ValidateManifest {
 
   val nameIfSingle: Option[String] =
      None
      // Some("1dotAbstractShapeCode1")
 
+  val ignored = List(
+    "AND3G", 
+    "Extend3G",
+    "ExtendANDExtend3GAND3G"
+  )
+
   val conf: Config = ConfigFactory.load()
   val shexFolder = conf.getString("schemasFolder")
-//  val shexFolder = conf.getString("shexLocalFolder")
   val shexFolderURI = Paths.get(shexFolder).normalize.toUri
 
   describe("RDF2ManifestLocal") {
+
     val r = RDF2Manifest.read(shexFolder + "/" + "manifest.ttl", "Turtle", Some(shexFolderURI.toString), false)
-    r.attempt.unsafeRunSync().fold(e => fail(s"Error reading manifest: $e"),
+
+    r.attempt.unsafeRunSync().fold(
+      e => fail(s"Error reading manifest: $e"),
       mf => {
         for (e <- mf.entries) {
-          if (nameIfSingle == None || nameIfSingle.getOrElse("") == e.name) {
+          if (nameIfSingle == None || 
+              nameIfSingle.getOrElse("") == e.name
+             ) {
+            if (!(ignored contains e.name)) {   
             it(s"Should pass test ${e.name}") {
               println(s"Testing: ${e.name}")
               e match {
@@ -76,6 +89,7 @@ class SchemasManifestTest extends ValidateManifest {
               }
             }
           }
+         }
         }
         info(s"Manifest read OK: ${mf.entries.length} entries")
       }

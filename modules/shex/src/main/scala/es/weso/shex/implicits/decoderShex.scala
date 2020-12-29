@@ -9,7 +9,6 @@ import es.weso.rdf._
 import es.weso.utils.json.DecoderUtils._
 import es.weso.rdf.operations.Comparisons._
 import es.weso.rdf.PREFIXES.{`rdf:langString`, `xsd:string`}
-import scala.annotation.meta.field
 
 object decoderShEx {
 
@@ -193,9 +192,10 @@ object decoderShEx {
       extra <- optFieldDecode[List[IRI]](c, "extra")
       expression <- optFieldDecode[TripleExpr](c, "expression")
       _extends <- optFieldDecode[List[ShapeLabel]](c, "extends")
+      restricts <- optFieldDecode[List[ShapeLabel]](c, "restricts")
       semActs <- optFieldDecode[List[SemAct]](c, "semActs")
       annotations <- optFieldDecode[List[Annotation]](c,"annotations")
-    } yield Shape(id, virtual, closed, extra, expression, _extends, annotations, semActs)
+    } yield Shape(id, virtual, closed, extra, expression, _extends, restricts, annotations, semActs)
   }
 
   implicit lazy val decodeTripleExpr: Decoder[TripleExpr] =

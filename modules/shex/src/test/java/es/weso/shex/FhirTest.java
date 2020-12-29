@@ -98,7 +98,7 @@ public class FhirTest {
  private IO<Result> validate(ResolvedSchema resolvedSchema, RDFAsRDF4jModel rdfmodel) {
     ExternalResolver noAction = NoAction.instance(); 
     Validator validator = new Validator(resolvedSchema, noAction, rdfmodel);
-    IO<Result> result = validator.validateNodeShape(rdfmodel, IRI.apply("http://hl7.org/fhir/Account/example"), "http://hl7.org/fhir/shape/Account");
+    IO<Result> result = validator.validateNodeShape(rdfmodel, IRI.apply("http://hl7.org/fhir/Account/example"), "http://hl7.org/fhir/shape/Account",false);
     return result;
  }
 

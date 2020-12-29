@@ -5,9 +5,12 @@ import java.nio.file.Paths
 import com.typesafe.config.{Config, ConfigFactory}
 import es.weso.shex._
 import cats.effect.IO
-import cats.data._
+// import cats.data._
+import org.scalatest._
+import funspec.AnyFunSpec
+// import matchers._
 
-class NegativeSyntaxManifestTest extends ValidateManifest {
+class NegativeSyntaxManifestTest extends AnyFunSpec with ValidateManifest {
 
   // If the following variable is None, it runs all tests
   // Otherwise, it runs only the test whose name is equal to the value of this variable

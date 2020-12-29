@@ -178,9 +178,9 @@ object Schema {
    for {
     _ <- { println(s"Trying to deref $uri"); IO.pure(()); }
     str <- derefUri(uri)
-    _ <- { println(s"Str obtained...${str.linesIterator.take(2).mkString("\n")}\n..."); IO.pure(()); }
+    _ <- { println(s"Str obtained\n${str.linesIterator.take(2).mkString("\n")}\n---"); IO.pure(()); }
     schema <- Schema.fromString(str,format,base,None)
-    _ <- { println(s"Obtained schema at $uri"); IO.pure(()); }
+    _ <- { println(s"Obtained schema at $uri\n${schema}\n---\n"); IO.pure(()); }
    } yield schema
   }
 

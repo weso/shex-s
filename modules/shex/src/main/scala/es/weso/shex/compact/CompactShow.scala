@@ -30,6 +30,10 @@ object CompactShow {
     doc2Str(valueSetDoc(pm)(values))
   }
 
+  def showTripleExpr(tripleExpr: TripleExpr, pm: PrefixMap): String = {
+    doc2Str(tripleExprDoc(pm)(tripleExpr))
+  }
+
   def doc2Str(doc: Doc): String = {
     val writer = new java.io.StringWriter
     doc.format(1, writer)
@@ -141,14 +145,13 @@ object CompactShow {
       case ShapeExternal(id, anns, acts) =>
         idDoc(id, pm) :: space :: str("EXTERNAL") :: optDoc(anns, annotationsDoc(pm)) :: optDoc(acts,semActsDoc(pm))
       case ShapeDecl(id,_abstract,se) => {
-        pprint.log(s"ShapeDecl")
         abstractDoc(_abstract) :: idDoc(id,pm) :: space :: shapeExprDoc(pm)(se)
       }
       case other => str(s"ERROR: Unknown type of ShapeExpr: ${other}")
     }
 
   private def abstractDoc(_abstract: Boolean): Doc = 
-  if (_abstract) str("ABSTRACT") :: space
+  if (_abstract) str("abstract") :: space
   else empty
 
   private def nodeConstraintDoc(pm: PrefixMap)(nc: NodeConstraint): Doc =
@@ -372,7 +375,7 @@ object CompactShow {
     optDocConst(t.optInverse, str("^")) ::
       optDocConst(t.optNegated, str("!")) ::
       iriDoc(pm)(t.predicate) :: space ::
-      optDoc(t.valueExpr, shapeExprDoc(pm)) ::
+      optDocOrElse(t.valueExpr, shapeExprDoc(pm), dot) ::
       cardinalityDoc(t.optMin, t.optMax) ::
       optDoc(t.semActs, semActsDoc(pm)) ::
       optDoc(t.annotations, annotationsDoc(pm))
@@ -457,6 +460,9 @@ object CompactShow {
 
   private def optDocConst[A](x: Option[A], c: Doc): Doc =
     x.fold(none)(_ => c)
+
+  private def optDocOrElse[A](x: Option[A], f: A => Doc, other: Doc): Doc =
+    x.fold(other)(f(_))
 
   private def eq = str("=")
 

@@ -2,6 +2,8 @@ package es.weso.shexs
 
 import es.weso.shapeMaps.ShapeMap
 import es.weso.shex.Schema
+import java.nio.file.Path
+import java.nio.file.Paths
 
 case class MainState(
   dataFormat: String,
@@ -11,7 +13,8 @@ case class MainState(
   shapeMapFormat: String,
   showDataFormat: String,
   showSchemaFormat: String,
-  showResultFormat: String
+  showResultFormat: String,
+  folder: Path
 )
 
 object MainState {
@@ -24,6 +27,7 @@ object MainState {
       shapeMapFormat = "Compact", 
       showDataFormat = "Turtle",
       showSchemaFormat = "ShExC",
-      showResultFormat = "JSON"
+      showResultFormat = "JSON",
+      folder = Paths.get(".")
     )
 }

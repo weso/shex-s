@@ -47,6 +47,13 @@ abstract class AbstractSchema {
 
   def labels: List[ShapeLabel] = shapesMap.keySet.toList
 
+  override def toString: String = 
+    shapesMap.
+    map { // We don't show the label because it is already shown in se
+      case (sl,se) => s"${se.showQualified(prefixMap)}" 
+    }.
+    mkString("\n")
+
 }
 
 

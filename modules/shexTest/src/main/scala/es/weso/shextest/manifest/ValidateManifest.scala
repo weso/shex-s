@@ -6,8 +6,7 @@ import es.weso.rdf.jena.RDFAsJenaModel
 import es.weso.rdf.nodes.IRI
 import es.weso.shapeMaps.{BNodeLabel => BNodeMapLabel, IRILabel => IRIMapLabel, Start => StartMap, _}
 // import es.weso.shapeMaps.ShapeMap
-import es.weso.utils.FileUtils
-import org.scalatest._
+// import es.weso.utils.FileUtils
 import scala.util.{Either, Left, Right, Try}
 import cats.data.EitherT
 import cats.effect.IO
@@ -24,8 +23,6 @@ import io.circe.syntax._
 import es.weso.rdf._
 import es.weso.rdf.nodes._
 import ManifestPrefixes._
-import matchers.should._
-import funspec._
 import es.weso.utils.IOUtils._
 
 
@@ -38,6 +35,7 @@ trait RunManifest {
     nameIfSingle: Option[String], 
     ignoreList: List[String]
     )
+
   type EntryProcess = EntryParam => IO[Option[Result]]
 
   def runManifest(
@@ -70,20 +68,24 @@ trait RunManifest {
         .map {
           case (includeNode, manifest) =>
             val folder = Try { Paths.get(includeNode.getLexicalForm).getParent.toString }.getOrElse("")
-            runManifest(includeNode.getLexicalForm, folder, parentFolder, nameIfSingle, ignoreList,withEntry)
+            runManifest(includeNode.getLexicalForm, folder, parentFolder, nameIfSingle, ignoreList, withEntry)
         }
         .sequence
         .map(_.flatten)
-      vs2 <- m.entries.map(e => withEntry(EntryParam(e, name, parentFolder, nameIfSingle, ignoreList))).sequence
+      vs2 <- m.entries.map(e => 
+       withEntry(EntryParam(e, name, parentFolder, nameIfSingle, ignoreList))
+      ).sequence
     } yield (vs1 ++ vs2.flatten[Result])
 }
 
-trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with OptionValues with RunManifest {
+trait ValidateManifest extends RunManifest {
 
   def showFailed(vs: List[Result], withReason: Boolean): String = {
       vs.map(f => s"${f.name}${if (withReason) s": ${f.reason}" else ""}").mkString("\n") ++
       s"\nNumber of failed tests: ${vs.length}" 
   }
+
+
 
   def parseManifest(
       name: String,
@@ -92,21 +94,8 @@ trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with Opti
       nameIfSingle: Option[String],
       ignoreList: List[String],
       verbose: Boolean
-  ): Unit = {
-    it(s"Should parse manifestTest $folder/$name") {
-      val r: IO[List[Result]] =
-        runManifest(name, folder, parentFolder, nameIfSingle, ignoreList, processEntryValidating(verbose))
-      r.attempt.unsafeRunSync.fold(e => {
-        val currentFolder = new java.io.File(".").getCanonicalPath
-        fail(s"Error: $e\nCurrent folder: $currentFolder")
-    }, vs => {
-      val failed = vs.filter(_.isOk == false )
-      if (failed.length == 0) 
-        info(s"No failures. Number of tests run: ${vs.length}\nIgnored list: ${ignoreList.mkString(",")}")
-      else
-       fail(s"Failed tests: ${showFailed(failed,verbose)}/${vs.length}")
-    })
-    }
+  ): IO[List[Result]] = {
+    runManifest(name, folder, parentFolder, nameIfSingle, ignoreList, processEntryValidating(verbose))
   }
 
   def processEntryValidating(verbose: Boolean): EntryProcess = ep => {
@@ -119,7 +108,7 @@ trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with Opti
       } else {
       val folderURI = Paths.get(ep.parentFolder).normalize.toUri
       val base = Paths.get(".").toUri
-      // pprint.pprintln(ep.entry)
+      println(s"## Processing entry: ${ep.entry.name}")
        
       ep.entry match {
 
@@ -152,18 +141,14 @@ trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with Opti
   private def result[A](name: String, isOk: Boolean, reason: String): IO[Option[Result]] =
     IO.pure(Some(Result(name, isOk, reason)))
 
-  //  private def testFail[A](msg: String): EitherT[IO, String, A] = EitherT.fromEither(Left(msg))
-  // private def fromEither[A](e: Either[String, A]): EitherT[IO, String, A] = EitherT.fromEither(e)
-  // private def testInfo(msg: String): EitherT[IO, String, Unit] = EitherT.liftF(IO(println(msg)))
-
-  def getContents(name: String, folder: String, value: Option[IRI]): EitherT[IO, String, String] = value match {
+/*  def getContents(name: String, folder: String, value: Option[IRI]): EitherT[IO, String, String] = value match {
     case None      => EitherT.fromEither[IO](s"No value for $name".asLeft)
     case Some(iri) => getContentsEIO(folder + "/" + iri.str)
   }
 
   private def getContentsEIO(name: String): EitherT[IO, String, String] = {
     EitherT.liftF(FileUtils.getContents(Paths.get(name)))
-  }
+  } */
 
   def eq(s1: String, s2: String): Boolean = s1 == s2
 
@@ -200,31 +185,6 @@ trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with Opti
      }
     } yield r
     r
-/*     match {
-      case Right(schema) => {
-         match {
-          case Left(err) => result(r.name,false,s"Error parsing Json ${r.json}: $err")
-          case Right(expectedSchema) =>
-            if (CompareSchemas.compareSchemas(schema, expectedSchema)) {
-              parse(jsonStr) match {
-                case Left(err) => result(r.name, false,s"Schemas are equal but error parsing Json $jsonStr")
-                case Right(json) => {
-                  if (json.equals(schema.asJson)) {
-                    result(r.name, true, "JSONs are equal")
-                  } else {
-                    result(r.name,false,
-                      s"Json's are different\nSchema:${schema}\nJson generated: ${schema.asJson.spaces2}\nExpected: ${json.spaces2}"
-                    )
-                  }
-                }
-              }
-            } else {
-              result(r.name, false, s"Schemas are different. Parsed:\n${schema}\n-----Expected:\n${expectedSchema}")
-            }
-        }
-      }
-      case Left(e) => result(r.name,false, s"Error parsing Schema: ${r.shex}: $e")
-    } */
   }
 
   def testInfo(msg: String, verbose: Boolean): IO[Unit] = 
@@ -324,7 +284,7 @@ trait ValidateManifest extends AnyFunSpec with Matchers with TryValues with Opti
       folderURI: URI
   ): IO[Option[Result]] = {
     v.maybeResult match {
-      case None => fail(s"No result specified")
+      case None => IO(None) // fail(s"No result specified")
       case Some(resultIRI) => {
         val schemaUri    = mkLocal(mr.schema, validationBase, folderURI)
         val shapeMapUri  = mkLocal(mr.shapeMap, validationBase, folderURI)

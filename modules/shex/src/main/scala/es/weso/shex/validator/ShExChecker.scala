@@ -21,7 +21,7 @@ import es.weso.shex.ShapeLabel
 
 object ShExChecker extends CheckerCats {
 
-  type Config = RDFReader
+  type Config = ShExConfig // RDFReader
   type Env = Context
   type Err = ShExError
   type Evidence = (NodeShape, String)
@@ -42,19 +42,22 @@ object ShExChecker extends CheckerCats {
   def fromStream[A](s: Stream[IO,A]): Check[List[A]] = fromIO(s.compile.toList)
 
   def fromEitherIOS[A](e: EitherT[IO,String,A]): Check[A] = {
-    val ea: Check[Either[String,A]] = EitherT.liftF(WriterT.liftF(ReaderT.liftF(ReaderT.liftF(e.value))))
+    val ea: Check[Either[String,A]] = EitherT.liftF(WriterT.liftF(ReaderT.liftF(ReaderT.liftF(e.value))))    
     for {
       either <- ea
       r <- either.fold(errStr(_), ok)
     } yield r
   }
 
-  def info(msg:String): Check[Unit] = {
-    fromIO(
-      // IO.pure(())
-      IO(println(s"$msg"))
+  def info(msg:String): Check[Unit] = for {
+    verbose <- getVerbose
+    _ <- fromIO(
+      if (verbose) 
+       IO(println(s"$msg"))
+      else 
+       IO.pure(())  
     )
-  }
+  } yield ()
 
   def checkCond(
                  condition: Boolean,
@@ -111,7 +114,8 @@ object ShExChecker extends CheckerCats {
   }
 
 
-  def getRDF: Check[RDFReader] = getConfig // ask[Comput,RDFReader]
+  def getRDF: Check[RDFReader] = getConfig.map(_.rdf) 
+  def getVerbose: Check[Boolean] = getConfig.map(_.verbose)
 
   def getTyping: Check[ShapeTyping] = for {
     env <- getEnv
@@ -233,11 +237,15 @@ object ShExChecker extends CheckerCats {
 
   def runCheck[A: Show](
     c: Check[A],
-    rdf: RDFReader): IO[CheckResult[ShExError, A, Log]] = {
+    rdf: RDFReader,
+    verbose: Boolean = false): IO[CheckResult[ShExError, A, Log]] = {
     val initial: Context = Monoid[Context].empty
     for {
-      result <- run(c)(rdf)(initial)
-    } yield CheckResult(result)
+      result <- run(c)(ShExConfig(rdf, verbose))(initial)
+    } yield {
+      val (log,eitherTyping) = result
+      CheckResult(log, eitherTyping)
+    }
   }
 
  

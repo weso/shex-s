@@ -93,14 +93,14 @@ class InheritanceTest
       ) 
     }    
 
-      it("Should fail without nodes") {
+    it("Should fail without nodes") {
       val cmp = for {
         g <- InheritanceJGraphT.empty[String]
         asA <- g.ancestors("A")
       } yield (asA)
       cmp.attempt.unsafeRunSync().fold(
-        e => info(s"Failure detected: ${e.getMessage}"),
-        ps => fail(s"Should fail but obtained ${ps}")
+        e => fail(s"Failed with error ${e}"),
+        ps => ps should contain theSameElementsAs List()
       ) 
     }    
 

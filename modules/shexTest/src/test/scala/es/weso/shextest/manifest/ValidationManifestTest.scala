@@ -27,9 +27,10 @@ import ManifestPrefixes._
 //import scala.io._
 import io.circe.parser._
 import io.circe.syntax._
+import org.scalatest._
+import funspec.AnyFunSpec
 
-
-class ValidationManifestTest extends ValidateManifest {
+class ValidationManifestTest extends AnyFunSpec with ValidateManifest {
 
   // If the following variable is None, it runs all tests
   // Otherwise, it runs only the test whose name is equal to the value of this variable

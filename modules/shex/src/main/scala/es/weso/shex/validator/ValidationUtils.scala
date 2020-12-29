@@ -48,8 +48,11 @@ object ValidationUtils {
   } yield () 
 
   def infoTyping(t: ShapeTyping, msg: String, shapesPrefixMap: PrefixMap): Check[Unit] = for {
+   verbose <- getVerbose 
    nodesPrefixMap <- getNodesPrefixMap
-   _ <- info(s"$msg: ${t.showShort(nodesPrefixMap,shapesPrefixMap)}")
+   _ <- if (verbose) 
+    info(s"$msg: ${t.showShort(nodesPrefixMap,shapesPrefixMap)}")
+   else ok(()) 
   } yield ()
 
   def getNodesPrefixMap: Check[PrefixMap] = for {
