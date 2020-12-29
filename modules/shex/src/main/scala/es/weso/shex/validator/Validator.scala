@@ -49,9 +49,9 @@ case class Validator(schema: ResolvedSchema,
 
   private def checkShapeMap(shapeMap: FixedShapeMap): CheckTyping = 
    for {
-    _ <- info(s"checkShapeMap")
+    // _ <- info(s"checkShapeMap")
     r <- checkNodesShapes(shapeMap)
-    _ <- info(s"end of checkShapeMap")
+    // _ <- info(s"end of checkShapeMap")
   } yield r
 
   private def checkNodesShapes(fixedMap: FixedShapeMap): CheckTyping =
@@ -346,7 +346,8 @@ case class Validator(schema: ResolvedSchema,
     descendants <- getDescendants(sd)
     _ <- info(s"Descendants: ${descendants.map(d => schema.prefixMap.qualify(d.toRDFNode)).mkString(",")}")
     rdf <- getRDF
-    newT <- if (sd._abstract) cond(checkSome(descendants.toList.map(checkHasType(node,t)), 
+    newT <- if (sd._abstract) 
+      cond(checkSome(descendants.toList.map(checkHasType(node, t, attempt)), 
                            AbstractShapeErr(node,sd,rdf)),
             (_: Unit) => ok(t),
             _ => {
@@ -361,14 +362,16 @@ case class Validator(schema: ResolvedSchema,
    ok(t.addNotEvidence(node,ShapeType(s,s.id,schema), AbstractShapeErr(node,s,rdf))))
     
 
-  private def checkHasType(node: RDFNode, 
+/*  private def checkHasType(node: RDFNode, 
                            t: ShapeTyping)
                           (lbl: ShapeLabel): Check[Unit] = {
    val vs: List[ShapeLabel] = 
      t.getOkValues(node).map(_.label).toList.flatten
    if (vs contains lbl) ok(())
-   else getRDF.flatMap(rdf => err(HasNoType(node,lbl,t,rdf)))
-  }
+   else 
+    getRDF.flatMap(rdf => 
+    err(HasNoType(node,lbl,t,attempt, rdf)))
+  } */
   
   private def getDescendants(s: ShapeExpr): Check[Set[ShapeLabel]] = s.id match {
     case None => ok(Set())
@@ -378,25 +381,16 @@ case class Validator(schema: ResolvedSchema,
   }
    
 
-  private def checkNodeHasType(node: RDFNode, shapeLabel: ShapeLabel, typing: ShapeTyping, attempt: Attempt): Check[Unit] =
+  private def checkHasType(node: RDFNode, typing: ShapeTyping, attempt: Attempt)(shapeLabel: ShapeLabel): Check[Unit] =
     if (typing.hasNoType(node, shapeLabel)) {
-      typing.getTypingResult(node, shapeLabel) match {
-        case None =>
-          errStr(s"Node ${node.show} has no shape ${shapeLabel.show}. Attempt: $attempt")
-        case Some(tr) =>
-          tr.getErrors match {
-            case None =>
-              errStr(s"Node ${node.show} has no shape ${shapeLabel.show}\nReason typing result ${tr.show} with no errors")
-            case Some(es) =>
-              errStr(s"Node ${node.show} has no shape ${shapeLabel.show}\nErrors: ${es.map(_.show).mkString("\n")}")
-          }
-      }
+      getRDF.flatMap(rdf => 
+      err(HasNoType(node, shapeLabel, typing, attempt, rdf)))
     } else ok(())
 
   private def checkRef(attempt: Attempt, node: RDFNode, ref: ShapeLabel): CheckTyping =
     for {
       t <- checkNodeLabel(node, ref)
-      _ <- checkNodeHasType(node,ref,t, attempt)
+      _ <- checkHasType(node, t, attempt)(ref)
     } yield t
 
   private def checkNodeConstraint(attempt: Attempt, node: RDFNode, s: NodeConstraint): CheckTyping =
@@ -411,7 +405,7 @@ case class Validator(schema: ResolvedSchema,
     }
 
   private  def getExternalShape(se: ShapeExternal): Check[ShapeExpr] = se.id match {
-    case None => errStr(s"No label in external shape")
+    case None => err(NoLabelExternal(se))
     case Some(label) => fromIO(externalResolver.getShapeExpr(label, se.annotations))
   }
 
@@ -596,7 +590,8 @@ case class Validator(schema: ResolvedSchema,
                  |neighs1=${neighs1}
                  |neighs2=${neighs2}
                  |""".stripMargin) *>
-        errStr[ShapeTyping]("Failing partition") // addNotEvidence(NodeShape(node,st),ExtendFails(node,extendLabel,attempt),s"Node ${node.show} doesn't conform to extended shape ${extendLabel.show}").map(t => (t,false))
+        // errStr[ShapeTyping]("Failing partition") // addNotEvidence(NodeShape(node,st),ExtendFails(node,extendLabel,attempt),s"Node ${node.show} doesn't conform to extended shape ${extendLabel.show}").map(t => (t,false))
+        err(PartitionFailed(node,attempt,shape,extendLabel,pair))
       }
     } yield pair 
   }
@@ -626,7 +621,7 @@ case class Validator(schema: ResolvedSchema,
       bagChecker    = IntervalChecker(rbe)
       csRest <- calculateCandidates(neighs, cTable)
       (candidates, rest) = csRest
-      _     <- checkRests(rest, s.extraPaths, s.isClosed, ignoredPathsClosed)
+      _     <- checkRests(rest, s.extraPaths, s.isClosed, ignoredPathsClosed, s, attempt)
       paths <- fromEither(s.paths(schema).leftMap(StringError(_)))
       _ <- info(s"Checking closed condition with paths=${paths}, neighs=${neighs}")
       _ <- {
@@ -658,7 +653,7 @@ case class Validator(schema: ResolvedSchema,
         t <- checkShapeRestrict(attempt, node, s, r)
         _ <- infoTyping(t,"After checkShapeRestrict",schema.prefixMap)
       } yield t 
-      case e :: rs  => errStr(s"Multiple restricts not supported yet: ${rs.map(_.show).mkString(",")}")
+      case e :: rs  => err(MultipleRestricts(node,attempt,s,rs))
   }
 
   private def checkShapeRestrict(attempt: Attempt, node: RDFNode, s: Shape, rl: ShapeLabel): CheckTyping = 
@@ -743,39 +738,47 @@ case class Validator(schema: ResolvedSchema,
       rests: NoCandidates,
       extras: List[Path],
       isClosed: Boolean,
-      ignoredPathsClosed: List[Path]
+      ignoredPathsClosed: List[Path],
+      shape: Shape,
+      attempt: Attempt
   ): Check[Unit] = {
-    val zero: Either[String, Unit] = Right(())
-    def combine(step: Either[String, Unit], current: Either[String, Unit]): Either[String, Unit] =
+    val zero: Either[ShExError, Unit] = ().asRight
+    def combine(
+      step: Either[ShExError, Unit], 
+      current: Either[ShExError, Unit]
+      ): Either[ShExError, Unit] =
       (step, current) match {
-        case (Left(str1), _)        => Left(str1)
-        case (_, Left(str2))        => Left(str2)
+        case (Left(e1), _)        => Left(e1)
+        case (_, Left(e2))        => Left(e2)
         case (Right(()), Right(())) => Right(())
       }
-    val ts: List[Either[String, Unit]] = rests.cs.map(checkRest(_, extras, isClosed, ignoredPathsClosed))
-    val r: Either[String, Unit]        = ts.foldLeft(zero)(combine)
-    r.fold(e => errStr(e), _ => ok(()))
+    val ts: List[Either[ShExError, Unit]] = rests.cs.map(checkRest(_, extras, isClosed, ignoredPathsClosed, shape, attempt))
+    val r: Either[ShExError, Unit]        = ts.foldLeft(zero)(combine)
+    r.fold(
+      err(_), 
+      _ => ok(())
+      )
   }
 
   private def checkRest(
       rest: Arc,
       extras: List[Path],
       isClosed: Boolean,
-      ignoredPathsClosed: List[Path]
-  ): Either[String, Unit] = {
+      ignoredPathsClosed: List[Path],
+      shape: Shape,
+      attempt: Attempt
+  ): Either[ShExError, Unit] = {
     val restPath = rest.path
     // Ignore extra predicates if they are inverse
     if (isClosed && restPath.isDirect) {
       // TODO: Review if the extra.contains(restpath) check is necessary
       // Extra has been implemented as a negation
       if (ignoredPathsClosed.contains(restPath) || extras.contains(restPath)) {
-        Right(())
+        ().asRight
       } else {
-        Left(
-          s"Closed shape. But rest ${restPath.show} is not in ${ignoredPathsClosed.map(_.show).mkString(",")} or ${extras.map(_.show).mkString(",")}"
-        )
+        ClosedShapeWithRests(shape,rest,attempt,ignoredPathsClosed,extras).asLeft
       }
-    } else Right(())
+    } else ().asRight
   }
 
   private def mkTable(maybeTe: Option[TripleExpr], extra: List[IRI], prefixMap: PrefixMap): Check[(CTable, Rbe_)] = {
@@ -906,9 +909,9 @@ case class Validator(schema: ResolvedSchema,
                        shapeMap: FixedShapeMap, 
                        verbose: Boolean = false): IO[Result] = 
   for {
-    _ <- IO { println(s"validateShapeMap") }
+    // _ <- IO { println(s"validateShapeMap") }
     r <- runValidator(checkShapeMap(shapeMap), rdf, verbose)
-    _ <- IO { println(s"end of checkShapeMap") }
+    // _ <- IO { println(s"end of checkShapeMap") }
   } yield r
 
   /**
@@ -920,7 +923,6 @@ case class Validator(schema: ResolvedSchema,
   def runValidator(chk: Check[ShapeTyping], rdf: RDFReader, verbose: Boolean = false): IO[Result] = for {
     r <- runCheck(chk, rdf, verbose)
     pm <- rdf.getPrefixMap
-    _ <- IO { println(s"End of runCheck") }
   } yield cnvResult(r, rdf, pm)
 
   private def cnvResult(r: CheckResult[ShExError, ShapeTyping, Log], rdf: RDFReader, rdfPrefixMap: PrefixMap): Result = Result (

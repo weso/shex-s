@@ -8,8 +8,8 @@ lazy val supportedScalaVersions = List(
   )
 
 // Local dependencies
-lazy val srdfVersion           = "0.1.86"
-lazy val shapeMapsVersion      = "0.1.69"
+lazy val srdfVersion           = "0.1.89"
+lazy val shapeMapsVersion      = "0.1.72"
 lazy val utilsVersion          = "0.1.73"
 lazy val documentVersion       = "0.0.11"
 
@@ -29,6 +29,8 @@ lazy val junitInterfaceVersion = "0.11"
 lazy val jgraphtVersion        = "1.3.1"
 lazy val logbackVersion        = "1.2.3"
 lazy val loggingVersion        = "3.9.2"
+lazy val munitVersion          = "0.7.20"
+lazy val munitEffectVersion    = "0.11.0"
 lazy val pprintVersion         = "0.5.6"
 lazy val rdf4jVersion          = "3.4.2"
 lazy val scalacheckVersion     = "1.14.0"
@@ -40,6 +42,7 @@ lazy val scallopVersion        = "3.3.1"
 lazy val sextVersion           = "0.2.6"
 lazy val typesafeConfigVersion = "1.3.4"
 lazy val xercesVersion         = "2.12.0"
+lazy val weaverVersion         = "0.6.0-M3"
 
 // Compiler plugin dependency versions
 lazy val simulacrumVersion = "1.0.0"
@@ -67,6 +70,8 @@ lazy val jenaArq        = "org.apache.jena"   % "jena-arq"         % jenaVersion
 lazy val jenaFuseki     = "org.apache.jena"   % "jena-fuseki-main" % jenaVersion
 lazy val junit          = "junit"             % "junit"            % junitVersion
 lazy val junitInterface = "com.novocode"      % "junit-interface"  % junitInterfaceVersion
+lazy val munit          = "org.scalameta"     %% "munit"           % munitVersion
+lazy val munitEffect    = "org.typelevel"     %% "munit-cats-effect-2" % munitEffectVersion
 lazy val rdf4j_runtime  = "org.eclipse.rdf4j" % "rdf4j-runtime"    % rdf4jVersion
 
 // WESO components
@@ -86,11 +91,12 @@ lazy val scalactic      = "org.scalactic"              %% "scalactic"     % scal
 lazy val scalacheck     = "org.scalacheck"             %% "scalacheck"    % scalacheckVersion
 lazy val scalaTest      = "org.scalatest"              %% "scalatest"     % scalaTestVersion
 // lazy val scalatags      = "com.lihaoyi"                %% "scalatags"     % scalatagsVersion
-lazy val sext           = "com.github.nikita-volkov"   % "sext"        % sextVersion
-lazy val pprint         = "com.lihaoyi"                %% "pprint"     % pprintVersion
-lazy val typesafeConfig = "com.typesafe"               % "config"      % typesafeConfigVersion
-lazy val xercesImpl     = "xerces"                     % "xercesImpl"  % xercesVersion
-lazy val simulacrum     = "org.typelevel"              %% "simulacrum" % simulacrumVersion
+lazy val sext           = "com.github.nikita-volkov"   % "sext"           % sextVersion
+lazy val pprint         = "com.lihaoyi"                %% "pprint"        % pprintVersion
+lazy val typesafeConfig = "com.typesafe"               % "config"         % typesafeConfigVersion
+lazy val xercesImpl     = "xerces"                     % "xercesImpl"     % xercesVersion
+lazy val simulacrum     = "org.typelevel"              %% "simulacrum"    % simulacrumVersion
+lazy val weaver         = "com.disneystreaming"        %% "weaver-cats"   % weaverVersion 
 
 lazy val shexsRoot = project
   .in(file("."))
@@ -187,8 +193,11 @@ lazy val shex = project
       srdfJena % Test,
       srdf4j   % Test,
       junit % Test,
-      junitInterface % Test
-    )
+      junitInterface % Test,
+      munit % Test,
+      munitEffect % Test
+    ),
+    testFrameworks += new TestFramework("munit.Framework")
   )
 
 lazy val depGraphs = project
@@ -200,8 +209,9 @@ lazy val depGraphs = project
     libraryDependencies ++= Seq(
       catsCore,
       catsKernel,
-      // catsMacros,
       jgraphtCore,
+      munit,
+      munitEffect,
       utils
     )
   )
@@ -248,6 +258,9 @@ lazy val shexTest = project
       circeParser,
       scalaTest  % Test,
       scalacheck % Test,
+      weaver % Test,
+      munit % Test,
+      munitEffect % Test,
       catsEffect,
       utils     % "test -> test; compile -> compile",
       utilsTest % Test,
@@ -255,6 +268,10 @@ lazy val shexTest = project
       shapeMaps,
       srdfJena,
       srdf4j % Test
+    ), 
+    testFrameworks ++= Seq(
+      new TestFramework("munit.Framework"), 
+      new TestFramework("weaver.framework.CatsEffect")
     )
   )
 

@@ -4,11 +4,13 @@ import java.nio.file.Paths
 import com.typesafe.config.{Config, ConfigFactory}
 import es.weso.shex._
 // import scala.io._
-import cats.data.EitherT
+// import cats.data.EitherT
 import cats.effect.IO
+import org.scalatest._
+import funspec.AnyFunSpec
 
 
-class NegativeStructureManifestTest extends ValidateManifest {
+class NegativeStructureManifestTest extends AnyFunSpec with ValidateManifest {
 
   // If the following variable is None, it runs all tests
   // Otherwise, it runs only the test whose name is equal to the value of this variable

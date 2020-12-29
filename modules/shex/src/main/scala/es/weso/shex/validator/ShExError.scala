@@ -451,8 +451,8 @@ object ShExError {
 
   }
 
-  case class HasNoType(node: RDFNode, label: ShapeLabel, shapeTyping: ShapeTyping, rdf: RDFReader) 
-    extends ShExError(s"Node ${node.show} has not type ${label.toRDFNode.show} in ${shapeTyping.showShapeTyping}") {
+  case class HasNoType(node: RDFNode, label: ShapeLabel, shapeTyping: ShapeTyping, attempt: Attempt, rdf: RDFReader) 
+    extends ShExError(s"Node ${node.show} has not shape ${label.toRDFNode.show} in ${shapeTyping.showShapeTyping}") {
       override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
         s"""HasNoType ${nodesPrefixMap.qualify(node)} has not type ${shapesPrefixMap.qualify(label.toRDFNode)} in ${shapeTyping.showShort(nodesPrefixMap,shapesPrefixMap)}"""
       }
@@ -544,6 +544,100 @@ object ShExError {
        ("shape", s.asJson),
 //       ("neighs", neighs.asJson),
        ("attempt", attempt.asJson)
+      ) 
+  }
+
+  case class PartitionFailed(
+    node: RDFNode,
+    attempt: Attempt, 
+    s: Shape,
+    extendLabel: ShapeLabel,
+    pair: (Set[Arc],Set[Arc])
+    ) extends ShExError(s"""|Partition of neighs from node ${node.show} failed to match ${s.id.map(_.toRDFNode.show).getOrElse("")}. 
+                            |Partition = ${pair} 
+                            |Extend label: ${extendLabel.toRDFNode.show}""".stripMargin) {
+    override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
+      s"""|Partition of neighs from node ${nodesPrefixMap.qualify(node)} failed to match shape ${shapesPrefixMap.qualify(extendLabel.toRDFNode)}
+      |Partition: ${pair.toString}
+      |Shape: ${s.showQualified(shapesPrefixMap)}
+      |ExtendLabel: ${shapesPrefixMap.qualify(extendLabel.toRDFNode)}
+      |Attempt: ${attempt.show}
+      |""".stripMargin
+    }
+
+    override def toJson: Json = Json.obj(
+       ("type", Json.fromString("PartitionFailed")),
+       ("shape", s.asJson),
+       ("pair", pair.toString.asJson),
+       ("attempt", attempt.asJson)
+      ) 
+
+  }
+
+  case class MultipleRestricts(
+    node: RDFNode,
+    attempt: Attempt, 
+    s: Shape,
+    rs: List[ShapeLabel]
+    ) extends ShExError(s"""|Multiple restricts not supported yet ${s.id.map(_.toRDFNode.show).getOrElse("")}. 
+                            |Restricts = ${rs}
+                            |""".stripMargin) {
+    override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
+      s"""|Multiple restricts not supported yet. 
+          |Node ${nodesPrefixMap.qualify(node)} 
+          |Shape: ${s.showQualified(shapesPrefixMap)}
+          |Attempt: ${attempt.show}
+          |Restricts: ${rs.toString}
+          |""".stripMargin
+    }
+
+    override def toJson: Json = Json.obj(
+       ("type", Json.fromString("MultipleRestricts")),
+       ("shape", s.asJson),
+       ("rs", rs.toString.asJson),
+       ("attempt", attempt.asJson)
+      ) 
+
+  }  
+
+
+  case class NoLabelExternal(
+    se: ShapeExternal
+    ) extends ShExError(s"""|No label to identify external shape ${se}
+                            |""".stripMargin) {
+    val s: ShapeExpr = se                          
+    override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
+      s"""|No label to identify external shape: ${se.showQualified(shapesPrefixMap)}
+          ||""".stripMargin
+    }
+
+    override def toJson: Json = Json.obj(
+       ("type", Json.fromString("NoLabelExternal")),
+       ("shapeExternal", s.asJson)
+      ) 
+
+  }
+
+  case class ClosedShapeWithRests(
+    s: Shape,
+    rest: Arc,
+    attempt: Attempt,
+    ignoredPathsClosed: List[Path],
+    extras: List[Path]
+  ) extends ShExError(s"""|Closed shape but rest ${rest.path.show} is not in ${ignoredPathsClosed.map(_.show).mkString(",")} or ${extras.map(_.show).mkString(",")}
+                          |""".stripMargin) {
+    override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
+      s"""|Closed shape but rest: ${rest.path.showQualified(shapesPrefixMap)} is not in ${ignoredPathsClosed.map(_.show).mkString(",")} or ${extras.map(_.show).mkString(",")}
+          |""".stripMargin
+    }
+
+    override def toJson: Json = Json.obj(
+       ("type", Json.fromString("ClosedShapeWithRests")),
+       ("shape", s.asJson),
+       ("attempt", attempt.asJson), 
+       ("rest", rest.path.toString.asJson),
+       ("extras", extras.map(_.show).mkString(",").asJson),
+       ("ignoredPathsClosed", ignoredPathsClosed.map(_.show).mkString(",").asJson),
       ) 
 
   }
