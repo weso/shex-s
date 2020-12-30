@@ -15,7 +15,9 @@ case class NodeShape(node: RDFNode, shape: ShapeType) {
 object NodeShape {
 
   implicit val nodeShapeShow = new Show[NodeShape] {
-    def show(ns: NodeShape) = s"[${ns.node},${ns.shape.label.map(label => label.toRDFNode.toString).getOrElse("Anonymous shape")}]"
+    def show(ns: NodeShape) = s"[${ns.node},${ns.shape.label.map(
+      label => label.toRDFNode.toString
+    ).getOrElse("Anonymous shape")}]"
   }
   
 

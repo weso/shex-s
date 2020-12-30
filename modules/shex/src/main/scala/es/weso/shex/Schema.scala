@@ -13,6 +13,7 @@ import scala.io.Source
 import scala.util._
 import cats.effect._
 import es.weso.utils.FileUtils
+import es.weso.rdf.locations.Location
 
 case class Schema private
                 ( id: IRI,
@@ -22,7 +23,8 @@ case class Schema private
                   start: Option[ShapeExpr],
                   shapes: Option[List[ShapeExpr]],
                   optTripleExprMap: Option[Map[ShapeLabel,TripleExpr]],
-                  imports: List[IRI]
+                  imports: List[IRI],
+                  labelLocationMap: Option[Map[ShapeLabel,Location]]
                  ) extends AbstractSchema {
 
   def addShape(se: ShapeExpr): Schema = this.copy(shapes = addToOptionList(se,shapes))
@@ -34,7 +36,7 @@ case class Schema private
     }
 
   def shapeLabel2Iri(l: ShapeLabel): Either[String, IRI] = l match {
-    case IRILabel(iri) => Right(iri)
+    case l: IRILabel => Right(l.iri)
     case _ => Left(s"Label $l can't be converted to IRI")
   }
 
@@ -109,15 +111,11 @@ case class Schema private
 
   def relativize(maybeBase: Option[IRI]): Schema = maybeBase match {
     case None => this
-    case Some(baseIri) => Schema(
-      id.relativizeIRI(baseIri),
-      prefixes,
-      base.map(_.relativizeIRI(baseIri)),
-      startActs,
-      start.map(_.relativize(baseIri)),
-      shapes.map(_.map(_.relativize(baseIri))),
-      optTripleExprMap,
-      imports
+    case Some(baseIri) => this.copy(
+      id = id.relativizeIRI(baseIri),
+      base = base.map(_.relativizeIRI(baseIri)),
+      start = start.map(_.relativize(baseIri)),
+      shapes = shapes.map(_.map(_.relativize(baseIri))),
     )
   }
 
@@ -134,7 +132,7 @@ object Schema {
   def rdfDataFormats(rdfReader: RDFReader) = rdfReader.availableParseFormats.map(_.toUpperCase)
 
   def empty: Schema =
-    Schema(IRI(""),None, None, None, None, None, None, List())
+    Schema(IRI(""),None, None, None, None, None, None, List(), None)
 
   def fromIRI(i: IRI, base: Option[IRI]): IO[Schema] = {
     val uri = i.uri

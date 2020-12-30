@@ -210,8 +210,8 @@ object showShEx {
 
   implicit lazy val showShapeLabel: Show[ShapeLabel] = new Show[ShapeLabel] {
     final def show(a: ShapeLabel): String = a match {
-      case IRILabel(iri) => iri.show
-      case BNodeLabel(bnode) => "_:" + bnode.id
+      case l: IRILabel => l.iri.show
+      case l: BNodeLabel => "_:" + l.bnode.id
       case Start => "Start"
     }
   }

@@ -3,7 +3,7 @@ package es.weso.shextest.manifest
 import weaver._
 import cats.effect._
 
-object WeaverSuite extends SimpleIOSuite {
+/*object WeaverSuite extends SimpleIOSuite {
  
  val randomUUID = IO(java.util.UUID.randomUUID())
 
@@ -14,4 +14,4 @@ object WeaverSuite extends SimpleIOSuite {
       y <- randomUUID
     } yield expect(x != y)
   }
-}
+} */

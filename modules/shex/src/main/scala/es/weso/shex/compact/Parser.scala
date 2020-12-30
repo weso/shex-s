@@ -14,6 +14,7 @@ import java.nio.charset.StandardCharsets
 import es.weso.utils.FileUtils
 
 import scala.collection.immutable.ListMap
+import es.weso.rdf.locations.Location
 
 object Parser extends LazyLogging {
 
@@ -54,6 +55,9 @@ object Parser extends LazyLogging {
   def getTripleExprMap: Builder[TripleExprMap] =
     getState.map(_.tripleExprMap)
 
+  def getLabelLocationMap: Builder[Map[ShapeLabel,Location]] =
+    getState.map(_.labelLocationMap)
+
   def getState: Builder[BuilderState] =
     EitherT.liftF[S, String, BuilderState](StateT.inspect(identity))
 
@@ -79,6 +83,11 @@ object Parser extends LazyLogging {
   def addShape(label: ShapeLabel, expr: ShapeExpr): Builder[Unit] = {
     updateState(s => s.copy(shapesMap = s.shapesMap + (label -> expr)))
   }
+
+  def addLabelLocation(label: ShapeLabel, location: Location): Builder[Unit] = {
+    updateState(s => s.copy(labelLocationMap = s.labelLocationMap + (label -> location)))
+  }
+
 
   def addPrefix(prefix: Prefix, iri: IRI): Builder[Unit] = {
     updateState(s => {
@@ -141,7 +150,8 @@ object Parser extends LazyLogging {
 
   def run[A](c: Builder[A],
              base: Option[IRI]
-            ): (BuilderState, Either[String, A]) = c.value.run(initialState(base)).value
+            ): (BuilderState, Either[String, A]) = 
+    c.value.run(initialState(base)).value
 
   def initialState(base: Option[IRI]) =
     BuilderState(
@@ -149,13 +159,16 @@ object Parser extends LazyLogging {
       base,
       None,
       ListMap(),
-      Map())
+      Map(),
+      Map()
+    )
 
   case class BuilderState(prefixMap: PrefixMap,
                           base: Option[IRI],
                           start: Option[ShapeExpr],
                           shapesMap: ShapesMap,
-                          tripleExprMap: TripleExprMap
+                          tripleExprMap: TripleExprMap,
+                          labelLocationMap: Map[ShapeLabel,Location]
                          )
 
 }

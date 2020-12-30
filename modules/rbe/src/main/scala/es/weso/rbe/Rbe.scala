@@ -81,24 +81,41 @@ sealed trait Rbe[+A] extends LazyLogging with Product with Serializable {
   /**
    * Checks if a rbe is nullable
    */
-  lazy val nullable: Boolean = {
-    val r = this match {
-      case _ : Fail => false
-      case Empty => true
-      case Symbol(_, 0, IntLimit(0)) => true
-      case Symbol(_, 0, _) => true
-      case Symbol(_, _, _) => false
-      case And(e1, e2) => e1.nullable && e2.nullable
-      case Or(e1, e2) => e1.nullable || e2.nullable
-      case Star(_) => true
-      case Plus(_) => false
-      // case Repeat(e,0,IntLimit(0)) => true
-      case Repeat(_, 0, _) => true //
-      case Repeat(e, _, _) => e.nullable
+  def nullable[U >: A]: Either[Map[U,Int],Unit]  = {
+    this match {
+      case _: Fail => Left(Map())
+      case Empty => Right(())
+      case Symbol(_,0,_) => Right(())
+      case Symbol(x,m,n) => Left(Map(x -> m))
+      case And(e1,e2) => combineAnd(e1.nullable, e2.nullable)
+      case Or(e1,e2) => combineOr(e1.nullable, e2.nullable)
+      case Star(_) => Right(())
+      case Plus(e) => e.nullable
+      case Repeat(_,0,_) => Right(())
+      case Repeat(e, _, _) => e.nullable 
     }
-    logger.debug(s"$this nullable?: $r")
-    r
   }
+
+  private def combineAnd[B](
+    s1: Either[Map[B,Int],Unit], 
+    s2: Either[Map[B,Int], Unit]
+    ): Either[Map[B,Int],Unit] = (s1,s2) match {
+      case (Left(m), Right(_)) => Left(m)
+      case (Right(_), Left(m)) => Left(m)
+      case (Right(_), Right(_)) => Right(())
+      case (Left(m1), Left(m2)) => Left(m1 |+| m2)
+    }
+
+  private def combineOr[B](
+    s1: Either[Map[B,Int],Unit], 
+    s2: Either[Map[B,Int], Unit]
+    ): Either[Map[B,Int],Unit] = (s1,s2) match {
+      case (Right(_), Left(_)) => Right(())
+      case (Right(_), Right(_)) => Right(())
+      case (Left(m1), Left(m2)) => Left(m1 |+| m2)
+      case (Left(_), Right(_)) => Right(())
+    }
+
 
   private def mkAnd[U >: A](r1: => Rbe[U], r2: => Rbe[U]): Rbe[U] = {
     val r = (r1, r2) match {
@@ -202,7 +219,7 @@ sealed trait Rbe[+A] extends LazyLogging with Product with Serializable {
       }
       case Repeat(e, 0, IntLimit(0)) => {
         val d = e.deriv(x, open, controlled)
-        if (d.nullable) Fail(CardinalityZeroZeroDeriv(x,e,d))
+        if (d.nullable.isRight) Fail(CardinalityZeroZeroDeriv(x,e,d))
         else Empty
       }
       case Repeat(e, m, n) => {

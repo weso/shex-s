@@ -8,6 +8,7 @@ import scala.util._
 import cats.effect.IO
 import es.weso.depgraphs.Inheritance
 import es.weso.depgraphs.InheritanceJGraphT
+import es.weso.rdf.locations.Location
 
 /**
   * Represents a schema with all the imports resolved
@@ -20,7 +21,8 @@ case class ResolvedSchema(
   source: Schema,
   resolvedMapShapeExprs: Map[ShapeLabel, ResolvedShapeExpr],
   resolvedMapTripleExprs: Map[ShapeLabel, ResolvedTripleExpr],
-  inheritanceGraph: Inheritance[ShapeLabel]
+  inheritanceGraph: Inheritance[ShapeLabel],
+  labelLocationMap: Option[Map[ShapeLabel,Location]]
   ) extends AbstractSchema {
   
  def id = source.id
@@ -95,7 +97,8 @@ object ResolvedSchema {
     source = schema, 
     resolvedMapShapeExprs = mapsImported.shapeExprMaps,
     resolvedMapTripleExprs = mapsImported.tripleExprMaps,
-    inheritanceGraph
+    inheritanceGraph,
+    labelLocationMap = schema.labelLocationMap
   )
 
   // TODO: make the following method tailrecursive
@@ -169,7 +172,8 @@ object ResolvedSchema {
     source = Schema.empty, 
     resolvedMapShapeExprs = Map(),
     resolvedMapTripleExprs = Map(),
-    inheritanceGraph = ig
+    inheritanceGraph = ig,
+    labelLocationMap = None
   )
 
 }

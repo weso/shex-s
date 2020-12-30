@@ -32,14 +32,17 @@ class RDF2ShexTest extends AnyFunSpec with Matchers with EitherValues with TryVa
       """.
           stripMargin
 
-      val expected = Schema(IRI(""),
+      val expected = Schema.empty.copy(
+        shapes = Some(List(NodeConstraint.nodeKind(IRIKind, List())))
+      )
+      /*Schema(IRI(""),
         None,
         None,
         None,
         None,
         Some(List(NodeConstraint.nodeKind(IRIKind, List()))),
         None,
-        List())
+        List()) */
 
       val result: IO[(Boolean,String,String)] = for {
         res1 <- RDFAsJenaModel.empty

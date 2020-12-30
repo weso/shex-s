@@ -286,8 +286,8 @@ trait ShEx2RDF extends RDFSaver with LazyLogging {
 
   private def label(lbl: ShapeLabel): RDFSaver[RDFNode] = lbl match {
     case Start => ok(sx_start)
-    case IRILabel(iri) => ok(iri)
-    case BNodeLabel(bnode) => ok(bnode)
+    case l: IRILabel => ok(l.iri)
+    case l: BNodeLabel => ok(l.bnode)
   }
 
   private def nodeKind(nk: NodeKind): RDFSaver[RDFNode] =
@@ -298,12 +298,9 @@ trait ShEx2RDF extends RDFSaver with LazyLogging {
       case NonLiteralKind => ok(sx_nonliteral)
     }
 
-  private def mkId(id: Option[ShapeLabel]): RDFSaver[RDFNode] = id match {
-    case None => createBNode
-    case Some(IRILabel(iri)) => ok(iri)
-    case Some(BNodeLabel(bNode)) => ok(bNode)
-    case Some(Start) => ok(sx_start)
-  }
+  private def mkId(id: Option[ShapeLabel]): RDFSaver[RDFNode] = 
+   id.map(label).getOrElse(createBNode()) 
+   
 
 }
 

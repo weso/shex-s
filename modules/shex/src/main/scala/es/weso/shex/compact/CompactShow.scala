@@ -110,8 +110,8 @@ object CompactShow {
 
   private def shapeLabelDoc(pm: PrefixMap)(l: ShapeLabel): Doc =
     l match {
-      case IRILabel(iri) => str(pm.qualify(iri))
-      case BNodeLabel(b) => str(b.toString)
+      case l: IRILabel => str(pm.qualify(l.iri))
+      case l: BNodeLabel => str(l.bnode.toString)
       case Start => str("Start")
     }
 

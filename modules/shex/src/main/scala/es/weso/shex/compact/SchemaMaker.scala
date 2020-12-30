@@ -12,6 +12,8 @@ import es.weso.shex.values._
 import es.weso.utils.StrUtils._
 import es.weso.rdf.operations.Comparisons._
 import scala.jdk.CollectionConverters._
+import es.weso.rdf.locations.Location
+import org.antlr.v4.runtime.Token
 
 /**
  * Visits the AST and builds the corresponding ShEx abstract syntax
@@ -31,18 +33,19 @@ class SchemaMaker extends ShExDocBaseVisitor[Any] with LazyLogging {
   val optional = (Some(0), Some(IntMax(1)))
 
   override def visitShExDoc(
-    ctx: ShExDocContext): Builder[Schema] = {
+    ctx: ShExDocContext
+    ): Builder[Schema] = {
     for {
       directives <- visitList(visitDirective, ctx.directive())
       startActions <- visitStartActions(ctx.startActions())
       notStartAction <- visitNotStartAction(ctx.notStartAction())
       statements <- visitList(visitStatement, ctx.statement())
-
       prefixMap <- getPrefixMap
       base <- getBase
       start <- getStart
       shapeMap <- getShapesMap
       tripleExprMap <- getTripleExprMap
+      labelLocationMap <- getLabelLocationMap 
     } yield {
       val importIRIs = directives.collect {
         case Right(Right(iri)) => iri
@@ -54,7 +57,8 @@ class SchemaMaker extends ShExDocBaseVisitor[Any] with LazyLogging {
         start = start,
         shapes = if (!shapeMap.isEmpty) Some(shapesMap2List(shapeMap)) else None,
         optTripleExprMap = if (!tripleExprMap.isEmpty) Some(tripleExprMap) else None,
-        imports = importIRIs
+        imports = importIRIs,
+        labelLocationMap = Some(labelLocationMap)
       )
     }
   }
@@ -148,10 +152,24 @@ class SchemaMaker extends ShExDocBaseVisitor[Any] with LazyLogging {
       case None => ok(None)
       case Some(v) => f(v).map(Some(_))
     }
+  
+  // TODO: Check more information about source  
+  private def getLocation(token: Token): Builder[Location] = {
+    ok(
+     Location(
+      line = token.getLine(), 
+      col = token.getCharPositionInLine(), 
+      tokenType = "label"
+     )
+    )
+  }
+
 
   override def visitShapeExprDecl(ctx: ShapeExprDeclContext): Builder[(ShapeLabel, ShapeExpr)] =
     for {
       label <- visitShapeExprLabel(ctx.shapeExprLabel())
+      location <- getLocation(ctx.start)
+      _ <- addLabelLocation(label,location)
       shapeExpr <- obtainShapeExpr(ctx)
       se <- if (isDefined(ctx.KW_ABSTRACT())) 
         ok(ShapeDecl(Some(label), true, shapeExpr))
@@ -159,7 +177,7 @@ class SchemaMaker extends ShExDocBaseVisitor[Any] with LazyLogging {
       _ <- addShape(label, se)
     } yield (label, se) 
 
-  def obtainShapeExpr(ctx: ShapeExprDeclContext): Builder[ShapeExpr] =
+  private def obtainShapeExpr(ctx: ShapeExprDeclContext): Builder[ShapeExpr] =
     if (isDefined(ctx.KW_EXTERNAL())) {
       // TODO: What happens if there are semantic actions after External??
       ok(ShapeExternal.empty)

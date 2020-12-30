@@ -39,10 +39,12 @@ object eqShEx extends LazyLogging {
     }
   }
 
+  // Equals comparison ignores locations
   implicit lazy val eqShapeLabel: Eq[ShapeLabel] = new Eq[ShapeLabel] {
     final def eqv(a1: ShapeLabel, a2: ShapeLabel): Boolean = (a1, a2) match {
-      case (IRILabel(b1), IRILabel(b2)) => b1 === b2
+      case (IRILabel(b1), IRILabel(b2)) => b1 === b2  
       case (BNodeLabel(b1), BNodeLabel(b2)) => b1 == b2
+      case (Start, Start) => true
       case (_, _) => false
     }
   }

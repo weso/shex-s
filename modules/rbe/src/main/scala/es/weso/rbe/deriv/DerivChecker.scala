@@ -8,13 +8,11 @@ import cats.implicits._
 case class DerivChecker[A: Show](rbe: Rbe[A]) extends BagChecker[A] {
 
   def check(bag: Bag[A], open: Boolean): Either[NonEmptyList[RbeError], Bag[A]] = {
-    val d = rbe.derivBag(bag, open, rbe.symbols)
-    //    println(s"Deriv of $rbe against $bag = $d")
-    if (d.nullable) Right(bag)
-    else {
-      d match {
-        case Fail(e) => Left(NonEmptyList.one(e))
-        case _ => NonEmptyList.one(NonNullableError(d, rbe, bag, open)).asLeft
+    rbe.derivBag(bag, open, rbe.symbols) match {
+      case f: Fail => NonEmptyList.one(f.error).asLeft
+      case d => d.nullable match {
+        case Right(_) => Right(bag)
+        case Left(m)  => NonEmptyList.one(NonNullableError(d, rbe, bag, open, m)).asLeft
       }
     }
   }
