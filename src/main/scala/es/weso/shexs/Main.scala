@@ -231,7 +231,7 @@ object Main extends IOApp {
 
   private def getRDFDataFromFile(fileName: String, dataFormat: String): IOS[Resource[IOS, RDFReader]] = for {
     resolvedName <- resolve(fileName)
-    res <- fromIO(RDFAsJenaModel.fromFile(Paths.get(resolvedName).toFile, dataFormat))
+    res <- fromIO(RDFAsJenaModel.fromURI(Paths.get(resolvedName).toUri().toString(), dataFormat))
   } yield res.mapK(cnv)
    
   private def getSchemaFromFile(fileName: String, schemaFormat: String): IOS[Schema] =
