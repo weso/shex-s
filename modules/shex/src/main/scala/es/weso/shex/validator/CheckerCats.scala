@@ -15,6 +15,7 @@ abstract class CheckerCats {
 
   implicit val logMonoid: Monoid[Log]
 
+
   type ReaderConfig[A]  = Kleisli[IO, Config, A]
   type ReaderEC[A]      = Kleisli[ReaderConfig, Env, A]
   type WriterEC[A]      = WriterT[ReaderEC, Log, A]
@@ -41,15 +42,10 @@ abstract class CheckerCats {
     EitherT.pure[WriterEC, Err](x)
 
   def err[A](e: Err): Check[A] = {
-    // pprint.log(s"@@@err($e)")
     EitherT.left[A](mkErr[WriterEC](e))
   }
 
   def fromEither[A](e: Either[Err,A]): Check[A] = EitherT.fromEither[WriterEC](e)
-
-  // TODO: Capture errors in EitherT
-  def fromIO[A](io: IO[A]): Check[A] = 
-    EitherT.liftF(WriterT.liftF(Kleisli.liftF(Kleisli.liftF(io))))
 
   def fromEitherIO[A](e: EitherT[IO,Err,A]): Check[A] = {
     val ea: Check[Either[Err,A]] = EitherT.liftF(WriterT.liftF(ReaderT.liftF(ReaderT.liftF(e.value))))

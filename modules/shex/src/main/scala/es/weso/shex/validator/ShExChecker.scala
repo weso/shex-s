@@ -36,6 +36,15 @@ object ShExChecker extends CheckerCats {
     info(s"errorStr($msg)") >> 
     err[A](ShExError.msgErr(msg))
 
+    // TODO: Capture errors in EitherT
+  def fromIO[A](io: IO[A]): Check[A] = {
+    val r: Check[Either[Throwable,A]] = EitherT.liftF(WriterT.liftF(Kleisli.liftF(Kleisli.liftF(io.attempt))))
+    r.flatMap(e => e.fold(
+      t => err[A](ShExError.ExceptionError(t)),
+      v => ok(v)))
+  }
+  
+
   def fromEitherString[A](e: Either[String,A]): Check[A] =
     fromEither(e.leftMap(ShExError.msgErr(_)))
 

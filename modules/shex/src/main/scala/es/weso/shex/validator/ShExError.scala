@@ -86,6 +86,20 @@ object ShExError {
       ) 
   }
 
+  case class ExceptionError(t: Throwable) extends ShExError(t.getMessage()) {
+    override def toString: String =
+      s"Exception: ${t.getMessage}\nStack: \n${t.getStackTrace().map(_.toString()).mkString("\n")}"
+
+    override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
+      s"ExceptionError: ${t.getMessage()}"
+    }
+
+    override def toJson: Json = Json.obj(
+       ("type", Json.fromString("ExceptionError")),
+       ("msg", Json.fromString(t.getMessage()))
+      ) 
+  }
+
   
   case class NotEnoughArcs(node: RDFNode,
                            values: Set[RDFNode],
