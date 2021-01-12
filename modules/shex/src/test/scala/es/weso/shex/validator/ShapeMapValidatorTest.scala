@@ -352,7 +352,7 @@ class ShapeMapValidatorTest extends ShouldValidateShapeMap {
          |""".stripMargin
 
     shouldValidateWithShapeMap(rdfStr, shexStr, ":ok1@:S", ":ok1@:S,:x@:T")
-    shouldValidateWithShapeMap(rdfStr, shexStr, ":ok2@:S", ":ok2@:S")
+    shouldValidateWithShapeMap(rdfStr, shexStr, ":ok2@:S", ":ok2@:S",true)
     shouldValidateWithShapeMap(rdfStr, shexStr, ":ko1@:S", ":ko1@!:S")
     shouldValidateWithShapeMap(rdfStr, shexStr, ":ko2@:S", ":ko2@!:S")
   }

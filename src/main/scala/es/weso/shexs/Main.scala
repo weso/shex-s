@@ -17,7 +17,7 @@ import es.weso.shextest.manifest._
 import es.weso.shextest.manifest.ShExManifest
 import es.weso.shapeMaps._ 
 import fs2._
-
+import es.weso.shex.validator.ValidationLog
 
 object Main extends IOApp {
 
@@ -70,6 +70,7 @@ object Main extends IOApp {
             resolvedSchema <- getResolvedSchema()
             fixedMap       <- getFixedMap(rdf, resolvedSchema)
             result         <- fromIO(Validator.validate(resolvedSchema, fixedMap, rdf, builder, opts.verbose()))
+            _              <- showLog(result.toValidationLog)
             resultShapeMap <- fromIO(result.toResultShapeMap)
             _              <- showResult(resultShapeMap) // putStrLn(s"Result\n${resultShapeMap.toString}"))
           } yield ()).handleErrorWith(t => ok { println(s"Error: ${t.getMessage}")})
@@ -90,7 +91,11 @@ object Main extends IOApp {
       _     <- fromIO(putStrLn(str))
     } yield ()
 
-  // private def sep: String = ("=" * 10) + "\n"  
+  private def showLog(log: ValidationLog): IOS[Unit] =
+    for {
+      _ <- fromIO(putStrLn(log.show))
+    } yield ()
+
 
   private def showResult(result: ResultShapeMap): IOS[Unit] =
     for {

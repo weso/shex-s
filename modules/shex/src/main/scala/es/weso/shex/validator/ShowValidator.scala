@@ -5,7 +5,8 @@ import implicits._
 import es.weso.shex._
 import es.weso.rdf.triples.RDFTriple
 
-class ShowValidator(schema: AbstractSchema) {
+trait ShowValidator {
+  val schema: AbstractSchema
 
   implicit lazy val showIRI = new Show[IRI] {
     override def show(i: IRI): String = {

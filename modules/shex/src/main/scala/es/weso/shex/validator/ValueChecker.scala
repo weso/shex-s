@@ -5,15 +5,15 @@ import implicits._
 import es.weso.rdf.nodes._
 import es.weso.rdf.PREFIXES._
 import es.weso.shex._
-import es.weso.shex.validator.ShExChecker._
 import ShExError._
+import es.weso.rdf.RDFBuilder
 
-case class ValueChecker(schema: AbstractSchema)
-  extends ShowValidator(schema) with LazyLogging {
+case class ValueChecker(schema: AbstractSchema, builder: RDFBuilder)
+  extends ShExChecker
+  with ShowValidator 
+  with LazyLogging {
 
-  def checkValue(
-    attempt: Attempt,
-    node: RDFNode)(value: ValueSetValue): CheckTyping = {
+  def checkValue(attempt: Attempt,node: RDFNode, value: ValueSetValue): CheckTyping = {
     logger.debug(s"checkValue: $node $value")
     valueChecker(node,value).fold(
       e => checkCond(false,attempt,msgErr(e), ""),

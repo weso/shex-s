@@ -140,7 +140,7 @@ object Parser extends LazyLogging {
 
     val maker = new SchemaMaker() // new DebugSchemaMaker()
     val builder = maker.visit(parser.shExDoc()).asInstanceOf[Builder[Schema]]
-    val errors = errorListener.getErrors
+    val errors = errorListener.getErrors()
     if (errors.length > 0) {
       Left(errors.mkString("\n"))
     } else {
