@@ -42,7 +42,7 @@ lazy val scallopVersion        = "3.3.1"
 lazy val sextVersion           = "0.2.6"
 lazy val typesafeConfigVersion = "1.3.4"
 lazy val xercesVersion         = "2.12.0"
-lazy val weaverVersion         = "0.6.0-M3"
+lazy val weaverVersion         = "0.6.0-M5"
 
 // Compiler plugin dependency versions
 lazy val simulacrumVersion = "1.0.0"
