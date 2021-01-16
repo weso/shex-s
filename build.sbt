@@ -216,6 +216,31 @@ lazy val depGraphs = project
     )
   )
 
+lazy val shapepath = project
+  .in(file("modules/shapepath"))
+  .enablePlugins(Antlr4Plugin)
+  .settings(
+    crossScalaVersions := supportedScalaVersions,
+    commonSettings,
+    publishSettings,
+    antlrSettings("es.weso.shapepath.parser"),
+    libraryDependencies ++= Seq(
+      typesafeConfig % Test,
+      logbackClassic % Test,
+      scalaLogging,
+      circeCore,
+      circeGeneric,
+      circeParser,
+      catsEffect,
+      pprint,
+      antlr4,
+      scalaTest  % Test,
+      scalacheck % Test,
+      munit % Test
+    ),
+    testFrameworks += new TestFramework("munit.Framework")
+  ).dependsOn(shex)
+
 lazy val wikibaserdf = project
   .in(file("modules/wikibaserdf"))
 //  .disablePlugins(RevolverPlugin)
