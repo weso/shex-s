@@ -20,6 +20,7 @@ lazy val catsEffectVersion     = "2.3.0"
 lazy val commonsTextVersion    = "1.8"
 lazy val console4catsVersion   = "0.8.1"
 lazy val circeVersion          = "0.14.0-M1"
+lazy val declineVersion        = "1.3.0"
 lazy val diffsonVersion        = "4.0.0"
 lazy val fs2Version            = "2.4.0"
 // lazy val effVersion            = "4.6.1"
@@ -60,6 +61,8 @@ lazy val circeGeneric      = "io.circe"                   %% "circe-generic"    
 lazy val circeParser       = "io.circe"                   %% "circe-parser"        % circeVersion
 lazy val commonsText       = "org.apache.commons"         %  "commons-text"        % commonsTextVersion
 lazy val console4cats      = "dev.profunktor"             %% "console4cats"        % console4catsVersion
+lazy val decline           = "com.monovore"               %% "decline"             % declineVersion
+lazy val declineEffect     = "com.monovore"               %% "decline-effect"      % declineVersion
 lazy val diffsonCirce      = "org.gnieh"                  %% "diffson-circe"       % diffsonVersion
 // lazy val eff               = "org.atnos"                  %% "eff"                 % effVersion
 lazy val fs2            = "co.fs2"            %% "fs2-core" % fs2Version
@@ -109,6 +112,7 @@ lazy val shexsRoot = project
     JavaAppPackaging, 
     LauncherJarPlugin
     )
+    .enablePlugins(BuildInfoPlugin)
 //  .disablePlugins(RevolverPlugin)
 //  .settings(
 //    buildInfoKeys := BuildInfoKey.ofN(name, version, scalaVersion, sbtVersion),
@@ -119,8 +123,8 @@ lazy val shexsRoot = project
          publishSettings, 
          // ghPagesSettings, 
          wixSettings)
-  .aggregate(depGraphs, shex, shexTest, rbe, wikibaserdf)
-  .dependsOn(depGraphs, shex, shexTest, rbe, wikibaserdf)
+  .aggregate(depGraphs, shex, shexTest, rbe, wikibaserdf, shapepath)
+  .dependsOn(depGraphs, shex, shexTest, rbe, wikibaserdf, shapepath)
   .settings(
     siteSubdirName in ScalaUnidoc := "scaladoc/latest",
     addMappingsToSiteDir(mappings in (ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc),
@@ -133,6 +137,7 @@ lazy val shexsRoot = project
       catsKernel,
       catsEffect,
       console4cats,
+      decline, declineEffect, 
       logbackClassic,
       srdf,
       scalaLogging,
@@ -145,7 +150,9 @@ lazy val shexsRoot = project
     ThisBuild / turbo := true,
     crossScalaVersions := supportedScalaVersions,
     skip in publish := true,
-    Compile / run / mainClass := Some("es.weso.shexs.Main")
+    Compile / run / mainClass := Some("es.weso.shexs.Main"),
+    buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
+    buildInfoPackage := "buildinfo"
   )
 
 lazy val CompatTest                     = config("compat") extend (Test) describedAs ("Tests that check compatibility (some may fail)")

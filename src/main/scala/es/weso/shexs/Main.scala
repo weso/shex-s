@@ -18,10 +18,88 @@ import es.weso.shextest.manifest.ShExManifest
 import es.weso.shapeMaps._ 
 import fs2._
 import es.weso.shex.validator.ValidationLog
+import com.monovore.decline._
+import com.monovore.decline.effect._
+import buildinfo._
+import java.nio.file.Path
+import es.weso.shapepath.schemamappings.SchemaMappings
+import es.weso.shex.implicits.showShEx._
 
-object Main extends IOApp {
+object Main extends CommandIOApp(
+  name="shex-s", 
+  header = "ShEx-Scala command line tool",
+  version = BuildInfo.version
+  ) {
 
-  def run(args: List[String]): IO[ExitCode] = {
+  case class SchemaMappingCommand(schema: Path, schemaFormat: String, mapping: Path, output: Option[Path], verbose: Boolean)
+  case class ValidateCommand(schema: Path, schemaFormat: String, data: Path, dataFormat: String, shapeMap: Path, shapeMapFormat: String, output: Option[Path], verbose: Boolean)
+
+  val availableSchemaFormats = List("ShExC", "ShExJ")
+  val defaultSchemaFormat = availableSchemaFormats.head
+  val availableSchemaFormatsStr = availableSchemaFormats.mkString(",")
+
+  val availableDataFormats = List("Turtle", "NTriples","RDF/XML","JSON-LD")
+  val defaultDataFormat = availableDataFormats.head
+  val availableDataFormatsStr = availableDataFormats.mkString(",")
+
+  val availableShapeMapFormats = List("Compact", "JSON")
+  val defaultShapeMapFormat = availableShapeMapFormats.head
+  val availableShapeMapFormatsStr = availableShapeMapFormats.mkString(",")
+
+  val schemaOpt = Opts.option[Path]("schema", short = "s", help = "Path to ShEx file.")
+  val schemaFormatOpt = Opts.option[String]("schemaFormat", metavar = "format", help = s"Schema format, default = ($defaultSchemaFormat). Possible values = ($availableSchemaFormatsStr)").withDefault(defaultSchemaFormat)
+  val outputOpt = Opts.option[Path]("output","Output to file (default = console)").orNone
+  val verboseOpt = Opts.flag("verbose", "show extra information").orFalse
+  val mappingOpt = Opts.option[Path]("mapping", short = "m", metavar = "mappings-file", help = "Path to Mappings file.")
+  val dataOpt = Opts.option[Path]("data", short = "d", help = "Path to data file.")
+  val dataFormatOpt = Opts.option[String]("dataFormat", help = s"Data format. Default=$defaultDataFormat, available=$availableDataFormatsStr").withDefault(defaultDataFormat)
+  val shapeMapOpt = Opts.option[Path]("shapeMap", short = "sm", help = "Path to shapeMap file.")
+  val shapeMapFormatOpt = Opts.option[String]("shapeMapFormat", help = s"ShapeMap format, default=$defaultShapeMapFormat, available formats=$availableShapeMapFormats").withDefault(defaultShapeMapFormat)
+
+  val schemaMappingCommand: Opts[SchemaMappingCommand] = 
+    Opts.subcommand("mapping", "Convert a schema through a mapping") {
+      (schemaOpt,schemaFormatOpt, mappingOpt, outputOpt, verboseOpt).mapN(SchemaMappingCommand)
+    }
+
+  val validateCommand: Opts[ValidateCommand] = 
+    Opts.subcommand("validate", "Validate RDF data using a schema and a shape map") {
+      (schemaOpt,schemaFormatOpt, dataOpt, dataFormatOpt, shapeMapOpt, shapeMapFormatOpt, outputOpt, verboseOpt)
+      .mapN(ValidateCommand)
+    }
+
+
+  def info(msg: String, verbose: Boolean): IO[Unit] = 
+   if (verbose) putStrLn(msg)
+   else IO(())
+
+  override def main: Opts[IO[ExitCode]] =
+   (schemaMappingCommand orElse validateCommand).map {
+     case smc: SchemaMappingCommand => doSchemaMapping(smc) 
+     case vc : ValidateCommand => doValidate(vc) 
+   }
+
+   private def doSchemaMapping(smc: SchemaMappingCommand): IO[ExitCode] = for {
+       schema <- Schema.fromFile(smc.schema.toFile().getAbsolutePath(), smc.schemaFormat, None, None)
+       mappingStr <- getContents(smc.mapping.toFile().getAbsolutePath())
+       mapping <- IO.fromEither(SchemaMappings
+        .fromString(mappingStr.toString)
+        .leftMap(err => new RuntimeException(s"Error parsing schema mappings: ${err}"))
+        )
+       newSchema <- IO.fromEither(mapping.convert(schema)
+        .leftMap(err => new RuntimeException(s"Error converting schema: ${err}")))
+       _ <- smc.output match {
+         case None => putStrLn(newSchema.show)
+         case Some(outputPath) => for { 
+           _ <- writeContents(outputPath, newSchema.show)
+           _ <- putStrLn(s"Output saved in ${outputPath}")
+         } yield ()  
+       } 
+     } yield ExitCode.Success
+
+   private def doValidate(vc: ValidateCommand): IO[ExitCode] = ???
+
+
+/*  def run(args: List[String]): IO[ExitCode] = {
     val opts = new MainOpts(args.toArray, errorDriver)
     for {
       _    <- IO(opts.verify())
@@ -280,7 +358,7 @@ object Main extends IOApp {
     if (opt.isDefined) action(opt())
     else ().pure[IOS]
   }
-
+*/
   private def runManifest(manifest: String): IO[Unit] =
     for {
       eitherManifest <- RDF2Manifest.read(manifest, "Turtle", None, true).attempt
@@ -297,6 +375,16 @@ object Main extends IOApp {
     } yield ()
 
   // TODO: Move to utils  
+
+  def writeContents(path: Path, contents: String): IO[Unit] = {
+    Stream.resource(Blocker[IO]).flatMap(blocker =>
+     Stream.emits(contents.split("\n"))
+     .covary[IO]
+     .through(text.utf8Encode)
+     .through(io.file.writeAll(path, blocker))
+    ).compile.drain
+  }
+
   def getContents(fileName: String): IO[CharSequence] = {
     val path = Paths.get(fileName)
     val decoder: Pipe[IO,Byte,String] = fs2.text.utf8Decode

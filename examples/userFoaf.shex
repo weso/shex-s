@@ -1,0 +1,10 @@
+prefix foaf: <http://xmlns.com/foaf/0.1/>
+prefix xsd:  <http://www.w3.org/2001/XMLSchema#>
+prefix :     <http://example.org/>
+
+<User> {
+ ( foaf:firstName xsd:string + ;
+   foaf:lastName  xsd:string | 
+   foaf:name xsd:string ) ;
+ :code          xsd:integer
+}
