@@ -1222,6 +1222,7 @@ class SchemaMaker extends ShExDocBaseVisitor[Any] with LazyLogging {
            case None => (Some(min),Some(Star))
            case Some(m) => (Some(min),Some(m))
          }
+    case _ => err(s"visitRepeatRange: unknown value of ctx: ${ctx.getClass().getName()}")         
    }
 
   override def visitMin_range(
@@ -1242,13 +1243,13 @@ class SchemaMaker extends ShExDocBaseVisitor[Any] with LazyLogging {
       ok(None)
   }
 
-  override def visitPredicate(
-    ctx: PredicateContext): Builder[IRI] = {
+  override def visitPredicate(ctx: PredicateContext): Builder[IRI] = {
     ctx match {
       case _ if (isDefined(ctx.iri())) =>
         visitIri(ctx.iri())
       case _ if (isDefined(ctx.rdfType())) =>
         ok(`rdf:type`)
+      case _ =>  err(s"visitPredicate: Unknown value of ctx ${ctx.getClass.getName}")
     }
   }
 

@@ -1,0 +1,5 @@
+prefix foaf: <http://xmlns.com/foaf/0.1/>
+prefix schema: <http://schema.org/>
+
+@<User>/foaf:firstName ~> schema:givenName ;
+@<User>/foaf:lastName ~> schema:familyName

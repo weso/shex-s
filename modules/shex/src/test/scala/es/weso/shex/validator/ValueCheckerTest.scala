@@ -5,8 +5,10 @@ import es.weso.shex._
 import org.scalatest._
 import org.scalatest.funspec.AnyFunSpecLike
 import org.scalatest.matchers.should.Matchers
+import es.weso.rdf.jena.RDFAsJenaModel
+import cats.effect.IO
 
-class ValueCheckerTest extends ValueChecker(Schema.empty) with AnyFunSpecLike with Matchers with EitherValues {
+class ValueCheckerTest extends AnyFunSpecLike with Matchers with EitherValues {
 
   describe("LanguageStem") {
     valueCheckerTest(LangLiteral("pepe", Lang("frc")),
@@ -36,14 +38,17 @@ class ValueCheckerTest extends ValueChecker(Schema.empty) with AnyFunSpecLike wi
 
   def valueCheckerTest(node: RDFNode, value: ValueSetValue, ok: Boolean): Unit = {
     it(s"should checkValue($node, $value) and return $ok") {
-      if (ok) valueChecker(node,value).fold(
-        e => fail(s"Should check, but failed with message: $e"),
-        msg => info(s"Passed with message: $msg")
-      )
-      else valueChecker(node,value).fold(
-        e => info(s"Should fail and failed with message: $e"),
-        msg => fail(s"Should fail but passed with message: $msg")
-      )
+      val cmp = RDFAsJenaModel.empty.flatMap(_.use(builder => {
+        val vck = ValueChecker(Schema.empty,builder)
+        IO(if (ok) vck.valueChecker(node,value).fold(
+         e => Left(s"Should check, but failed with message: $e"),
+         msg => Right(s"Passed with message: $msg")
+        ) else vck.valueChecker(node,value).fold(
+         e => Right(s"Should fail and failed with message: $e"),
+         msg => Left(s"Should fail but passed with message: $msg")
+        ))
+      }))
+      cmp.unsafeRunSync().fold(err => fail(err), v => info(v))
     }
   }
 }

@@ -10,9 +10,8 @@ import es.weso.rdf._
 object eqShEx extends LazyLogging {
 
   implicit lazy val eqIRI = new Eq[IRI] {
-    final def eqv(n1: IRI, n2: IRI): Boolean = (n1, n2) match {
-      case (IRI(i1), IRI(i2)) => i1 == i2
-    }
+    final def eqv(n1: IRI, n2: IRI): Boolean = 
+     n1.uri == n2.uri
   }
 
   implicit lazy val eqSchema: Eq[Schema] = new Eq[Schema] {

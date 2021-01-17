@@ -34,8 +34,8 @@ class ValidatorTest extends AnyFunSpec with Matchers with EitherValues {
       vv <- (res1,res2).tupled.use{ case (rdf,builder) => for {
       resolved <- ResolvedSchema.resolve(schema,None)
       v = Validator(resolved,NoAction,builder)
-      check: ShExChecker.Check[ShapeTyping] = v.checkNodeLabel(node, label)
-      r <- ShExChecker.runCheck(check, rdf)
+      check = v.checkNodeLabel(node, label)
+      r <- v.runCheck(check, rdf)
     } yield r }
   } yield vv
     result.attempt.unsafeRunSync.fold(

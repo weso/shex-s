@@ -11,16 +11,13 @@ import es.weso.rbe.interval.IntervalChecker
 import es.weso.rbe.Empty
 import es.weso.utils.{SeqUtils, SetUtils}
 import es.weso.shex.implicits.showShEx._
-import ShExChecker._
-// import es.weso.rdf.triples.RDFTriple
 import es.weso.shapeMaps.{BNodeLabel => BNodeMapLabel, IRILabel => IRIMapLabel, Start => StartMapLabel, _}
 import es.weso.shex.actions.TestSemanticAction
 import Function.tupled
 import es.weso.shex.validator.ShExError._
 import es.weso.shex.validator.ConstraintRef.{showConstraintRef => _}
-import ValidationUtils._
-// import es.weso.depgraphs.Inheritance
 import es.weso.utils.internal.CollectionCompat._
+import cats.data._
 
 /**
   * ShEx validator
@@ -29,7 +26,8 @@ case class Validator(schema: ResolvedSchema,
                      externalResolver: ExternalResolver = NoAction,
                      builder: RDFBuilder
                      )
-    extends ShowValidator(schema)
+    extends ShExChecker
+    with ShowValidator
     with LazyLogging {
 
   type ShapeChecker     = ShapeExpr => CheckTyping
@@ -421,11 +419,15 @@ case class Validator(schema: ResolvedSchema,
     } yield t
   }
 
+  private def checkValueSetValue(attempt: Attempt, node: RDFNode)(v: ValueSetValue): CheckTyping = {
+   val r: CheckTyping = ValueChecker(schema, builder).checkValue(attempt, node, v)
+   r
+  }
+
   private def checkValues(attempt: Attempt,
                                      node: RDFNode)
                                     (values: List[ValueSetValue]): CheckTyping = {
-    val cs: List[CheckTyping] =
-      values.map(v => ValueChecker(schema).checkValue(attempt, node)(v))
+    val cs: List[CheckTyping] = values.map(checkValueSetValue(attempt,node))
     checkSome(cs, StringError(s"${node.show} does not belong to [${values.map(_.show).mkString(",")}]"))
   }
 
@@ -445,7 +447,7 @@ case class Validator(schema: ResolvedSchema,
     else
       for {
         rdf <- getRDF
-        t   <- FacetChecker(schema, rdf).checkFacets(attempt, node)(xsFacets)
+        t   <- FacetChecker(schema, rdf, builder).checkFacets(attempt, node)(xsFacets)
       } yield t
   }
 
@@ -672,7 +674,7 @@ case class Validator(schema: ResolvedSchema,
         for {
           flatShape <- fromEitherString(s.flattenShape(schema))
           pm <- getNodesPrefixMap
-          typing    <- ValidateFlatShape(this,pm,schema.prefixMap).checkFlatShape(attempt, node, flatShape)
+          typing    <- ValidateFlatShape(this,pm,schema.prefixMap,builder).checkFlatShape(attempt, node, flatShape)
         } yield typing
       case _ =>
         for {
@@ -726,7 +728,7 @@ case class Validator(schema: ResolvedSchema,
         }
         case _ => {
           logger.info(s"Unsupported semantic action processor: $name")
-          addLog(List(Action(name, code)))
+          addAction2Log(Action(name, code))
           ok(unit)
         }
       }
@@ -925,12 +927,13 @@ case class Validator(schema: ResolvedSchema,
     pm <- rdf.getPrefixMap
   } yield cnvResult(r, rdf, pm)
 
-  private def cnvResult(r: CheckResult[ShExError, ShapeTyping, Log], rdf: RDFReader, rdfPrefixMap: PrefixMap): Result = Result (
+  private def cnvResult(r: CheckResult[ShExError, ShapeTyping, Log], rdf: RDFReader, rdfPrefixMap: PrefixMap): Result = 
+   Result (
     for {
       shapeTyping <- r.toEither
       result      <- shapeTyping.toShapeMap(rdfPrefixMap, schema.prefixMap).leftMap(StringError)
     } yield {
-      result
+      (r.log, result)
     }
   )
 

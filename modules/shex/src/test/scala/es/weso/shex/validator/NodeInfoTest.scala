@@ -8,8 +8,8 @@ import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import es.weso.rdf.RDFReader
 import cats.effect.IO
-import cats.data._
-import es.weso.utils.IOUtils._
+// import cats.data._
+// import es.weso.utils.IOUtils._
 
 class NodeInfoTest extends AnyFunSpec with Matchers with EitherValues {
   // val rdf = RDFAsJenaModel.empty

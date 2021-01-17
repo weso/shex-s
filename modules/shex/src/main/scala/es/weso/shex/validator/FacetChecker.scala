@@ -11,14 +11,14 @@ import cats._
 import data._
 import cats.implicits._
 import cats.effect.IO
-import ShExChecker._
 import es.weso.utils.IOUtils._
 import es.weso.utils.eitherios.EitherIOUtils._
+import es.weso.rdf.RDFBuilder
 
-case class FacetChecker(
-  schema: AbstractSchema, 
-  rdf: RDFReader
-  ) extends ShowValidator(schema) with LazyLogging {
+case class FacetChecker(schema: AbstractSchema, rdf: RDFReader, builder: RDFBuilder) 
+  extends ShExChecker
+  with ShowValidator 
+  with LazyLogging {
 
   def checkFacets(attempt: Attempt, node: RDFNode)(facets: List[XsFacet]): CheckTyping =
     for {
