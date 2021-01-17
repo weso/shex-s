@@ -7,6 +7,7 @@ sealed abstract class Context {
 }
 case object ShapeAndCtx extends Context {
   override def symbol = "ShapeAnd"
+
 }
 case object ShapeOrCtx extends Context {
   override def symbol = "ShapeOr"

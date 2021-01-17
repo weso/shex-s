@@ -236,7 +236,8 @@ lazy val shapepath = project
       antlr4,
       scalaTest  % Test,
       scalacheck % Test,
-      munit % Test
+      munit % Test,
+      munitEffect % Test
     ),
     testFrameworks += new TestFramework("munit.Framework")
   ).dependsOn(shex)

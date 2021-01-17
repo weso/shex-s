@@ -4,15 +4,32 @@ import cats.Show
 import cats.syntax.show._
 import es.weso.shex.ShapeLabel
 import es.weso.shex.implicits.showShEx._
+import es.weso.rdf.PrefixMap
 
-sealed abstract class ExprIndex
-sealed abstract class ShapeExprIndex extends ExprIndex
-case class IntShapeIndex(v: Int) extends ShapeExprIndex
-case class ShapeLabelIndex(lbl: ShapeLabel) extends ShapeExprIndex
+sealed abstract class ExprIndex {
+  def showQualify(pm: PrefixMap): String
+}
+sealed abstract class ShapeExprIndex extends ExprIndex {
+  override def showQualify(pm: PrefixMap): String
+}
+case class IntShapeIndex(v: Int) extends ShapeExprIndex {
+  override def showQualify(pm: PrefixMap): String = v.toString
+}
+case class ShapeLabelIndex(lbl: ShapeLabel) extends ShapeExprIndex {
+  override def showQualify(pm: PrefixMap): String = 
+    lbl.showQualify(pm)
+}
 
-sealed abstract class TripleExprIndex extends ExprIndex
-case class IntTripleExprIndex(v: Int) extends TripleExprIndex
-case class LabelTripleExprIndex(lbl: ShapeLabel, n: Option[Int]) extends TripleExprIndex
+sealed abstract class TripleExprIndex extends ExprIndex {
+  override def showQualify(pm: PrefixMap): String
+}
+case class IntTripleExprIndex(v: Int) extends TripleExprIndex {
+  override def showQualify(pm: PrefixMap): String = v.toString
+}
+case class LabelTripleExprIndex(lbl: ShapeLabel, n: Option[Int]) extends TripleExprIndex {
+  override def showQualify(pm: PrefixMap): String = 
+    lbl.showQualify(pm) + n.map(_.toString).getOrElse("")
+}
 
 object ExprIndex {
   implicit lazy val indexShow = new Show[ExprIndex] {

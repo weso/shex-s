@@ -21,13 +21,27 @@ case class Schema private
                   base: Option[IRI],
                   startActs: Option[List[SemAct]],
                   start: Option[ShapeExpr],
+
+                  // TODO: Replace this by a map? 
                   shapes: Option[List[ShapeExpr]],
+
                   optTripleExprMap: Option[Map[ShapeLabel,TripleExpr]],
                   imports: List[IRI],
                   labelLocationMap: Option[Map[ShapeLabel,Location]]
                  ) extends AbstractSchema {
 
-  def addShape(se: ShapeExpr): Schema = this.copy(shapes = addToOptionList(se,shapes))
+  def addShape(se: ShapeExpr): Schema = 
+    this.copy(shapes = shapes match {
+      case None => Some(List(se))
+      case Some(ls) => Some(se :: removeShapeWithLabel(se.id, ls))
+    })
+
+  private def removeShapeWithLabel(maybeLbl: Option[ShapeLabel], ls: List[ShapeExpr]): List[ShapeExpr] =
+   maybeLbl match {
+     case None => ls
+     case Some(lbl) => 
+       ls.filter { se => se.id.map(_ != lbl).getOrElse(true) }
+   }
 
   def getTripleExpr(lbl: ShapeLabel): Either[String,TripleExpr] = 
     optTripleExprMap match {
@@ -49,8 +63,6 @@ case class Schema private
     }
   } yield se
 
-  def err[A](msg: String): IO[A] = IO.raiseError(new RuntimeException(msg))
-  def ok[A](x:A): IO[A] = IO.pure(x)
   
   lazy val localShapes: List[ShapeExpr] = shapes.getOrElse(List())
 
@@ -123,6 +135,10 @@ case class Schema private
     case None => Some(List(x))
     case Some(xs) => Some(x :: xs)
   }
+
+  // TODO: Move this methods to other parts...
+  def err[A](msg: String): IO[A] = IO.raiseError(new RuntimeException(msg))
+  def ok[A](x:A): IO[A] = IO.pure(x)
 
 }
 

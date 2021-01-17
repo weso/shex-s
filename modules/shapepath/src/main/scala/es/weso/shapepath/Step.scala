@@ -3,10 +3,20 @@ import cats.Show
 import cats.syntax.show._
 import es.weso.shex.implicits.showShEx._
 import es.weso.shex.ShapeLabel
+import es.weso.rdf.PrefixMap
 
-sealed abstract class Step
-case class ExprStep(maybeContext: Option[Context], exprIndex: ExprIndex) extends Step
-case class ContextStep(context: Context) extends Step
+sealed abstract class Step {
+  def showQualify(pm: PrefixMap): String
+}
+case class ExprStep(maybeContext: Option[Context], exprIndex: ExprIndex) extends Step {
+  override def showQualify(pm: PrefixMap): String = 
+    maybeContext.map(_.symbol).getOrElse("") +
+    exprIndex.showQualify(pm)
+}
+case class ContextStep(context: Context) extends Step {
+  override def showQualify(pm: PrefixMap): String = 
+   context.symbol
+}
 
 
 

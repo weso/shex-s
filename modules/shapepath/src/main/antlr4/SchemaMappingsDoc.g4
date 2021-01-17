@@ -22,8 +22,12 @@ importDecl
  ;
 
 mappings 
- : shapePathExpr '~>' shapePathExpr *
+ : mapping (';' mapping ) *
  ;
+
+mapping
+ : shapePathExpr '~>' iri
+ ; 
 
 shapePathExpr
  : absolutePathExpr

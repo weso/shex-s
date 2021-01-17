@@ -1,20 +1,23 @@
 package es.weso.shapepath
 
 import cats._
-import cats.data.{NonEmptyList, Writer}
-import cats.instances.list._
-import cats.syntax.applicative._
-import cats.syntax.foldable._
-import cats.syntax.show._
-import cats.syntax.writer._
-import es.weso.rdf.nodes.{BNode, IRI}
+import cats.data._
+import cats.implicits._
 import es.weso.shapepath.compact.Parser
-import es.weso.shex.{EachOf, IRILabel, NodeConstraint, OneOf, Schema, Shape, ShapeAnd, ShapeExpr, ShapeLabel, ShapeNot, ShapeOr, TripleConstraint, TripleExpr}
 import Step._
 import cats.implicits.catsSyntaxFlatMapOps
 import es.weso.shex.implicits.showShEx._
+import es.weso.rdf.PrefixMap
+import es.weso.shex._
+import es.weso.rdf.nodes._
 
-case class ShapePath(startsWithRoot: Boolean, steps: List[Step])
+case class ShapePath(
+  startsWithRoot: Boolean, 
+  steps: List[Step],
+  ) {
+  def showQualify(pm: PrefixMap): String = 
+   (if (startsWithRoot) "/" else "") + steps.map(_.showQualify(pm)).mkString("/")
+}
 
 object ShapePath {
 
@@ -34,6 +37,14 @@ object ShapePath {
     evaluateShapePath(p, s,
       maybeValue.getOrElse(Value(s.localShapes.map(ShapeExprItem(_))))
     ).run
+  }
+
+  def replace(p: ShapePath,
+              s: Schema,
+              maybeValue: Option[Value] = None,
+              newShapeNode: ShapeNode
+          ): Either[ProcessingError,Schema] = {
+    replaceShapePath(p, s,newShapeNode)
   }
 
   lazy val availableFormats : NonEmptyList[String] = NonEmptyList("Compact", List())
@@ -136,7 +147,7 @@ object ShapePath {
       case _ => false
     }
   } */
-  private def checkContext(context: Context, item: Item): Comp[List[Item]] = ???
+  private def checkContext(context: Context, item: ShapeNode): Comp[List[ShapeNode]] = ???
 
   private def matchShapeExprId(lbl: ShapeLabel)(se: ShapeExpr): Boolean = se.id match {
     case None => false
@@ -169,9 +180,9 @@ object ShapePath {
 
   private def undef(msg: String, current: Value): Comp[Value] = err(msg) >> ok(current)
 
-  private def evaluateIndex(items: List[Item], index: ExprIndex): Comp[Value] = {
+  private def evaluateIndex(items: List[ShapeNode], index: ExprIndex): Comp[Value] = {
     val zero: Value = noValue
-    def cmb(current: Value, item: Item): Comp[Value] =
+    def cmb(current: Value, item: ShapeNode): Comp[Value] =
       item match {
         /*      case SchemaItem(s) => index match {
         case IntShapeIndex(idx) => Value(s.localShapes.slice(idx - 1,1).map(ShapeExprItem(_))).pure[Comp]
@@ -268,10 +279,10 @@ object ShapePath {
         case _ => err(s"Unknown item: ${item.show}") >>
                   ok(current)
       }
-    Foldable[List].foldM[Comp,Item,Value](items, zero)(cmb)
+    Foldable[List].foldM[Comp,ShapeNode,Value](items, zero)(cmb)
   }
 
-  private def cmb(ctx: Context)(current: List[Item], item: Item): Comp[List[Item]] = for {
+  private def cmb(ctx: Context)(current: List[ShapeNode], item: ShapeNode): Comp[List[ShapeNode]] = for {
     next <- checkContext(ctx, item)
   } yield current ++ next
 
@@ -290,22 +301,17 @@ object ShapePath {
           currentValue <- current
           _ <- debug(s"Context step ${ctx.show}\nvalue: ${currentValue.show}")
           // (matched,unmatched) = currentValue.items.partition(checkContext(ctx))
-          matched <- currentValue.items.foldM[Comp,List[Item]](List())(cmb(ctx))
+          matched <- currentValue.items.foldM[Comp,List[ShapeNode]](List())(cmb(ctx))
           _ <- debug(s"Matched ${matched}")
           // _ <- debug(s"Unmatched ${unmatched}")
           newValue <- evaluateIndex(matched, es.exprIndex)
           _ <- debug(s"newValue ${newValue.show}")
-          // errors: List[ProcessingError] = unmatched.map(UnmatchItemContextLabel(_,step,ctx))
-          // _ <- errors.tell
         } yield newValue
       }
     }
     case ContextStep(ctx) => for {
      currentValue <- current
-     matched <- currentValue.items.foldM[Comp,List[Item]](List())(cmb(ctx))
-//     (matched,unmatched) = currentValue.items.partition(checkContext(ctx))
-//     errors: List[ProcessingError] = unmatched.map(UnmatchItemContextLabel(_,step,ctx))
-//     _ <- errors.tell
+     matched <- currentValue.items.foldM[Comp,List[ShapeNode]](List())(cmb(ctx))
     } yield Value(matched) 
   }
 
@@ -318,6 +324,79 @@ object ShapePath {
 
     p.steps.foldLeft(zero)(evaluateStep(s))
   }
+
+  type CompReplace[A] = Either[ProcessingError,A]
+
+  def rerr[A](msg: String): CompReplace[A] = 
+    Err(msg).asLeft
+  def info(msg: String): CompReplace[Unit] = { 
+    println(msg)
+    ().asRight
+  }
+
+  private def replaceTripleExprLabel(
+    te: TripleExpr, 
+    sourceIri: IRI, 
+    newItem: ShapeNode
+  ): CompReplace[TripleExpr] = te match {
+    case eo: EachOf => for {
+      eos <- eo.expressions.map(replaceTripleExprLabel(_,sourceIri,newItem)).sequence
+    } yield eo.copy(expressions = eos)
+    case oo: OneOf => for {
+      os <- oo.expressions.map(replaceTripleExprLabel(_,sourceIri,newItem)).sequence
+    } yield oo.copy(expressions = os)
+    case tc: TripleConstraint => newItem match {
+      case IRIItem(iri) => {
+       println(s"replaceTripleExprLabel=${iri}, tc.predicate = ${tc.predicate}, newItem=${iri}") 
+       if (tc.predicate == sourceIri) tc.copy(predicate = iri).asRight
+       else tc.asRight
+      }
+      case _ => rerr(s"replaceTripleExprLabel: Not implemented at tripleConstraint: ${newItem}") 
+    }
+    case _ => te.asRight
+  }
+
+  private def replaceShapeExprSteps(
+    se: ShapeExpr, 
+    steps: List[Step], 
+    schema: Schema,
+    newItem: ShapeNode): CompReplace[ShapeExpr] = steps match {
+      case Nil => se.asRight
+      case ExprStep(None, LabelTripleExprIndex(IRILabel(iri), None)) :: Nil => se match {
+        case s: Shape => s.expression match {
+          case None => se.asRight
+          case Some(te) => for {
+            newTe <- replaceTripleExprLabel(te,iri,newItem)
+          } yield s.copy(expression = Some(newTe))
+        }
+        case _ => rerr(s"replaceShapeExprSteps: step: ${iri.show} se=${se}")
+      }
+      case _ => rerr(s"replaceShapeExprSteps: several steps ${steps}...") 
+    }
+
+  private def updateLabel(schema: Schema, newShapeExpr: ShapeExpr): CompReplace[Schema] = 
+   schema.addShape(newShapeExpr).asRight
+
+  private def replaceShapePath(
+    p: ShapePath, 
+    s: Schema,
+    newItem: ShapeNode
+    ): CompReplace[Schema] = {
+    p.steps match {
+      case Nil => s.asRight
+      case ExprStep(None, ShapeLabelIndex(lbl)) :: rest => for {
+        se <- s.getShape(lbl).leftMap(Err(_))
+        newShapeExpr <- replaceShapeExprSteps(se, rest, s, newItem)
+        _ <- info(s"newShapeExpr: ${newShapeExpr}")
+        newSchema <- updateLabel(s, newShapeExpr)
+      } yield { 
+        println(s"ExprStep: ${lbl}...newSchema: ${newSchema}")
+        newSchema 
+      }
+      case step :: rest => rerr(s"Not implemented step ${step} yet")
+    }
+  }
+
 
 }
 

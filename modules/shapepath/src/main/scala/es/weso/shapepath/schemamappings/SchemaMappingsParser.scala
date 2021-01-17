@@ -17,6 +17,7 @@ import es.weso.utils.FileUtils
 
 import scala.collection.immutable.ListMap
 import es.weso.shapepath.parser.SchemaMappingsDocParser
+import es.weso.shapepath.parser.SchemaMappingsDocLexer
 
 object SchemaMappingsParser extends LazyLogging {
 
@@ -117,7 +118,7 @@ object SchemaMappingsParser extends LazyLogging {
                   base: Option[IRI]
                  ): Either[String, SchemaMappings] = {
     val input: CharStream = CharStreams.fromReader(reader)
-    val lexer: ShapePathDocLexer = new ShapePathDocLexer(input)
+    val lexer: SchemaMappingsDocLexer = new SchemaMappingsDocLexer(input)
     val tokens: CommonTokenStream = new CommonTokenStream(lexer)
     val parser: SchemaMappingsDocParser = new SchemaMappingsDocParser(tokens)
 

@@ -32,8 +32,21 @@ class SchemaMappingsMaker extends SchemaMappingsDocBaseVisitor[Any] with LazyLog
   override def visitSchemaMappingsDoc(ctx: SchemaMappingsDocContext): Builder[SchemaMappings] = 
   for {
     directives <- visitList(visitDirective, ctx.directive())
+    mappings <- visitMappings(ctx.mappings())
     // visitShapePathExpr(ctx.shapePathExpr())
-  } yield SchemaMappings.empty
+    state <- getState
+  } yield SchemaMappings.empty.copy(prefixMap = state.prefixMap, mappings = mappings)
+
+  override def visitMappings(ctx: MappingsContext): Builder[List[SchemaMapping]] = 
+    for {
+      mappings <- visitList(visitMapping, ctx.mapping())
+    } yield mappings
+
+  override def visitMapping(ctx: MappingContext): Builder[SchemaMapping] = 
+    for {
+      shapePath <- visitShapePathExpr(ctx.shapePathExpr())
+      iri <- visitIri(ctx.iri())
+    } yield SchemaMapping(shapePath,iri)
 
   override def visitDirective(
     ctx: DirectiveContext): Builder[Directive] = ctx match {
