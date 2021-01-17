@@ -13,27 +13,27 @@ class SchemaMappingsTest extends CatsEffectSuite {
   test("Change foaf by schema") {
 
   val schemaStr = s"""|prefix foaf: <http://xmlns.com/foaf/0.1/>
+                      |prefix xsd:  <http://www.w3.org/2001/XMLSchema#>
+                      |prefix :     <http://example.org/>
                       |
                       |<Person> {
-                      | foaf:firstName . ;
-                      | foaf:lastName  .
+                      | foaf:firstName xsd:string ;
+                      | foaf:lastName  xsd:string ;
+                      | :code          xsd:integer
                       }
                       |""".stripMargin
 
-  val expectedStr = s"""|prefix foaf: <http://xmlns.com/foaf/0.1/>
+  val expectedStr = s"""|prefix foaf:   <http://xmlns.com/foaf/0.1/>
                         |prefix schema: <http://schema.org/>
+                        |prefix xsd:    <http://www.w3.org/2001/XMLSchema#>
+                        |prefix :       <http://example.org/>
                         |
                         |<Person> {
-                        | schema:givenName  . ;
-                        | schema:familyName .
+                        | schema:givenName  xsd:string ;
+                        | schema:familyName xsd:string ;
+                        | :code             xsd:integer
                         |}
                         |""".stripMargin
-/*  val mappingsStr = s"""|prefix foaf: <http://xmlns.com/foaf/0.1/>
-                        |prefix schema: <http://schema.org/>
-                        |
-                        |@<Person>/foaf:firstName ~> @<Person>/schema:givenName ;
-                        |@<Person>/foaf:lastName ~> @<Person>/schema:familyName ;
-                        |""".stripMargin */
   val mappingsStr = s"""|prefix foaf: <http://xmlns.com/foaf/0.1/>
                         |prefix schema: <http://schema.org/>
                         |
