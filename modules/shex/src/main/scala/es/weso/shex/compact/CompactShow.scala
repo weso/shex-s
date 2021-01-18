@@ -8,6 +8,7 @@ import es.weso.utils.SeqUtils.intersperse
 import es.weso.document._
 import es.weso.document.Document._
 import es.weso.rdf.operations.Comparisons._
+import java.io.Writer
 
 
 
@@ -17,9 +18,14 @@ import es.weso.rdf.operations.Comparisons._
 object CompactShow {
 
   type Doc = Document
-
-  def showSchema(schema: Schema): String = {
-    doc2Str(schemaDoc(schema))
+  val DEFAULT_WIDTH  = 20  // TODO: Consider if we add this as a external property
+  val DEFAULT_INDENT = 2
+  
+  def showSchema(schema: Schema, 
+                 writer: Option[Writer] = None, 
+                 width: Option[Int] = None
+                 ): String = {
+    doc2Str(schemaDoc(schema), writer, width)
   }
 
   def showShapeExpr(shapeExpr: ShapeExpr, pm: PrefixMap): String = {
@@ -34,9 +40,9 @@ object CompactShow {
     doc2Str(tripleExprDoc(pm)(tripleExpr))
   }
 
-  def doc2Str(doc: Doc): String = {
-    val writer = new java.io.StringWriter
-    doc.format(1, writer)
+  def doc2Str(doc: Doc, maybeWriter: Option[Writer] = None, maybeWidth: Option[Int] = None): String = {
+    val writer = maybeWriter.getOrElse(new java.io.StringWriter)
+    doc.format(maybeWidth.getOrElse(DEFAULT_WIDTH), writer)
     writer.toString
   }
 
@@ -346,12 +352,16 @@ object CompactShow {
 
   private def eachOfDoc(pm: PrefixMap)(e: EachOf): Doc = {
     val kernel = if (Cardinality.isDefault(e.min, e.max)) {
-      listDocIntersperse(e.expressions, tripleExprDoc(pm), keyword(";") :: newline )
+      DocNest(DEFAULT_INDENT, 
+       listDocIntersperse(e.expressions, tripleExprDoc(pm), keyword(";") :: newline )
+      ) 
     } else {
+      DocNest(DEFAULT_INDENT, 
       openParen ::
         listDocIntersperse(e.expressions, tripleExprDoc(pm), keyword(";")) ::
         closeParen ::
         cardinalityDoc(e.optMin, e.optMax)
+      )  
     }
     kernel ::
       optDoc(e.semActs, semActsDoc(pm)) ::
@@ -359,12 +369,14 @@ object CompactShow {
   }
   private def someOfDoc(pm: PrefixMap)(e: OneOf): Doc = {
     val kernel = if (Cardinality.isDefault(e.min, e.max)) {
-      listDocIntersperse(e.expressions, tripleExprDoc(pm), keyword("|"))
+      openParen ::
+      listDocIntersperse(e.expressions, tripleExprDoc(pm), keyword("|")) ::
+      closeParen 
     } else {
       openParen ::
         listDocIntersperse(e.expressions, tripleExprDoc(pm), keyword("|")) ::
-        closeParen ::
-        cardinalityDoc(e.optMin, e.optMax)
+      closeParen ::
+      cardinalityDoc(e.optMin, e.optMax)
     }
     kernel ::
       optDoc(e.semActs, semActsDoc(pm)) ::
@@ -373,12 +385,12 @@ object CompactShow {
 
   private def tripleConstraintDoc(pm: PrefixMap)(t: TripleConstraint): Doc =
     optDocConst(t.optInverse, str("^")) ::
-      optDocConst(t.optNegated, str("!")) ::
-      iriDoc(pm)(t.predicate) :: space ::
-      optDocOrElse(t.valueExpr, shapeExprDoc(pm), dot) ::
-      cardinalityDoc(t.optMin, t.optMax) ::
-      optDoc(t.semActs, semActsDoc(pm)) ::
-      optDoc(t.annotations, annotationsDoc(pm))
+    optDocConst(t.optNegated, str("!")) ::
+    iriDoc(pm)(t.predicate) :: space ::
+    optDocOrElse(t.valueExpr, shapeExprDoc(pm), dot) ::
+    cardinalityDoc(t.optMin, t.optMax) ::
+    optDoc(t.semActs, semActsDoc(pm)) ::
+    optDoc(t.annotations, annotationsDoc(pm))
 
   private def annotationsDoc(pm: PrefixMap)(as: List[Annotation]): Doc =
     listDocSep(as,annotationDoc(pm),space)
@@ -472,7 +484,7 @@ object CompactShow {
 
   private def none: Doc = empty
 
-  private def newline: Doc = break
+  private def newline: Doc = text("\n")
 
   private def dot: Doc = text(".")
   private def openParen: Doc = text("(")

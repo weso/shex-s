@@ -1,11 +1,11 @@
 package es.weso.shexs
 import java.nio.file.Paths
-import cats.arrow.FunctionK
-import cats.data.StateT
+// import cats.arrow.FunctionK
+// import cats.data.StateT
 import cats.effect._
 import cats.effect.Console.io._
 import cats.implicits._
-import cats.~>
+// import cats.~>
 import es.weso.rdf._
 import es.weso.rdf.jena.RDFAsJenaModel
 import es.weso.shapeMaps.ShapeMap
@@ -377,20 +377,26 @@ object Main extends CommandIOApp(
   // TODO: Move to utils  
 
   def writeContents(path: Path, contents: String): IO[Unit] = {
+    println(s"Contents:\n${contents}\n-------------")
     Stream.resource(Blocker[IO]).flatMap(blocker =>
-     Stream.emits(contents.split("\n"))
+     Stream.emits(contents)
      .covary[IO]
+     .chunkN(4096)
+     .map(_.toVector.mkString)
      .through(text.utf8Encode)
      .through(io.file.writeAll(path, blocker))
-    ).compile.drain
+    )
+    .compile.drain
   }
 
   def getContents(fileName: String): IO[CharSequence] = {
-    val path = Paths.get(fileName)
-    val decoder: Pipe[IO,Byte,String] = fs2.text.utf8Decode
-    Stream.resource(Blocker[IO]).flatMap(blocker =>
-      fs2.io.file.readAll[IO](path, blocker,4096).through(decoder)
-    ).compile.string
+    Stream.resource(Blocker[IO])
+    .flatMap(blocker =>
+      fs2.io.file.readAll[IO](Paths.get(fileName), blocker,4096)
+      .through(text.utf8Decode)
+    )
+    .compile
+    .string
   }
 
 
