@@ -1,0 +1,9 @@
+prefix foaf: <http://xmlns.com/foaf/0.1/>
+prefix schema: <http://schema.org/>
+prefix : <http://example.org/>
+prefix wdt: <>
+prefix rdf: <>
+
+@<User>/foaf:firstName ~> schema:givenName ;
+@<User>/foaf:lastName ~> schema:familyName ;
+@<anatomical_stricture>/wdt:P31 ~> rdf:type

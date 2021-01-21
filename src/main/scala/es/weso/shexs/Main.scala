@@ -24,6 +24,8 @@ import buildinfo._
 import java.nio.file.Path
 import es.weso.shapepath.schemamappings.SchemaMappings
 import es.weso.shex.implicits.showShEx._
+import es.weso.shapepath.ProcessingError
+import es.weso.shapepath.ShapePath
 
 object Main extends CommandIOApp(
   name="shex-s", 
@@ -31,8 +33,11 @@ object Main extends CommandIOApp(
   version = BuildInfo.version
   ) {
 
-  case class SchemaMappingCommand(schema: Path, schemaFormat: String, mapping: Path, output: Option[Path], verbose: Boolean)
-  case class ValidateCommand(schema: Path, schemaFormat: String, data: Path, dataFormat: String, shapeMap: Path, shapeMapFormat: String, output: Option[Path], verbose: Boolean)
+  // Commands  
+  case class SchemaMapping(schema: Path, schemaFormat: String, mapping: Path, output: Option[Path], verbose: Boolean)
+  case class Validate(schema: Path, schemaFormat: String, data: Path, dataFormat: String, shapeMap: Path, shapeMapFormat: String, showResultFormat: String, output: Option[Path], verbose: Boolean)
+  case class ShapePathEval(schema: Path, schemaFormat: String, shapePath: String, output: Option[Path], verbose: Boolean)
+
 
   val availableSchemaFormats = List("ShExC", "ShExJ")
   val defaultSchemaFormat = availableSchemaFormats.head
@@ -55,38 +60,59 @@ object Main extends CommandIOApp(
   val dataFormatOpt = Opts.option[String]("dataFormat", help = s"Data format. Default=$defaultDataFormat, available=$availableDataFormatsStr").withDefault(defaultDataFormat)
   val shapeMapOpt = Opts.option[Path]("shapeMap", short = "sm", help = "Path to shapeMap file.")
   val shapeMapFormatOpt = Opts.option[String]("shapeMapFormat", help = s"ShapeMap format, default=$defaultShapeMapFormat, available formats=$availableShapeMapFormats").withDefault(defaultShapeMapFormat)
+  val shapePathOpt = Opts.option[String]("shapePath", help = s"ShapePath to validate a schema")
+  val showResultFormatOpt = Opts.option[String]("showResultFormat", help = s"showResultFormat").withDefault("details")
 
-  val schemaMappingCommand: Opts[SchemaMappingCommand] = 
+  val schemaMappingCommand: Opts[SchemaMapping] = 
     Opts.subcommand("mapping", "Convert a schema through a mapping") {
-      (schemaOpt,schemaFormatOpt, mappingOpt, outputOpt, verboseOpt).mapN(SchemaMappingCommand)
+      (schemaOpt,schemaFormatOpt, mappingOpt, outputOpt, verboseOpt).mapN(SchemaMapping)
     }
 
-  val validateCommand: Opts[ValidateCommand] = 
+  val validateCommand: Opts[Validate] = 
     Opts.subcommand("validate", "Validate RDF data using a schema and a shape map") {
-      (schemaOpt,schemaFormatOpt, dataOpt, dataFormatOpt, shapeMapOpt, shapeMapFormatOpt, outputOpt, verboseOpt)
-      .mapN(ValidateCommand)
+      (schemaOpt,schemaFormatOpt, dataOpt, dataFormatOpt, shapeMapOpt, shapeMapFormatOpt, showResultFormatOpt, outputOpt, verboseOpt)
+      .mapN(Validate)
     }
 
+  val shapePathValidateCommand: Opts[ShapePathEval] =
+    Opts.subcommand("shapePath","Validate a shape path") {
+      (schemaOpt,schemaFormatOpt, shapePathOpt, outputOpt, verboseOpt)
+      .mapN(ShapePathEval)
+    }
 
   def info(msg: String, verbose: Boolean): IO[Unit] = 
    if (verbose) putStrLn(msg)
    else IO(())
 
   override def main: Opts[IO[ExitCode]] =
-   (schemaMappingCommand orElse validateCommand).map {
-     case smc: SchemaMappingCommand => doSchemaMapping(smc) 
-     case vc : ValidateCommand => doValidate(vc) 
-   }
+   (schemaMappingCommand orElse 
+    validateCommand orElse
+    shapePathValidateCommand
+   ).map {
+     case smc: SchemaMapping => doSchemaMapping(smc) 
+     case vc : Validate => doValidate(vc)
+     case spc: ShapePathEval => doShapePathEval(spc)
+   }.map(
+     _.handleErrorWith(infoError)
+   )
 
-   private def doSchemaMapping(smc: SchemaMappingCommand): IO[ExitCode] = for {
+   private def infoError(err: Throwable): IO[ExitCode] =
+    putStrLn(s"Error ${err.getLocalizedMessage()}") *> IO(ExitCode.Error)
+
+   private def doSchemaMapping(smc: SchemaMapping): IO[ExitCode] = for {
        schema <- Schema.fromFile(smc.schema.toFile().getAbsolutePath(), smc.schemaFormat, None, None)
        mappingStr <- getContents(smc.mapping.toFile().getAbsolutePath())
        mapping <- IO.fromEither(SchemaMappings
         .fromString(mappingStr.toString)
         .leftMap(err => new RuntimeException(s"Error parsing schema mappings: ${err}"))
         )
-       newSchema <- IO.fromEither(mapping.convert(schema)
-        .leftMap(err => new RuntimeException(s"Error converting schema: ${err}")))
+       newSchema <- mapping.convert(schema).fold(
+         err => IO.raiseError(new RuntimeException(err.map(_.toString).mkString("\n"))),
+         s => s.pure[IO],
+         (warnings: List[ProcessingError], s: Schema) => for {
+           _ <- putStrLn(warnings.map(_.toString).mkString("\n"))
+         } yield s
+       )
        _ <- smc.output match {
          case None => putStrLn(newSchema.show)
          case Some(outputPath) => for { 
@@ -96,7 +122,35 @@ object Main extends CommandIOApp(
        } 
      } yield ExitCode.Success
 
-   private def doValidate(vc: ValidateCommand): IO[ExitCode] = ???
+   private def doValidate(vc: Validate): IO[ExitCode] = 
+    for {
+        res1 <- RDFAsJenaModel.fromURI(vc.data.toUri().toString(),vc.dataFormat,None)
+        res2 <- RDFAsJenaModel.empty
+        vv <- (res1,res2).tupled.use { 
+      case (rdf,builder) => for {
+       nodesPrefixMap <- rdf.getPrefixMap
+       schema <- Schema.fromFile(vc.schema.toFile().getAbsolutePath(), vc.schemaFormat, None, None)
+       resolvedSchema <- ResolvedSchema.resolve(schema,None)
+       shapeMap <- getShapeMapFromFile(vc.shapeMap.toFile().getAbsolutePath(),vc.shapeMapFormat,nodesPrefixMap, schema.prefixMap)
+       fixedMap <- ShapeMap.fixShapeMap(shapeMap, rdf, nodesPrefixMap, resolvedSchema.prefixMap)
+       result   <- Validator.validate(resolvedSchema, fixedMap, rdf, builder, vc.verbose)
+       resultShapeMap <- result.toResultShapeMap
+       _             <- showResult(resultShapeMap, vc.showResultFormat) 
+      } yield ExitCode.Success}
+    } yield vv
+
+   private def doShapePathEval(spc: ShapePathEval): IO[ExitCode] = for {
+     schema <- Schema.fromFile(spc.schema.toFile().getAbsolutePath(), spc.schemaFormat, None, None)
+     shapePath <- IO.fromEither(ShapePath.fromString(spc.shapePath, "Compact", None).leftMap(err => new RuntimeException(s"Errir parsing shapePath: ${err}")))
+     result <- { 
+       val (ls,v) = ShapePath.eval(shapePath,schema)
+       putStrLn(ls.map(_.toString).mkString("\n")) *>
+       v.pure[IO]
+     } 
+   } yield ExitCode.Success 
+
+  private def showResult(result: ResultShapeMap, showResultFormat: String): IO[Unit] =
+    putStrLn(result.serialize(showResultFormat).fold(err => s"Error serializing ${result} with format ${showResultFormat}: $err", identity))
 
 
 /*  def run(args: List[String]): IO[ExitCode] = {
@@ -328,15 +382,7 @@ object Main extends CommandIOApp(
   } yield resolvedName
 
 
-  private def getShapeMapFromFile(fileName: String, 
-                                  shapeMapFormat: String,
-                                  nodesPrefixMap: PrefixMap,
-                                  shapesPrefixMap: PrefixMap): IOS[ShapeMap] =
-    for {
-      resolvedName <- resolve(fileName)
-      str <- fromIO(getContents(resolvedName).handleErrorWith(e => IO.raiseError(new RuntimeException(s"Error obtaining shapeMap from file: ${resolvedName} with format ${shapeMapFormat}: ${e.getMessage()}"))))
-      sm <- fromEither(ShapeMap.fromString(str.toString, shapeMapFormat, None, nodesPrefixMap,shapesPrefixMap))
-    } yield sm 
+ 
 
 
   private def errorDriver(e: Throwable, scallop: Scallop) = e match {
@@ -359,6 +405,17 @@ object Main extends CommandIOApp(
     else ().pure[IOS]
   }
 */
+
+    private def getShapeMapFromFile(fileName: String, 
+                                  shapeMapFormat: String,
+                                  nodesPrefixMap: PrefixMap,
+                                  shapesPrefixMap: PrefixMap): IO[ShapeMap] =
+    for {
+      str <- getContents(fileName).handleErrorWith(e => IO.raiseError(new RuntimeException(s"Error obtaining shapeMap from file: ${fileName} with format ${shapeMapFormat}: ${e.getMessage()}")))
+      sm <- IO.fromEither(ShapeMap.fromString(str.toString, shapeMapFormat, None, nodesPrefixMap,shapesPrefixMap)
+        .leftMap(err => new RuntimeException(s"Error parsing shapeMap: ${err})")))
+    } yield sm
+
   private def runManifest(manifest: String): IO[Unit] =
     for {
       eitherManifest <- RDF2Manifest.read(manifest, "Turtle", None, true).attempt
@@ -375,6 +432,7 @@ object Main extends CommandIOApp(
     } yield ()
 
   // TODO: Move to utils  
+
 
   def writeContents(path: Path, contents: String): IO[Unit] = {
     println(s"Contents:\n${contents}\n-------------")
