@@ -43,7 +43,7 @@ object ShapePath {
               s: Schema,
               maybeValue: Option[Value] = None,
               newShapeNode: ShapeNode
-          ): Either[ProcessingError,Schema] = {
+          ): Ior[List[ProcessingError],Schema] = {
     replaceShapePath(p, s,newShapeNode)
   }
 
@@ -325,14 +325,20 @@ object ShapePath {
     p.steps.foldLeft(zero)(evaluateStep(s))
   }
 
-  type CompReplace[A] = Either[ProcessingError,A]
+  type CompReplace[A] = Ior[List[ProcessingError],A]
 
   def rerr[A](msg: String): CompReplace[A] = 
-    Err(msg).asLeft
+    Ior.Left(List(Err(msg)))
+  def rwarn[A](msg: String, x: A): CompReplace[A] = 
+    Ior.Both(List(Warning(msg)), x)
+
   def info(msg: String): CompReplace[Unit] = { 
     println(msg)
-    ().asRight
+    Ior.Right(())
   }
+  def okr[A](x:A): CompReplace[A] = Ior.Right(x)
+
+
 
   private def replaceTripleExprLabel(
     te: TripleExpr, 
@@ -348,12 +354,12 @@ object ShapePath {
     case tc: TripleConstraint => newItem match {
       case IRIItem(iri) => {
        println(s"replaceTripleExprLabel=${iri}, tc.predicate = ${tc.predicate}, newItem=${iri}") 
-       if (tc.predicate == sourceIri) tc.copy(predicate = iri).asRight
-       else tc.asRight
+       if (tc.predicate == sourceIri) okr(tc.copy(predicate = iri))
+       else okr(tc)
       }
       case _ => rerr(s"replaceTripleExprLabel: Not implemented at tripleConstraint: ${newItem}") 
     }
-    case _ => te.asRight
+    case _ => okr(te)
   }
 
   private def replaceShapeExprSteps(
@@ -361,10 +367,10 @@ object ShapePath {
     steps: List[Step], 
     schema: Schema,
     newItem: ShapeNode): CompReplace[ShapeExpr] = steps match {
-      case Nil => se.asRight
+      case Nil => okr(se)
       case ExprStep(None, LabelTripleExprIndex(IRILabel(iri), None)) :: Nil => se match {
         case s: Shape => s.expression match {
-          case None => se.asRight
+          case None => okr(se)
           case Some(te) => for {
             newTe <- replaceTripleExprLabel(te,iri,newItem)
           } yield s.copy(expression = Some(newTe))
@@ -375,7 +381,7 @@ object ShapePath {
     }
 
   private def updateLabel(schema: Schema, newShapeExpr: ShapeExpr): CompReplace[Schema] = 
-   schema.addShape(newShapeExpr).asRight
+   okr(schema.addShape(newShapeExpr))
 
   private def replaceShapePath(
     p: ShapePath, 
@@ -383,15 +389,17 @@ object ShapePath {
     newItem: ShapeNode
     ): CompReplace[Schema] = {
     p.steps match {
-      case Nil => s.asRight
-      case ExprStep(None, ShapeLabelIndex(lbl)) :: rest => for {
-        se <- s.getShape(lbl).leftMap(Err(_))
-        newShapeExpr <- replaceShapeExprSteps(se, rest, s, newItem)
-        _ <- info(s"newShapeExpr: ${newShapeExpr}")
-        newSchema <- updateLabel(s, newShapeExpr)
-      } yield { 
-        println(s"ExprStep: ${lbl}...newSchema: ${newSchema}")
-        newSchema 
+      case Nil => okr(s)
+      case ExprStep(None, ShapeLabelIndex(lbl)) :: rest => s.getShape(lbl) match {
+        case Left(err) => rwarn(s"Not found label: ${err}", s)
+        case Right(se) => for {
+         newShapeExpr <- replaceShapeExprSteps(se, rest, s, newItem)
+         _ <- info(s"newShapeExpr: ${newShapeExpr}")
+         newSchema <- updateLabel(s, newShapeExpr)
+        } yield { 
+         println(s"ExprStep: ${lbl}...newSchema: ${newSchema}")
+         newSchema 
+        }
       }
       case step :: rest => rerr(s"Not implemented step ${step} yet")
     }

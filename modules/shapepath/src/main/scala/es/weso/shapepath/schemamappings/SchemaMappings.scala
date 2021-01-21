@@ -19,9 +19,8 @@ case class ErrorEvaluatingSource(source: ShapePath, schema: Schema, error: Proce
 
 case class SchemaMapping(source: ShapePath, value: IRI) {
 
- def convert(schema: Schema): Either[ConversionError,Schema] = {
+ def convert(schema: Schema): Ior[List[ProcessingError],Schema] = {
    ShapePath.replace(source, schema, None, IRIItem(value))
-   .leftMap(e => ErrorEvaluatingSource(source,schema,e))
  }
 
  def showQualify(pm: PrefixMap): String = 
@@ -36,8 +35,8 @@ case class SchemaMappings(
   mappings: List[SchemaMapping]
   ) {
 
-  def convert(schema: Schema): Either[ConversionError,Schema] = {
-   val zero = schema.asRight[ConversionError] 
+  def convert(schema: Schema): Ior[List[ProcessingError],Schema] = {
+   val zero: Ior[List[ProcessingError],Schema] = Ior.Right(schema)
    mappings
    .foldLeft(zero){ 
      case (acc, mapping) => 
