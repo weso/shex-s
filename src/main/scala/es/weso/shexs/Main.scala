@@ -11,13 +11,13 @@ import es.weso.rdf.jena.RDFAsJenaModel
 import es.weso.shapeMaps.ShapeMap
 import es.weso.shex.{ResolvedSchema, Schema}
 import es.weso.shex.validator.Validator
-import org.rogach.scallop._
-import org.rogach.scallop.exceptions._
+//import org.rogach.scallop._
+//import org.rogach.scallop.exceptions._
 import es.weso.shextest.manifest._
 import es.weso.shextest.manifest.ShExManifest
-import es.weso.shapeMaps._ 
+//import es.weso.shapeMaps._ 
 import fs2._
-import es.weso.shex.validator.ValidationLog
+//import es.weso.shex.validator.ValidationLog
 import com.monovore.decline._
 import com.monovore.decline.effect._
 import buildinfo._
