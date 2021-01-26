@@ -4,33 +4,150 @@
 grammar ShapePathDoc;
 
 shapePathDoc
- : shapePathExpr
+ : expr
  ;
 
-shapePathExpr
- : absolutePathExpr
- | relativePathExpr
+// [6xp]
+expr 
+ : unionExpr ( ',' unionExpr) *
  ;
 
-absolutePathExpr
- : KW_SLASH  relativePathExpr
+// [23xp]
+unionExpr 
+: intersectionExpr  (( KW_Union | KW_Bar ) intersectionExpr) *
+;
+
+// [24xp]
+intersectionExpr
+ : pathExpr ((KW_Intersect | KW_Except) pathExpr) *
  ;
 
-relativePathExpr
- : stepExpr (KW_SLASH stepExpr) *
+
+// [35xp]
+pathExpr
+ : firstStepExpr (stepExpr) *
  ;
 
-stepExpr
- : contextTest ? exprIndex   # exprIndexStep
- | contextTest               # contextStep
+// [0]
+firstStepExpr 
+ : stepExpr
+ | forwardAxis? nodeTest 
+ | KW_SLASH type predicateList
+ | KW_SLASH predicate +
  ;
 
-contextTest
- : shapeExprContext
- | tripleExprContext
+// [37xp]
+stepExpr 
+ : postfixExpr
+ | axisStep
  ;
 
-shapeExprContext
+// [38xp]
+axisStep 
+ : forwardStep predicateList 
+ ;
+
+// [40xp]
+forwardStep  
+ : KW_SLASH forwardAxis? nodeTest 
+ // TODO 
+ ; 
+
+// [40xp]
+forwardAxis 
+ : 'child'                             # child    
+ | 'descendant'                        # descendant
+ | 'nested-or-self-shape-expression'   # nestedShapeExpr
+ | 'nested-or-self-triple-expression'  # nestedTripleExpr
+ ;
+
+// [45xp]
+nodeTest 
+ : kindTest
+ | nameTest
+ ;
+
+
+// [46xp]
+nameTest 
+ : eqName
+ | wildCard
+ ;
+
+
+// [47xp]
+wildCard
+ : '*'
+ ;
+
+// [48xp]
+postfixExpr 
+ : primaryExpr predicate *
+ ;
+
+// [50xp]
+predicateList   
+ : predicate * 
+ ;
+
+// [51xp]
+predicate 
+ : '[' expr ']'
+ ;
+
+// [52xp]
+primaryExpr 
+ : type 
+ | literal
+ | parenthesizedExpr
+ | contextItemExpr
+ ;
+
+// [53xp]
+literal 
+ : numericLiteral
+ ;
+
+// [54xp]
+numericLiteral
+ : INTEGER
+ ;
+
+// [57xp]
+parenthesizedExpr
+ : '(' expr ')'
+ ;
+
+// [58xp]
+contextItemExpr
+ : '.'
+ ;
+
+// [71xp]
+kindTest 
+ : regExpTest
+ | anyKindTest
+ ;
+
+// [82xp]
+regExpTest 
+ : 'pattern' KW_OPENPAREN stringLiteral KW_CLOSEPAREN
+ ;
+
+// [72xp]
+anyKindTest
+ : 'expr' KW_OPENPAREN KW_CLOSEPAREN
+ ;
+
+// [1]
+type
+ : KW_Schema
+ | shapeExprType
+ | tripleExprType
+ ;
+
+// [2]
+shapeExprType
  : KW_ShapeAnd
  | KW_ShapeOr
  | KW_ShapeNot
@@ -38,10 +155,16 @@ shapeExprContext
  | KW_Shape
  ;
 
-tripleExprContext
+// [3]
+tripleExprType
  : KW_EachOf
  | KW_OneOf
  | KW_TripleConstraint
+ ;
+
+// [94xp]
+eqName
+ : iri 
  ;
 
 exprIndex
@@ -68,6 +191,11 @@ tripleExprLabel
 
 blankNodeLabel
  : blankNode
+ ;
+
+stringLiteral
+ : STRING_LITERAL1
+ | STRING_LITERAL2
  ;
 
 iri
@@ -120,12 +248,40 @@ KW_Shape
  : S H A P E
  ;
 
+KW_Schema
+ : S C H E M A
+ ; 
+
 KW_TripleConstraint
  : T R I P L E C O N S T R A I N T
  ;
 
 KW_SLASH
  : '/'
+ ;
+
+KW_OPENPAREN
+ : '(' 
+ ;
+
+KW_CLOSEPAREN
+ : ')' 
+ ;
+
+KW_Union
+ : U N I O N
+ ;
+
+KW_Intersect
+ : I N T E R S E C T
+ ;
+
+KW_Except
+ : E X C E P T
+ ;
+
+KW_Bar 
+ : '|'
  ;
 
  // --------------------------

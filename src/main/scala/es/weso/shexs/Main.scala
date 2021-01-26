@@ -26,6 +26,7 @@ import es.weso.shapepath.schemamappings.SchemaMappings
 import es.weso.shex.implicits.showShEx._
 import es.weso.shapepath.ProcessingError
 import es.weso.shapepath.ShapePath
+import es.weso.shapeMaps.ResultShapeMap
 
 object Main extends CommandIOApp(
   name="shex-s", 
@@ -141,7 +142,7 @@ object Main extends CommandIOApp(
 
    private def doShapePathEval(spc: ShapePathEval): IO[ExitCode] = for {
      schema <- Schema.fromFile(spc.schema.toFile().getAbsolutePath(), spc.schemaFormat, None, None)
-     shapePath <- IO.fromEither(ShapePath.fromString(spc.shapePath, "Compact", None).leftMap(err => new RuntimeException(s"Errir parsing shapePath: ${err}")))
+     shapePath <- IO.fromEither(ShapePath.fromString(spc.shapePath, "Compact", None, schema.prefixMap).leftMap(err => new RuntimeException(s"Error parsing shapePath: ${err}")))
      result <- { 
        val (ls,v) = ShapePath.eval(shapePath,schema)
        putStrLn(ls.map(_.toString).mkString("\n")) *>
@@ -150,7 +151,10 @@ object Main extends CommandIOApp(
    } yield ExitCode.Success 
 
   private def showResult(result: ResultShapeMap, showResultFormat: String): IO[Unit] =
-    putStrLn(result.serialize(showResultFormat).fold(err => s"Error serializing ${result} with format ${showResultFormat}: $err", identity))
+    putStrLn(result.serialize(showResultFormat).fold(
+      err => s"Error serializing ${result} with format ${showResultFormat}: $err", 
+      identity)
+    )
 
 
 /*  def run(args: List[String]): IO[ExitCode] = {
@@ -406,7 +410,7 @@ object Main extends CommandIOApp(
   }
 */
 
-    private def getShapeMapFromFile(fileName: String, 
+  private def getShapeMapFromFile(fileName: String, 
                                   shapeMapFormat: String,
                                   nodesPrefixMap: PrefixMap,
                                   shapesPrefixMap: PrefixMap): IO[ShapeMap] =

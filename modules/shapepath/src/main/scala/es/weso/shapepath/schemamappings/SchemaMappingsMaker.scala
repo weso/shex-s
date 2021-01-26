@@ -115,11 +115,11 @@ class SchemaMappingsMaker extends SchemaMappingsDocBaseVisitor[Any] with LazyLog
     case ectx : ExprIndexStepContext => for {
       maybeCtx <- visitOpt(visitContextTest, ectx.contextTest())
       exprIndex <- visitExprIndex(ectx.exprIndex())
-    } yield ExprStep(maybeCtx,exprIndex)
-    case cctx : ContextStepContext => for {
+    } yield ExprStep(maybeCtx,exprIndex,List())
+   /* case cctx : ContextStepContext => for {
       context <- visitContextTest(cctx.contextTest())
     } yield ContextStep(context)
-    case _ => err("visitStepExpr: unknown context: $ctx / ${ctx.getClass.getName}")
+    case _ => err("visitStepExpr: unknown context: $ctx / ${ctx.getClass.getName}") */
   }/*for {
    maybeCtx <- visitContextTest(ctx.contextTest())
    exprIndex <- visitExprIndex(ctx.exprIndex())

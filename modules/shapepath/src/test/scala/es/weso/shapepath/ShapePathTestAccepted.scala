@@ -12,7 +12,7 @@ import org.scalatest.matchers.should._
 
 class ShapePathTestAccepted extends  AnyFunSpec with ShapePathTest with Matchers {
 
-  describe(s"ShapePath from Manifest only accepted tests") {
+  ignore(s"ShapePath from Manifest only accepted tests") {
     def runManifest(json: Json): IO[Unit] = for {
       manifest <- either2io(json2manifest(json), cnvMsg)
       _ <- processManifest(manifest, all = false)

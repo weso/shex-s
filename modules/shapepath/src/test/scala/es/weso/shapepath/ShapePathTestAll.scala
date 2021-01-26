@@ -39,8 +39,8 @@ class ShapePathTestAll extends  AnyFunSpec with ShapePathTest with Matchers {
     it(s"Evaluates a shapePath") {
       // /@<#IssueShape>/2
       val two: TripleExprIndex = IntTripleExprIndex(2)
-      val sTwo: Step = ExprStep(None, two)
-      val issueShape: Step = ExprStep(None, ShapeLabelIndex(IRILabel(IRI("#IssueShape"))))
+      // val sTwo: Step = ExprStep(None, two, List())
+      val issueShape: Step = ExprStep(None, ShapeLabelIndex(IRILabel(IRI("#IssueShape"))), List())
       val path: ShapePath = ShapePath(true, List(issueShape))
 
       val schemaStr =

@@ -22,21 +22,47 @@ import scala.jdk.CollectionConverters._
 class ShapePathMaker extends ShapePathDocBaseVisitor[Any] with LazyLogging {
 
   override def visitShapePathDoc(ctx: ShapePathDocContext): Builder[ShapePath] = {
-    visitShapePathExpr(ctx.shapePathExpr())
+    visitExpr(ctx.expr())
   }
 
-  override def visitShapePathExpr(ctx: ShapePathExprContext): Builder[ShapePath] = {
+  // TODO
+  override def visitExpr(ctx: ExprContext): Builder[ShapePath] = for {
+    ls <- visitList(visitUnionExpr, ctx.unionExpr())
+  } yield ls.head
+
+  override def visitUnionExpr(ctx: UnionExprContext): Builder[ShapePath] = for {
+    ls <- visitList(visitIntersectionExpr, ctx.intersectionExpr())
+  } yield ls.head
+  
+  override def visitIntersectionExpr(ctx: IntersectionExprContext): Builder[ShapePath] = for {
+    ls <- visitList(visitPathExpr, ctx.pathExpr())
+  } yield ls.head
+  
+  override def visitPathExpr(ctx: PathExprContext): Builder[ShapePath] = for {
+    firstStep <- visitFirstStepExpr(ctx.firstStepExpr())
+    steps <- visitList(visitStepExpr, ctx.stepExpr())
+  } yield ShapePath(false, firstStep :: steps)
+
+  override def visitFirstStepExpr(ctx: FirstStepExprContext): Builder[Step] = 
     ctx match {
-      case _ if isDefined(ctx.absolutePathExpr()) => for {
-        steps <- visitAbsolutePathExpr(ctx.absolutePathExpr())
-      } yield ShapePath(true, steps)
-      case _ if isDefined(ctx.relativePathExpr()) =>
+     case _ if isDefined(ctx.stepExpr()) => for {
+        step <- visitStepExpr(ctx.stepExpr())
+      } yield step
+     case _ => err(s"visitShapePathExpr: unknown ctx: $ctx")
+    }
+  
+  /*{
+    ctx match {
+      case _ if isDefined(ctx.stepExpr()) => for {
+        step <- visitStepExpr(ctx.stepExpr())
+      } yield ShapePath(true, List(step))
+/*      case _ if isDefined(ctx.relativePathExpr()) =>
         for {
           steps <- visitRelativePathExpr(ctx.relativePathExpr())
-        } yield ShapePath(false,steps)
+        } yield ShapePath(false,steps) */
       case _ => err(s"visitShapePathExpr: unknown ctx: $ctx")
     }
-  }
+  } 
 
   override def visitAbsolutePathExpr(ctx: AbsolutePathExprContext): Builder[List[Step]] =
     visitRelativePathExpr(ctx.relativePathExpr())
@@ -45,23 +71,105 @@ class ShapePathMaker extends ShapePathDocBaseVisitor[Any] with LazyLogging {
     for {
       steps <- visitList(visitStepExpr, ctx.stepExpr())
     } yield steps
+  } */
+
+  override def visitStepExpr(ctx: StepExprContext): Builder[Step] = ctx match {
+    case _ if isDefined(ctx.axisStep()) => visitAxisStep(ctx.axisStep())
+    case _ if isDefined(ctx.postfixExpr()) => err(s"visitStepExpr: TODO postfixExpr: $ctx / ${ctx.getClass.getName}")
+    case _ => err(s"visitStepExpr: unknown context: $ctx / ${ctx.getClass.getName}")
   }
 
-  def visitStepExpr(ctx: StepExprContext): Builder[Step] = ctx match {
-    case ectx : ExprIndexStepContext => for {
-      maybeCtx <- visitOpt(visitContextTest, ectx.contextTest())
-      exprIndex <- visitExprIndex(ectx.exprIndex())
-    } yield ExprStep(maybeCtx,exprIndex)
-    case cctx : ContextStepContext => for {
-      context <- visitContextTest(cctx.contextTest())
-    } yield ContextStep(context)
-    case _ => err(s"visitStepExpr: unknown context: $ctx / ${ctx.getClass.getName}")
-  }/*for {
+  override def visitAxisStep(ctx: AxisStepContext): Builder[Step] = for {
+    step <- visitForwardStep(ctx.forwardStep())
+    predicates <- visitPredicateList(ctx.predicateList())
+  } yield step.addPredicates(predicates)
+  
+  override def visitForwardStep(ctx: ForwardStepContext): Builder[Step] = for {
+    axis <- visitOpt(visitForwardAxis,ctx.forwardAxis())
+    nodeTest <- visitNodeTest(ctx.nodeTest())
+  } yield Step.mkStep(axis,nodeTest)
+
+  // TODO
+  override def visitPredicateList(ctx: PredicateListContext): Builder[List[Predicate]] = 
+   ok(List())
+
+  def visitForwardAxis(ctx: ForwardAxisContext): Builder[Axis] = 
+    ctx match {
+      case _: ChildContext => ok(Child)
+      case _: DescendantContext => ok(Descendant)
+      case _: NestedShapeExprContext => ok(NestedShapeExpr)
+      case _: NestedTripleExprContext => ok(NestedTripleExpr)
+    }
+
+  override def visitNodeTest(ctx: NodeTestContext): Builder[NodeTest] = 
+    ctx match {
+      case _ if isDefined(ctx.kindTest()) => visitKindTest(ctx.kindTest())
+      case _ if isDefined(ctx.nameTest()) => visitNameTest(ctx.nameTest())
+      case _ => err(s"visitNodeTest: Unsupported ${ctx.getClass.getName}")
+    }  
+
+  
+  override def visitNameTest(ctx: NameTestContext): Builder[NodeTest] = 
+    ctx match {
+      case _ if isDefined(ctx.eqName()) => visitEqName(ctx.eqName())
+      case _ if isDefined(ctx.wildCard()) => visitWildCard(ctx.wildCard())
+      case _ => err(s"visitKindTest: Unsupported ${ctx.getClass.getName}")
+    }  
+    
+
+  override def visitKindTest(ctx: KindTestContext): Builder[NodeTest] = 
+    ctx match {
+      case _ if isDefined(ctx.regExpTest()) => visitRegExpTest(ctx.regExpTest())
+      case _ if isDefined(ctx.anyKindTest()) => visitAnyKindTest(ctx.anyKindTest())
+      case _ => err(s"visitKindTest: Unsupported ${ctx.getClass.getName}")
+    }  
+
+  override def visitEqName(ctx: EqNameContext): Builder[NodeTest] = for {
+    iri <- visitIri(ctx.iri())
+  } yield EqName(iri)
+
+  override def visitWildCard(ctx: WildCardContext): Builder[NodeTest] = 
+   ok(WildcardTest)
+
+  private def okStringLiteral(str:String): Builder[String] =
+    ok(unescapeStringLiteral(str))
+
+  private def stripStringLiteral1(s: String): String = {
+    val regexStr = "\'(.*)\'".r
+    s match {
+      case regexStr(s) => s
+      case _ => throw new Exception(s"stripStringLiteral2 $s doesn't match regex")
+    }
+  }
+
+  private def stripStringLiteral2(s: String): String = {
+    val regexStr = "\"(.*)\"".r
+    s match {
+      case regexStr(s) => s
+      case _ => throw new Exception(s"stripStringLiteral2 $s doesn't match regex")
+    }
+  }
+
+
+  override def visitRegExpTest(ctx: RegExpTestContext): Builder[NodeTest] = for {
+    str <- visitStringLiteral(ctx.stringLiteral())
+  } yield RegExpTest(str)
+
+  override def visitStringLiteral(ctx: StringLiteralContext): Builder[String] = ctx match {
+    case _ if isDefined(ctx.STRING_LITERAL1()) => okStringLiteral(stripStringLiteral1(ctx.STRING_LITERAL1().getText()))
+    case _ if (isDefined(ctx.STRING_LITERAL2())) => okStringLiteral(stripStringLiteral2(ctx.STRING_LITERAL2().getText()))
+  }
+
+  override def visitAnyKindTest(ctx: AnyKindTestContext): Builder[NodeTest] = 
+    ok(AnyKindTest)
+   
+  
+  /*for {
    maybeCtx <- visitContextTest(ctx.contextTest())
    exprIndex <- visitExprIndex(ctx.exprIndex())
   } yield ExprStep(maybeCtx,exprIndex) */
 
-  override def visitContextTest(ctx: ContextTestContext): Builder[Context] =
+  /* override def visitContextTest(ctx: ContextTestContext): Builder[Context] =
       ctx match {
         case _ if (isDefined(ctx.shapeExprContext())) => for {
          shapeExprContext <- visitShapeExprContext(ctx.shapeExprContext())
@@ -128,7 +236,7 @@ class ShapePathMaker extends ShapePathDocBaseVisitor[Any] with LazyLogging {
         n <- getInteger(ctx.INTEGER().getText())
       } yield IntTripleExprIndex(n)
     case _ => err(s"visitShapeExprIndex: unknown ctx $ctx")
-  }
+  } */
 
   override def visitShapeExprLabel(ctx: ShapeExprLabelContext): Builder[ShapeLabel] = ctx match {
     case _ if isDefined(ctx.iri()) => for {

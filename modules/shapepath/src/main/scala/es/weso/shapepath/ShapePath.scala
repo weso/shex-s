@@ -59,9 +59,11 @@ object ShapePath {
    */
   def fromString(str: String,
                  format: String = "Compact",
-                 base: Option[IRI] = None): Either[String, ShapePath] =
+                 base: Option[IRI] = None,
+                 prefixMap: PrefixMap = PrefixMap.empty
+                 ): Either[String, ShapePath] =
    format.toLowerCase match {
-    case "compact" => Parser.parseShapePath(str,base)
+    case "compact" => Parser.parseShapePath(str, base, prefixMap)
     case _ => Left(s"Unsupported input format: $format")
    }
 
@@ -309,10 +311,10 @@ object ShapePath {
         } yield newValue
       }
     }
-    case ContextStep(ctx) => for {
+/*    case ContextStep(ctx) => for {
      currentValue <- current
      matched <- currentValue.items.foldM[Comp,List[ShapeNode]](List())(cmb(ctx))
-    } yield Value(matched) 
+    } yield Value(matched)  */
   }
 
   private def evaluateShapePath(p: ShapePath, s: Schema, v: Value): Comp[Value] = {
@@ -368,7 +370,7 @@ object ShapePath {
     schema: Schema,
     newItem: ShapeNode): CompReplace[ShapeExpr] = steps match {
       case Nil => okr(se)
-      case ExprStep(None, LabelTripleExprIndex(IRILabel(iri), None)) :: Nil => se match {
+      case ExprStep(None, LabelTripleExprIndex(IRILabel(iri), None), _) :: Nil => se match {
         case s: Shape => s.expression match {
           case None => okr(se)
           case Some(te) => for {
@@ -390,7 +392,7 @@ object ShapePath {
     ): CompReplace[Schema] = {
     p.steps match {
       case Nil => okr(s)
-      case ExprStep(None, ShapeLabelIndex(lbl)) :: rest => s.getShape(lbl) match {
+      case ExprStep(None, ShapeLabelIndex(lbl), _) :: rest => s.getShape(lbl) match {
         case Left(err) => rwarn(s"Not found label: ${err}", s)
         case Right(se) => for {
          newShapeExpr <- replaceShapeExprSteps(se, rest, s, newItem)

@@ -47,7 +47,7 @@ class SchemaMappingsTest extends CatsEffectSuite {
     _ <- IO { println(s"Schemas read...")}
     mappings <- IO.fromEither(SchemaMappings.fromString(mappingsStr).leftMap(err => new RuntimeException(err.msg)))
     _ <- IO { println(s"Mappings: ${mappings.toString}")}
-    converted <- IO.fromEither(mappings.convert(schema).leftMap(err => new RuntimeException(err.toString)))
+    converted <- IO.fromEither(mappings.convert(schema).leftMap(err => new RuntimeException(err.toString)).toEither)
     _ <- IO { println(s"Converted: \n${converted}\n")}
   } yield (converted,expected)
 
