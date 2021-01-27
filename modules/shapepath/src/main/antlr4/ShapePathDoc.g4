@@ -32,7 +32,7 @@ pathExpr
 firstStepExpr 
  : stepExpr
  | forwardAxis? nodeTest 
- | KW_SLASH type predicateList
+ | KW_SLASH shapeType predicateList
  | KW_SLASH predicate +
  ;
 
@@ -50,7 +50,11 @@ axisStep
 // [40xp]
 forwardStep  
  : KW_SLASH forwardAxis? nodeTest 
- // TODO 
+ | KW_DOUBLE_SLASH forwardAxis? nodeTest 
+ | KW_AT nodeTest
+ | KW_DOUBLE_AT nodeTest
+ | KW_DOT nodeTest
+ | KW_DOUBLE_DOT nodeTest
  ; 
 
 // [40xp]
@@ -97,7 +101,7 @@ predicate
 
 // [52xp]
 primaryExpr 
- : type 
+ : shapeType 
  | literal
  | parenthesizedExpr
  | contextItemExpr
@@ -140,7 +144,7 @@ anyKindTest
  ;
 
 // [1]
-type
+shapeType
  : KW_Schema
  | shapeExprType
  | tripleExprType
@@ -259,6 +263,28 @@ KW_TripleConstraint
 KW_SLASH
  : '/'
  ;
+
+KW_DOUBLE_SLASH
+ : '//'
+ ;
+
+KW_AT
+ : '@'
+ ;
+
+KW_DOUBLE_AT
+ : '@@'
+ ;
+
+
+KW_DOT
+ : '.'
+ ;
+
+KW_DOUBLE_DOT
+ : '..'
+ ;
+
 
 KW_OPENPAREN
  : '(' 

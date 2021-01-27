@@ -1,5 +1,6 @@
 package es.weso.shapepath
 
 import cats.Show
+// import es.weso.rdf.nodes.RDFNode
 
-case class Predicate(expr: ShapePath) 
+sealed abstract class Predicate extends Product with Serializable

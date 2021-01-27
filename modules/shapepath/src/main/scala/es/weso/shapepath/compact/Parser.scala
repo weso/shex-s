@@ -80,7 +80,8 @@ object Parser extends LazyLogging {
         str.substring(1)
       } else str
     val reader: JavaReader =
-      new InputStreamReader(new ByteArrayInputStream(s.getBytes(StandardCharsets.UTF_8)))
+      new InputStreamReader(
+        new ByteArrayInputStream(s.getBytes(StandardCharsets.UTF_8)))
     logger.debug(s"s:$s")
     parseReader(reader, base, prefixMap)
   }

@@ -39,17 +39,31 @@ class ShapePathMaker extends ShapePathDocBaseVisitor[Any] with LazyLogging {
   } yield ls.head
   
   override def visitPathExpr(ctx: PathExprContext): Builder[ShapePath] = for {
-    firstStep <- visitFirstStepExpr(ctx.firstStepExpr())
+    path <- visitFirstStepExpr(ctx.firstStepExpr())
     steps <- visitList(visitStepExpr, ctx.stepExpr())
-  } yield ShapePath(false, firstStep :: steps)
+  } yield path.addSteps(steps)
 
-  override def visitFirstStepExpr(ctx: FirstStepExprContext): Builder[Step] = 
+  override def visitFirstStepExpr(ctx: FirstStepExprContext): Builder[ShapePath] = 
     ctx match {
      case _ if isDefined(ctx.stepExpr()) => for {
         step <- visitStepExpr(ctx.stepExpr())
-      } yield step
-     case _ => err(s"visitShapePathExpr: unknown ctx: $ctx")
+      } yield ShapePath(true, List(step))
+     case _ if isDefined(ctx.nodeTest()) => for {
+       maybeAxis <- visitOpt(visitForwardAxis, ctx.forwardAxis())
+       nodeTest <- visitNodeTest(ctx.nodeTest())
+     } yield ShapePath(false, List(Step.mkStep(maybeAxis, nodeTest)))
+     case _ if isDefined(ctx.predicateList()) => for {
+       shapeType <- visitShapeType(ctx.shapeType())
+       predicates <- visitPredicateList(ctx.predicateList())
+     } yield ShapePath.fromTypePredicates(shapeType, predicates)
+     case _ if isDefined(ctx.predicateList()) => for {
+       predicates <- visitList(visitPredicate, ctx.predicate())
+     } yield ShapePath.fromPredicates(predicates)
+     case _ => err(s"visitShapePathExpr: unknown ctx: ${ctx.getClass().getCanonicalName()}")
     }
+
+  override def visitShapeType(ctx: ShapeTypeContext): Builder[ShapeNodeType] = ???
+  override def visitPredicate(ctx: PredicateContext): Builder[Predicate] = ???
   
   /*{
     ctx match {
@@ -84,10 +98,16 @@ class ShapePathMaker extends ShapePathDocBaseVisitor[Any] with LazyLogging {
     predicates <- visitPredicateList(ctx.predicateList())
   } yield step.addPredicates(predicates)
   
-  override def visitForwardStep(ctx: ForwardStepContext): Builder[Step] = for {
-    axis <- visitOpt(visitForwardAxis,ctx.forwardAxis())
-    nodeTest <- visitNodeTest(ctx.nodeTest())
-  } yield Step.mkStep(axis,nodeTest)
+  override def visitForwardStep(ctx: ForwardStepContext): Builder[Step] = ctx match {
+    case _ if isDefined(ctx.KW_SLASH()) => for {
+      axis <- visitOpt(visitForwardAxis,ctx.forwardAxis())
+      nodeTest <- visitNodeTest(ctx.nodeTest())
+    } yield Step.mkStep(axis,nodeTest)
+    case _ if isDefined(ctx.KW_AT()) => for {
+      nodeTest <- visitNodeTest(ctx.nodeTest())
+    } yield Step.mkStep(Some(NestedShapeExpr),nodeTest)
+    
+  }
 
   // TODO
   override def visitPredicateList(ctx: PredicateListContext): Builder[List[Predicate]] = 
@@ -319,7 +339,6 @@ class ShapePathMaker extends ShapePathDocBaseVisitor[Any] with LazyLogging {
 
   def resolve(prefixedName: String): Builder[IRI] = {
     val (prefix, local) = splitPrefix(prefixedName)
-    // logger.info(s"Resolve. prefix: $prefix local: $local Prefixed name: $prefixedName")
     getPrefixMap.flatMap(prefixMap =>
       prefixMap.getIRI(prefix) match {
         case None =>

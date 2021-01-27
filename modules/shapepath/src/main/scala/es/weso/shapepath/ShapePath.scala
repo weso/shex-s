@@ -17,11 +17,20 @@ case class ShapePath(
   ) {
   def showQualify(pm: PrefixMap): String = 
    (if (startsWithRoot) "/" else "") + steps.map(_.showQualify(pm)).mkString("/")
+  
+  def addSteps(steps: List[Step]): ShapePath = 
+   this.copy(steps = this.steps ++ steps)
 }
 
 object ShapePath {
 
   def empty: ShapePath = ShapePath(startsWithRoot = false,List())
+
+  def fromTypePredicates(shapeType: ShapeNodeType, preds: List[Predicate]): ShapePath = 
+   throw new RuntimeException(s"fromTypePredicates: not implemented")
+
+  def fromPredicates(preds: List[Predicate]): ShapePath = 
+   throw new RuntimeException(s"fromPredicates: not implemented")
 
   /**
    * Evaluate a shapePath
@@ -149,7 +158,8 @@ object ShapePath {
       case _ => false
     }
   } */
-  private def checkContext(context: Context, item: ShapeNode): Comp[List[ShapeNode]] = ???
+  private def checkContext(context: ContextType, item: ShapeNode): Comp[List[ShapeNode]] = 
+   throw new RuntimeException(s"checkContext: not implemented")
 
   private def matchShapeExprId(lbl: ShapeLabel)(se: ShapeExpr): Boolean = se.id match {
     case None => false
@@ -284,15 +294,25 @@ object ShapePath {
     Foldable[List].foldM[Comp,ShapeNode,Value](items, zero)(cmb)
   }
 
-  private def cmb(ctx: Context)(current: List[ShapeNode], item: ShapeNode): Comp[List[ShapeNode]] = for {
+  private def cmb(ctx: ContextType)(current: List[ShapeNode], item: ShapeNode): Comp[List[ShapeNode]] = for {
     next <- checkContext(ctx, item)
   } yield current ++ next
 
 
   private def evaluateStep(s: Schema)(current: Comp[Value], step: Step): Comp[Value] = step match {
+    case nt: NodeTestStep => nt.axis match {
+      case Child => for {
+        currentValue <- current
+      } yield currentValue.evalChild(nt.nodeTest)
+      case NestedShapeExpr => for {
+        currentValue <- current
+      } yield currentValue.evalNestedShapeExpr(nt.nodeTest)
+      case _ => err(s"Not implemented axis: ${nt.axis}") *> 
+                current
+    }
     case es: ExprStep => {
       println(s"ExprStep: ${step.show}")
-      es.maybeContext match {
+      es.maybeType match {
         case None => for {
           currentValue <- current
           _ <- debug(s" Current value: ${currentValue.show}")

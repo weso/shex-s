@@ -7,7 +7,7 @@ import es.weso.shex.implicits.showShEx._
 import es.weso.shex.{Shape, ShapeExpr, ShapeLabel, TripleExpr}
 import es.weso.rdf.nodes.IRI
 
-sealed abstract class ShapeNodeType 
+sealed abstract class ShapeNodeType extends Product with Serializable
 case object TripleExprType extends ShapeNodeType
 case object ShapeExprType extends ShapeNodeType
 case object IRIType extends ShapeNodeType
@@ -16,6 +16,17 @@ sealed abstract class ShapeNode {
   def hasLabel(lbl: ShapeLabel):Boolean
   def getTripleExprByLabel(lbl: ShapeLabel, n: Option[Int]): Option[TripleExpr]
   def _type: ShapeNodeType
+
+  def evalChild(nt: NodeTest): Option[ShapeNode] = nt match {
+    case EqName(iri) => throw new RuntimeException(s"evalChild($nt) for ${this}: not implemented")
+    case _ => throw new RuntimeException(s"evalChild($nt) for ${this}: not implemented")
+  }
+
+  def evalNestedShapeExpr(nt: NodeTest): Option[ShapeNode] = nt match {
+    case EqName(iri) => throw new RuntimeException(s"evalNestedShapeExpr($nt) for ${this}: not implemented")
+    case _ => throw new RuntimeException(s"evalNestedShapeExpr($nt) for ${this}: not implemented")
+  }
+
 }
 // case class SchemaItem(s: Schema) extends Item
 case class ShapeExprItem(se: ShapeExpr) extends ShapeNode {

@@ -15,6 +15,17 @@ case class Value(items: List[ShapeNode]) {
   def add(s: ShapeExpr): Value = Value(items ++ List(ShapeExprItem(s)))
   def add(t: TripleExpr): Value = Value(items ++ List(TripleExprItem(t)))
   def add(newItems: List[ShapeNode]): Value = Value(items ++ newItems)
+
+  def evalChild(nt: NodeTest): Value = 
+   Value(items.collect{ item => item.evalChild(nt) match {
+     case Some(i) => i
+   }} )
+
+  def evalNestedShapeExpr(nt: NodeTest): Value = 
+   Value(items.collect{ item => item.evalNestedShapeExpr(nt) match {
+     case Some(i) => i
+   }} ) 
+
 }
 
 object Value {

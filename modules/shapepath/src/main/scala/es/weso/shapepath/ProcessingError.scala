@@ -5,12 +5,12 @@ sealed abstract class ProcessingError
 case class UnmatchItemContextLabel(
   item: ShapeNode, 
   step: Step, 
-  contextLabel: Context
+  typeLabel: ContextType
   ) extends ProcessingError {
   override def toString = s"""|Processing error: 
                               |Item: ${item.toString}
                               |Step: ${step.toString}
-                              |ContextLabel: ${contextLabel.toString}
+                              |ContextLabel: ${typeLabel.toString}
                               |""".stripMargin
 }
 

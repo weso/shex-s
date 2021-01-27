@@ -27,13 +27,13 @@ case class NodeTestStep(
 }
 
 case class ExprStep(
-   maybeContext: Option[Context], 
+   maybeType: Option[ContextType], 
    exprIndex: ExprIndex,
    predicates: List[Predicate]
   ) extends Step {
 
   override def showQualify(pm: PrefixMap): String = 
-    maybeContext.map(_.symbol).getOrElse("") +
+    maybeType.map(_.symbol).getOrElse("") +
     exprIndex.showQualify(pm)
 
   override def addPredicates(ps: List[Predicate]) = 
@@ -50,11 +50,11 @@ object Step {
     }
   }
 
-  def fromIRI(pred: IRI): ExprStep = 
-   ExprStep(None,LabelTripleExprIndex(IRILabel(pred), None), List())
+  def fromIRI(pred: IRI): Step = 
+   NodeTestStep(Child, EqName(pred), List())
 
-  def fromShapeLabel(lbl: IRI): ExprStep = 
-   ExprStep(None,ShapeLabelIndex(IRILabel(lbl)), List())
+  def fromShapeLabel(lbl: IRI): Step = 
+   NodeTestStep(Child, EqName(lbl), List())
 
   def mkStep(maybeAxis: Option[Axis], nodeTest: NodeTest): Step = {
     val axis = maybeAxis.getOrElse(Child)

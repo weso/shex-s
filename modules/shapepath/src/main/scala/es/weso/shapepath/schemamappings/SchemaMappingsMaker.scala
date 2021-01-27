@@ -125,7 +125,7 @@ class SchemaMappingsMaker extends SchemaMappingsDocBaseVisitor[Any] with LazyLog
    exprIndex <- visitExprIndex(ctx.exprIndex())
   } yield ExprStep(maybeCtx,exprIndex) */
 
-  override def visitContextTest(ctx: ContextTestContext): Builder[Context] =
+  override def visitContextTest(ctx: ContextTestContext): Builder[ContextType] =
       ctx match {
         case _ if (isDefined(ctx.shapeExprContext())) => for {
          shapeExprContext <- visitShapeExprContext(ctx.shapeExprContext())
@@ -136,19 +136,19 @@ class SchemaMappingsMaker extends SchemaMappingsDocBaseVisitor[Any] with LazyLog
         case _ => err("visitContextTest: unknown ctx = $ctx")
       }
 
-  override def visitShapeExprContext(ctx: ShapeExprContextContext): Builder[Context] = ctx match {
-    case _ if isDefined(ctx.KW_ShapeAnd()) => ok(ShapeAndCtx)
-    case _ if isDefined(ctx.KW_ShapeOr()) => ok(ShapeOrCtx)
-    case _ if isDefined(ctx.KW_ShapeNot()) => ok(ShapeNotCtx)
-    case _ if isDefined(ctx.KW_NodeConstraint()) => ok(NodeConstraintCtx)
-    case _ if isDefined(ctx.KW_Shape()) => ok(ShapeCtx)
+  override def visitShapeExprContext(ctx: ShapeExprContextContext): Builder[ContextType] = ctx match {
+    case _ if isDefined(ctx.KW_ShapeAnd()) => ok(ShapeAndType)
+    case _ if isDefined(ctx.KW_ShapeOr()) => ok(ShapeOrType)
+    case _ if isDefined(ctx.KW_ShapeNot()) => ok(ShapeNotType)
+    case _ if isDefined(ctx.KW_NodeConstraint()) => ok(NodeConstraintType)
+    case _ if isDefined(ctx.KW_Shape()) => ok(ShapeType)
     case _ => err("visitShapeExprContext: unknown ctx: $ctx")
   }
 
-  override def visitTripleExprContext(ctx: TripleExprContextContext): Builder[Context] = ctx match {
-    case _ if isDefined(ctx.KW_EachOf()) => ok(EachOfCtx)
-    case _ if isDefined(ctx.KW_OneOf()) => ok(OneOfCtx)
-    case _ if isDefined(ctx.KW_TripleConstraint()) => ok(TripleConstraintCtx)
+  override def visitTripleExprContext(ctx: TripleExprContextContext): Builder[ContextType] = ctx match {
+    case _ if isDefined(ctx.KW_EachOf()) => ok(EachOfType)
+    case _ if isDefined(ctx.KW_OneOf()) => ok(OneOfType)
+    case _ if isDefined(ctx.KW_TripleConstraint()) => ok(TripleConstraintType)
     case _ => err("visitTripleExprContext: unknown ctx: $ctx")
   }
 
