@@ -11,7 +11,7 @@ import es.weso.rbe.interval.IntervalChecker
 import es.weso.rbe.Empty
 import es.weso.utils.{SeqUtils, SetUtils}
 import es.weso.shex.implicits.showShEx._
-import es.weso.shapeMaps.{BNodeLabel => BNodeMapLabel, IRILabel => IRIMapLabel, Start => StartMapLabel, _}
+import es.weso.shapemaps.{BNodeLabel => BNodeMapLabel, IRILabel => IRIMapLabel, Start => StartMapLabel, _}
 import es.weso.shex.actions.TestSemanticAction
 import Function.tupled
 import es.weso.shex.validator.ShExError._

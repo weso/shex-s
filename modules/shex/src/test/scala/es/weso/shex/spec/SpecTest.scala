@@ -2,7 +2,7 @@ package es.weso.shex.spec
 
 import es.weso.rdf.jena.RDFAsJenaModel
 import es.weso.rdf.nodes._
-import es.weso.shapeMaps._
+import es.weso.shapemaps._
 import es.weso.shex.{IRILabel => ShExIriLabel, _}
 import org.scalatest._
 import org.scalatest.funspec.AnyFunSpec

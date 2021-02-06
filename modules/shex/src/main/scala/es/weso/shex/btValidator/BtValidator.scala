@@ -5,7 +5,7 @@ import cats.data._
 import cats.implicits._
 import es.weso.rdf.RDFReader
 import es.weso.rdf.nodes.RDFNode
-import es.weso.shapeMaps._
+import es.weso.shapemaps._
 import es.weso.shex._
 import es.weso.typing.Typing
 

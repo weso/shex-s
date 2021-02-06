@@ -20,7 +20,7 @@ import es.weso.shex.ShapeLabel
 import es.weso.rdf.RDFBuilder
 import es.weso.rdf.PrefixMap
 import es.weso.shex.ResolvedSchema
-import es.weso.shapeMaps.ShapeMapLabel
+import es.weso.shapemaps.ShapeMapLabel
 import es.weso.shex.Shape
 import es.weso.shex.BNodeLabel
 import es.weso.shex.IRILabel

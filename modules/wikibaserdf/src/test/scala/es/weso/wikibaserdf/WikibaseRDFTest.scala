@@ -7,16 +7,16 @@ import cats.effect.IO
 import es.weso.rdf.triples.RDFTriple
 import es.weso.shex.Schema
 import es.weso.shex.ResolvedSchema
-import es.weso.shapeMaps.QueryShapeMap
-import es.weso.shapeMaps.ShapeMap
+import es.weso.shapemaps.QueryShapeMap
+import es.weso.shapemaps.ShapeMap
 import cats.data._  
 import cats.implicits._ 
 import es.weso.utils.IOUtils._
 import es.weso.shex.validator.Validator
-import es.weso.shapeMaps.ResultShapeMap
+import es.weso.shapemaps.ResultShapeMap
 import es.weso.rdf.nodes.IRI
 import es.weso.rdf.PREFIXES._
-import es.weso.shapeMaps.IRILabel
+import es.weso.shapemaps.IRILabel
 import es.weso.rdf.jena.RDFAsJenaModel
 
 class WikibaseRDFTest extends AnyFunSpec with Matchers {

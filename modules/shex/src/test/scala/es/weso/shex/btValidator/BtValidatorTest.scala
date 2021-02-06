@@ -6,7 +6,7 @@ import es.weso.rdf.jena.RDFAsJenaModel
 import es.weso.rdf.nodes.{IRI, RDFNode}
 import es.weso.rdf.triples.RDFTriple
 import es.weso.rdf.PREFIXES._
-import es.weso.shapeMaps.{IRILabel, ShapeMapLabel}
+import es.weso.shapemaps.{IRILabel, ShapeMapLabel}
 import es.weso.shex._
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers

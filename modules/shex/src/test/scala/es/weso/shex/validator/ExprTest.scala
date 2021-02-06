@@ -2,7 +2,7 @@ package es.weso.shex.validator
 
 import cats.implicits._
 import es.weso.rdf.jena._
-import es.weso.shapeMaps.ShapeMap
+import es.weso.shapemaps.ShapeMap
 import es.weso.shex._
 import org.scalatest._
 import org.scalatest.funspec.AnyFunSpec

@@ -1,7 +1,7 @@
 package es.weso.shex
 import es.weso.shex.shexR.PREFIXES.{sx_start}
 import es.weso.rdf.nodes.{BNode, IRI, RDFNode}
-import es.weso.shapeMaps.{ Start => StartMapLabel, IRILabel => IRIMapLabel, BNodeLabel => BNodeMapLabel, _}
+import es.weso.shapemaps.{ Start => StartMapLabel, IRILabel => IRIMapLabel, BNodeLabel => BNodeMapLabel, _}
 import es.weso.rdf.PrefixMap
 
 abstract sealed trait ShapeLabel extends Product with Serializable {

@@ -9,7 +9,7 @@ lazy val supportedScalaVersions = List(
 
 // Local dependencies
 lazy val srdfVersion           = "0.1.90"
-lazy val shapeMapsVersion      = "0.1.73"
+lazy val shapeMapsVersion      = "0.1.74"
 lazy val utilsVersion          = "0.1.73"
 lazy val documentVersion       = "0.0.11"
 
@@ -101,7 +101,7 @@ lazy val xercesImpl     = "xerces"                     % "xercesImpl"     % xerc
 lazy val simulacrum     = "org.typelevel"              %% "simulacrum"    % simulacrumVersion
 lazy val weaver         = "com.disneystreaming"        %% "weaver-cats"   % weaverVersion 
 
-lazy val shexsRoot = project
+lazy val shexs = project
   .in(file("."))
   .enablePlugins(
     ScalaUnidocPlugin, 
@@ -140,16 +140,20 @@ lazy val shexsRoot = project
       decline, declineEffect, 
       logbackClassic,
       srdf,
+      srdf4j,
+      srdfJena,
       scalaLogging,
       scallop,
       typesafeConfig,
       pprint,
+      junit % Test,
+      junitInterface % Test,
     ),
     cancelable in Global := true,
     fork := true,
     ThisBuild / turbo := true,
     crossScalaVersions := supportedScalaVersions,
-    skip in publish := true,
+    // skip in publish := true,
     Compile / run / mainClass := Some("es.weso.shexs.Main"),
     buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
     buildInfoPackage := "buildinfo"

@@ -5,7 +5,7 @@ import cats.implicits._
 import es.weso.shex.implicits.showShEx._
 import es.weso.rdf.{PrefixMap, RDFReader}
 import es.weso.rdf.nodes.{IRI, Literal, RDFNode}
-import es.weso.shapeMaps.{
+import es.weso.shapemaps.{
   BNodeLabel => BNodeShapeMapLabel,
   Conformant => ConformantStatus,
   IRILabel => IriShapeMapLabel,

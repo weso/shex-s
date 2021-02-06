@@ -2,7 +2,7 @@ package es.weso.shex.validator
 
 import cats._
 import cats.implicits._
-import es.weso.shapeMaps.ResultShapeMap
+import es.weso.shapemaps.ResultShapeMap
 import cats.effect._
 
 case class Result(e: Either[ShExError, (ValidationLog,ResultShapeMap)]) extends AnyVal {

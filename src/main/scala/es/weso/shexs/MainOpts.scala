@@ -1,7 +1,7 @@
 package es.weso.shexs
 
 import org.rogach.scallop._
-import es.weso.shapeMaps.ShapeMapFormat
+import es.weso.shapemaps.ShapeMapFormat
 
 
 

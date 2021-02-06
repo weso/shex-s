@@ -8,14 +8,13 @@ import cats.implicits._
 // import cats.~>
 import es.weso.rdf._
 import es.weso.rdf.jena.RDFAsJenaModel
-import es.weso.shapeMaps.ShapeMap
+import es.weso.shapemaps.ShapeMap
 import es.weso.shex.{ResolvedSchema, Schema}
 import es.weso.shex.validator.Validator
 //import org.rogach.scallop._
 //import org.rogach.scallop.exceptions._
 import es.weso.shextest.manifest._
 import es.weso.shextest.manifest.ShExManifest
-//import es.weso.shapeMaps._ 
 import fs2._
 //import es.weso.shex.validator.ValidationLog
 import com.monovore.decline._
@@ -26,7 +25,7 @@ import es.weso.shapepath.schemamappings.SchemaMappings
 import es.weso.shex.implicits.showShEx._
 import es.weso.shapepath.ProcessingError
 import es.weso.shapepath.ShapePath
-import es.weso.shapeMaps.ResultShapeMap
+import es.weso.shapemaps.ResultShapeMap
 
 object Main extends CommandIOApp(
   name="shex-s", 

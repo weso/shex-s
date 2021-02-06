@@ -11,10 +11,10 @@ import com.typesafe.config.{Config, ConfigFactory}
 import es.weso.rdf.PrefixMap
 import es.weso.rdf.jena.RDFAsJenaModel
 import es.weso.rdf.nodes.{BNode, IRI}
-import es.weso.shapeMaps.{BNodeLabel => BNodeMapLabel, IRILabel => IRIMapLabel, Start => StartMap, _}
+import es.weso.shapemaps.{BNodeLabel => BNodeMapLabel, IRILabel => IRIMapLabel, Start => StartMap, _}
 import es.weso.shex._
 import es.weso.shex.validator.{ExternalIRIResolver, Validator}
-import es.weso.shapeMaps._
+import es.weso.shapemaps._
 import es.weso.shex.compact.CompareSchemas
 import es.weso.shextest.manifest.Utils._
 // import es.weso.shex.implicits.decoderShEx._

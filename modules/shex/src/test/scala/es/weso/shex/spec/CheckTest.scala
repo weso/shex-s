@@ -4,7 +4,7 @@ import Check._
 import cats._
 import es.weso.rdf.jena.RDFAsJenaModel
 import es.weso.rdf.nodes.IRI
-import es.weso.shapeMaps.{IRILabel, ShapeMapLabel}
+import es.weso.shapemaps.{IRILabel, ShapeMapLabel}
 import es.weso.shex.Schema
 import org.scalatest._
 import es.weso.utils.internal.CollectionCompat._

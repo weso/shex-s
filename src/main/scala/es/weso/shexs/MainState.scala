@@ -1,6 +1,6 @@
 package es.weso.shexs
 
-import es.weso.shapeMaps.ShapeMap
+import es.weso.shapemaps.ShapeMap
 import es.weso.shex.Schema
 import java.nio.file.Path
 import java.nio.file.Paths

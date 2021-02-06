@@ -1,8 +1,8 @@
-package es.weso.shex;
+package es.weso.shexs;
 
 import es.weso.rdf.nodes.IRI;
 import es.weso.rdf.rdf4j.RDFAsRDF4jModel;
-import es.weso.shapeMaps.ResultShapeMap;
+import es.weso.shapemaps.ResultShapeMap;
 import es.weso.shex.ResolvedSchema;
 import es.weso.shex.Schema;
 import es.weso.shex.validator.Result;

@@ -3,7 +3,7 @@ package es.weso.shex.validator
 
 import es.weso.rdf.jena.RDFAsJenaModel
 import es.weso.rdf.nodes.IRI
-import es.weso.shapeMaps.ShapeMap
+import es.weso.shapemaps.ShapeMap
 import es.weso.shex.Schema
 // import org.scalatest._
 

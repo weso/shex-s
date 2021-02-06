@@ -5,7 +5,7 @@ import com.typesafe.scalalogging.LazyLogging
 import es.weso.rdf.PrefixMap
 import es.weso.typing._
 import es.weso.rdf.nodes._
-import es.weso.shapeMaps.{BNodeLabel, IRILabel => IRIMapLabel, _}
+import es.weso.shapemaps.{BNodeLabel, IRILabel => IRIMapLabel, _}
 import es.weso.shex.ShapeLabel
 import io.circe.Json
 import es.weso.shex.shexR.PREFIXES.sx_start

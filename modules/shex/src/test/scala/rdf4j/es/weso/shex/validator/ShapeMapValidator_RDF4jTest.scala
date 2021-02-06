@@ -3,7 +3,7 @@ package rdf4j.es.weso.shex.validator
 import cats.implicits._
 import cats.effect.IO
 import es.weso.rdf.rdf4j._
-import es.weso.shapeMaps.ShapeMap
+import es.weso.shapemaps.ShapeMap
 import es.weso.shex._
 import es.weso.shex.validator.Validator
 // import cats.data.EitherT

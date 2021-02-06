@@ -4,7 +4,7 @@ import java.net.URI
 import java.nio.file.Paths
 import es.weso.rdf.jena.RDFAsJenaModel
 import es.weso.rdf.nodes.IRI
-import es.weso.shapeMaps.{BNodeLabel => BNodeMapLabel, IRILabel => IRIMapLabel, Start => StartMap, _}
+import es.weso.shapemaps.{BNodeLabel => BNodeMapLabel, IRILabel => IRIMapLabel, Start => StartMap, _}
 // import es.weso.shapeMaps.ShapeMap
 // import es.weso.utils.FileUtils
 import scala.util.{Either, Left, Right, Try}

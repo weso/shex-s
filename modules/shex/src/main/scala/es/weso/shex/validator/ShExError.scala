@@ -33,6 +33,7 @@ object ShExError {
       case _ => node
     }
     val locations = rdf.nodeLocations.get(node2search) 
+    println(s"#### Locations: ${locations}")
     Json.fromFields(
      List(("lexicalForm", node.getLexicalForm.asJson)) 
        ++ (if (locations.isEmpty) List()
@@ -465,8 +466,14 @@ object ShExError {
 
   }
 
-  case class HasNoType(node: RDFNode, label: ShapeLabel, shapeTyping: ShapeTyping, attempt: Attempt, rdf: RDFReader) 
-    extends ShExError(s"Node ${node.show} has not shape ${label.toRDFNode.show} in ${shapeTyping.showShapeTyping}") {
+  case class HasNoType(
+    node: RDFNode, 
+    label: ShapeLabel, 
+    shapeTyping: ShapeTyping, 
+    attempt: Attempt, 
+    rdf: RDFReader) 
+    extends ShExError(s"Node ${node.show} has not shape ${label.toRDFNode.show} in ${shapeTyping.showShapeTyping}") 
+    {
       override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
         s"""HasNoType ${nodesPrefixMap.qualify(node)} has not type ${shapesPrefixMap.qualify(label.toRDFNode)} in ${shapeTyping.showShort(nodesPrefixMap,shapesPrefixMap)}"""
       }
@@ -474,7 +481,11 @@ object ShExError {
      override def toJson: Json = Json.obj(
        ("type", Json.fromString("HasNoType")),
        ("label", label.asJson),
-       ("node", ShExError.node2Json(node,rdf)),
+       ("node", {
+          println(s"node2Json ${node}")
+          ShExError.node2Json(node,rdf)
+         }
+       ),
        ("shapeTyping", shapeTyping.showShapeTyping.asJson)
       ) 
 
