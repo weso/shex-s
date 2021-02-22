@@ -7,8 +7,39 @@ import es.weso.shex.validator._
 import cats.effect._
 import cats.implicits._
 import es.weso.utils.IOUtils._
+import java.io.Reader
+import java.io.InputStream
+import java.io.InputStreamReader
 
 object ShExS {
+
+    def validate(
+        data: InputStream, 
+        schema: InputStream, 
+        shapeMap: InputStream, 
+        options: ShExsOptions
+    ): ResultShapeMap = {
+      val dataReader = new InputStreamReader(data)
+
+      val cmp: IO[ResultShapeMap] = for {
+          res1 <- RDFAsJenaModel.fromReader(dataReader,options.dataFormat,options.base)
+          res2 <- RDFAsJenaModel.empty
+          v <- (res1,res2).tupled.use {
+              case (rdf,builder) => for {
+                prefixMap <- rdf.getPrefixMap
+                schema <- Schema.fromInputStream(schema, options.schemaFormat, options.base,None)
+                resolved <- ResolvedSchema.resolve(schema, options.base)
+                shapeMap <- fromES(ShapeMap.fromInputStream(shapeMap, options.shapemapFormat,options.base, prefixMap,resolved.prefixMap))
+                fixedShapeMap <- ShapeMap.fixShapeMap(shapeMap,rdf,prefixMap,schema.prefixMap)
+                result <- Validator.validate(resolved,fixedShapeMap,rdf,builder,options.verbose)
+                resultShapeMap <- result.toResultShapeMap
+              } yield resultShapeMap
+          }
+      } yield v 
+      cmp.unsafeRunSync()
+    }
+
+
 
     /**
       * Validate RDF data using ShEx
@@ -49,7 +80,8 @@ object ShExS {
       *
       * @param dataStr string containing RDF data
       * @param schemaStr string containing ShEx schema
-      * @param shapeMapStr string containing shape map
+      * @param node IRI of RDF node to check conformance
+      * @param shape IRI of shape label target shape label
       * @param options object representing validation options
       * @return resultShapeMap
       */
