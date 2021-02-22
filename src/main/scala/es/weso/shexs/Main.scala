@@ -26,6 +26,9 @@ import es.weso.shex.implicits.showShEx._
 import es.weso.shapepath.ProcessingError
 import es.weso.shapepath.ShapePath
 import es.weso.shapemaps.ResultShapeMap
+import java.net.URL
+import scala.util.Try
+import cats.data.Validated
 
 object Main extends CommandIOApp(
   name="shex-s", 
@@ -34,9 +37,18 @@ object Main extends CommandIOApp(
   ) {
 
   // Commands  
-  case class SchemaMapping(schema: Path, schemaFormat: String, mapping: Path, output: Option[Path], verbose: Boolean)
-  case class Validate(schema: Path, schemaFormat: String, data: Path, dataFormat: String, shapeMap: Path, shapeMapFormat: String, showResultFormat: String, output: Option[Path], verbose: Boolean)
-  case class ShapePathEval(schema: Path, schemaFormat: String, shapePath: String, output: Option[Path], verbose: Boolean)
+  sealed abstract class SchemaSpec
+  case class SchemaPath(schema: Path, schemaFormat: Option[String]) extends SchemaSpec
+  case class SchemaURL(url: URL) extends SchemaSpec
+  case class SchemaMapping(schemaSpec: SchemaSpec, mapping: Path, output: Option[Path], verbose: Boolean)
+  case class Validate(schemaSpec: SchemaSpec, data: Path, dataFormat: String, shapeMap: Path, shapeMapFormat: String, showResultFormat: String, output: Option[Path], verbose: Boolean)
+  
+  sealed abstract class DataSpec
+  case class DataPath(dataPath: Path, dataFormat: Option[String]) extends DataSpec
+  case class Endpoint(url: URL) extends DataSpec
+
+  case class Wikibase(schemaSpec: SchemaSpec, endpoint: Endpoint, shapeMap: Path, shapeMapFormat: String, showResultFormat: String, output: Option[Path], verbose: Boolean)
+  case class ShapePathEval(schemaSpec: SchemaSpec, shapePath: String, output: Option[Path], verbose: Boolean)
 
 
   val availableSchemaFormats = List("ShExC", "ShExJ")
@@ -62,6 +74,23 @@ object Main extends CommandIOApp(
   val shapeMapFormatOpt = Opts.option[String]("shapeMapFormat", help = s"ShapeMap format, default=$defaultShapeMapFormat, available formats=$availableShapeMapFormats").withDefault(defaultShapeMapFormat)
   val shapePathOpt = Opts.option[String]("shapePath", help = s"ShapePath to validate a schema")
   val showResultFormatOpt = Opts.option[String]("showResultFormat", help = s"showResultFormat").withDefault("details")
+  val schemaPath: Opts[SchemaPath] = 
+    (schemaOpt,schemaFormatOpt).mapN { case (path, format) => SchemaPath(path, Some(format))}
+
+  val dataPath: Opts[DataPath] = ???
+    
+  val endpoint: Opts[Endpoint] = 
+    Opts.option[String]("endpoint", help =s"endpoint URL").mapValidated(s => 
+      Try(new URL(s)).fold(
+        exc => Validated.invalidNel(s"Error converting to URL: ${exc.getMessage}"), 
+        url => Validated.valid(Endpoint(url)))
+    )
+
+  def url(name: String): Opts[URL] = ???
+
+  val schemaSpec: Opts[SchemaSpec] = schemaPath orElse schemaURL
+  val dataSpec: Opts[DataSpec] = dataPath orElse endpoint
+  val schemaURL: Opts[SchemaURL] = url("schemaURL").map(SchemaURL)
 
   val schemaMappingCommand: Opts[SchemaMapping] = 
     Opts.subcommand("mapping", "Convert a schema through a mapping") {
@@ -79,6 +108,13 @@ object Main extends CommandIOApp(
       (schemaOpt,schemaFormatOpt, shapePathOpt, outputOpt, verboseOpt)
       .mapN(ShapePathEval)
     }
+
+  val wikibaseCommand: Opts[Wikibase] = 
+    Opts.subcommand("validate", "Validate RDF data using a schema and a shape map") {
+      (schemaOpt,schemaFormatOpt, dataOpt, dataFormatOpt, shapeMapOpt, shapeMapFormatOpt, showResultFormatOpt, outputOpt, verboseOpt)
+      .mapN(Validate)
+    }
+  
 
   def info(msg: String, verbose: Boolean): IO[Unit] = 
    if (verbose) putStrLn(msg)
