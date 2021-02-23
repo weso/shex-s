@@ -26,9 +26,12 @@ import es.weso.shex.implicits.showShEx._
 import es.weso.shapepath.ProcessingError
 import es.weso.shapepath.ShapePath
 import es.weso.shapemaps.ResultShapeMap
-import java.net.URL
+import java.net.URI
 import scala.util.Try
 import cats.data.Validated
+// import es.weso.utils.IOException
+import es.weso.rdf.jena.Endpoint
+import es.weso.rdf.nodes.IRI
 
 object Main extends CommandIOApp(
   name="shex-s", 
@@ -37,82 +40,93 @@ object Main extends CommandIOApp(
   ) {
 
   // Commands  
-  sealed abstract class SchemaSpec
-  case class SchemaPath(schema: Path, schemaFormat: Option[String]) extends SchemaSpec
-  case class SchemaURL(url: URL) extends SchemaSpec
   case class SchemaMapping(schemaSpec: SchemaSpec, mapping: Path, output: Option[Path], verbose: Boolean)
-  case class Validate(schemaSpec: SchemaSpec, data: Path, dataFormat: String, shapeMap: Path, shapeMapFormat: String, showResultFormat: String, output: Option[Path], verbose: Boolean)
+  case class Validate(schemaSpec: SchemaSpec, dataSpec: DataSpec, shapeMap: Path, shapeMapFormat: String, showResultFormat: String, output: Option[Path], verbose: Boolean)
+  case class Wikibase(schemaSpec: SchemaSpec, endpoint: EndpointOpt, shapeMap: Path, shapeMapFormat: String, showResultFormat: String, output: Option[Path], verbose: Boolean)
+  case class ShapePathEval(schemaSpec: SchemaSpec, shapePath: String, output: Option[Path], verbose: Boolean)
+  case class Manifest(manifestPath: Path, verbose: Boolean)
+  
+  sealed abstract class SchemaSpec
+  case class SchemaPath(schema: Path, schemaFormat: String) extends SchemaSpec
+  case class SchemaURI(uri: URI) extends SchemaSpec
   
   sealed abstract class DataSpec
   case class DataPath(dataPath: Path, dataFormat: Option[String]) extends DataSpec
-  case class Endpoint(url: URL) extends DataSpec
+  case class EndpointOpt(uri: URI) extends DataSpec
 
-  case class Wikibase(schemaSpec: SchemaSpec, endpoint: Endpoint, shapeMap: Path, shapeMapFormat: String, showResultFormat: String, output: Option[Path], verbose: Boolean)
-  case class ShapePathEval(schemaSpec: SchemaSpec, shapePath: String, output: Option[Path], verbose: Boolean)
+  lazy val availableSchemaFormats = List("ShExC", "ShExJ")
+  lazy val defaultSchemaFormat = availableSchemaFormats.head
+  lazy val availableSchemaFormatsStr = availableSchemaFormats.mkString(",")
 
+  lazy val availableDataFormats = List("Turtle", "NTriples","RDF/XML","JSON-LD")
+  lazy val defaultDataFormat = availableDataFormats.head
+  lazy val availableDataFormatsStr = availableDataFormats.mkString(",")
 
-  val availableSchemaFormats = List("ShExC", "ShExJ")
-  val defaultSchemaFormat = availableSchemaFormats.head
-  val availableSchemaFormatsStr = availableSchemaFormats.mkString(",")
+  lazy val availableShapeMapFormats = List("Compact", "JSON")
+  lazy val defaultShapeMapFormat = availableShapeMapFormats.head
+  lazy val availableShapeMapFormatsStr = availableShapeMapFormats.mkString(",")
 
-  val availableDataFormats = List("Turtle", "NTriples","RDF/XML","JSON-LD")
-  val defaultDataFormat = availableDataFormats.head
-  val availableDataFormatsStr = availableDataFormats.mkString(",")
+  lazy val schemaOpt = Opts.option[Path]("schema", short = "s", help = "Path to ShEx file.")
+  lazy val schemaFormatOpt = Opts.option[String]("schemaFormat", metavar = "format", help = s"Schema format, default = ($defaultSchemaFormat). Possible values = ($availableSchemaFormatsStr)").withDefault(defaultSchemaFormat)
+  lazy val outputOpt = Opts.option[Path]("output","Output to file (default = console)").orNone
+  lazy val verboseOpt = Opts.flag("verbose", "show extra information").orFalse
+  lazy val mappingOpt = Opts.option[Path]("mapping", short = "m", metavar = "mappings-file", help = "Path to Mappings file.")
+  lazy val dataOpt = Opts.option[Path]("data", short = "d", help = "Path to data file.")
 
-  val availableShapeMapFormats = List("Compact", "JSON")
-  val defaultShapeMapFormat = availableShapeMapFormats.head
-  val availableShapeMapFormatsStr = availableShapeMapFormats.mkString(",")
+  lazy val dataFormatOpt = Opts.option[String]("dataFormat", help = s"Data format. Default=$defaultDataFormat, available=$availableDataFormatsStr").withDefault(defaultDataFormat)
+  lazy val shapeMapOpt = Opts.option[Path]("shapeMap", short = "sm", help = "Path to shapeMap file.")
+  lazy val shapeMapFormatOpt = Opts.option[String]("shapeMapFormat", help = s"ShapeMap format, default=$defaultShapeMapFormat, available formats=$availableShapeMapFormats").withDefault(defaultShapeMapFormat)
+  lazy val shapePathOpt = Opts.option[String]("shapePath", help = s"ShapePath to validate a schema")
+  lazy val showResultFormatOpt = Opts.option[String]("showResultFormat", help = s"showResultFormat").withDefault("details")
+  lazy val schemaPath: Opts[SchemaPath] = 
+    (schemaOpt, schemaFormatOpt).mapN { case (path, format) => SchemaPath(path, format)}
 
-  val schemaOpt = Opts.option[Path]("schema", short = "s", help = "Path to ShEx file.")
-  val schemaFormatOpt = Opts.option[String]("schemaFormat", metavar = "format", help = s"Schema format, default = ($defaultSchemaFormat). Possible values = ($availableSchemaFormatsStr)").withDefault(defaultSchemaFormat)
-  val outputOpt = Opts.option[Path]("output","Output to file (default = console)").orNone
-  val verboseOpt = Opts.flag("verbose", "show extra information").orFalse
-  val mappingOpt = Opts.option[Path]("mapping", short = "m", metavar = "mappings-file", help = "Path to Mappings file.")
-  val dataOpt = Opts.option[Path]("data", short = "d", help = "Path to data file.")
-  val dataFormatOpt = Opts.option[String]("dataFormat", help = s"Data format. Default=$defaultDataFormat, available=$availableDataFormatsStr").withDefault(defaultDataFormat)
-  val shapeMapOpt = Opts.option[Path]("shapeMap", short = "sm", help = "Path to shapeMap file.")
-  val shapeMapFormatOpt = Opts.option[String]("shapeMapFormat", help = s"ShapeMap format, default=$defaultShapeMapFormat, available formats=$availableShapeMapFormats").withDefault(defaultShapeMapFormat)
-  val shapePathOpt = Opts.option[String]("shapePath", help = s"ShapePath to validate a schema")
-  val showResultFormatOpt = Opts.option[String]("showResultFormat", help = s"showResultFormat").withDefault("details")
-  val schemaPath: Opts[SchemaPath] = 
-    (schemaOpt,schemaFormatOpt).mapN { case (path, format) => SchemaPath(path, Some(format))}
-
-  val dataPath: Opts[DataPath] = ???
+  lazy val dataPath: Opts[DataPath] = (dataOpt,dataFormatOpt).mapN {
+    case (path,format) => DataPath(path,Some(format))
+  }
     
-  val endpoint: Opts[Endpoint] = 
-    Opts.option[String]("endpoint", help =s"endpoint URL").mapValidated(s => 
-      Try(new URL(s)).fold(
+  lazy val endpoint: Opts[EndpointOpt] = uri("endpoint", "endpoint URL").map(EndpointOpt)
+
+  def uri(name: String, helpStr: String): Opts[URI] = 
+    Opts.option[String](name, help =helpStr).mapValidated(s => 
+      Try(new URI(s)).fold(
         exc => Validated.invalidNel(s"Error converting to URL: ${exc.getMessage}"), 
-        url => Validated.valid(Endpoint(url)))
+        url => Validated.valid(url))
     )
+  lazy val schemaURI: Opts[SchemaURI] = 
+    (uri("schemaURL", "URL of schema")).map(SchemaURI)
 
-  def url(name: String): Opts[URL] = ???
-
-  val schemaSpec: Opts[SchemaSpec] = schemaPath orElse schemaURL
-  val dataSpec: Opts[DataSpec] = dataPath orElse endpoint
-  val schemaURL: Opts[SchemaURL] = url("schemaURL").map(SchemaURL)
-
-  val schemaMappingCommand: Opts[SchemaMapping] = 
+  lazy val schemaSpec: Opts[SchemaSpec] = schemaPath orElse schemaURI
+  lazy val dataSpec: Opts[DataSpec] = dataPath orElse endpoint
+  
+  lazy val schemaMappingCommand: Opts[SchemaMapping] = 
     Opts.subcommand("mapping", "Convert a schema through a mapping") {
-      (schemaOpt,schemaFormatOpt, mappingOpt, outputOpt, verboseOpt).mapN(SchemaMapping)
+      (schemaSpec, mappingOpt, outputOpt, verboseOpt).mapN(SchemaMapping)
     }
 
-  val validateCommand: Opts[Validate] = 
+  lazy val validateCommand: Opts[Validate] = 
     Opts.subcommand("validate", "Validate RDF data using a schema and a shape map") {
-      (schemaOpt,schemaFormatOpt, dataOpt, dataFormatOpt, shapeMapOpt, shapeMapFormatOpt, showResultFormatOpt, outputOpt, verboseOpt)
+      (schemaSpec, dataSpec, shapeMapOpt, shapeMapFormatOpt, showResultFormatOpt, outputOpt, verboseOpt)
       .mapN(Validate)
     }
 
-  val shapePathValidateCommand: Opts[ShapePathEval] =
+  lazy val shapePathValidateCommand: Opts[ShapePathEval] =
     Opts.subcommand("shapePath","Validate a shape path") {
-      (schemaOpt,schemaFormatOpt, shapePathOpt, outputOpt, verboseOpt)
+      (schemaSpec, shapePathOpt, outputOpt, verboseOpt)
       .mapN(ShapePathEval)
     }
 
-  val wikibaseCommand: Opts[Wikibase] = 
+  lazy val wikibaseCommand: Opts[Wikibase] = 
     Opts.subcommand("validate", "Validate RDF data using a schema and a shape map") {
-      (schemaOpt,schemaFormatOpt, dataOpt, dataFormatOpt, shapeMapOpt, shapeMapFormatOpt, showResultFormatOpt, outputOpt, verboseOpt)
-      .mapN(Validate)
+      (schemaSpec, endpoint, shapeMapOpt, shapeMapFormatOpt, showResultFormatOpt, outputOpt, verboseOpt)
+      .mapN(Wikibase)
+    }
+
+  lazy val manifestOpt = Opts.option[Path]("manifest", short = "m", help = "Path to manifest file.")
+
+  lazy val manifestCommand: Opts[Manifest] =
+    Opts.subcommand("manifest", "Run manifest file containing tests") {
+      (manifestOpt, verboseOpt).mapN(Manifest)
     }
   
 
@@ -123,20 +137,22 @@ object Main extends CommandIOApp(
   override def main: Opts[IO[ExitCode]] =
    (schemaMappingCommand orElse 
     validateCommand orElse
-    shapePathValidateCommand
+    shapePathValidateCommand orElse 
+    manifestCommand
    ).map {
      case smc: SchemaMapping => doSchemaMapping(smc) 
      case vc : Validate => doValidate(vc)
      case spc: ShapePathEval => doShapePathEval(spc)
+     case mf: Manifest => runManifest(mf)
    }.map(
      _.handleErrorWith(infoError)
-   )
+   ) 
 
    private def infoError(err: Throwable): IO[ExitCode] =
     putStrLn(s"Error ${err.getLocalizedMessage()}") *> IO(ExitCode.Error)
 
    private def doSchemaMapping(smc: SchemaMapping): IO[ExitCode] = for {
-       schema <- Schema.fromFile(smc.schema.toFile().getAbsolutePath(), smc.schemaFormat, None, None)
+       schema <- getSchema(smc.schemaSpec)
        mappingStr <- getContents(smc.mapping.toFile().getAbsolutePath())
        mapping <- IO.fromEither(SchemaMappings
         .fromString(mappingStr.toString)
@@ -158,14 +174,27 @@ object Main extends CommandIOApp(
        } 
      } yield ExitCode.Success
 
+   private def getSchema(schemaSpec: SchemaSpec): IO[Schema] = schemaSpec match {
+     case SchemaPath(schema, schemaFormat) => 
+       Schema.fromFile(schema.toFile().getAbsolutePath(), schemaFormat, None, None)
+     case SchemaURI(uri) => 
+       Schema.fromIRI(IRI(uri), None)
+   }
+
+   private def getRDFData(dataSpec: DataSpec): IO[Resource[IO,RDFReader]] = dataSpec match {
+     case DataPath(dataPath, dataFormat) => RDFAsJenaModel.fromURI(dataPath.toUri().toString(), dataFormat.getOrElse(defaultDataFormat))
+     case EndpointOpt(uri) => IO(Resource.pure[IO,RDFReader](Endpoint(IRI(uri))))
+   }
+   
+
    private def doValidate(vc: Validate): IO[ExitCode] = 
     for {
-        res1 <- RDFAsJenaModel.fromURI(vc.data.toUri().toString(),vc.dataFormat,None)
+        res1 <- getRDFData(vc.dataSpec) // RDFAsJenaModel.fromURI(vc.data.toUri().toString(),vc.dataFormat,None)
         res2 <- RDFAsJenaModel.empty
         vv <- (res1,res2).tupled.use { 
       case (rdf,builder) => for {
        nodesPrefixMap <- rdf.getPrefixMap
-       schema <- Schema.fromFile(vc.schema.toFile().getAbsolutePath(), vc.schemaFormat, None, None)
+       schema <- getSchema(vc.schemaSpec) // Schema.fromFile(vc.schema.toFile().getAbsolutePath(), vc.schemaFormat, None, None)
        resolvedSchema <- ResolvedSchema.resolve(schema,None)
        shapeMap <- getShapeMapFromFile(vc.shapeMap.toFile().getAbsolutePath(),vc.shapeMapFormat,nodesPrefixMap, schema.prefixMap)
        fixedMap <- ShapeMap.fixShapeMap(shapeMap, rdf, nodesPrefixMap, resolvedSchema.prefixMap)
@@ -176,7 +205,7 @@ object Main extends CommandIOApp(
     } yield vv
 
    private def doShapePathEval(spc: ShapePathEval): IO[ExitCode] = for {
-     schema <- Schema.fromFile(spc.schema.toFile().getAbsolutePath(), spc.schemaFormat, None, None)
+     schema <- getSchema(spc.schemaSpec) // Schema.fromFile(spc.schema.toFile().getAbsolutePath(), spc.schemaFormat, None, None)
      shapePath <- IO.fromEither(ShapePath.fromString(spc.shapePath, "Compact", None, schema.prefixMap).leftMap(err => new RuntimeException(s"Error parsing shapePath: ${err}")))
      result <- { 
        val (ls,v) = ShapePath.eval(shapePath,schema)
@@ -455,20 +484,21 @@ object Main extends CommandIOApp(
         .leftMap(err => new RuntimeException(s"Error parsing shapeMap: ${err})")))
     } yield sm
 
-  private def runManifest(manifest: String): IO[Unit] =
+  private def runManifest(mf: Manifest): IO[ExitCode] =
     for {
-      eitherManifest <- RDF2Manifest.read(manifest, "Turtle", None, true).attempt
-      _ <- eitherManifest.fold(
+      eitherManifest <- RDF2Manifest.read(mf.manifestPath.toAbsolutePath().toFile().toString(), "Turtle", None, true).attempt
+      exitCode <- eitherManifest.fold(
         e =>
           putStrLn(s"Error reading manifest: $e") *>
-            ShExManifest.empty.pure[IO],
+          IO(ExitCode.Error),
         manifest =>
           putStrLn(
             s"""|Manifest read with ${manifest.entries.length} entries
           |Number of includes: ${manifest.includes.length}""".stripMargin
-          )
+          ) *>
+          IO(ExitCode.Success)
       )
-    } yield ()
+    } yield exitCode
 
   // TODO: Move to utils  
 

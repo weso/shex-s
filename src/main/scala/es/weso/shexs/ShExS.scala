@@ -29,7 +29,9 @@ object ShExS {
                 prefixMap <- rdf.getPrefixMap
                 schema <- Schema.fromInputStream(schema, options.schemaFormat, options.base,None)
                 resolved <- ResolvedSchema.resolve(schema, options.base)
-                shapeMap <- fromES(ShapeMap.fromInputStream(shapeMap, options.shapemapFormat,options.base, prefixMap,resolved.prefixMap))
+                shapeMap <- fromES(
+                  ShapeMap.fromInputStream(shapeMap, options.shapemapFormat,options.base, prefixMap,resolved.prefixMap
+                  ).leftMap(es => es.toList.mkString("\n")))
                 fixedShapeMap <- ShapeMap.fixShapeMap(shapeMap,rdf,prefixMap,schema.prefixMap)
                 result <- Validator.validate(resolved,fixedShapeMap,rdf,builder,options.verbose)
                 resultShapeMap <- result.toResultShapeMap
@@ -65,7 +67,9 @@ object ShExS {
                 prefixMap <- rdf.getPrefixMap      
                 schema <- Schema.fromString(schemaStr, options.schemaFormat, options.base,None)
                 resolved <- ResolvedSchema.resolve(schema, options.base)
-                shapeMap <- fromES(ShapeMap.fromString(shapeMapStr, options.shapemapFormat,options.base, prefixMap,resolved.prefixMap))
+                shapeMap <- fromES(
+                  ShapeMap.fromString(shapeMapStr, options.shapemapFormat,options.base, prefixMap,resolved.prefixMap).leftMap(_.toString.mkString("\n"))
+                )
                 fixedShapeMap <- ShapeMap.fixShapeMap(shapeMap,rdf,prefixMap,schema.prefixMap)
                 result <- Validator.validate(resolved,fixedShapeMap,rdf,builder,options.verbose)
                 resultShapeMap <- result.toResultShapeMap
