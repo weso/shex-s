@@ -21,17 +21,17 @@ import scala.util._
 import java.io.ByteArrayOutputStream
 import io.circe.Json
 import io.circe.parser.parse
-import org.apache.jena.rdf.model.ModelFactory
-import org.apache.jena.rdf.model.Model
+// import org.apache.jena.rdf.model.ModelFactory
+// import org.apache.jena.rdf.model.Model
 
 case class CachedState(iris: Set[IRI], rdf: RDFAsJenaModel) 
 
 object CachedState {
 
-  private def closeJenaModel(m: RDFAsJenaModel): IO[Unit] = for {
+/*  private def closeJenaModel(m: RDFAsJenaModel): IO[Unit] = for {
     _ <- IO(pprint.log(m, s"Closing Model"))  
     model <- m.getModel
-  } yield model.close()
+  } yield model.close() */
 
   def initial: IO[Resource[IO,CachedState]] = for {
     res <- RDFAsJenaModel.empty
@@ -275,18 +275,22 @@ object WikibaseRDF {
   val wdt = IRI("http://www.wikidata.org/prop/direct/")
   val wikidataEndpoint = IRI("https://query.wikidata.org/sparql")
 
-  val wikidata : IO[Resource[IO,WikibaseRDF]] = for {
+  val wikidata : IO[Resource[IO,WikibaseRDF]] = 
+   fromEndpoint(wikidataEndpoint, wikidataPrefixMap)
+
+  def fromEndpoint(endpoint: IRI, pm: PrefixMap): IO[Resource[IO, WikibaseRDF]] = for {
     res <- CachedState.initial
   } yield res.evalMap(initial => for {
     ref <- Ref[IO].of(initial)
-    r = WikibaseRDF(wikidataEndpoint,
-     prefixMap = PrefixMap(Map(
-     Prefix("wd") -> wd,
-     Prefix("wdt") -> wdt
-    )), ref)
-    _ <- r.showRDFId("Initialization")
+    r = WikibaseRDF(endpoint,pm,ref)
+    _ <- r.showRDFId(s"Initialization")
   } yield { 
     r
   })
+
+ lazy val wikidataPrefixMap = PrefixMap(Map(
+     Prefix("wd") -> wd,
+     Prefix("wdt") -> wdt
+  ))
 
 }
