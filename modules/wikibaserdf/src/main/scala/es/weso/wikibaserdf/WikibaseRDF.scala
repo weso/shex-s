@@ -9,7 +9,6 @@ import fs2.Stream
 import es.weso.utils.Deref._
 import es.weso.rdf.path.SHACLPath
 import org.apache.jena.rdf.model.{RDFNode => JenaRDFNode}
-import cats.effect.concurrent.Ref
 import es.weso.rdf.jena.RDFAsJenaModel
 import es.weso.rdf.jena.SPARQLQueries._
 import org.apache.jena.query.QueryExecutionFactory

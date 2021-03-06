@@ -347,6 +347,7 @@ trait ValidateManifest extends RunManifest {
   }
 
 
+  // TODO: Replace by http4s client
   def derefUriIO(uri: URI): IO[String] = {
     Try {
       val urlCon = uri.toURL.openConnection()

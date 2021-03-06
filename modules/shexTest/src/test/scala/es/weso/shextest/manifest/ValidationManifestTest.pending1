@@ -27,10 +27,11 @@ import ManifestPrefixes._
 //import scala.io._
 import io.circe.parser._
 import io.circe.syntax._
-import org.scalatest._
-import funspec.AnyFunSpec
+import munit._
+import cats.effect.unsafe.IORuntime
+class ValidationManifestTest extends CatsEffectSuite with ValidateManifest {
 
-class ValidationManifestTest extends AnyFunSpec with ValidateManifest {
+  // import cats.effect.unsafe.implicits.global
 
   // If the following variable is None, it runs all tests
   // Otherwise, it runs only the test whose name is equal to the value of this variable
@@ -43,16 +44,15 @@ class ValidationManifestTest extends AnyFunSpec with ValidateManifest {
 //  val shexFolder = conf.getString("shexLocalFolder")
   val shexFolderURI = Paths.get(shexFolder).normalize.toUri
 
-
-  describe("Validation Manifest") {
-
-    val r = RDF2Manifest.read(shexFolder + "/" + "manifest.ttl", "Turtle", Some(shexFolderURI.toString), false)
-    r.attempt.unsafeRunSync.fold(e => info(s"Error reading manifest: $e"),
+  val r = RDF2Manifest.read(shexFolder + "/" + "manifest.ttl", "Turtle", Some(shexFolderURI.toString), false)
+  val ior = implicitly[IORuntime] // = cats.effect.unsafe.IORuntime.global
+  
+  r.attempt.unsafeRunSync()(ior).fold(e => println(s"Error reading manifest: $e"),
       mf => {
-        info(s"Manifest read with ${mf.entries.length} entries")
+        println(s"Manifest read with ${mf.entries.length} entries")
         for (e <- mf.entries) {
-          if (nameIfSingle == None || eq(nameIfSingle.getOrElse(""), e.name)) {
-            it(s"Should pass test ${e.name}") {
+          if (nameIfSingle == None || nameIfSingle.getOrElse("") === e.name) {
+            test(s"Should pass test ${e.name}") {
               e match {
                 case r: RepresentationTest => {
                   val resolvedJson = mkLocal(r.json,schemasBase,shexFolderURI)// IRI(shexFolderURI).resolve(r.json).uri
@@ -78,7 +78,7 @@ class ValidationManifestTest extends AnyFunSpec with ValidateManifest {
                           }
                   } yield r
                   res.attempt.unsafeRunSync.fold(e => fail(s"Error: $e"),
-                    v => info(s"Passed: $v")
+                    v => println(s"Passed: $v")
                   )
                 }
                 case v: ValidationTest => {
@@ -98,18 +98,17 @@ class ValidationManifestTest extends AnyFunSpec with ValidateManifest {
                   }
                   r.attempt.unsafeRunSync().fold(
                     e => fail(s"Error: ${v.name}: Error: $e"),
-                    resultMsg => info(s"ValidationFailure ${v.name} passed")
+                    resultMsg => println(s"ValidationFailure ${v.name} passed")
                   )
                 }
               }
             }
           }
        }
-     info(s"Manifest read OK: ${mf.entries.length} entries")
+     println(s"Manifest read OK: ${mf.entries.length} entries")
     }
   )
-  }
-
+ 
   private def schema2Json(schema: Schema): Json = schema.asJson
 
   private def decodeSchema(jsonStr: String): IO[Schema] = {
@@ -193,7 +192,7 @@ class ValidationManifestTest extends AnyFunSpec with ValidateManifest {
           schemaStr      <- derefUriIO(schemaUri)
           resultMapStr  <- derefUriIO(resultMapUri)
           smapStr       <- derefUriIO(shapeMapUri)
-          sm            <- fromES(ShapeMap.fromJson(smapStr))
+          sm            <- fromES(ShapeMap.fromJson(smapStr).leftMap(_.toList.mkString("\n")))
           schema        <- Schema.fromString(schemaStr, "SHEXC", None)
           fixedShapeMap <- RDFAsJenaModel.empty.flatMap(_.use(emptyRdf =>
             ShapeMap.fixShapeMap(sm, emptyRdf, PrefixMap.empty, PrefixMap.empty)
@@ -220,9 +219,8 @@ class ValidationManifestTest extends AnyFunSpec with ValidateManifest {
         r
       }
     }
-  }
-
-  private def ioErr[A](msg: String): IO[A] = IO.raiseError(new RuntimeException(msg))
-
+  
+ }
+ private def ioErr[A](msg: String): IO[A] = IO.raiseError(new RuntimeException(msg))
 }
 

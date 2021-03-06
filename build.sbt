@@ -43,7 +43,7 @@ lazy val scallopVersion        = "3.3.1"
 lazy val sextVersion           = "0.2.6"
 lazy val typesafeConfigVersion = "1.3.4"
 lazy val xercesVersion         = "2.12.0"
-lazy val weaverVersion         = "0.6.0-M3"
+lazy val weaverVersion         = "0.7.0-M6"
 
 // Compiler plugin dependency versions
 lazy val simulacrumVersion = "1.0.0"
@@ -75,6 +75,8 @@ lazy val junit          = "junit"             % "junit"            % junitVersio
 lazy val junitInterface = "com.novocode"      % "junit-interface"  % junitInterfaceVersion
 lazy val munit          = "org.scalameta"     %% "munit"           % munitVersion
 lazy val munitEffect    = "org.typelevel"     %% "munit-cats-effect-3" % munitEffectVersion
+lazy val MUnitFramework = new TestFramework("munit.Framework")
+
 lazy val rdf4j_runtime  = "org.eclipse.rdf4j" % "rdf4j-runtime"    % rdf4jVersion
 
 // WESO components
@@ -268,7 +270,10 @@ lazy val wikibaserdf = project
       utils,
       srdf,
       srdfJena,
-  )).dependsOn(
+    ),
+    testFrameworks ++= Seq(MUnitFramework),
+    testOptions.in(Test) += Tests.Argument(MUnitFramework, "--exclude-tags=Slow")
+  ).dependsOn(
     shex
   )
 

@@ -7,9 +7,10 @@ import es.weso.shex.validator._
 import cats.effect._
 import cats.implicits._
 import es.weso.utils.IOUtils._
-import java.io.Reader
+// import java.io.Reader
 import java.io.InputStream
 import java.io.InputStreamReader
+import cats.effect.unsafe.implicits.global
 
 object ShExS {
 

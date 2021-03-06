@@ -33,6 +33,7 @@ import cats.data.Validated
 import es.weso.rdf.jena.Endpoint
 import es.weso.rdf.nodes.IRI
 import es.weso.wikibaserdf.WikibaseRDF
+import es.weso.utils.FileUtils._
 
 object Main extends CommandIOApp(
   name="shex-s", 
@@ -199,7 +200,7 @@ object Main extends CommandIOApp(
 
    private def doSchemaMapping(smc: SchemaMapping): IO[ExitCode] = for {
        schema <- getSchema(smc.schemaSpec, smc.baseIRI)
-       mappingStr <- getContents(smc.mapping.toFile().getAbsolutePath())
+       mappingStr <- getContents(smc.mapping)
        mapping <- IO.fromEither(SchemaMappings
         .fromString(mappingStr.toString)
         .leftMap(err => new RuntimeException(s"Error parsing schema mappings: ${err}"))
@@ -214,7 +215,7 @@ object Main extends CommandIOApp(
        _ <- smc.output match {
          case None => putStrLn(newSchema.show)
          case Some(outputPath) => for { 
-           _ <- writeContents(outputPath, newSchema.show)
+           _ <- writeFile(outputPath.toFile().getAbsolutePath(), newSchema.show)
            _ <- putStrLn(s"Output saved in ${outputPath}")
          } yield ()  
        } 
@@ -241,7 +242,7 @@ object Main extends CommandIOApp(
        nodesPrefixMap <- rdf.getPrefixMap
        schema <- getSchema(vc.schemaSpec, vc.baseIRI) 
        resolvedSchema <- ResolvedSchema.resolve(schema,None)
-       shapeMap <- getShapeMapFromFile(vc.shapeMapSpec.shapeMap.toFile().getAbsolutePath(),vc.shapeMapSpec.shapeMapFormat,nodesPrefixMap, schema.prefixMap, vc.baseIRI)
+       shapeMap <- getShapeMapFromFile(vc.shapeMapSpec.shapeMap,vc.shapeMapSpec.shapeMapFormat,nodesPrefixMap, schema.prefixMap, vc.baseIRI)
        fixedMap <- ShapeMap.fixShapeMap(shapeMap, rdf, nodesPrefixMap, resolvedSchema.prefixMap)
        result   <- Validator.validate(resolvedSchema, fixedMap, rdf, builder, vc.verbose)
        resultShapeMap <- result.toResultShapeMap
@@ -259,7 +260,7 @@ object Main extends CommandIOApp(
        nodesPrefixMap <- rdf.getPrefixMap
        schema <- getSchema(wc.schemaSpec, wc.baseIRI) 
        resolvedSchema <- ResolvedSchema.resolve(schema,None)
-       shapeMap <- getShapeMapFromFile(wc.shapeMapSpec.shapeMap.toFile().getAbsolutePath(),wc.shapeMapSpec.shapeMapFormat,nodesPrefixMap, schema.prefixMap, wc.baseIRI)
+       shapeMap <- getShapeMapFromFile(wc.shapeMapSpec.shapeMap,wc.shapeMapSpec.shapeMapFormat,nodesPrefixMap, schema.prefixMap, wc.baseIRI)
        fixedMap <- ShapeMap.fixShapeMap(shapeMap, rdf, nodesPrefixMap, resolvedSchema.prefixMap)
        result   <- Validator.validate(resolvedSchema, fixedMap, rdf, builder, wc.verbose)
        resultShapeMap <- result.toResultShapeMap
@@ -549,14 +550,14 @@ object Main extends CommandIOApp(
   }
 */
 
-  private def getShapeMapFromFile(fileName: String, 
+  private def getShapeMapFromFile(filePath: Path, 
                                   shapeMapFormat: String,
                                   nodesPrefixMap: PrefixMap,
                                   shapesPrefixMap: PrefixMap,
                                   baseIRI: Option[IRI]
                                   ): IO[ShapeMap] =
     for {
-      str <- getContents(fileName).handleErrorWith(e => IO.raiseError(new RuntimeException(s"Error obtaining shapeMap from file: ${fileName} with format ${shapeMapFormat}: ${e.getMessage()}")))
+      str <- getContents(filePath).handleErrorWith(e => IO.raiseError(new RuntimeException(s"Error obtaining shapeMap from file: ${filePath.toFile().getAbsolutePath()} with format ${shapeMapFormat}: ${e.getMessage()}")))
       sm <- IO.fromEither(ShapeMap.fromString(str.toString, shapeMapFormat, baseIRI, nodesPrefixMap,shapesPrefixMap)
         .leftMap(err => new RuntimeException(s"Error parsing shapeMap: ${err})")))
     } yield sm
@@ -580,7 +581,7 @@ object Main extends CommandIOApp(
   // TODO: Move to utils  
 
 
-  def writeContents(path: Path, contents: String): IO[Unit] = {
+/*  def writeContents(path: Path, contents: String): IO[Unit] = {
     println(s"Contents:\n${contents}\n-------------")
     Stream.resource(Blocker[IO]).flatMap(blocker =>
      Stream.emits(contents)
@@ -602,6 +603,6 @@ object Main extends CommandIOApp(
     .compile
     .string
   }
-
+*/
 
 }
