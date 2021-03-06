@@ -94,9 +94,9 @@ object BtValidator {
     } else unimplemented("checkTripleConstraint with inverse ")
 
 
-  def runCheck[A](rdf: RDFReader, schema: Schema, c: Check[A]): Either[ShExErr,A] = {
+/*  def runCheck[A](rdf: RDFReader, schema: Schema, c: Check[A]): Either[ShExErr,A] = {
     val env = Env(rdf,schema,Typing.empty,Monoid[VarTable].empty)
     c.value.run(env).unsafeRunSync()
-  }
+  } */
 
 }

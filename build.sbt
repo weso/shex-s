@@ -1,6 +1,6 @@
-lazy val scala212 = "2.12.12"
-lazy val scala213 = "2.13.4"
-lazy val scala3   = "3.0.0-M2"
+lazy val scala212 = "2.12.13"
+lazy val scala213 = "2.13.5"
+lazy val scala3   = "3.0.0-M3"
 lazy val supportedScalaVersions = List(
   scala213, 
   scala212,
@@ -8,21 +8,21 @@ lazy val supportedScalaVersions = List(
   )
 
 // Local dependencies
-lazy val srdfVersion           = "0.1.90"
-lazy val shapeMapsVersion      = "0.1.75"
-lazy val utilsVersion          = "0.1.73"
-lazy val documentVersion       = "0.0.11"
+lazy val srdfVersion           = "0.1.93"
+lazy val shapeMapsVersion      = "0.1.78"
+lazy val utilsVersion          = "0.1.77"
+lazy val documentVersion       = "0.0.15"
 
 // Dependency versions
 lazy val antlrVersion          = "4.7.1"
-lazy val catsVersion           = "2.3.0"
-lazy val catsEffectVersion     = "2.3.0"
+lazy val catsVersion           = "2.4.2"
+lazy val catsEffectVersion     = "3.0.0-RC2"
 lazy val commonsTextVersion    = "1.8"
 lazy val console4catsVersion   = "0.8.1"
-lazy val circeVersion          = "0.14.0-M1"
+lazy val circeVersion          = "0.14.0-M4"
 lazy val declineVersion        = "1.3.0"
 lazy val diffsonVersion        = "4.0.0"
-lazy val fs2Version            = "2.4.0"
+lazy val fs2Version            = "3.0.0-M7"
 // lazy val effVersion            = "4.6.1"
 lazy val jenaVersion           = "3.16.0"
 lazy val junitVersion          = "4.13.1"
@@ -30,9 +30,9 @@ lazy val junitInterfaceVersion = "0.11"
 lazy val jgraphtVersion        = "1.3.1"
 lazy val logbackVersion        = "1.2.3"
 lazy val loggingVersion        = "3.9.2"
-lazy val munitVersion          = "0.7.21"
-lazy val munitEffectVersion    = "0.11.0"
-lazy val pprintVersion         = "0.5.6"
+lazy val munitVersion          = "0.7.22"
+lazy val munitEffectVersion    = "0.13.1"
+lazy val pprintVersion         = "0.6.0"
 lazy val rdf4jVersion          = "3.4.2"
 lazy val scalacheckVersion     = "1.14.0"
 lazy val scalacticVersion      = "3.2.0"
@@ -48,7 +48,7 @@ lazy val weaverVersion         = "0.6.0-M3"
 // Compiler plugin dependency versions
 lazy val simulacrumVersion = "1.0.0"
 // lazy val kindProjectorVersion = "0.9.5"
-lazy val scalaMacrosVersion = "2.1.1"
+// lazy val scalaMacrosVersion = "2.1.1"
 
 // Dependency modules
 lazy val antlr4            = "org.antlr"                  % "antlr4"               % antlrVersion
@@ -74,7 +74,7 @@ lazy val jenaFuseki     = "org.apache.jena"   % "jena-fuseki-main" % jenaVersion
 lazy val junit          = "junit"             % "junit"            % junitVersion
 lazy val junitInterface = "com.novocode"      % "junit-interface"  % junitInterfaceVersion
 lazy val munit          = "org.scalameta"     %% "munit"           % munitVersion
-lazy val munitEffect    = "org.typelevel"     %% "munit-cats-effect-2" % munitEffectVersion
+lazy val munitEffect    = "org.typelevel"     %% "munit-cats-effect-3" % munitEffectVersion
 lazy val rdf4j_runtime  = "org.eclipse.rdf4j" % "rdf4j-runtime"    % rdf4jVersion
 
 // WESO components
@@ -201,6 +201,7 @@ lazy val shex = project
       validating,
       srdf,
       shapeMaps,
+      xercesImpl,
       srdfJena % Test,
       srdf4j   % Test,
       junit % Test,
@@ -224,7 +225,8 @@ lazy val depGraphs = project
       munit,
       munitEffect,
       utils
-    )
+    ),
+   testFrameworks += new TestFramework("munit.Framework") 
   )
 
 lazy val shapepath = project
@@ -427,10 +429,13 @@ lazy val wixSettings = Seq(
 lazy val commonSettings = compilationSettings ++ sharedDependencies ++ Seq(
   organization := "es.weso",
   resolvers ++= Seq(
-    Resolver.bintrayRepo("labra", "maven"),
-    Resolver.bintrayRepo("weso", "weso-releases"),
-    Resolver.sonatypeRepo("snapshots")
-  )
+    Resolver.githubPackages("weso"),
+    Resolver.sonatypeRepo("snapshots"),
+    Resolver.sonatypeRepo("releases"),
+  ),
+  coverageHighlighting := true,
+  githubOwner := "weso", 
+  githubRepository := "utils"
 ) ++ warnUnusedImport
 
 def antlrSettings(packageName: String) = Seq(
@@ -441,7 +446,7 @@ def antlrSettings(packageName: String) = Seq(
 )
 
 lazy val publishSettings = Seq(
-  maintainer := "Jose Emilio Labra Gayo <labra@uniovi.es>",
+//  maintainer := "Jose Emilio Labra Gayo <labra@uniovi.es>",
   homepage := Some(url("https://github.com/labra/shaclex")),
   licenses := Seq("MIT" -> url("http://opensource.org/licenses/MIT")),
   scmInfo := Some(ScmInfo(url("https://github.com/labra/shaclex"), "scm:git:git@github.com:labra/shaclex.git")),
@@ -454,17 +459,17 @@ lazy val publishSettings = Seq(
                          <url>https://github.com/labra/</url>
                        </developer>
                      </developers>,
-  scalacOptions in doc ++= Seq(
+/*  scalacOptions in doc ++= Seq(
     "-diagrams-debug",
     "-doc-source-url",
     scmInfo.value.get.browseUrl + "/tree/master€{FILE_PATH}.scala",
     "-sourcepath",
     baseDirectory.in(LocalRootProject).value.getAbsolutePath,
     "-diagrams"
-  ),
+  ), */
   publishMavenStyle := true,
-  bintrayRepository in bintray := "weso-releases",
-  bintrayOrganization in bintray := Some("weso")
+//  bintrayRepository in bintray := "weso-releases",
+//  bintrayOrganization in bintray := Some("weso")
 )
 
 lazy val warnUnusedImport = Seq(
