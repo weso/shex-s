@@ -15,7 +15,7 @@ import cats.implicits._
 
 import scala.io.{BufferedSource, Source}
 
-class ShapePathTestAll extends  AnyFunSpec with ShapePathTest with Matchers {
+class ShapePathTestAll extends AnyFunSpec with ShapePathTest with Matchers {
 
   describe(s"JSON encoder") {
     it(s"Should encode value with triple expr") {

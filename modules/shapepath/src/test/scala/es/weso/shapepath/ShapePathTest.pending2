@@ -14,7 +14,7 @@ import cats.implicits._
 import scala.io.{BufferedSource, Source}
 import Value._
 
-trait ShapePathTest extends AnyFunSpec with Matchers {
+trait ShapePathTest {
 
   val manifestPath = "modules/shapepath/src/test/resources/test-suite/"
 
@@ -47,8 +47,8 @@ trait ShapePathTest extends AnyFunSpec with Matchers {
   def readContents2(path1: String, path2: String): Resource[IO, (String,String)] =
     (readContents(path1), readContents(path2)).tupled
 
-  def processEntryPositive(name: String, from: String, shapePath: String, expect: String): Unit = {
-    val cmp = readContents2(manifestPath + from, manifestPath + expect + ".json").use(
+  def processEntryPositive(name: String, from: String, shapePath: String, expect: String): IO[Boolean] = {
+    readContents2(manifestPath + from, manifestPath + expect + ".json").use(
       pair => {
         val (schemaStr,expectStr) = pair
         for {
@@ -60,31 +60,13 @@ trait ShapePathTest extends AnyFunSpec with Matchers {
           _ <- if (!es.isEmpty) IO {
             println(s"Processing errors: ${es.map(_.toString + "\n").mkString}")
           } else IO.pure(())
-        } yield (v,expectedValues)
+        } yield (v.asJson === expectedValues)
       }
     )
-    cmp.attempt
-      .unsafeRunSync()
-      .fold(
-        err => fail(s"Error $err"),
-        pair => {
-          val (value,expectedValues) = pair
-          value.asJson should be(expectedValues)
-//          info(s"$values should be(${expectedValues})")
-        }
-      )
   }
 
-  def processEntryNegative(name: String, shapePath: String, msgExpected: String): Unit = {
-    val cmp = for {
-      sp <- eitherStr2io(ShapePath.fromString(shapePath))
-    } yield sp
-    cmp.attempt
-      .unsafeRunSync()
-      .fold(
-        err => info(s"Failed to parse as expected: $err"),
-        value => fail(s"Parsed ${shapePath}as $value but should fail: $msgExpected")
-      )
+  def processEntryNegative(name: String, shapePath: String, msgExpected: String): IO[Boolean] = {
+    ShapePath.fromString(shapePath).fold(err => IO.pure(true), _ => IO.pure(false))
   }
 
   def matchNameIfSingle(nameIfSingle: Option[String], name: String): Boolean =
@@ -93,7 +75,7 @@ trait ShapePathTest extends AnyFunSpec with Matchers {
       case Some(nameSingle) => name == nameSingle
     }
 
-  def processEntry(nameIfSingle: Option[String], all: Boolean)(entry: ManifestEntry): IO[Unit] =
+/*  def processEntry(nameIfSingle: Option[String], all: Boolean)(entry: ManifestEntry): IO[Boolean] =
     if (matchNameIfSingle(nameIfSingle, entry.name)) {
       val cmp: IO[Unit] = IO (entry.throws match {
         case None | Some(false) => processEntryPositive(entry.name, entry.from, entry.shapePath, entry.expect)
@@ -109,7 +91,7 @@ trait ShapePathTest extends AnyFunSpec with Matchers {
 
         }
       } yield ()
-    } else IO.pure(())
+    } else IO.pure(()) */
 
   def processManifest(manifest: Manifest,
                       nameIfSingle: Option[String] = None,

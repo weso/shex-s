@@ -6,15 +6,13 @@ import es.weso.rdf.nodes.IRI
 import es.weso.shex.{IRILabel, Schema}
 import io.circe._
 import io.circe.parser._
-import org.scalatest._
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should._
 // import cats.syntax.applicative._
 import cats.implicits._
+import munit._
 
 import scala.io.{BufferedSource, Source}
 
-class ShapePathTestSingle extends AnyFunSpec with ShapePathTest with  Matchers {
+class ShapePathTestSingle extends CatsEffectSuite with ShapePathTest {
 
   describe(s"ShapePath from Manifest") {
       val cmp = readJsonContents(manifestPath + "Manifest.json").use(either =>
