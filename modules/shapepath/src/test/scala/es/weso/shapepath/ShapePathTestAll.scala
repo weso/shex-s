@@ -1,24 +1,20 @@
 package es.weso.shapepath
 
-import cats.MonadError
-import cats.effect.{IO, Resource}
 import es.weso.rdf.nodes.IRI
 import es.weso.shex.{IRILabel, Schema, TripleConstraint}
-import io.circe._
 import io.circe.syntax._
 import io.circe.parser._
-import org.scalatest._
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should._
+// import cats.implicits._
+import cats.effect._
 // import cats.syntax.applicative._
-import cats.implicits._
+import munit._
+import es.weso.utils.testsuite._
+import java.nio.file.Paths
 
-import scala.io.{BufferedSource, Source}
+class ShapePathTestAll extends CatsEffectSuite {
+  val manifestPath = "modules/shapepath/src/test/resources/test-suite/"
 
-class ShapePathTestAll extends AnyFunSpec with ShapePathTest with Matchers {
-
-  describe(s"JSON encoder") {
-    it(s"Should encode value with triple expr") {
+  test(s"Should encode value with triple expr") {
       val v: Value = Value(List(
         TripleExprItem(TripleConstraint.emptyPred(IRI("http://a.example/a")))
       ))
@@ -28,17 +24,15 @@ class ShapePathTestAll extends AnyFunSpec with ShapePathTest with Matchers {
                        |        "predicate": "http://a.example/a"
                        |      }
                        |]""".stripMargin
-      val s = parse(strJson).fold(
+      parse(strJson).fold(
         err => fail(s"Error parsing json: $err"),
-        jsonExpected => v.asJson should be(jsonExpected)
+        jsonExpected => assertEquals(v.asJson, jsonExpected)
       )
-    }
   }
 
-  describe(s"ShapePath") {
-    it(s"Evaluates a shapePath") {
+  test(s"Evaluates a shapePath") {
       // /@<#IssueShape>/2
-      val two: TripleExprIndex = IntTripleExprIndex(2)
+      // val two: TripleExprIndex = IntTripleExprIndex(2)
       // val sTwo: Step = ExprStep(None, two, List())
       val issueShape: Step = ExprStep(None, ShapeLabelIndex(IRILabel(IRI("#IssueShape"))), List())
       val path: ShapePath = ShapePath(true, List(issueShape))
@@ -66,35 +60,28 @@ class ShapePathTestAll extends AnyFunSpec with ShapePathTest with Matchers {
             |}
             |""".stripMargin
 
-      val s: IO[Schema] = for {
+      val cmp: IO[Schema] = for {
         schema <- Schema.fromString(schemaStr)
       } yield (schema)
 
-      s.attempt.unsafeRunSync match {
-        case Left(e) => fail(s"Error: $e")
-        case Right(s) => {
+      cmp.map(s => {
           val (es, v) = ShapePath.eval(path, s)
-          es shouldBe empty
-          info(s"Schema parsed:\n$s\nValue: $v")
+          assertEquals(es.size,0)
+          // info(s"Schema parsed:\n$s\nValue: $v")
         }
-      }
-    }
-  }
-  ignore(s"ShapePath from Manifest") {
-      def runManifest(json: Json): IO[Unit] = for {
-        manifest <- either2io(json2manifest(json), cnvMsg)
-        _ <- processManifest(manifest, all = true)
-      } yield ()
-
-      val cmp = readJsonContents(manifestPath + "Manifest.json").use(either =>
-        either.fold(err => IO {
-          println(s"Error parsing manifest: \n$err")
-        }, json => runManifest(json))
       )
-      cmp.unsafeRunSync()
   }
 
-  describe(s"Embedded manifest") {
+  test(s"ShapePath from Manifest".ignore) {
+      val cmp = for { 
+        manifest <- Manifest.fromPath(Paths.get(manifestPath + "Manifest.json")) 
+        testSuite = manifest.toTestSuite(manifestPath)
+        pair <- testSuite.runAll(TestConfig.initial)
+      } yield pair
+      cmp.map { case (_, failed) => assertEquals(failed.map(_.entry.name.id), Vector[String]()) }
+  } 
+
+  test(s"Embedded manifest".ignore) {
     val str =
         """|{
            |  "description": "collection of partition tests",
@@ -117,10 +104,11 @@ class ShapePathTestAll extends AnyFunSpec with ShapePathTest with Matchers {
 
 
       val cmp = for {
-        json <- either2io(parse(str), cnvFailure)
-        manifest <- either2io(json2manifest(json), cnvMsg)
-        _ <- processManifest(manifest)
-      } yield ()
-      cmp.attempt.unsafeRunSync.fold(e => println(s"Error: $e"), v => println(s"OK: $v"))
-    }
+        manifest <- Manifest.fromString(str)
+        testSuite = manifest.toTestSuite(manifestPath)
+        pair <- testSuite.runAll(TestConfig.initial)
+      } yield pair
+      cmp.map { case (_, failed) => assertEquals(failed.map(_.entry.name.id), Vector[String]()) }
+    } 
+
 }
