@@ -31,8 +31,6 @@ import munit._
 import cats.effect.unsafe.IORuntime
 class ValidationManifestTest extends CatsEffectSuite with ValidateManifest {
 
-  // import cats.effect.unsafe.implicits.global
-
   // If the following variable is None, it runs all tests
   // Otherwise, it runs only the test whose name is equal to the value of this variable
   val nameIfSingle: Option[String] =
@@ -44,10 +42,17 @@ class ValidationManifestTest extends CatsEffectSuite with ValidateManifest {
 //  val shexFolder = conf.getString("shexLocalFolder")
   val shexFolderURI = Paths.get(shexFolder).normalize.toUri
 
-  val r = RDF2Manifest.read(shexFolder + "/" + "manifest.ttl", "Turtle", Some(shexFolderURI.toString), false)
-  val ior = implicitly[IORuntime] // = cats.effect.unsafe.IORuntime.global
+  // val ior = implicitly[IORuntime] // = cats.effect.unsafe.IORuntime.global
+  test("run all") {
+    val cmp: IO[Vector[TestResult]] = for {
+      manifest <- RDF2Manifest.read(Paths.get(shexFolder + "/" + "manifest.ttl"), "Turtle", Some(shexFolderURI.toString), false)
+      testSuite <- manifest.toTestSuite(shexFolderURI)
+      results <- testSuite.runAll
+    } yield res
+    cmp.map(vs => assertEquals(vs.filter(!_.passed), Set()))
+  }
   
-  r.attempt.unsafeRunSync()(ior).fold(e => println(s"Error reading manifest: $e"),
+/*  r.attempt.unsafeRunSync()(ior).fold(e => println(s"Error reading manifest: $e"),
       mf => {
         println(s"Manifest read with ${mf.entries.length} entries")
         for (e <- mf.entries) {
@@ -55,14 +60,14 @@ class ValidationManifestTest extends CatsEffectSuite with ValidateManifest {
             test(s"Should pass test ${e.name}") {
               e match {
                 case r: RepresentationTest => {
-                  val resolvedJson = mkLocal(r.json,schemasBase,shexFolderURI)// IRI(shexFolderURI).resolve(r.json).uri
-                  val resolvedShEx = mkLocal(r.shex,schemasBase,shexFolderURI)// IRI(shexFolderURI).resolve(r.shex).uri
+                  val resolvedJson = mkLocal(r.json,schemasBase,shexFolderURI)
+                  val resolvedShEx = mkLocal(r.shex,schemasBase,shexFolderURI)
                   // info(s"Entry: $r with json: ${resolvedJsonIri}")
                   val res: IO[String] = for {
                     jsonStr <- derefUriIO(resolvedJson)
                     schemaStr <- derefUriIO(resolvedShEx)
                     schema <- Schema.fromString(schemaStr, "SHEXC", None)
-                    expectedSchema <- decodeSchema(jsonStr)
+                    expectedSchema <- jsonStr2Schema(jsonStr)
                     r <- if (CompareSchemas.compareSchemas(schema, expectedSchema)) {
                             parse(jsonStr) match {
                               case Left(err) => ioErr(s"Schemas are equal but error parsing Json $jsonStr")
@@ -84,51 +89,28 @@ class ValidationManifestTest extends CatsEffectSuite with ValidateManifest {
                 case v: ValidationTest => {
                   val base = Paths.get(".").toUri
                   v.action match {
-                    case focusAction: FocusAction => validateFocusAction(focusAction,base,v,true)
-                    case mr: MapResultAction => validateMapResult(mr,base,v)
+                    case focusAction: FocusAction => validateFocusAction(focusAction,base,v,true, shexFolderURI)
+                    case mr: MapResultAction => validateMapResult(mr, base, v, shexFolderURI)
                     case ma: ManifestAction => err(s"Not implemented validate ManifestAction yet")
                   }
                 }
                 case v: ValidationFailure => {
                   val base = Paths.get(".").toUri
-                  val r: IO[String] = v.action match {
-                    case focusAction: FocusAction => validateFocusAction(focusAction,base,v,false)
-                    case mr: MapResultAction => validateMapResult(mr,base,v)
+                  v.action match {
+                    case focusAction: FocusAction => validateFocusAction(focusAction,base,v,false, shexFolderURI)
+                    case mr: MapResultAction => validateMapResult(mr,base,v, shexFolderURI)
                     case ma: ManifestAction => IO.raiseError(new RuntimeException(s"Not implemented validate ManifestAction yet"))
                   }
-                  r.attempt.unsafeRunSync().fold(
-                    e => fail(s"Error: ${v.name}: Error: $e"),
-                    resultMsg => println(s"ValidationFailure ${v.name} passed")
-                  )
                 }
               }
             }
           }
        }
      println(s"Manifest read OK: ${mf.entries.length} entries")
-    }
-  )
+    } 
+  ) */
  
-  private def schema2Json(schema: Schema): Json = schema.asJson
-
-  private def decodeSchema(jsonStr: String): IO[Schema] = {
-    // import es.weso.shex.implicits.decoderShEx.decodeSchema
-    implicit val decodeSchema : Decoder[Schema] = es.weso.shex.implicits.decoderShEx.decodeSchema
-    fromES(decode[Schema](jsonStr)(decodeSchema).leftMap(
-      e => s"Error decoding JSON string as Schema: ${e.toString}\nJson string:\n${jsonStr}")
-    )
-  }
-
-  private def iriLabel(fa: FocusAction): ShapeMapLabel = fa.shape match {
-    case None           => StartMap: ShapeMapLabel
-    case Some(i: IRI)   => IRIMapLabel(i)
-    case Some(b: BNode) => BNodeMapLabel(b)
-    case Some(other) => {
-      IRIMapLabel(IRI(s"UnknownLabel"))
-    }
-  }
-
-  def validateFocusAction(fa: FocusAction,
+/*  def validateFocusAction(fa: FocusAction,
                           base: URI,
                           v: ValidOrFailureTest,
                           shouldValidate: Boolean
@@ -221,6 +203,6 @@ class ValidationManifestTest extends CatsEffectSuite with ValidateManifest {
     }
   
  }
- private def ioErr[A](msg: String): IO[A] = IO.raiseError(new RuntimeException(msg))
+*/
 }
 

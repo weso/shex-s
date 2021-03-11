@@ -385,15 +385,17 @@ object RDF2Manifest extends LazyLogging {
   }
 
   def read(
-      fileName: String,
+      path: Path,
       format: String,
       base: Option[String],
       derefIncludes: Boolean
   ): IO[ShExManifest] = {
     // val noIri : Option[IRI] = None
+
     val n : RDFNode = IRI("http://internal.base/")
+
     val r: IO[ShExManifest] = for {
-      cs <- getContents(Paths.get(fileName))
+      cs <- getContents(path)
       sm <- getRDF(cs.toString, format, base).flatMap(_.use(rdf => for {
         iriBase <- getIriBase(base)
         mfs <- {
@@ -421,14 +423,5 @@ object RDF2Manifest extends LazyLogging {
   private def getRDF(cs: String, format: String, base: Option[String]): IO[Resource[IO, RDFReader]] = {
     RDFAsJenaModel.fromChars(cs, format, base.map(IRI(_)))
   }
-
-/*  private def getContents(fileName: String): IO[CharSequence] = {
-    val path = Paths.get(fileName)
-    implicit val cs = IO.contextShift(ExecutionContext.global)
-    val decoder: Pipe[IO,Byte,String] = fs2.text.utf8Decode
-    Stream.resource(Blocker[IO]).flatMap(blocker =>
-        fs2.io.file.readAll[IO](path, blocker,4096).through(decoder)
-    ).compile.string
-  } */
 
 }

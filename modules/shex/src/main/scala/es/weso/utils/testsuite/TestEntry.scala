@@ -3,7 +3,7 @@ import cats._
 import cats.implicits._
 import cats.effect._
 
-case class TestEntry(name: TestId, action: IO[Boolean]) {
+case class TestEntry(name: TestId, action: IO[TestResult]) {
  
  def runEntry(r: Ref[IO,Stats], config: TestConfig): IO[TestResult] = for {
     _ <- if (config.verbose) IO.println(s"Running ${name.show}") else IO.pure(())
@@ -14,13 +14,11 @@ case class TestEntry(name: TestId, action: IO[Boolean]) {
     (time, either) = pair  
     result <- either.fold(
         e => {
-          val res = FailedResult(this, time, Some(e))
+          val res = FailedResult(this, time, None, Some(e))
           r.getAndUpdate(_.addResult(this,res)) *> 
           IO.pure(res)
         }, 
-        b => { 
-         val res = if (b) PassedResult(this,time) 
-           else FailedResult(this,time,None)
+        res => { 
          r.getAndUpdate(_.addResult(this,res)) *> 
          IO.pure(res)
         }

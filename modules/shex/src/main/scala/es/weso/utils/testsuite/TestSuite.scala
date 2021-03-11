@@ -11,12 +11,12 @@ case class TestSuite(tests: List[TestEntry]) {
     * Run a list of test entries 
     * @return A pair formed by the entries that passed and the entries that failed
     */
-  def runAll(config: TestConfig): IO[(Vector[PassedResult], Vector[FailedResult])] = for {
+  def runAll(config: TestConfig): IO[Vector[TestResult]] = for {
     refStats <- Ref[IO].of(Stats(tests)) 
     _ <- tests.map(_.runEntry(refStats,config)).sequence.void
-    endStats <- refStats.get 
+    endStats <- refStats.get
     _ <- if (config.verbose) IO.println(endStats.show) else IO.unit
-  } yield (endStats.passed, endStats.failed)
+  } yield (endStats.failed ++ endStats.passed)
 
   def runSingle(testId: TestId, config: TestConfig): IO[TestResult] = {
     tests.filter(_.name == testId) match {

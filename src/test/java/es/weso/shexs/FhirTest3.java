@@ -1,8 +1,6 @@
 package es.weso.shexs;
 
 import cats.effect.IO;
-import cats.effect.Resource;
-import cats.effect.Bracket;
 import java.io.BufferedReader;
 import com.google.common.collect.Maps;
 import es.weso.rdf.jena.RDFAsJenaModel;

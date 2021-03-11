@@ -15,7 +15,7 @@ import es.weso.shex._
 import es.weso.shex.validator.{ExternalIRIResolver, Validator}
 import es.weso.shex.compact.CompareSchemas
 import es.weso.shextest.manifest.Utils._
-import es.weso.shex.implicits.decoderShEx._
+// import es.weso.shex.implicits.decoderShEx._
 import es.weso.shex.implicits.encoderShEx._
 import scala.io._
 import io.circe.parser._
@@ -24,7 +24,6 @@ import es.weso.rdf._
 import es.weso.rdf.nodes._
 import ManifestPrefixes._
 import es.weso.utils.IOUtils._
-
 
 trait RunManifest {
 
@@ -50,7 +49,7 @@ trait RunManifest {
     val manifestFolder  = s"$parentFolder/$folder"
     val fileName        = s"$manifestFolder/$name.ttl"
     for {
-      mf <- RDF2Manifest.read(fileName, "TURTLE", Some(s"$parentFolderURI/$folder/"), true)
+      mf <- RDF2Manifest.read(Paths.get(fileName), "TURTLE", Some(s"$parentFolderURI/$folder/"), true)
       v <- processManifest(mf, name, manifestFolder, nameIfSingle, ignoreList, withEntry)
     } yield v
   }
@@ -160,13 +159,14 @@ trait ValidateManifest extends RunManifest {
 
   def representationTest(repTest: RepresentationTest,
                          folderURI: URI): IO[Option[Result]] = {
+    // implicit val decodeSchema : Decoder[Schema] = es.weso.shex.implicits.decoderShEx.decodeSchema                           
     val resolvedJson      = mkLocal(repTest.json, schemasBase, folderURI) // IRI(shexFolderURI).resolve(r.json).uri
     val resolvedShEx      = mkLocal(repTest.shex, schemasBase, folderURI) // IRI(shexFolderURI).resolve(r.shex).uri
     val r: IO[Option[Result]] = for {
      jsonStr <- derefUriIO(resolvedJson)
      schemaStr <- derefUriIO(resolvedShEx)
      schema <- Schema.fromString(schemaStr, "SHEXC", None)
-     expectedSchema <- fromES(decode[Schema](jsonStr).leftMap(e => e.toString))
+     expectedSchema <- jsonStr2Schema(jsonStr)// fromES(decode[Schema](jsonStr).leftMap(e => e.toString))
      r <- if (CompareSchemas.compareSchemas(schema, expectedSchema)) {
        parse(jsonStr) match {
          case Left(err) => result(repTest.name, false,s"Schemas are equal but error parsing Json $jsonStr")
@@ -196,7 +196,7 @@ trait ValidateManifest extends RunManifest {
    if (verbose) IO { pprint.log(value, tag = msg); () }
    else IO(())
 
-  def validateFocusAction(
+  private def validateFocusAction(
       fa: FocusAction,
       base: URI,
       v: ValidOrFailureTest,
@@ -276,7 +276,7 @@ trait ValidateManifest extends RunManifest {
     }
   }
 
-  def validateMapResult(
+  private def validateMapResult(
       mr: MapResultAction,
       base: URI,
       v: ValidOrFailureTest,
@@ -344,21 +344,6 @@ trait ValidateManifest extends RunManifest {
                        )
     } yield result
     r
-  }
-
-
-  // TODO: Replace by http4s client
-  def derefUriIO(uri: URI): IO[String] = {
-    Try {
-      val urlCon = uri.toURL.openConnection()
-      urlCon.setConnectTimeout(4000)
-      urlCon.setReadTimeout(2000)
-      val is = urlCon.getInputStream()
-      Source.fromInputStream(is).mkString
-     }.fold(
-      e => IO.raiseError(new RuntimeException(s"derefUri($uri): Error: ${e.getMessage}")),
-      IO(_)
-    )
   }
 
 }
