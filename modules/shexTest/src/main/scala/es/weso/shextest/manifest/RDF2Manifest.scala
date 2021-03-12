@@ -214,7 +214,7 @@ class RDF2Manifest extends RDFParser with LazyLogging {
       resultShapeMap = resultShapeMap
     )
 
-  private def result: RDFParser[Result] =
+  private def result: RDFParser[ResultExpected] =
     for {
       n <- getNode
       v <- n match {
@@ -223,7 +223,7 @@ class RDF2Manifest extends RDFParser with LazyLogging {
           for {
             b <- noType
             v <- if (b) {
-              val r: RDFParser[Result] = ok(IRIResult(iri))
+              val r: RDFParser[ResultExpected] = ok(IRIResult(iri))
               r
             } else compoundResult
           } yield v
@@ -232,7 +232,7 @@ class RDF2Manifest extends RDFParser with LazyLogging {
       }
     } yield v
 
-  private def compoundResult: RDFParser[Result] =
+  private def compoundResult: RDFParser[ResultExpected] =
     for {
       n         <- getNode
       maybeType <- optional(iriFromPredicate(rdf_type))

@@ -25,9 +25,9 @@ import es.weso.rdf.nodes._
 import ManifestPrefixes._
 import es.weso.utils.IOUtils._
 
+
 trait RunManifest {
 
-  case class Result(name: String, isOk: Boolean, reason: String)
   case class EntryParam(entry: es.weso.shextest.manifest.Entry, 
     name: String, 
     parentFolder: String, 
@@ -113,8 +113,10 @@ trait ValidateManifest extends RunManifest {
 
         case v: ValidationTest => {
           v.action match {
-            case focusAction: FocusAction => validateFocusAction(focusAction, base, v, true, v.name, folderURI, verbose)
-            case mr: MapResultAction      => validateMapResult(mr, base, v, v.name, folderURI)
+            case focusAction: FocusAction => 
+             validateFocusAction(focusAction, base, v, true, v.name, folderURI, verbose)
+            case mr: MapResultAction      => 
+             validateMapResult(mr, base, v, v.name, folderURI)
             case ma: ManifestAction       =>
               result(v.name, false, s"Not implemented validate ManifestAction yet")
           }
@@ -122,8 +124,10 @@ trait ValidateManifest extends RunManifest {
        
         case v: ValidationFailure => {
           v.action match {
-            case focusAction: FocusAction => validateFocusAction(focusAction, base, v, false, v.name, folderURI, verbose)
-            case mr: MapResultAction      => validateMapResult(mr, base, v, v.name, folderURI)
+            case focusAction: FocusAction => 
+             validateFocusAction(focusAction, base, v, false, v.name, folderURI, verbose)
+            case mr: MapResultAction      => 
+             validateMapResult(mr, base, v, v.name, folderURI)
             case ma: ManifestAction       => result(v.name, false, s"Not implemented validationFailure ManifestAction yet")
           }
         }
@@ -137,8 +141,7 @@ trait ValidateManifest extends RunManifest {
     } else None.pure[IO]
   }
 
-  private def result[A](name: String, isOk: Boolean, reason: String): IO[Option[Result]] =
-    IO.pure(Some(Result(name, isOk, reason)))
+
 
 /*  def getContents(name: String, folder: String, value: Option[IRI]): EitherT[IO, String, String] = value match {
     case None      => EitherT.fromEither[IO](s"No value for $name".asLeft)
@@ -187,96 +190,7 @@ trait ValidateManifest extends RunManifest {
     r
   }
 
-  def testInfo(msg: String, verbose: Boolean): IO[Unit] = 
-    if (verbose) IO {
-      println(msg); 
-    } else IO(())
-
-  def testInfoValue(msg: String, value: Any, verbose: Boolean): IO[Unit] = 
-   if (verbose) IO { pprint.log(value, tag = msg); () }
-   else IO(())
-
-  private def validateFocusAction(
-      fa: FocusAction,
-      base: URI,
-      v: ValidOrFailureTest,
-      shouldValidate: Boolean,
-      name: String,
-      folderURI: URI,
-      verbose: Boolean
-  ): IO[Option[Result]] = {
-    val focus     = fa.focus
-    val schemaUri = mkLocal(fa.schema, schemasBase, folderURI)
-    val dataUri   = mkLocal(fa.data, schemasBase, folderURI)
-    for {
-      //_         <- testInfo(s"Validating focusAction: $name",verbose)
-      schemaStr <- derefUriIO(schemaUri)
-      //_         <- testInfo(s"schemaStr:\n$schemaStr\n-----end schemaStr\nNest step: deref: $dataUri", verbose)
-      dataStr   <- derefUriIO(dataUri)
-      //_         <- testInfo(s"dataStr:\n$dataStr\n-----end dataStr", verbose)
-      schema    <- Schema.fromString(schemaStr, "SHEXC", Some(fa.schema))
-      //_         <- testInfoValue(s"schema", schema.asJson.spaces2, verbose)
-      result      <- for {
-        res1 <- RDFAsJenaModel.fromChars(dataStr, "TURTLE", Some(fa.data))
-        res2 <- RDFAsJenaModel.empty
-        vv <- (res1,res2).tupled.use{ case (data, builder) =>
-       for {
-         dataPrefixMap <- data.getPrefixMap
-         // _         <- testInfoValue(s"data", data, verbose)
-         lbl = getLabel(fa)
-         // _         <- testInfoValue(s"label", lbl, verbose)
-         ok <- if (v.traits contains sht_Greedy) {
-           result(name, true, "Ignored sht:Greedy")
-         } else {
-           val shapeMap = FixedShapeMap(Map(focus -> Map(lbl -> Info())), dataPrefixMap, schema.prefixMap)
-           for {
-             // _         <- testInfoValue(s"shapeMap", shapeMap, verbose)
-             resolvedSchema <- ResolvedSchema.resolve(schema, Some(fa.schema))
-             // _         <- testInfoValue(s"resolvedSchema", resolvedSchema, verbose)
-             resultVal <- Validator(schema = resolvedSchema, 
-                externalResolver = ExternalIRIResolver(fa.shapeExterns),
-                builder = builder
-               ).validateShapeMap(data, shapeMap)
-             resultShapeMap <- resultVal.toResultShapeMap
-             _         <- testInfoValue(s"resultShapeMap", resultShapeMap, verbose)
-             ok <- if (resultShapeMap.getConformantShapes(focus) contains lbl) {
-               if (shouldValidate) result(name, true, "Conformant shapes match")
-               else
-                 result(name, false, s"Focus $focus conforms to $lbl but should not" ++
-                   s"\nData: \n${dataStr}\nSchema: ${schemaStr}\n" ++
-                   s"${resultShapeMap.getInfo(focus, lbl)}\n" // ++
-                   // s"Schema: ${schema}\n" ++
-                   // s"Data: ${data}"
-                 )
-             } else {
-               if (!shouldValidate) result(name, true, "Doesn't validate as expected")
-               else
-                 result(name, false,
-                   s"Focus $focus does not conform to $lbl but should" ++
-                     s"\nData: \n${dataStr}\nSchema: ${schemaStr}\n" ++
-                     s"${resultShapeMap.getInfo(focus, lbl)}\n" /* ++
-                     s"Schema: ${schema}\n" ++
-                     s"Data: ${data}" */
-                 )
-             }
-           } yield ok
-         }
-        } yield ok }
-      } yield vv 
-     } yield result
-  }
-
-  private def getLabel(fa: FocusAction): ShapeMapLabel =
-    fa.shape match {
-    case None           => StartMap: ShapeMapLabel
-    case Some(i: IRI)   => IRIMapLabel(i)
-    case Some(b: BNode) => BNodeMapLabel(b)
-    case Some(other) => {
-      IRIMapLabel(IRI(s"UnknownLabel"))
-    }
-  }
-
-  private def validateMapResult(
+/*  private def validateMapResultDel(
       mr: MapResultAction,
       base: URI,
       v: ValidOrFailureTest,
@@ -319,7 +233,7 @@ trait ValidateManifest extends RunManifest {
         r
       }
     }
-  }
+  } */
 
   def negativeSyntax(ns: NegativeSyntax, folderURI: URI): IO[Option[Result]] = {
     val schemaUri    = mkLocal(ns.shex, negativeSyntaxBase, folderURI)

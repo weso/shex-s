@@ -13,7 +13,7 @@ case class ShExManifest(
   entries: List[Entry],
   includes: List[(RDFNode, Option[ShExManifest])]) {
 
-  def toTestSuite(uri: URI): TestSuite = TestSuite(entries.map(_.toTestEntry(uri)))  
+  def toTestSuite(uri: URI, verbose: Boolean): TestSuite = TestSuite(entries.map(_.toTestEntry(uri, verbose)))  
 }
 
 object ShExManifest {

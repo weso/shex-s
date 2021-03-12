@@ -27,7 +27,7 @@ abstract trait Entry {
  def entryType: IRI
  def status: Status
  def name: String
- def toTestEntry(uri: URI): TestEntry
+ def toTestEntry(uri: URI, verbose: Boolean): TestEntry
 }
   
 case class RepresentationTest(
@@ -39,10 +39,10 @@ case class RepresentationTest(
   ttl: IRI) extends Entry {
     override val entryType = sht_RepresentationTest
 
-    override def toTestEntry(shexFolderURI: URI): TestEntry = {
+    override def toTestEntry(shexFolderURI: URI, verbose: Boolean): TestEntry = {
       val id = TestId(name)
       TestEntry(
-       name = id, 
+       id = id, 
       action = {
         val resolvedJson = mkLocal(json,schemasBase,shexFolderURI)
         val resolvedShEx = mkLocal(shex,schemasBase,shexFolderURI)
@@ -56,12 +56,12 @@ case class RepresentationTest(
             parse(jsonStr) match {
              case Left(err) => IO.pure(
                FailedResult(id,
-                msg = s"Schemas are equal but error parsing Json $jsonStr")
+                msg = Some(s"Schemas are equal but error parsing Json $jsonStr"))
              )
              case Right(json) => {
              if (json.equals(schema2Json(schema))) {
               IO.pure(
-                PassedResult(id,msg = s"Schemas are equal")
+                PassedResult(id,msg = Some(s"Schemas are equal"))
               )
              } else {
               IO.pure(FailedResult(id, 
@@ -86,15 +86,15 @@ case class Validate(override val node: RDFNode,
                       override val status: Status,
                       override val name: String,
                       action: ManifestAction,
-                      result: Result,
+                      result: ResultExpected,
                       specRef: Option[IRI]
                      ) extends Entry {
     override val entryType = sht_Validate
-    override def toTestEntry(uri: URI): TestEntry = {
-      val id = TestId(name),
+    override def toTestEntry(uri: URI, verbose: Boolean): TestEntry = {
+      val id = TestId(name)
       TestEntry(
-        name = id, 
-        action = IO.pure(PassedResult(id, msg="Not implemented"))
+        id = id, 
+        action = IO.pure(PassedResult(id, msg=Some("Not implemented")))
       )
     }
  }
@@ -106,20 +106,42 @@ case class Validate(override val node: RDFNode,
                                 val comment: String,
                                 val action: Action,
                                 val maybeResult: Option[IRI],
-                                val entryType : IRI
+                                val entryType : IRI,
+                                val shouldPass: Boolean
                                 ) extends Entry {
-    override def toTestEntry(uri: URI): TestEntry = 
+    override def toTestEntry(uri: URI, verbose: Boolean): TestEntry = {
+      val id = TestId(name)
       TestEntry(
-        name = TestId(name), 
+        id = id, 
         action = { 
           val base = Paths.get(".").toUri
           action match {
-            case focusAction: FocusAction => validateFocusAction(focusAction,base,this,true, uri)
-            case mr: MapResultAction => validateMapResult(mr,base,this,uri)
-            case ma: ManifestAction => err(s"Not implemented validate ManifestAction yet")
+            case focusAction: FocusAction => 
+              validateFocusAction(focusAction, base, this, true, name, uri, false).map(
+                maybeR => maybeR match {
+                 case None => FailedResult(id,Some("No result"),None,None)
+                 case Some(res) => if (res.isOk == shouldPass) {
+                  PassedResult(id,msg = Some(res.reason)) 
+                 } else {
+                  FailedResult(id, msg = Some(res.reason))
+                 }
+              })
+            case mr: MapResultAction => 
+              validateMapResult(mr,base,this,name,uri).map(
+               maybeR => maybeR match {
+                 case None => FailedResult(id,Some("No result"),None,None)
+                 case Some(res) => if (res.isOk == shouldPass) {
+                  PassedResult(id,msg = Some(res.reason)) 
+                 } else {
+                  FailedResult(id, msg = Some(res.reason))
+                 }
+              })
+            case ma: ManifestAction => 
+             err(s"Not implemented validate ManifestAction yet")
           }
         }
       )
+    }
   }
   
   case class ValidationTest(override val node: RDFNode,
@@ -130,7 +152,7 @@ case class Validate(override val node: RDFNode,
                       override val action: Action,
                       override val maybeResult: Option[IRI]
                      ) extends
-    ValidOrFailureTest(node,status,name,traits,comment,action,maybeResult, sht_ValidationTest) {
+    ValidOrFailureTest(node,status,name,traits,comment,action,maybeResult, sht_ValidationTest, true) {
   }
   
   case class ValidationFailure(override val node: RDFNode,
@@ -140,8 +162,8 @@ case class Validate(override val node: RDFNode,
                                override val comment: String,
                                override val action: Action,
                                override val maybeResult: Option[IRI]
-                              ) extends
-    ValidOrFailureTest(node,status,name,traits,comment,action,maybeResult,sht_Validate) {
+                              ) extends 
+    ValidOrFailureTest(node,status,name,traits,comment,action,maybeResult,sht_Validate, false) {
   }
   
   case class NegativeSyntax(override val node: RDFNode,
@@ -150,11 +172,13 @@ case class Validate(override val node: RDFNode,
                             shex: IRI
                            ) extends Entry {
     override val entryType = sht_NegativeSyntax
-    override def toTestEntry(uri: URI): TestEntry = 
-      TestEntry(
-        name = TestId(name), 
-        action = IO.println(s"Pending") *> IO(true)
+    override def toTestEntry(uri: URI, verbose: Boolean): TestEntry = {
+     val id = TestId(name) 
+     TestEntry(
+        id = id, 
+        action = IO.pure(PassedResult(id, msg=Some("Not implemented")))
       )
+    }
   }
   
   case class NegativeStructure(override val node: RDFNode,
@@ -163,11 +187,14 @@ case class Validate(override val node: RDFNode,
                             shex: IRI
                            ) extends Entry {
     override val entryType = sht_NegativeStructure
-    override def toTestEntry(uri: URI): TestEntry = 
+    override def toTestEntry(uri: URI, verbose: Boolean): TestEntry = {
+      val id = TestId(name)
       TestEntry(
-        name = TestId(name), 
-        action = IO.println(s"Pending") *> IO(true)
+        id = id, 
+        action = IO.pure(PassedResult(id, msg=Some("Not implemented")))
       )
+    }
+
 
 
 }

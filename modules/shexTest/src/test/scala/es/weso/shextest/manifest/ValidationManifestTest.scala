@@ -1,34 +1,35 @@
 package es.weso.shextest.manifest
 
-import java.net.URI
+// import java.net.URI
 
-import es.weso.shex.implicits.decoderShEx.decodeSchema
-import es.weso.utils.IOUtils.fromES
-import io.circe.{Decoder, Json}
+// import es.weso.shex.implicits.decoderShEx.decodeSchema
+// import es.weso.utils.IOUtils.fromES
+// import io.circe.{Decoder, Json}
 //import es.weso.utils.UriUtils._
 import java.nio.file.Paths
 import com.typesafe.config.{Config, ConfigFactory}
-import es.weso.rdf.PrefixMap
-import es.weso.rdf.jena.RDFAsJenaModel
-import es.weso.rdf.nodes.{BNode, IRI}
-import es.weso.shapemaps.{BNodeLabel => BNodeMapLabel, IRILabel => IRIMapLabel, Start => StartMap, _}
-import es.weso.shex._
-import es.weso.shex.validator.{ExternalIRIResolver, Validator}
-import es.weso.shapemaps._
-import es.weso.shex.compact.CompareSchemas
-import es.weso.shextest.manifest.Utils._
+// import es.weso.rdf.PrefixMap
+// import es.weso.rdf.jena.RDFAsJenaModel
+// import es.weso.rdf.nodes.{BNode, IRI}
+// import es.weso.shapemaps.{BNodeLabel => BNodeMapLabel, IRILabel => IRIMapLabel, Start => StartMap, _}
+// import es.weso.shex._
+// import es.weso.shex.validator.{ExternalIRIResolver, Validator}
+// import es.weso.shapemaps._
+// import es.weso.shex.compact.CompareSchemas
+//import es.weso.shextest.manifest.Utils._
 // import es.weso.shex.implicits.decoderShEx._
-import es.weso.shex.implicits.encoderShEx._
+//import es.weso.shex.implicits.encoderShEx._
 //import cats._
-import cats.data.EitherT
-import cats.implicits._
+//import cats.data.EitherT
+//import cats.implicits._
 import cats.effect.IO
-import ManifestPrefixes._
+//import ManifestPrefixes._
 //import scala.io._
-import io.circe.parser._
-import io.circe.syntax._
+//import io.circe.parser._
+//import io.circe.syntax._
 import munit._
-import cats.effect.unsafe.IORuntime
+//import cats.effect.unsafe.IORuntime
+import es.weso.utils.testsuite._
 class ValidationManifestTest extends CatsEffectSuite with ValidateManifest {
 
   // If the following variable is None, it runs all tests
@@ -46,10 +47,29 @@ class ValidationManifestTest extends CatsEffectSuite with ValidateManifest {
   test("run all") {
     val cmp: IO[Vector[TestResult]] = for {
       manifest <- RDF2Manifest.read(Paths.get(shexFolder + "/" + "manifest.ttl"), "Turtle", Some(shexFolderURI.toString), false)
-      testSuite <- manifest.toTestSuite(shexFolderURI)
-      results <- testSuite.runAll
-    } yield res
-    cmp.map(vs => assertEquals(vs.filter(!_.passed), Set()))
+      testSuite = manifest.toTestSuite(shexFolderURI, false)
+      results <- testSuite.runAll(TestConfig.initial)
+    } yield results
+    cmp.map(vs => {
+      val failed: Vector[TestResult] = vs.filter(!_.passed)
+      assertEquals(failed, Vector[TestResult]())
+     }
+    )
+  }
+
+    // val ior = implicitly[IORuntime] // = cats.effect.unsafe.IORuntime.global
+  test("single") {
+    val cmp: IO[TestResult] = for {
+      manifest <- RDF2Manifest.read(Paths.get(shexFolder + "/" + "manifest.ttl"), "Turtle", Some(shexFolderURI.toString), false)
+      testSuite = manifest.toTestSuite(shexFolderURI, false)
+      // _ <- IO.println(s"Tests: ${testSuite.tests.map(_.id).mkString("\n")}")
+      result <- testSuite.runSingle(TestId("1dotRefOR3_fail"),TestConfig.initial)
+      _ <- IO.println(s"Result: ${result}")
+    } yield result
+    cmp.map(res => {
+      assertEquals(res.passed, true)
+     }
+    )
   }
   
 /*  r.attempt.unsafeRunSync()(ior).fold(e => println(s"Error reading manifest: $e"),

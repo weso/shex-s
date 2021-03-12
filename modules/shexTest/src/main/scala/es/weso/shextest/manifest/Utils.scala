@@ -23,7 +23,6 @@ import es.weso.rdf.PrefixMap
 import es.weso.shex.validator.ExternalIRIResolver
 import ManifestPrefixes._
 
-
 object Utils {
 
   /**
@@ -85,7 +84,101 @@ object Utils {
     }
   }
 
- def validateFocusAction(fa: FocusAction,
+  
+  def validateFocusAction(
+      fa: FocusAction,
+      base: URI,
+      v: ValidOrFailureTest,
+      shouldValidate: Boolean,
+      name: String,
+      folderURI: URI,
+      verbose: Boolean
+  ): IO[Option[Result]] = {
+    val focus     = fa.focus
+    val schemaUri = mkLocal(fa.schema, schemasBase, folderURI)
+    val dataUri   = mkLocal(fa.data, schemasBase, folderURI)
+    for {
+      //_         <- testInfo(s"Validating focusAction: $name",verbose)
+      schemaStr <- derefUriIO(schemaUri)
+      //_         <- testInfo(s"schemaStr:\n$schemaStr\n-----end schemaStr\nNest step: deref: $dataUri", verbose)
+      dataStr   <- derefUriIO(dataUri)
+      //_         <- testInfo(s"dataStr:\n$dataStr\n-----end dataStr", verbose)
+      schema    <- Schema.fromString(schemaStr, "SHEXC", Some(fa.schema))
+      //_         <- testInfoValue(s"schema", schema.asJson.spaces2, verbose)
+      result      <- for {
+        res1 <- RDFAsJenaModel.fromChars(dataStr, "TURTLE", Some(fa.data))
+        res2 <- RDFAsJenaModel.empty
+        vv <- (res1,res2).tupled.use{ case (data, builder) =>
+       for {
+         dataPrefixMap <- data.getPrefixMap
+         // _         <- testInfoValue(s"data", data, verbose)
+         lbl = getLabel(fa)
+         // _         <- testInfoValue(s"label", lbl, verbose)
+         ok <- if (v.traits contains sht_Greedy) {
+           result(name, true, "Ignored sht:Greedy")
+         } else {
+           val shapeMap = FixedShapeMap(Map(focus -> Map(lbl -> Info())), dataPrefixMap, schema.prefixMap)
+           for {
+             // _         <- testInfoValue(s"shapeMap", shapeMap, verbose)
+             resolvedSchema <- ResolvedSchema.resolve(schema, Some(fa.schema))
+             // _         <- testInfoValue(s"resolvedSchema", resolvedSchema, verbose)
+             resultVal <- Validator(schema = resolvedSchema, 
+                externalResolver = ExternalIRIResolver(fa.shapeExterns),
+                builder = builder
+               ).validateShapeMap(data, shapeMap)
+             resultShapeMap <- resultVal.toResultShapeMap
+             _         <- testInfoValue(s"resultShapeMap", resultShapeMap, verbose)
+             ok <- if (resultShapeMap.getConformantShapes(focus) contains lbl) {
+               if (shouldValidate) result(name, true, "Conformant shapes match")
+               else
+                 result(name, false, s"Focus $focus conforms to $lbl but should not" ++
+                   s"\nData: \n${dataStr}\nSchema: ${schemaStr}\n" ++
+                   s"${resultShapeMap.getInfo(focus, lbl)}\n" // ++
+                   // s"Schema: ${schema}\n" ++
+                   // s"Data: ${data}"
+                 )
+             } else {
+               if (!shouldValidate) result(name, true, "Doesn't validate as expected")
+               else
+                 result(name, false,
+                   s"Focus $focus does not conform to $lbl but should" ++
+                     s"\nData: \n${dataStr}\nSchema: ${schemaStr}\n" ++
+                     s"${resultShapeMap.getInfo(focus, lbl)}\n" /* ++
+                     s"Schema: ${schema}\n" ++
+                     s"Data: ${data}" */
+                 )
+             }
+           } yield ok
+         }
+        } yield ok }
+      } yield vv 
+     } yield result
+  }
+
+  def result[A](name: String, isOk: Boolean, reason: String): IO[Option[Result]] =
+    IO.pure(Some(Result(name, isOk, reason)))
+
+  private def getLabel(fa: FocusAction): ShapeMapLabel =
+    fa.shape match {
+    case None           => StartMap: ShapeMapLabel
+    case Some(i: IRI)   => IRIMapLabel(i)
+    case Some(b: BNode) => BNodeMapLabel(b)
+    case Some(other) => {
+      IRIMapLabel(IRI(s"UnknownLabel"))
+    }
+  }
+
+  def testInfo(msg: String, verbose: Boolean): IO[Unit] = 
+    if (verbose) IO {
+      println(msg); 
+    } else IO(())
+
+  def testInfoValue(msg: String, value: Any, verbose: Boolean): IO[Unit] = 
+   if (verbose) IO { pprint.log(value, tag = msg); () }
+   else IO(())
+
+
+/* def validateFocusAction(fa: FocusAction,
                           base: URI,
                           v: ValidOrFailureTest,
                           shouldValidate: Boolean,
@@ -187,7 +280,50 @@ object Utils {
         r
       }
     }
-  
- }
+ } */
 
+ def validateMapResult(
+      mr: MapResultAction,
+      base: URI,
+      v: ValidOrFailureTest,
+      name: String,
+      folderURI: URI
+  ): IO[Option[Result]] = {
+    v.maybeResult match {
+      case None => IO(None) // fail(s"No result specified")
+      case Some(resultIRI) => {
+        val schemaUri    = mkLocal(mr.schema, validationBase, folderURI)
+        val shapeMapUri  = mkLocal(mr.shapeMap, validationBase, folderURI)
+        val resultMapUri = mkLocal(resultIRI, validationBase, folderURI)
+        val r: IO[Option[Result]] = RDFAsJenaModel.empty.flatMap(_.use(emptyRdf =>
+          for {
+          //_             <- testInfo(s"Validating mapResult: $name")
+          schemaStr     <- derefUriIO(schemaUri)
+          resultMapStr  <- derefUriIO(resultMapUri)
+          smapStr       <- derefUriIO(shapeMapUri)
+          sm            <- fromES(ShapeMap.fromJson(smapStr).leftMap(s => s"Error parsing shapeMap: $s\nShapeMap:\n$smapStr"))
+          schema        <- Schema.fromString(schemaStr, "SHEXC", None)
+          resolvedSchema <- ResolvedSchema.resolve(schema, None)
+          fixedShapeMap <- ShapeMap.fixShapeMap(sm, emptyRdf, PrefixMap.empty, PrefixMap.empty)
+          dataUri = mkLocal(mr.data, schemasBase, folderURI)
+          strData        <- derefUriIO(dataUri)
+          rr      <- for {
+            res1 <- RDFAsJenaModel.fromString(strData, "TURTLE", None)
+            res2 <- RDFAsJenaModel.empty
+            vv <- ( res1, res2).tupled.use{ case (data,builder) =>
+           for {
+             resultVal <- Validator(schema = resolvedSchema, builder = builder).validateShapeMap(data, fixedShapeMap)
+             resultShapeMap <- resultVal.toResultShapeMap
+             jsonResult     <- fromES(JsonResult.fromJsonString(resultMapStr))
+             r <- if (jsonResult.compare(resultShapeMap))
+                    result(name, true, "Json results match")
+                  else
+                    result(name,false, s"Json results are different. Expected: ${jsonResult.asJson.spaces2}\nObtained: ${resultShapeMap.toString}")
+           } yield r }
+          } yield vv 
+          } yield rr))
+        r
+      }
+    }
+  }
 }
