@@ -21,7 +21,7 @@ import com.typesafe.config.{Config, ConfigFactory}
 //import es.weso.shex.implicits.encoderShEx._
 //import cats._
 //import cats.data.EitherT
-//import cats.implicits._
+import cats.implicits._
 import cats.effect.IO
 //import ManifestPrefixes._
 //import scala.io._
@@ -30,7 +30,11 @@ import cats.effect.IO
 import munit._
 //import cats.effect.unsafe.IORuntime
 import es.weso.utils.testsuite._
+import scala.concurrent.duration._
+import cats.effect.kernel.Outcome
 class ValidationManifestTest extends CatsEffectSuite with ValidateManifest {
+
+  override def munitTimeout: Duration = 5.second
 
   // If the following variable is None, it runs all tests
   // Otherwise, it runs only the test whose name is equal to the value of this variable
@@ -44,15 +48,43 @@ class ValidationManifestTest extends CatsEffectSuite with ValidateManifest {
   val shexFolderURI = Paths.get(shexFolder).normalize.toUri
 
   // val ior = implicitly[IORuntime] // = cats.effect.unsafe.IORuntime.global
+
   test("run all") {
-    val cmp: IO[Vector[TestResult]] = for {
+    val exceptions = 
+     List(
+       "vitals-RESTRICTS-pass_lie-PostureVital",
+       "ExtendANDExtend3GAND3G-t28",
+       "vitals-RESTRICTS-pass_lie-BP",
+       "vitals-RESTRICTS-pass_sit-PostureVital",
+       "ExtendAND3G-pass",
+       "vitals-RESTRICTS-pass_sit-BP",
+       "ExtendANDExtend3GAND3G-t27",
+       "Extend3G-pass",
+       "ExtendANDExtend3GAND3G-t35",
+       "ExtendANDExtend3GAND3G-t26",
+       "extends-abstract-multi-empty_fail-ReferrerExtraP",
+       "ExtendANDExtend3GAND3G-t24",
+       "ExtendANDExtend3GAND3G-t34",
+       "ExtendANDExtend3GAND3G-t33",
+       "vitals-RESTRICTS-pass_lie-ReclinedBP"
+     )
+    // val xs: OutcomeIO[TestResults] = ??? 
+    val cmp: IO[TestResults] = for {
       manifest <- RDF2Manifest.read(Paths.get(shexFolder + "/" + "manifest.ttl"), "Turtle", Some(shexFolderURI.toString), false)
       testSuite = manifest.toTestSuite(shexFolderURI, false)
-      results <- testSuite.runAll(TestConfig.initial)
+      ioresults <- testSuite.runAll(TestConfig.initial).background.use(res => res.flatMap(_.fold(
+       IO.raiseError(new RuntimeException(s"Cancelled")),
+       e => IO.raiseError(e),
+       res => IO(res) 
+      )))
+      results <- ioresults
+      _ <- IO(System.out.flush())
+      _ <- IO(System.err.flush())
+      _ <- IO.println(s"After run all: ${results.passed.length}/${testSuite.tests.length}")
+      _ <- IO.println(s"Failed:\n${results.failed.map(_.show).mkString("\n")}")
     } yield results
     cmp.map(vs => {
-      val failed: Vector[TestResult] = vs.filter(!_.passed)
-      assertEquals(failed, Vector[TestResult]())
+      assertEquals(vs.failed, Vector[FailedResult]())
      }
     )
   }

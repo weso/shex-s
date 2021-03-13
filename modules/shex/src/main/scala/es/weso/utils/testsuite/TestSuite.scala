@@ -11,15 +11,31 @@ case class TestSuite(tests: List[TestEntry]) {
     * Run a list of test entries 
     * @return A pair formed by the entries that passed and the entries that failed
     */
-  def runAll(config: TestConfig): IO[Vector[TestResult]] = for {
+  def runAll(config: TestConfig): IO[TestResults] = for {
     refStats <- Ref[IO].of(Stats(tests)) 
-    _ <- tests.map(_.runEntry(refStats,config)).sequence.void
+    latch <- Latch(tests.length)
+    fiber <- tests.map(test => for {
+      r <- test.runEntry(refStats,config)
+      _ <- latch.release
+    } yield r
+    ).parSequence.start
+    _ <- latch.await
     endStats <- refStats.get
-    _ <- if (config.verbose) IO.println(endStats.show) else IO.unit
-  } yield (endStats.failed ++ endStats.passed)
+    _ <- if (config.verbose) 
+      IO.println(endStats.show) else IO.unit
+  } yield TestResults(endStats.passed, endStats.failed)
+
+/*  def runAllSeq(config: TestConfig): IO[TestResults] = for {
+    refStats <- Ref[IO].of(Stats(tests)) 
+    _ <- tests.map(_.runEntry(refStats,config)).sequence
+    endStats <- refStats.get
+    _ <- IO(System.out.flush())
+    _ <- if (config.verbose) 
+    IO.println(endStats.show) else IO.unit
+  } yield TestResults(endStats.passed, endStats.failed) */
 
   def runSingle(testId: TestId, config: TestConfig): IO[TestResult] = {
-    tests.filter(_.name == testId) match {
+    tests.filter(_.id == testId) match {
       case Nil => IO.raiseError(NotFoundTestEntry(testId, tests))
       case entry :: Nil => for {
         refStats <- Ref[IO].of(Stats(List(entry)))
