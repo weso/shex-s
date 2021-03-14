@@ -440,7 +440,7 @@ lazy val commonSettings = compilationSettings ++ sharedDependencies ++ Seq(
   ),
   coverageHighlighting := true,
   githubOwner := "weso", 
-  githubRepository := "utils"
+  githubRepository := "shex-s"
 ) ++ warnUnusedImport
 
 def antlrSettings(packageName: String) = Seq(
