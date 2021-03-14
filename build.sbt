@@ -120,11 +120,12 @@ lazy val shexs = project
 //    buildInfoKeys := BuildInfoKey.ofN(name, version, scalaVersion, sbtVersion),
 //    buildInfoPackage := "es.weso.shaclex.buildinfo"
 //  )
-  .settings(commonSettings, 
-         packagingSettings, 
-         publishSettings, 
+  .settings(
+    commonSettings, 
+    packagingSettings, 
+    publishSettings, 
          // ghPagesSettings, 
-         wixSettings)
+    wixSettings)
   .aggregate(depGraphs, shex, shexTest, rbe, wikibaserdf, shapepath)
   .dependsOn(depGraphs, shex, shexTest, rbe, wikibaserdf, shapepath)
   .settings(
@@ -154,7 +155,7 @@ lazy val shexs = project
     cancelable in Global := true,
     fork := true,
     ThisBuild / turbo := true,
-    crossScalaVersions := supportedScalaVersions,
+    ThisBuild / crossScalaVersions := supportedScalaVersions,
     // skip in publish := true,
     Compile / run / mainClass := Some("es.weso.shexs.Main"),
     buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
