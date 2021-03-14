@@ -394,7 +394,7 @@ lazy val compilationSettings = Seq(
     "-explaintypes",                     // Explain type errors in more detail.
     "-feature",                          // Emit warning and location for usages of features that should be imported explicitly.  "-encoding", "UTF-8",
     "-language:_",
-    "-target:jvm-12.0.2",
+//    "-target:jvm-1.8",
     "-unchecked",                        // Enable additional warnings where generated code depends on assumptions.
     "-Xlint",
     "-Yrangepos",
