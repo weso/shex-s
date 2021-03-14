@@ -36,7 +36,7 @@ import es.weso.utils.FileUtils._
 
 class ValidationManifestTest extends CatsEffectSuite with ValidateManifest {
 
-  override def munitTimeout: Duration = 5.second
+  override def munitTimeout: Duration = 5 minutes
 
   // If the following variable is None, it runs all tests
   // Otherwise, it runs only the test whose name is equal to the value of this variable
