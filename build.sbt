@@ -1,3 +1,4 @@
+import bloop.config.Config
 lazy val scala212 = "2.12.13"
 lazy val scala213 = "2.13.5"
 lazy val scala3   = "3.0.0-M3"
@@ -6,6 +7,8 @@ lazy val supportedScalaVersions = List(
   scala212,
 //  scala3
   )
+
+val Java11 = "adopt@1.11"  
 
 // Local dependencies
 lazy val srdfVersion           = "0.1.93"
@@ -102,6 +105,9 @@ lazy val typesafeConfig = "com.typesafe"               % "config"         % type
 lazy val xercesImpl     = "xerces"                     % "xercesImpl"     % xercesVersion
 lazy val simulacrum     = "org.typelevel"              %% "simulacrum"    % simulacrumVersion
 lazy val weaver         = "com.disneystreaming"        %% "weaver-cats"   % weaverVersion 
+
+
+ThisBuild / githubWorkflowJavaVersions := Seq(Java11)
 
 lazy val shexs = project
   .in(file("."))
@@ -441,7 +447,7 @@ lazy val commonSettings = compilationSettings ++ sharedDependencies ++ Seq(
   ),
   coverageHighlighting := true,
   githubOwner := "weso", 
-  githubRepository := "shex-s"
+  githubRepository := "shex-s",
 ) ++ warnUnusedImport
 
 def antlrSettings(packageName: String) = Seq(
