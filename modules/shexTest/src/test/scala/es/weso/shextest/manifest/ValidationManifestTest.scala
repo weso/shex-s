@@ -89,6 +89,11 @@ class ValidationManifestTest extends CatsEffectSuite with ValidateManifest {
 "extends-abstract-multi-empty_fail-Ref1ExtraP",
 "Extend3G-t17",
 "ExtendANDExtend3GAND3G-t30",
+"vitals-RESTRICTS-fail_sit-ReclinedBP",
+"extends-abstract-multi-empty_pass-missingOptRef1",
+"Extend3G-t20",
+"ExtendANDExtend3GAND3G-t25",
+"extends-abstract-multi-empty_pass",
 "node_kind_example" // Pending to parse result shape maps from TestSuite
 ).map(TestId(_))
 
@@ -113,6 +118,7 @@ class ValidationManifestTest extends CatsEffectSuite with ValidateManifest {
       _ <- IO.println(s"After run all: ${results.passed.length}/${testSuite.tests.length}")
       _ <- IO.println(s"Failed: ${results.failed.length}\n${results.failed.map(_.show).mkString("\n")}")
     } yield results
+
     cmp.map(vs => {
       assertEquals(vs.failed, Vector[FailedResult]())
      }
