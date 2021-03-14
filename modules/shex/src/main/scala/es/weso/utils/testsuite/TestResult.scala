@@ -41,7 +41,7 @@ case class FailedResult(
 
 object FailedResult {
  implicit val showFailedResult: Show[FailedResult] = new Show[FailedResult] {
-    def show(fr: FailedResult): String = s"Failed: ${fr.msg.fold("")(str => s"$str ")}${fr.entry.show} time: ${fr.time}.${fr.exception.fold("")(e => s"\nException: ${e.getMessage}")}"
+    def show(fr: FailedResult): String = s"Failed ${fr.entry.show}: ${fr.msg.fold("")(str => s"$str ")}${fr.entry.show} time: ${fr.time}.${fr.exception.fold("")(e => s"\nException: ${e.getMessage}")}"
  }
     
 }

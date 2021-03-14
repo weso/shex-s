@@ -31,7 +31,9 @@ import munit._
 //import cats.effect.unsafe.IORuntime
 import es.weso.utils.testsuite._
 import scala.concurrent.duration._
-import cats.effect.kernel.Outcome
+// import cats.effect.kernel.Outcome
+import es.weso.utils.FileUtils._
+
 class ValidationManifestTest extends CatsEffectSuite with ValidateManifest {
 
   override def munitTimeout: Duration = 5.second
@@ -50,38 +52,66 @@ class ValidationManifestTest extends CatsEffectSuite with ValidateManifest {
   // val ior = implicitly[IORuntime] // = cats.effect.unsafe.IORuntime.global
 
   test("run all") {
-    val exceptions = 
+
+    val except: List[TestId] = 
      List(
-       "vitals-RESTRICTS-pass_lie-PostureVital",
-       "ExtendANDExtend3GAND3G-t28",
-       "vitals-RESTRICTS-pass_lie-BP",
-       "vitals-RESTRICTS-pass_sit-PostureVital",
-       "ExtendAND3G-pass",
-       "vitals-RESTRICTS-pass_sit-BP",
-       "ExtendANDExtend3GAND3G-t27",
-       "Extend3G-pass",
-       "ExtendANDExtend3GAND3G-t35",
-       "ExtendANDExtend3GAND3G-t26",
-       "extends-abstract-multi-empty_fail-ReferrerExtraP",
-       "ExtendANDExtend3GAND3G-t24",
-       "ExtendANDExtend3GAND3G-t34",
-       "ExtendANDExtend3GAND3G-t33",
-       "vitals-RESTRICTS-pass_lie-ReclinedBP"
-     )
+"vitals-RESTRICTS-pass_lie-PostureVital",
+"ExtendANDExtend3GAND3G-t28",
+"vitals-RESTRICTS-pass_lie-BP",
+"vitals-RESTRICTS-pass_sit-PostureVital",
+"ExtendAND3G-pass",
+"vitals-RESTRICTS-pass_sit-BP",
+"ExtendANDExtend3GAND3G-t27",
+"Extend3G-pass",
+"ExtendANDExtend3GAND3G-t35",
+"ExtendANDExtend3GAND3G-t26",
+"extends-abstract-multi-empty_fail-ReferrerExtraP",
+"ExtendANDExtend3GAND3G-t24",
+"ExtendANDExtend3GAND3G-t34",
+"ExtendANDExtend3GAND3G-t33",
+"vitals-RESTRICTS-pass_lie-ReclinedBP",
+"vitals-RESTRICTS-pass_lie-Posture",
+"vitals-RESTRICTS-pass_lie-Vital",
+"ANDAbstract-pass",
+"vitals-RESTRICTS-pass_sit-Vital",
+"AND3G-pass",
+"vitals-RESTRICTS-pass_sit-Posture",
+"extends-abstract-multi-empty_fail-Ref2ExtraP",
+"vitals-RESTRICTS-pass_lie-PostureBP",
+"vitals-RESTRICTS-pass_lie-Reclined",
+"1list0PlusDot-manualList_extraArc_Iv1,Iv2,Iv3_fail",
+"vitals-RESTRICTS-pass_lie-ReclinedVital",
+"ExtendANDExtend3GAND3G-t32",
+"ExtendANDExtend3GAND3G-pass",
+"ExtendANDExtend3GAND3G-t31",
+"vitals-RESTRICTS-fail_sit-ReclinedVital",
+"vitals-RESTRICTS-pass_sit-PostureBP",
+"extends-abstract-multi-empty_fail-Ref1ExtraP",
+"Extend3G-t17",
+"ExtendANDExtend3GAND3G-t30",
+"node_kind_example" // Pending to parse result shape maps from TestSuite
+).map(TestId(_))
+
     // val xs: OutcomeIO[TestResults] = ??? 
     val cmp: IO[TestResults] = for {
       manifest <- RDF2Manifest.read(Paths.get(shexFolder + "/" + "manifest.ttl"), "Turtle", Some(shexFolderURI.toString), false)
       testSuite = manifest.toTestSuite(shexFolderURI, false)
-      ioresults <- testSuite.runAll(TestConfig.initial).background.use(res => res.flatMap(_.fold(
+      ioresults <- testSuite.runAll(
+        TestConfig.initial.copy(maxTimePerTest = 3 seconds), 
+        except
+      ).background.use(res => res.flatMap(_.fold(
        IO.raiseError(new RuntimeException(s"Cancelled")),
-       e => IO.raiseError(e),
-       res => IO(res) 
+       IO.raiseError(_),
+       IO(_) 
       )))
       results <- ioresults
-      _ <- IO(System.out.flush())
-      _ <- IO(System.err.flush())
+      msg = s"""|After run all. ${testSuite.tests.length} total tests = ${results.passed.length} passed + ${results.failed.length} failed + ${results.skipped.length} skipped.
+                |Failed:${results.failed.length}\n${showFailedResults(results)}
+                |Not Found in Except: ${results.notFound.map(_.id).mkString(",")}
+                |""".stripMargin
+      _ <- writeFile("target/testResults.txt", msg)
       _ <- IO.println(s"After run all: ${results.passed.length}/${testSuite.tests.length}")
-      _ <- IO.println(s"Failed:\n${results.failed.map(_.show).mkString("\n")}")
+      _ <- IO.println(s"Failed: ${results.failed.length}\n${results.failed.map(_.show).mkString("\n")}")
     } yield results
     cmp.map(vs => {
       assertEquals(vs.failed, Vector[FailedResult]())
@@ -89,13 +119,16 @@ class ValidationManifestTest extends CatsEffectSuite with ValidateManifest {
     )
   }
 
+  def showFailedResults(results: TestResults): String = 
+   results.failed.map(_.entry.id.show).mkString(",\n")
+
     // val ior = implicitly[IORuntime] // = cats.effect.unsafe.IORuntime.global
   test("single") {
     val cmp: IO[TestResult] = for {
       manifest <- RDF2Manifest.read(Paths.get(shexFolder + "/" + "manifest.ttl"), "Turtle", Some(shexFolderURI.toString), false)
-      testSuite = manifest.toTestSuite(shexFolderURI, false)
+      testSuite = manifest.toTestSuite(shexFolderURI, true)
       // _ <- IO.println(s"Tests: ${testSuite.tests.map(_.id).mkString("\n")}")
-      result <- testSuite.runSingle(TestId("1dotRefOR3_fail"),TestConfig.initial)
+      result <- testSuite.runSingle(TestId("startNoCode1_pass"),TestConfig.initial)
       _ <- IO.println(s"Result: ${result}")
     } yield result
     cmp.map(res => {
@@ -104,157 +137,5 @@ class ValidationManifestTest extends CatsEffectSuite with ValidateManifest {
     )
   }
   
-/*  r.attempt.unsafeRunSync()(ior).fold(e => println(s"Error reading manifest: $e"),
-      mf => {
-        println(s"Manifest read with ${mf.entries.length} entries")
-        for (e <- mf.entries) {
-          if (nameIfSingle == None || nameIfSingle.getOrElse("") === e.name) {
-            test(s"Should pass test ${e.name}") {
-              e match {
-                case r: RepresentationTest => {
-                  val resolvedJson = mkLocal(r.json,schemasBase,shexFolderURI)
-                  val resolvedShEx = mkLocal(r.shex,schemasBase,shexFolderURI)
-                  // info(s"Entry: $r with json: ${resolvedJsonIri}")
-                  val res: IO[String] = for {
-                    jsonStr <- derefUriIO(resolvedJson)
-                    schemaStr <- derefUriIO(resolvedShEx)
-                    schema <- Schema.fromString(schemaStr, "SHEXC", None)
-                    expectedSchema <- jsonStr2Schema(jsonStr)
-                    r <- if (CompareSchemas.compareSchemas(schema, expectedSchema)) {
-                            parse(jsonStr) match {
-                              case Left(err) => ioErr(s"Schemas are equal but error parsing Json $jsonStr")
-                              case Right(json) => {
-                                if (json.equals(schema2Json(schema))) {
-                                  IO("Schemas and Json representations are equal")
-                                } else {
-                                  ioErr(s"Json's are different\nSchema:${schema}\nJson generated: ${schema.asJson.spaces2}\nExpected: ${json.spaces2}")
-                                }
-                              }
-                          } } else {
-                            ioErr(s"Schemas are different. Parsed:\n${schema}\n-----Expected:\n${expectedSchema}")
-                          }
-                  } yield r
-                  res.attempt.unsafeRunSync.fold(e => fail(s"Error: $e"),
-                    v => println(s"Passed: $v")
-                  )
-                }
-                case v: ValidationTest => {
-                  val base = Paths.get(".").toUri
-                  v.action match {
-                    case focusAction: FocusAction => validateFocusAction(focusAction,base,v,true, shexFolderURI)
-                    case mr: MapResultAction => validateMapResult(mr, base, v, shexFolderURI)
-                    case ma: ManifestAction => err(s"Not implemented validate ManifestAction yet")
-                  }
-                }
-                case v: ValidationFailure => {
-                  val base = Paths.get(".").toUri
-                  v.action match {
-                    case focusAction: FocusAction => validateFocusAction(focusAction,base,v,false, shexFolderURI)
-                    case mr: MapResultAction => validateMapResult(mr,base,v, shexFolderURI)
-                    case ma: ManifestAction => IO.raiseError(new RuntimeException(s"Not implemented validate ManifestAction yet"))
-                  }
-                }
-              }
-            }
-          }
-       }
-     println(s"Manifest read OK: ${mf.entries.length} entries")
-    } 
-  ) */
- 
-/*  def validateFocusAction(fa: FocusAction,
-                          base: URI,
-                          v: ValidOrFailureTest,
-                          shouldValidate: Boolean
-                         ): IO[String] = {
-    val focus = fa.focus
-    val schemaUri = mkLocal(fa.schema,schemasBase,shexFolderURI)
-    val dataUri = mkLocal(fa.data,schemasBase,shexFolderURI)
-    for {
-      schemaStr <- derefUriIO(schemaUri)
-      dataStr <- derefUriIO(dataUri)
-      schema <- Schema.fromString(schemaStr, "SHEXC", Some(fa.schema))
-      ss   <- for {
-        res1 <- RDFAsJenaModel.fromChars(dataStr, "TURTLE", Some(fa.data))
-        res2 <- RDFAsJenaModel.empty  
-        vv <- (res1,res2).tupled.use{case (data,builder) =>
-        for {
-          dataPrefixMap <- data.getPrefixMap
-          resolvedSchema <- ResolvedSchema.resolve(schema, Some(fa.schema))
-          lbl = iriLabel(fa)
-          rr <- if (v.traits contains sht_Greedy) {
-            IO(s"Greedy")
-          } else {
-            val shapeMap = FixedShapeMap(Map(focus -> Map(lbl -> Info())), dataPrefixMap, schema.prefixMap)
-            for {
-              result <- Validator(resolvedSchema, ExternalIRIResolver(fa.shapeExterns), builder)
-                .validateShapeMap(data, shapeMap)
-              resultShapeMap <- result.toResultShapeMap
-              r <- if (resultShapeMap.getConformantShapes(focus) contains lbl)
-                if (shouldValidate) IO(s"Focus $focus conforms to $lbl as expected")
-                else IO.raiseError(new RuntimeException(s"Focus $focus conforms to $lbl but should not" ++
-                  s"\nData: \n${dataStr}\nSchema: ${schemaStr}\n" ++
-                  s"${resultShapeMap.getInfo(focus, lbl)}\n" ++
-                  s"Schema: ${schema}\n" ++
-                  s"Data: ${data}"))
-              else {
-                if (!shouldValidate) IO(s"Focus $focus does not conform to $lbl as expected")
-                else IO.raiseError(new RuntimeException(s"Focus $focus does not conform to $lbl but should" ++
-                  s"\nData: \n${dataStr}\nSchema: ${schemaStr}\n" ++
-                  s"${resultShapeMap.getInfo(focus, lbl)}\n" ++
-                  s"Schema: ${schema}\n" ++
-                  s"Data: ${data}"))
-              }
-            } yield r
-           }
-          } yield rr}
-      } yield vv 
-    } yield ss
-  }
-
-  def validateMapResult(mr: MapResultAction,
-                        base: URI,
-                        v: ValidOrFailureTest
-                       ): IO[String] = {
-    v.maybeResult match {
-      case None => IO.raiseError(new RuntimeException(s"No result specified"))
-      case Some(resultIRI) => {
-        val schemaUri         = mkLocal(mr.schema, validationBase, shexFolderURI)
-        val shapeMapUri       = mkLocal(mr.shapeMap, validationBase, shexFolderURI)
-        val resultMapUri      = mkLocal(resultIRI, validationBase, shexFolderURI)
-        val r: IO[String] = for {
-          schemaStr      <- derefUriIO(schemaUri)
-          resultMapStr  <- derefUriIO(resultMapUri)
-          smapStr       <- derefUriIO(shapeMapUri)
-          sm            <- fromES(ShapeMap.fromJson(smapStr).leftMap(_.toList.mkString("\n")))
-          schema        <- Schema.fromString(schemaStr, "SHEXC", None)
-          fixedShapeMap <- RDFAsJenaModel.empty.flatMap(_.use(emptyRdf =>
-            ShapeMap.fixShapeMap(sm, emptyRdf, PrefixMap.empty, PrefixMap.empty)
-          ))
-          dataUri = mkLocal(mr.data,schemasBase,shexFolderURI)
-          strData        <- derefUriIO(dataUri)
-          r           <- for {
-            res1 <- RDFAsJenaModel.fromChars(strData, "TURTLE", None)
-            res2 <- RDFAsJenaModel.empty
-            vv <- (res1, res2).tupled.use{ case (data,builder) =>
-           for {
-             resolvedSchema <- ResolvedSchema.resolve(schema, None)
-             resultVal <- Validator(schema = resolvedSchema, builder = builder).validateShapeMap(data, fixedShapeMap)
-             resultShapeMap <- resultVal.toResultShapeMap
-             jsonResult     <- fromES(JsonResult.fromJsonString(resultMapStr))
-             result <- if (jsonResult.compare(resultShapeMap))
-               IO(s"Json results match resultShapeMap")
-             else
-               IO.raiseError(new RuntimeException(s"Json results are different. Expected: ${jsonResult.asJson.spaces2}\nObtained: ${resultShapeMap.toString}"))
-           } yield result
-        }
-          } yield vv 
-        } yield r
-        r
-      }
-    }
-  
- }
-*/
 }
 

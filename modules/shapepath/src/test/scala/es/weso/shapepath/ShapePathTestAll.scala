@@ -72,16 +72,48 @@ class ShapePathTestAll extends CatsEffectSuite {
       )
   }
 
-  test(s"ShapePath from Manifest".ignore) {
+  val except = List("2Eachdot_S_b",
+  "nested_S0_2_1_valueExpr",
+  "nested_baseS0_EachOf 2",
+  "nested_baseS0_p2_valueExpr_TC",
+  "nested_S0_p2_valueExpr",
+  "nested_baseS0_p2_valueExpr",
+  "nested_baseS0_EachOf_1",
+  "nested_baseS0_1_valueExpr",
+  "nested_baseS0_p2_EachOf 2_TripleConstraint",
+  "nested_baseS0_1",
+  "1dotRefOR3_S1",
+  "1dotRefOR3_S4",
+  "1dotRefOR3_p1",
+  "1dotRefOR3_p1_valueExpr",
+  "nested_baseS0_EachOf_2_valueExpr",
+  "1dotRefOR3_p1_valueExpr_type",
+  "nested_baseS0_EachOf_1_valueExpr",
+  "1dotRefOR3_S1_p1_valueExpr_3",
+  "1dotRefOR3_S1_p1_at3",
+  "1dotRefOR3_S1_p1_at_3",
+  "1dotRefOR3_S1_p1_valueExpr_at_ShapeAnd3",
+  "1dotRefOR3_S1_p1_valueExpr_ShapeOr3",
+  "2Eachdot_S_a",
+  "1dotRefOR3_1",
+  "1dotRefOR3_1_1",
+  "1dotRefOR3_4",
+  "1dotRefOR3_1_1_valueExpr",
+  "1dotRefOR3_S1_p1_at_ShapeOr3",
+  "1dotRefOR3_1_1_valueExpr_at3",
+  "1dotRefOR3_S1_p1_at_ShapeAnd3"
+  ).map(TestId(_))
+
+  test(s"ShapePath from Manifest") {
       val cmp = for { 
         manifest <- Manifest.fromPath(Paths.get(manifestPath + "Manifest.json")) 
         testSuite = manifest.toTestSuite(manifestPath)
-        pair <- testSuite.runAll(TestConfig.initial)
-      } yield pair
-      cmp.map { case (_, failed) => assertEquals(failed.map(_.entry.name.id), Vector[String]()) }
+        res <- testSuite.runAll(TestConfig.initial, except)
+      } yield res
+      cmp.map { case res => assertEquals(res.failed.map(_.entry.id), Vector[String]()) }
   } 
 
-  test(s"Embedded manifest".ignore) {
+  test(s"Embedded manifest") {
     val str =
         """|{
            |  "description": "collection of partition tests",
@@ -89,26 +121,28 @@ class ShapePathTestAll extends CatsEffectSuite {
            |    {
            |      "name": "2Eachdot_S_a",
            |      "from": "./2Eachdot.json",
-           |      "shexPath": "/@<http://a.example/S>/<http://a.example/a>",
+           |      "shapePath": "/@<http://a.example/S>/<http://a.example/a>",
            |      "expect": "2Eachdot_S_a"
            |    },
            |    {
            |      "name": "nested_s0_2_1*",
            |      "from": "./nested.json",
-           |      "shexPath": "@<base:/S0>/2/1*",
+           |      "shapePath": "@<base:/S0>/2/1*",
            |      "throws": true,
            |      "expect": "Error: unable to parse at offset 15: *"
            |    }
            | ]
            |}""".stripMargin
 
+      val except = List("2Eachdot_S_a").map(TestId(_))
+
 
       val cmp = for {
         manifest <- Manifest.fromString(str)
         testSuite = manifest.toTestSuite(manifestPath)
-        pair <- testSuite.runAll(TestConfig.initial)
-      } yield pair
-      cmp.map { case (_, failed) => assertEquals(failed.map(_.entry.name.id), Vector[String]()) }
+        res <- testSuite.runAll(TestConfig.initial, except)
+      } yield res
+      cmp.map { case res => assertEquals(res.failed.map(_.entry.id), Vector[String]()) }
     } 
 
 }

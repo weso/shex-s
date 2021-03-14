@@ -287,7 +287,8 @@ object Utils {
       base: URI,
       v: ValidOrFailureTest,
       name: String,
-      folderURI: URI
+      folderURI: URI,
+      verbose: Boolean
   ): IO[Option[Result]] = {
     v.maybeResult match {
       case None => IO(None) // fail(s"No result specified")
@@ -296,17 +297,24 @@ object Utils {
         val shapeMapUri  = mkLocal(mr.shapeMap, validationBase, folderURI)
         val resultMapUri = mkLocal(resultIRI, validationBase, folderURI)
         val r: IO[Option[Result]] = RDFAsJenaModel.empty.flatMap(_.use(emptyRdf =>
-          for {
-          //_             <- testInfo(s"Validating mapResult: $name")
+
+        for {
+          _             <- testInfo(s"Validating mapResult: $name", verbose)
           schemaStr     <- derefUriIO(schemaUri)
+          _             <- testInfo(s"Schema:\n$schemaStr", verbose)
           resultMapStr  <- derefUriIO(resultMapUri)
+          
           smapStr       <- derefUriIO(shapeMapUri)
+
+          _             <- testInfo(s"ShapeMap:\n$smapStr", verbose)
           sm            <- fromES(ShapeMap.fromJson(smapStr).leftMap(s => s"Error parsing shapeMap: $s\nShapeMap:\n$smapStr"))
           schema        <- Schema.fromString(schemaStr, "SHEXC", None)
           resolvedSchema <- ResolvedSchema.resolve(schema, None)
           fixedShapeMap <- ShapeMap.fixShapeMap(sm, emptyRdf, PrefixMap.empty, PrefixMap.empty)
           dataUri = mkLocal(mr.data, schemasBase, folderURI)
           strData        <- derefUriIO(dataUri)
+          _             <- testInfo(s"RDF:\n$strData", verbose)
+          
           rr      <- for {
             res1 <- RDFAsJenaModel.fromString(strData, "TURTLE", None)
             res2 <- RDFAsJenaModel.empty
@@ -314,6 +322,10 @@ object Utils {
            for {
              resultVal <- Validator(schema = resolvedSchema, builder = builder).validateShapeMap(data, fixedShapeMap)
              resultShapeMap <- resultVal.toResultShapeMap
+
+             _             <- testInfo(s"ResultShapeMap:\n$resultShapeMap", verbose)
+             _             <- testInfo(s"Expected:\n$resultMapStr", verbose)
+
              jsonResult     <- fromES(JsonResult.fromJsonString(resultMapStr))
              r <- if (jsonResult.compare(resultShapeMap))
                     result(name, true, "Json results match")

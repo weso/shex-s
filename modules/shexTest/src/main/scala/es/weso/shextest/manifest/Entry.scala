@@ -7,19 +7,19 @@ import es.weso.shextest.manifest.Utils._
 import java.net.URI
 import cats.effect.IO
 //import cats._
-import cats.implicits._
+// import cats.implicits._
 import es.weso.shex.Schema
 import es.weso.shex.compact.CompareSchemas
 import io.circe.parser._
 import java.nio.file.Paths
-import es.weso.rdf.jena.RDFAsJenaModel
-import es.weso.shex.ResolvedSchema
-import es.weso.shapemaps.FixedShapeMap
-import es.weso.shapemaps.Info
-import es.weso.shex.validator.ExternalIRIResolver
-import es.weso.shex.validator.Validator
-import es.weso.shapemaps.ShapeMap
-import es.weso.rdf.PrefixMap
+// import es.weso.rdf.jena.RDFAsJenaModel
+// import es.weso.shex.ResolvedSchema
+// import es.weso.shapemaps.FixedShapeMap
+// import es.weso.shapemaps.Info
+// import es.weso.shex.validator.ExternalIRIResolver
+// import es.weso.shex.validator.Validator
+// import es.weso.shapemaps.ShapeMap
+// import es.weso.rdf.PrefixMap
 import es.weso.utils.IOUtils._
 
 abstract trait Entry {
@@ -127,7 +127,7 @@ case class Validate(override val node: RDFNode,
                  }
               })
             case mr: MapResultAction => 
-              validateMapResult(mr,base,this,name,uri).map(
+              validateMapResult(mr,base,this,name,uri, verbose).map(
                maybeR => maybeR match {
                  case None => FailedResult(id,Some("No result"),None,None)
                  case Some(res) => if (res.isOk == shouldPass) {

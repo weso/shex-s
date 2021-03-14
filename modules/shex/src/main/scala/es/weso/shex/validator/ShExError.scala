@@ -33,7 +33,6 @@ object ShExError {
       case _ => node
     }
     val locations = rdf.nodeLocations.get(node2search) 
-    println(s"#### Locations: ${locations}")
     Json.fromFields(
      List(("lexicalForm", node.getLexicalForm.asJson)) 
        ++ (if (locations.isEmpty) List()

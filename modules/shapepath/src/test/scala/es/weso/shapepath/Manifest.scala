@@ -9,29 +9,33 @@ import cats.implicits._
 import cats.effect._
 import java.nio.file.Path
 import scala.io.{BufferedSource, Source}
-import es.weso.shex.{IRILabel, Schema}
+import es.weso.shex._
 import es.weso.rdf.nodes.IRI
 import cats._
 import es.weso.utils.FileUtils
 
+import io.circe.CursorOp._
 
 case class ManifestEntry(
     name: String,
     from: String,
-    shexPath: String,
+    shapePath: String,
     expect: String,
     throws: Option[Boolean],
     status: Option[String],
     comment: Option[String]
 ) {
-  def toTestEntry(manifestPath: String): TestEntry = TestEntry(name = TestId(name), action = 
+  def toTestEntry(manifestPath: String): TestEntry = {
+    val id = TestId(name)
+    TestEntry(id = id, action = 
     throws match {
-        case None | Some(false) => processEntryPositive(name, from, shexPath, expect, manifestPath)
-        case Some(true)         => processEntryNegative(name, shexPath, expect)
+        case None | Some(false) => processEntryPositive(id, from, shapePath, expect, manifestPath)
+        case Some(true)         => processEntryNegative(id, shapePath, expect)
       }
    )
+  }
 
-  def processEntryPositive(name: String, from: String, shapePath: String, expect: String, manifestPath: String): IO[Boolean] = {
+  def processEntryPositive(id: TestId, from: String, shapePath: String, expect: String, manifestPath: String): IO[TestResult] = {
     readContents2(manifestPath + from, manifestPath + expect + ".json").use(
       pair => {
         val (schemaStr,expectStr) = pair
@@ -44,15 +48,20 @@ case class ManifestEntry(
           _ <- if (!es.isEmpty) IO {
             println(s"Processing errors: ${es.map(_.toString + "\n").mkString}")
           } else IO.pure(())
-        } yield (v.asJson === expectedValues)
+        } yield 
+        if (v.asJson === expectedValues) 
+          PassedResult(id,msg = Some(s"JSon equals expected"))
+        else 
+          FailedResult(id,msg = Some(s"Json's are different =\n${v.asJson.spaces2}\nExpected: ${expectedValues.spaces2}"))  
+
       }
     )
   }
 
-  def processEntryNegative(name: String, shapePath: String, msgExpected: String): IO[Boolean] = {
+  def processEntryNegative(id: TestId, shapePath: String, msgExpected: String): IO[TestResult] = {
     ShapePath.fromString(shapePath).fold(
-      err => IO.pure(true), 
-      _ => IO.pure(false)
+      err => IO.pure(PassedResult(id, msg = Some(s"Failed to parse as expected with msg: ${err}"))), 
+      v => IO.pure(FailedResult(id,msg = Some(s"Parsed as $v but it was expected to fail\nshapePath: $shapePath")))
     )
   }
 
@@ -62,8 +71,8 @@ case class ManifestEntry(
   private def readContents(path: String): Resource[IO, String] =
     readFile(path).map(_.mkString)
 
-  private def readJsonContents(path: String): Resource[IO, Either[ParsingFailure, Json]] =
-    readContents(path).map(parse(_))
+/*  private def readJsonContents(path: String): Resource[IO, Either[ParsingFailure, Json]] =
+    readContents(path).map(parse(_)) */
 
   private def readFile(path: String): Resource[IO, BufferedSource] =
     Resource.fromAutoCloseable(IO(Source.fromFile(path)))
@@ -82,7 +91,8 @@ case class ManifestEntry(
 
 }
 
-case class ManifestErrorParsingJson(failure: DecodingFailure) extends RuntimeException(s"Error obtaining manifest from json: ${failure.message}")
+case class ManifestErrorParsingJson(failure: DecodingFailure, line: String, json: String) extends 
+  RuntimeException(s"Error obtaining manifest from json: ${failure.message}\nLine: ${line}\nJson:\n ${json}")
 case class Manifest(
  description: String,
  tests: List[ManifestEntry]
@@ -99,8 +109,29 @@ object Manifest {
   implicit val manifestDecoder: Decoder[Manifest] = deriveDecoder
   implicit val manifestEncoder: Encoder[Manifest] = deriveEncoder
 
+  // The following code has been borrowed from: https://github.com/circe/circe/issues/1464
+  def historyToLineNumber(cursor: ACursor, history: Seq[CursorOp]): String = {
+  history.headOption match {
+    // support other CursorOp subclasses...
+    case Some(DownField(f)) => historyToLineNumber(cursor.downField(f), history.tail)
+    case _ =>
+      val target = "<Intentionally_Break_The_Json_Parser_HERE_To_Get_Line_Number!>"
+      val broken = parse(
+        cursor
+        .withFocus(_ => Json.fromString(target))
+        .top.get.toString.replace(s""""$target"""", ">something that will break it!")
+      )
+      broken.toString // It shouldn't arrive here
+  }
+}
+
+//val errorMessageContainingLineNumber = historyToLineNumber(hcursor.downField("Top"), history.reverse)
+
   def fromJson(json: Json): IO[Manifest] = json.as[Manifest].fold(
-    f => IO.raiseError(ManifestErrorParsingJson(f)),
+    f => { 
+      val line = historyToLineNumber(json.hcursor, f.history.reverse)
+      IO.raiseError(ManifestErrorParsingJson(f, line, json.spaces2))
+    },
     IO.pure(_)
   )
 

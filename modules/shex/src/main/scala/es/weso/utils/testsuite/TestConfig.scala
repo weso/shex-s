@@ -8,6 +8,6 @@ case class TestConfig(
 )
 
 object TestConfig {
-  def initial: TestConfig = TestConfig(3 second, true)
+  def initial: TestConfig = TestConfig(5 second, true)
 }
  
