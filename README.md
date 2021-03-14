@@ -4,7 +4,7 @@ Scala implementation of SHEX.
 
 This project contains an implementation of [ShEx](http://www.shex.io).
 
-[![Build Status](https://travis-ci.org/weso/shex-s.svg?branch=master)](https://travis-ci.org/weso/shex-s)
+[![Continuous Integration](https://github.com/weso/shex-s/actions/workflows/ci.yml/badge.svg)](https://github.com/weso/shex-s/actions/workflows/ci.yml)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/d421668975834528bf562ca81bff4433)](https://www.codacy.com/gh/weso/shex-s?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=weso/shex-s&amp;utm_campaign=Badge_Grade)
 [![codecov](https://codecov.io/gh/weso/shex-s/branch/master/graph/badge.svg)](https://codecov.io/gh/weso/shex-s)
 
