@@ -564,7 +564,7 @@ object Main extends CommandIOApp(
 
   private def runManifest(mf: Manifest): IO[ExitCode] =
     for {
-      eitherManifest <- RDF2Manifest.read(mf.manifestPath.toAbsolutePath().toFile().toString(), "Turtle", None, true).attempt
+      eitherManifest <- RDF2Manifest.read(mf.manifestPath, "Turtle", None, true).attempt
       exitCode <- eitherManifest.fold(
         e =>
           putStrLn(s"Error reading manifest: $e") *>
