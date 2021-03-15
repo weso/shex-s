@@ -1,4 +1,3 @@
-import bloop.config.Config
 lazy val scala212 = "2.12.13"
 lazy val scala213 = "2.13.5"
 lazy val scala3   = "3.0.0-M3"
@@ -13,7 +12,7 @@ val Java11 = "adopt@1.11"
 // Local dependencies
 lazy val srdfVersion           = "0.1.93"
 lazy val shapeMapsVersion      = "0.1.78"
-lazy val utilsVersion          = "0.1.77"
+lazy val utilsVersion          = "0.1.78"
 lazy val documentVersion       = "0.0.15"
 
 // Dependency versions
@@ -92,6 +91,8 @@ lazy val utils             = "es.weso"                    %% "utils"           %
 lazy val typing            = "es.weso"                    %% "typing"          % utilsVersion
 lazy val validating        = "es.weso"                    %% "validating"      % utilsVersion
 lazy val utilsTest         = "es.weso"                    %% "utilstest"       % utilsVersion
+lazy val testsuite         = "es.weso"                    %% "testsuite"       % utilsVersion
+
 
 lazy val scalaLogging   = "com.typesafe.scala-logging" %% "scala-logging" % loggingVersion
 lazy val scallop        = "org.rogach"                 %% "scallop"       % scallopVersion
@@ -256,6 +257,7 @@ lazy val shapepath = project
       catsEffect,
       pprint,
       antlr4,
+      testsuite,
       scalaTest  % Test,
       scalacheck % Test,
       munit % Test,
@@ -315,6 +317,7 @@ lazy val shexTest = project
       catsEffect,
       utils     % "test -> test; compile -> compile",
       utilsTest % Test,
+      testsuite,
       srdf,
       shapeMaps,
       srdfJena,
