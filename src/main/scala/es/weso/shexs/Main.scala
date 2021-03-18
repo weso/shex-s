@@ -3,7 +3,6 @@ package es.weso.shexs
 // import cats.arrow.FunctionK
 // import cats.data.StateT
 import cats.effect._
-import cats.effect.Console.io._
 import cats.implicits._
 // import cats.~>
 import es.weso.rdf._
@@ -176,7 +175,7 @@ object Main extends CommandIOApp (
   
 
   def info(msg: String, verbose: Boolean): IO[Unit] = 
-   if (verbose) putStrLn(msg)
+   if (verbose) IO.println(msg)
    else IO(())
 
   override def main: Opts[IO[ExitCode]] =
@@ -196,7 +195,9 @@ object Main extends CommandIOApp (
    ) 
 
    private def infoError(err: Throwable): IO[ExitCode] =
-    putStrLn(s"Error ${err.getLocalizedMessage()}") *> IO(ExitCode.Error)
+    IO.println(s"Error ${err.getLocalizedMessage()}") *> IO(ExitCode.Error)
+
+  
 
    private def doSchemaMapping(smc: SchemaMapping): IO[ExitCode] = for {
        schema <- getSchema(smc.schemaSpec, smc.baseIRI)
@@ -209,14 +210,14 @@ object Main extends CommandIOApp (
          err => IO.raiseError(new RuntimeException(err.map(_.toString).mkString("\n"))),
          s => s.pure[IO],
          (warnings: List[ProcessingError], s: Schema) => for {
-           _ <- putStrLn(warnings.map(_.toString).mkString("\n"))
+           _ <- IO.println(warnings.map(_.toString).mkString("\n"))
          } yield s
        )
        _ <- smc.output match {
-         case None => putStrLn(newSchema.show)
+         case None => IO.println(newSchema.show)
          case Some(outputPath) => for { 
            _ <- writeFile(outputPath.toFile().getAbsolutePath(), newSchema.show)
-           _ <- putStrLn(s"Output saved in ${outputPath}")
+           _ <- IO.println(s"Output saved in ${outputPath}")
          } yield ()  
        } 
      } yield ExitCode.Success
@@ -285,13 +286,13 @@ object Main extends CommandIOApp (
      shapePath <- IO.fromEither(ShapePath.fromString(spc.shapePath, "Compact", None, schema.prefixMap).leftMap(err => new RuntimeException(s"Error parsing shapePath: ${err}")))
      result <- { 
        val (ls,v) = ShapePath.eval(shapePath,schema)
-       putStrLn(ls.map(_.toString).mkString("\n")) *>
+       IO.println(ls.map(_.toString).mkString("\n")) *>
        v.pure[IO]
      } 
    } yield ExitCode.Success 
 
   private def showResult(result: ResultShapeMap, showResultFormat: String): IO[Unit] =
-    putStrLn(result.serialize(showResultFormat).fold(
+    IO.println(result.serialize(showResultFormat).fold(
       err => s"Error serializing ${result} with format ${showResultFormat}: $err", 
       identity)
     )
@@ -314,10 +315,10 @@ object Main extends CommandIOApp (
       eitherManifest <- RDF2Manifest.read(mf.manifestPath, "Turtle", None, true).attempt
       exitCode <- eitherManifest.fold(
         e =>
-          putStrLn(s"Error reading manifest: $e") *>
+          IO.println(s"Error reading manifest: $e") *>
           IO(ExitCode.Error),
         manifest =>
-          putStrLn(
+          IO.println(
             s"""|Manifest read with ${manifest.entries.length} entries
           |Number of includes: ${manifest.includes.length}""".stripMargin
           ) *>

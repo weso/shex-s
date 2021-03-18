@@ -10,8 +10,8 @@ lazy val supportedScalaVersions = List(
 val Java11 = "adopt@1.11"  
 
 // Local dependencies
-lazy val srdfVersion           = "0.1.93"
-lazy val shapeMapsVersion      = "0.1.78"
+lazy val srdfVersion           = "0.1.85"
+lazy val shapeMapsVersion      = "0.1.79"
 lazy val utilsVersion          = "0.1.78"
 lazy val documentVersion       = "0.0.15"
 
@@ -20,11 +20,10 @@ lazy val antlrVersion          = "4.7.1"
 lazy val catsVersion           = "2.4.2"
 lazy val catsEffectVersion     = "3.0.0-RC2"
 lazy val commonsTextVersion    = "1.8"
-lazy val console4catsVersion   = "0.8.1"
 lazy val circeVersion          = "0.14.0-M4"
 lazy val declineVersion        = "2.0.0-RC1"
 lazy val diffsonVersion        = "4.0.0"
-lazy val fs2Version            = "3.0.0-M7"
+lazy val fs2Version            = "3.0.0-M9"
 // lazy val effVersion            = "4.6.1"
 lazy val jenaVersion           = "3.16.0"
 lazy val junitVersion          = "4.13.1"
@@ -62,7 +61,6 @@ lazy val circeCore         = "io.circe"                   %% "circe-core"       
 lazy val circeGeneric      = "io.circe"                   %% "circe-generic"       % circeVersion
 lazy val circeParser       = "io.circe"                   %% "circe-parser"        % circeVersion
 lazy val commonsText       = "org.apache.commons"         %  "commons-text"        % commonsTextVersion
-lazy val console4cats      = "dev.profunktor"             %% "console4cats"        % console4catsVersion
 lazy val decline           = "com.monovore"               %% "decline"             % declineVersion
 lazy val declineEffect     = "com.monovore"               %% "decline-effect"      % declineVersion
 lazy val diffsonCirce      = "org.gnieh"                  %% "diffson-circe"       % diffsonVersion
@@ -146,7 +144,6 @@ lazy val shexs = project
       catsCore,
       catsKernel,
       catsEffect,
-      console4cats,
       decline, declineEffect, 
       logbackClassic,
       srdf,
