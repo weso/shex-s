@@ -22,7 +22,7 @@ lazy val catsEffectVersion     = "3.0.0-RC2"
 lazy val commonsTextVersion    = "1.8"
 lazy val console4catsVersion   = "0.8.1"
 lazy val circeVersion          = "0.14.0-M4"
-lazy val declineVersion        = "1.3.0"
+lazy val declineVersion        = "2.0.0-RC1"
 lazy val diffsonVersion        = "4.0.0"
 lazy val fs2Version            = "3.0.0-M7"
 // lazy val effVersion            = "4.6.1"
@@ -219,7 +219,7 @@ lazy val shex = project
       munit % Test,
       munitEffect % Test
     ),
-    testFrameworks += new TestFramework("munit.Framework")
+    testFrameworks += MUnitFramework
   )
 
 lazy val depGraphs = project
