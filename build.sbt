@@ -10,9 +10,9 @@ lazy val supportedScalaVersions = List(
 val Java11 = "adopt@1.11"  
 
 // Local dependencies
-lazy val srdfVersion           = "0.1.85"
-lazy val shapeMapsVersion      = "0.1.79"
-lazy val utilsVersion          = "0.1.78"
+lazy val srdfVersion           = "0.1.94"
+lazy val shapeMapsVersion      = "0.1.80"
+lazy val utilsVersion          = "0.1.79"
 lazy val documentVersion       = "0.0.15"
 
 // Dependency versions
@@ -36,9 +36,9 @@ lazy val munitEffectVersion    = "0.13.1"
 lazy val pprintVersion         = "0.6.0"
 lazy val rdf4jVersion          = "3.4.2"
 lazy val scalacheckVersion     = "1.14.0"
-lazy val scalacticVersion      = "3.2.0"
-lazy val scalaTestVersion      = "3.2.0"
-lazy val scalaGraphVersion     = "1.11.5"
+// lazy val scalacticVersion      = "3.2.0"
+// lazy val scalaTestVersion      = "3.2.0"
+// lazy val scalaGraphVersion     = "1.11.5"
 // lazy val scalatagsVersion      = "0.6.7"
 lazy val scallopVersion        = "3.3.1"
 lazy val sextVersion           = "0.2.6"
@@ -94,9 +94,9 @@ lazy val testsuite         = "es.weso"                    %% "testsuite"       %
 
 lazy val scalaLogging   = "com.typesafe.scala-logging" %% "scala-logging" % loggingVersion
 lazy val scallop        = "org.rogach"                 %% "scallop"       % scallopVersion
-lazy val scalactic      = "org.scalactic"              %% "scalactic"     % scalacticVersion
+// lazy val scalactic      = "org.scalactic"              %% "scalactic"     % scalacticVersion
 lazy val scalacheck     = "org.scalacheck"             %% "scalacheck"    % scalacheckVersion
-lazy val scalaTest      = "org.scalatest"              %% "scalatest"     % scalaTestVersion
+//lazy val scalaTest      = "org.scalatest"              %% "scalatest"     % scalaTestVersion
 // lazy val scalatags      = "com.lihaoyi"                %% "scalatags"     % scalatagsVersion
 lazy val sext           = "com.github.nikita-volkov"   % "sext"           % sextVersion
 lazy val pprint         = "com.lihaoyi"                %% "pprint"        % pprintVersion
@@ -198,7 +198,7 @@ lazy val shex = project
       circeParser,
       catsEffect,
       pprint,
-      scalaTest  % Test,
+      // scalaTest  % Test,
       scalacheck % Test,
       typing,
       document,
@@ -255,7 +255,7 @@ lazy val shapepath = project
       pprint,
       antlr4,
       testsuite,
-      scalaTest  % Test,
+      // scalaTest  % Test,
       scalacheck % Test,
       munit % Test,
       munitEffect % Test
@@ -306,7 +306,7 @@ lazy val shexTest = project
       circeCore,
       circeGeneric,
       circeParser,
-      scalaTest  % Test,
+      // scalaTest  % Test,
       scalacheck % Test,
       weaver % Test,
       munit % Test,
@@ -375,8 +375,8 @@ lazy val noPublishSettings = Seq(
 
 lazy val sharedDependencies = Seq(
   libraryDependencies ++= Seq(
-    scalactic,
-    scalaTest % Test
+    // scalactic,
+    // scalaTest % Test
   )
 )
 
