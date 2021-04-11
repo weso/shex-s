@@ -1,6 +1,5 @@
 package es.weso.shex.validator
 
-import com.typesafe.scalalogging.LazyLogging
 import es.weso.rdf.RDFReader
 import es.weso.rdf.nodes._
 import es.weso.rdf.operations.Comparisons._
@@ -16,9 +15,7 @@ import es.weso.utils.eitherios.EitherIOUtils._
 import es.weso.rdf.RDFBuilder
 
 case class FacetChecker(schema: AbstractSchema, rdf: RDFReader, builder: RDFBuilder) 
-  extends ShExChecker
-  with ShowValidator 
-  with LazyLogging {
+  extends ShExChecker with ShowValidator {
 
   def checkFacets(attempt: Attempt, node: RDFNode)(facets: List[XsFacet]): CheckTyping =
     for {

@@ -3,7 +3,6 @@ package es.weso.shex.validator
 import cats._
 import implicits._
 import cats.effect.IO
-import com.typesafe.scalalogging.LazyLogging
 import es.weso.shex._
 import es.weso.rdf._
 import es.weso.rdf.nodes._
@@ -27,8 +26,7 @@ case class Validator(schema: ResolvedSchema,
                      builder: RDFBuilder
                      )
     extends ShExChecker
-    with ShowValidator
-    with LazyLogging {
+    with ShowValidator {
 
   type ShapeChecker     = ShapeExpr => CheckTyping
   type NodeShapeChecker = (RDFNode, Shape) => CheckTyping
@@ -727,7 +725,7 @@ case class Validator(schema: ResolvedSchema,
           )
         }
         case _ => {
-          logger.info(s"Unsupported semantic action processor: $name")
+          // logger.info(s"Unsupported semantic action processor: $name")
           addAction2Log(Action(name, code))
           ok(unit)
         }

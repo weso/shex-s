@@ -1,11 +1,9 @@
 package es.weso.shex
-import org.scalatest._
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
+import munit._
 
-class CardinalityTest extends AnyFunSpec with Matchers with EitherValues {
+class CardinalityTest extends FunSuite {
 
-  describe(s"Cardinality test") {
+
     checkBetween(2,1,IntMax(5))
     checkBetween(2,0,IntMax(2))
     checkBetween(2,2,IntMax(5))
@@ -16,16 +14,15 @@ class CardinalityTest extends AnyFunSpec with Matchers with EitherValues {
     checkNotBetween(0,1,Star)
     checkNotBetween(10,11,Star)
     checkNotBetween(10,42,Star)
-  }
 
-  def checkBetween(n: Int, min: Int, max: Max): Unit = {
-    it(s"Should check that $n is between $min and $max") {
-      Cardinality(min,max).contains(n) should be(true)
+  def checkBetween(n: Int, min: Int, max: Max)(implicit loc: munit.Location): Unit = {
+    test(s"Should check that $n is between $min and $max") {
+      assertEquals(Cardinality(min,max).contains(n), true)
     }
   }
-  def checkNotBetween(n: Int, min: Int, max: Max): Unit = {
-    it(s"Should check that $n is not between $min and $max") {
-      Cardinality(min,max).contains(n) should be(false)
+  def checkNotBetween(n: Int, min: Int, max: Max)(implicit loc: munit.Location): Unit = {
+    test(s"Should check that $n is not between $min and $max") {
+      assertEquals(Cardinality(min,max).contains(n), false)
     }
   }
 }

@@ -1,17 +1,14 @@
 package es.weso.shex.validator
 
-import org.scalatest._
+import munit._
 import cats._
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
 
-class ContextTest extends AnyFunSpec with Matchers with EitherValues {
+class ContextTest extends FunSuite {
 
-  describe(s"Context") {
-    it("should generate empty context") {
+  
+ test("should generate empty context") {
       val ctx = Monoid[Context].empty
-      ctx.typing.getMap.isEmpty should be(true)
-    }
-  }
+  assertEquals(ctx.typing.getMap.isEmpty, true)
+ }
 
 }

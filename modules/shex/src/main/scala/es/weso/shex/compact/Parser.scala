@@ -3,7 +3,6 @@ package es.weso.shex.compact
 import java.io.{ByteArrayInputStream, InputStreamReader, Reader => JavaReader}
 import cats.data._
 import cats.implicits._
-import com.typesafe.scalalogging._
 import es.weso.rdf._
 import es.weso.rdf.nodes._
 import es.weso.shex._
@@ -16,7 +15,7 @@ import es.weso.utils.FileUtils
 import scala.collection.immutable.ListMap
 import es.weso.rdf.locations.Location
 
-object Parser extends LazyLogging {
+object Parser {
 
   type S[A] = State[BuilderState, A]
   type Builder[A] = EitherT[S, String, A]
@@ -110,12 +109,12 @@ object Parser extends LazyLogging {
     val UTF8_BOM = "\uFEFF"
     val s =
       if (str.startsWith(UTF8_BOM)) {
-        logger.debug("BOM detected and removed")
+        // logger.debug("BOM detected and removed")
         str.substring(1)
       } else str
     val reader: JavaReader =
       new InputStreamReader(new ByteArrayInputStream(s.getBytes(StandardCharsets.UTF_8)))
-    logger.debug(s"s:$s")
+    // logger.debug(s"s:$s")
     parseSchemaReader(reader, base)
   }
 

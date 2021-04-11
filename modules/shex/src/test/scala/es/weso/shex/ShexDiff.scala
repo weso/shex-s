@@ -1,28 +1,25 @@
 package es.weso.shex
-import org.scalatest._
+import munit._
 import es.weso.rdf.nodes._
 import es.weso.rdf._
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
 
-class shexDiffTest extends AnyFunSpec with Matchers with EitherValues {
+class ShexDiffTest extends FunSuite {
 
-  describe("shexDiff") {
-    it("should calculate diffs of base values") {
+  test("should calculate diffs of base values") {
       val iri = IRI("http://example.org/")
       val x1 = Schema.empty.copy(base = Some(iri))
       val x2 = Schema.empty.copy(base = Some(iri))
       val d = ShExDiff.schemaDiff(x1, x2)
       shouldBeOK(d)
     }
-    it("should calculate diffs of start actions") {
+  test("should calculate diffs of start actions") {
       val iri = IRI("http://example.org/")
       val x1 = Schema.empty.copy(startActs = Some(List(SemAct(iri, Some("code")))))
       val x2 = Schema.empty.copy(startActs = Some(List(SemAct(iri, Some("code")))))
       val d = ShExDiff.schemaDiff(x1, x2)
       shouldBeOK(d)
     }
-    it("should calculate diffs of prefixes") {
+  test("should calculate diffs of prefixes") {
       val iri = IRI("http://example.org/")
       val x1 = Schema.empty.copy(
         prefixes = Some(
@@ -35,9 +32,8 @@ class shexDiffTest extends AnyFunSpec with Matchers with EitherValues {
       val d = ShExDiff.schemaDiff(x1, x2)
       shouldBeOK(d)
     }
-  }
 
-  def shouldBeOK[A](x: ShExDiff.Result[A]): Unit = {
+  def shouldBeOK[A](x: ShExDiff.Result[A])(implicit loc: munit.Location): Unit = {
     if (!x.isValid) {
       fail(s"Different: $x")
     }
