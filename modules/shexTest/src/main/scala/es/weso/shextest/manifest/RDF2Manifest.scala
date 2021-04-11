@@ -4,7 +4,6 @@ import java.nio.file._
 // import java.util.concurrent.Executors
 
 import cats.effect._
-import com.typesafe.scalalogging.LazyLogging
 import es.weso.rdf._
 import es.weso.rdf.jena.RDFAsJenaModel
 import es.weso.rdf.nodes._
@@ -26,7 +25,7 @@ import es.weso.utils.FileUtils._
 
 case class ManifestContext(base: Option[IRI], derefIncludes: Boolean, visited: List[IRI])
 
-class RDF2Manifest extends RDFParser with LazyLogging {
+class RDF2Manifest extends RDFParser {
 
   type ManifestParser[A] = ReaderT[RDFParser,ManifestContext,A]
   def liftParser[A](parser: RDFParser[A]): ManifestParser[A] = ReaderT.liftF(parser)
@@ -372,7 +371,7 @@ class RDF2Manifest extends RDFParser with LazyLogging {
  */
 }
 
-object RDF2Manifest extends LazyLogging {
+object RDF2Manifest {
 
   private def getIriBase(base: Option[String]): IO[Option[IRI]] =
     base match {

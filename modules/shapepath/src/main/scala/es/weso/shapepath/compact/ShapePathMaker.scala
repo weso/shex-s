@@ -1,5 +1,5 @@
 package es.weso.shapepath.compact
-import com.typesafe.scalalogging.LazyLogging
+// import com.typesafe.scalalogging.LazyLogging
 import cats.implicits._
 // import es.weso.rdf.Prefix
 import es.weso.rdf.nodes._
@@ -19,7 +19,7 @@ import scala.jdk.CollectionConverters._
 /**
  * Visits the AST and builds the corresponding abstract syntax
  */
-class ShapePathMaker extends ShapePathDocBaseVisitor[Any] with LazyLogging {
+class ShapePathMaker extends ShapePathDocBaseVisitor[Any]  {
 
   override def visitShapePathDoc(ctx: ShapePathDocContext): Builder[ShapePath] = {
     visitExpr(ctx.expr())

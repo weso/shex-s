@@ -10,8 +10,8 @@ lazy val supportedScalaVersions = List(
 val Java11 = "adopt@1.11"  
 
 // Local dependencies
-lazy val srdfVersion           = "0.1.95"
-lazy val shapeMapsVersion      = "0.1.81"
+lazy val srdfVersion           = "0.1.96"
+lazy val shapeMapsVersion      = "0.1.82"
 lazy val utilsVersion          = "0.1.81"
 lazy val documentVersion       = "0.0.17"
 
@@ -23,7 +23,7 @@ lazy val commonsTextVersion    = "1.8"
 lazy val circeVersion          = "0.14.0-M5"
 lazy val declineVersion        = "2.0.0-RC1"
 // lazy val diffsonVersion        = "4.0.0"
-lazy val fs2Version            = "3.0.1"
+lazy val fs2Version            = "3.0.0"
 // lazy val effVersion            = "4.6.1"
 lazy val jenaVersion           = "3.16.0"
 lazy val junitVersion          = "4.13.1"
