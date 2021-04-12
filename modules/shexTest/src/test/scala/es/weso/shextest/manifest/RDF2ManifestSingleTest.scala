@@ -3,7 +3,7 @@ import java.nio.file.Paths
 import com.typesafe.config.{Config, ConfigFactory}
 import munit._
 
-class RDF2ManifestSingleTest extends FunSuite with ValidateManifest {
+class RDF2ManifestSingleTest extends CatsEffectSuite with ValidateManifest {
 
   val conf: Config = ConfigFactory.load()
   val validationFolder = conf.getString("testsFolder")
@@ -17,10 +17,10 @@ class RDF2ManifestSingleTest extends FunSuite with ValidateManifest {
        // None, 
        Some(
          // "Extend3G-pass"
-         "2EachInclude1-S2"
+         "1dotRefOR3_fail"
          ),
        List(),
-       verbose = true)
+       verbose = true).map(rs => assertEquals(rs.size > 0, true))
   }
 
 }

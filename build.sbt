@@ -42,7 +42,7 @@ lazy val scalacheckVersion     = "1.14.0"
 // lazy val scalatagsVersion      = "0.6.7"
 // lazy val scallopVersion        = "3.3.1"
 // lazy val sextVersion           = "0.2.6"
-lazy val typesafeConfigVersion = "1.3.4"
+lazy val typesafeConfigVersion = "1.4.1"
 lazy val xercesVersion         = "2.12.0"
 // lazy val weaverVersion         = "0.7.0-M6"
 
@@ -219,7 +219,6 @@ lazy val shex = project
 
 lazy val depGraphs = project
   .in(file("modules/depGraphs"))
-//  .disablePlugins(RevolverPlugin)
   .settings(commonSettings, publishSettings)
   .settings(
     crossScalaVersions := supportedScalaVersions,
@@ -243,9 +242,6 @@ lazy val shapepath = project
     publishSettings,
     antlrSettings("es.weso.shapepath.parser"),
     libraryDependencies ++= Seq(
-      typesafeConfig % Test,
-      // logbackClassic % Test,
-      // scalaLogging,
       circeCore,
       circeGeneric,
       circeParser,
@@ -253,10 +249,10 @@ lazy val shapepath = project
       pprint,
       antlr4,
       testsuite,
-      // scalaTest  % Test,
       scalacheck % Test,
       munit % Test,
-      munitEffect % Test
+      munitEffect % Test,
+      typesafeConfig % Test,
     ),
     testFrameworks += new TestFramework("munit.Framework")
   ).dependsOn(shex)
@@ -283,7 +279,6 @@ lazy val wikibaserdf = project
 
 lazy val shexTest = project
   .in(file("modules/shexTest"))
-//  .disablePlugins(RevolverPlugin)
   .configs(CompatTest)
   .settings(
     crossScalaVersions := supportedScalaVersions,
@@ -298,25 +293,21 @@ lazy val shexTest = project
   )
   .settings(
     libraryDependencies ++= Seq(
-      // typesafeConfig % Test,
-      // logbackClassic % Test,
-      // scalaLogging,
       circeCore,
       circeGeneric,
       circeParser,
-      // scalaTest  % Test,
-      scalacheck % Test,
-      // weaver % Test,
-      munit % Test,
-      munitEffect % Test,
       catsEffect,
       utils     % "test -> test; compile -> compile",
-      utilsTest % Test,
       testsuite,
       srdf,
       shapeMaps,
       srdfJena,
-      srdf4j % Test
+      scalacheck % Test,
+      munit % Test,
+      munitEffect % Test,
+      utilsTest % Test,
+      srdf4j % Test,
+      typesafeConfig % Test,
     ), 
     testFrameworks ++= Seq(
       new TestFramework("munit.Framework"), 
