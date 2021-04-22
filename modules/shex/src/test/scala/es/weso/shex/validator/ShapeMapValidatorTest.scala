@@ -2,7 +2,7 @@ package es.weso.shex.validator
 
 class ShapeMapValidatorTest extends ShouldValidateShapeMap {
 
-  { // shape Map
+/*  { // shape Map
     val shexStr =
       """
         |prefix : <http://example.org/>
@@ -349,5 +349,5 @@ class ShapeMapValidatorTest extends ShouldValidateShapeMap {
     shouldValidateWithShapeMap(rdfStr, shexStr, ":ok2@:S", ":ok2@:S",true)
     shouldValidateWithShapeMap(rdfStr, shexStr, ":ko1@:S", ":ko1@!:S")
     shouldValidateWithShapeMap(rdfStr, shexStr, ":ko2@:S", ":ko2@!:S")
-  } 
+  } */
 }

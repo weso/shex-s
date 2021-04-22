@@ -16,7 +16,6 @@ import Function.tupled
 import es.weso.shex.validator.ShExError._
 import es.weso.shex.validator.ConstraintRef.{showConstraintRef => _}
 import es.weso.utils.internal.CollectionCompat._
-// import cats.data._
 
 /**
   * ShEx validator
