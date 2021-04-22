@@ -59,23 +59,6 @@ case class Validator(schema: ResolvedSchema,
       _ <- info(s"returning...")
     } yield t 
 
-/*  private def removeAbstractShapes(t: ShapeTyping): CheckTyping = for {
-    ls <- fromIO(abstractNoDescendants(t,schema.inheritanceGraph))
-    newT = ls.map(st => addNotEvidence(st,))  // t.negateShapeTypesWith(abstractNoDescendants(t,schema.inheritanceGraph), AbstractShapeErrNoArgs())
-  } yield newT 
-  
-  private def abstractNoDescendants(t: ShapeTyping, inheritanceGraph: Inheritance[ShapeLabel])(st: ShapeType): IO[List[ShapeType]] = {
-    if (st.isAbstract) st.label match {
-     case None => false
-     case Some(lbl) => {
-       val descendants = inheritanceGraph.ancestors(lbl)
-       pprint.log(descendants.map(_.show),"descendants")
-       descendants.map()
-       ???
-     }
-   } else false
-  } */
-
   private def checkNodeShapeMapLabel(node: RDFNode, label: ShapeMapLabel, info: Info): CheckTyping =
     info.status match {
       case Conformant =>
