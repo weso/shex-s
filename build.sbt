@@ -29,46 +29,27 @@ lazy val jenaVersion           = "3.16.0"
 lazy val junitVersion          = "4.13.1"
 lazy val junitInterfaceVersion = "0.11"
 lazy val jgraphtVersion        = "1.3.1"
-// lazy val logbackVersion        = "1.2.3"
-// lazy val loggingVersion        = "3.9.2"
 lazy val munitVersion          = "0.7.22"
 lazy val munitEffectVersion    = "0.13.1"
 lazy val pprintVersion         = "0.6.0"
 lazy val rdf4jVersion          = "3.4.2"
 lazy val scalacheckVersion     = "1.14.0"
-// lazy val scalacticVersion      = "3.2.0"
-// lazy val scalaTestVersion      = "3.2.0"
-// lazy val scalaGraphVersion     = "1.11.5"
-// lazy val scalatagsVersion      = "0.6.7"
-// lazy val scallopVersion        = "3.3.1"
-// lazy val sextVersion           = "0.2.6"
 lazy val typesafeConfigVersion = "1.4.1"
 lazy val xercesVersion         = "2.12.0"
-// lazy val weaverVersion         = "0.7.0-M6"
-
-// Compiler plugin dependency versions
-// lazy val simulacrumVersion = "1.0.0"
-// lazy val kindProjectorVersion = "0.9.5"
-// lazy val scalaMacrosVersion = "2.1.1"
 
 // Dependency modules
 lazy val antlr4            = "org.antlr"                  % "antlr4"               % antlrVersion
 lazy val catsCore          = "org.typelevel"              %% "cats-core"           % catsVersion
 lazy val catsKernel        = "org.typelevel"              %% "cats-kernel"         % catsVersion
-// lazy val catsMacros        = "org.typelevel"              %% "cats-macros"         % catsMacrosVersion
 lazy val catsEffect        = "org.typelevel"              %% "cats-effect"         % catsEffectVersion
 lazy val circeCore         = "io.circe"                   %% "circe-core"          % circeVersion
 lazy val circeGeneric      = "io.circe"                   %% "circe-generic"       % circeVersion
 lazy val circeParser       = "io.circe"                   %% "circe-parser"        % circeVersion
-// lazy val commonsText       = "org.apache.commons"         %  "commons-text"        % commonsTextVersion
 lazy val decline           = "com.monovore"               %% "decline"             % declineVersion
 lazy val declineEffect     = "com.monovore"               %% "decline-effect"      % declineVersion
-// lazy val diffsonCirce      = "org.gnieh"                  %% "diffson-circe"       % diffsonVersion
-// lazy val eff               = "org.atnos"                  %% "eff"                 % effVersion
 lazy val fs2            = "co.fs2"            %% "fs2-core" % fs2Version
 lazy val fs2io          = "co.fs2"            %% "fs2-io" % fs2Version
 lazy val jgraphtCore    = "org.jgrapht"       % "jgrapht-core"     % jgraphtVersion
-// lazy val logbackClassic = "ch.qos.logback"    % "logback-classic"  % logbackVersion
 lazy val jenaArq        = "org.apache.jena"   % "jena-arq"         % jenaVersion
 lazy val jenaFuseki     = "org.apache.jena"   % "jena-fuseki-main" % jenaVersion
 lazy val junit          = "junit"             % "junit"            % junitVersion
@@ -92,18 +73,10 @@ lazy val utilsTest         = "es.weso"                    %% "utilstest"       %
 lazy val testsuite         = "es.weso"                    %% "testsuite"       % utilsVersion
 
 
-// lazy val scalaLogging   = "com.typesafe.scala-logging" %% "scala-logging" % loggingVersion
-// lazy val scallop        = "org.rogach"                 %% "scallop"       % scallopVersion
-// lazy val scalactic      = "org.scalactic"              %% "scalactic"     % scalacticVersion
 lazy val scalacheck     = "org.scalacheck"             %% "scalacheck"    % scalacheckVersion
-//lazy val scalaTest      = "org.scalatest"              %% "scalatest"     % scalaTestVersion
-// lazy val scalatags      = "com.lihaoyi"                %% "scalatags"     % scalatagsVersion
-// lazy val sext           = "com.github.nikita-volkov"   % "sext"           % sextVersion
 lazy val pprint         = "com.lihaoyi"                %% "pprint"        % pprintVersion
 lazy val typesafeConfig = "com.typesafe"               % "config"         % typesafeConfigVersion
 lazy val xercesImpl     = "xerces"                     % "xercesImpl"     % xercesVersion
-// lazy val simulacrum     = "org.typelevel"              %% "simulacrum"    % simulacrumVersion
-// lazy val weaver         = "com.disneystreaming"        %% "weaver-cats"   % weaverVersion 
 
 
 ThisBuild / githubWorkflowJavaVersions := Seq(Java11)
@@ -120,16 +93,10 @@ lazy val shexs = project
     LauncherJarPlugin
     )
     .enablePlugins(BuildInfoPlugin)
-//  .disablePlugins(RevolverPlugin)
-//  .settings(
-//    buildInfoKeys := BuildInfoKey.ofN(name, version, scalaVersion, sbtVersion),
-//    buildInfoPackage := "es.weso.shaclex.buildinfo"
-//  )
   .settings(
     commonSettings, 
     packagingSettings, 
     publishSettings, 
-         // ghPagesSettings, 
     wixSettings)
   .aggregate(depGraphs, shex, shexTest, rbe, wikibaserdf, shapepath)
   .dependsOn(depGraphs, shex, shexTest, rbe, wikibaserdf, shapepath)
@@ -144,14 +111,11 @@ lazy val shexs = project
       catsCore,
       catsKernel,
       catsEffect,
-      decline, declineEffect, 
-      // logbackClassic,
+      decline, 
+      declineEffect, 
       srdf,
       srdf4j,
       srdfJena,
-      // scalaLogging,
-      // scallop,
-      // typesafeConfig,
       pprint,
       junit % Test,
       junitInterface % Test,
@@ -160,7 +124,6 @@ lazy val shexs = project
     fork := true,
     ThisBuild / turbo := true,
     ThisBuild / crossScalaVersions := supportedScalaVersions,
-    // skip in publish := true,
     Compile / run / mainClass := Some("es.weso.shexs.Main"),
     buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
     buildInfoPackage := "buildinfo"
@@ -173,7 +136,6 @@ def testFilter(name: String): Boolean   = /*(name endsWith "Test") && */ !compat
 lazy val shex = project
   .in(file("modules/shex"))
   .enablePlugins(Antlr4Plugin)
-//  .disablePlugins(RevolverPlugin)
   .configs(CompatTest)
   .settings(
     crossScalaVersions := supportedScalaVersions,
@@ -181,8 +143,9 @@ lazy val shex = project
     publishSettings,
     antlrSettings("es.weso.shex.parser"),
     inConfig(CompatTest)(Defaults.testTasks),
-    testOptions in Test := Seq(Tests.Filter(testFilter)),
-    testOptions in CompatTest := Seq(Tests.Filter(compatFilter))
+    Test / testOptions := Seq(Tests.Filter(testFilter)),
+    Test / parallelExecution := false,
+    CompatTest / testOptions := Seq(Tests.Filter(compatFilter))
   )
   .dependsOn(
     rbe,
@@ -191,14 +154,11 @@ lazy val shex = project
   .settings(
     libraryDependencies ++= Seq(
       typesafeConfig % Test,
-      // logbackClassic % Test,
-      // scalaLogging,
       circeCore,
       circeGeneric,
       circeParser,
       catsEffect,
       pprint,
-      // scalaTest  % Test,
       scalacheck % Test,
       typing,
       document,

@@ -1,13 +1,5 @@
 package es.weso.shex.validator
 
-// import es.weso.rdf.jena.RDFAsJenaModel
-// import cats.data._
-// import cats.effect._
-// import es.weso.utils.IOUtils._
-// import es.weso.shex._
-// import es.weso.rdf.triples._
-// import es.weso.rdf.nodes._
-
 class ShapeMapValidatorTest extends ShouldValidateShapeMap {
 
   { // shape Map
