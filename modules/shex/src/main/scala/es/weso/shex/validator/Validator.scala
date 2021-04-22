@@ -16,7 +16,7 @@ import Function.tupled
 import es.weso.shex.validator.ShExError._
 import es.weso.shex.validator.ConstraintRef.{showConstraintRef => _}
 import es.weso.utils.internal.CollectionCompat._
-import cats.data._
+// import cats.data._
 
 /**
   * ShEx validator
@@ -341,17 +341,6 @@ case class Validator(schema: ResolvedSchema,
    ok(t.addNotEvidence(node,ShapeType(s,s.id,schema), AbstractShapeErr(node,s,rdf))))
     
 
-/*  private def checkHasType(node: RDFNode, 
-                           t: ShapeTyping)
-                          (lbl: ShapeLabel): Check[Unit] = {
-   val vs: List[ShapeLabel] = 
-     t.getOkValues(node).map(_.label).toList.flatten
-   if (vs contains lbl) ok(())
-   else 
-    getRDF.flatMap(rdf => 
-    err(HasNoType(node,lbl,t,attempt, rdf)))
-  } */
-  
   private def getDescendants(s: ShapeExpr): Check[Set[ShapeLabel]] = s.id match {
     case None => ok(Set())
     case Some(lbl) => for {
@@ -484,7 +473,6 @@ case class Validator(schema: ResolvedSchema,
         // t <- combineTypings(t1,t2)
         // _ <- infoTyping(t,s"checkShapeExtendLs(${es.map(_.toRDFNode.show).mkString(",")}): After checkShapeExtend, t = ",schema.prefixMap)
       } yield t2
-//       case _        => errStr(s"Multiple inheritance not supported yet: ${es.map(_.show).mkString(",")}")
     }
   }
 
