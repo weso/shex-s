@@ -2,7 +2,6 @@ package es.weso.rbe
 import cats.Show
 import es.weso.collection._
 import cats.data.NonEmptyList
-//import es.weso.validating._
 
 trait BagChecker[A] {
 

@@ -11,7 +11,7 @@ val Java11 = "adopt@1.11"
 
 // Local dependencies
 lazy val srdfVersion           = "0.1.96"
-lazy val shapeMapsVersion      = "0.1.82"
+// lazy val shapeMapsVersion      = "0.1.82"
 lazy val utilsVersion          = "0.1.81"
 lazy val documentVersion       = "0.0.17"
 
@@ -33,6 +33,7 @@ lazy val munitVersion          = "0.7.22"
 lazy val munitEffectVersion    = "0.13.1"
 lazy val pprintVersion         = "0.6.0"
 lazy val rdf4jVersion          = "3.4.2"
+lazy val scalaCollCompatVersion  = "2.4.3"
 lazy val scalacheckVersion     = "1.14.0"
 lazy val typesafeConfigVersion = "1.4.1"
 lazy val xercesVersion         = "2.12.0"
@@ -59,13 +60,14 @@ lazy val munitEffect    = "org.typelevel"     %% "munit-cats-effect-3" % munitEf
 lazy val MUnitFramework = new TestFramework("munit.Framework")
 
 lazy val rdf4j_runtime  = "org.eclipse.rdf4j" % "rdf4j-runtime"    % rdf4jVersion
+lazy val scalaCollCompat   = "org.scala-lang.modules"     %% "scala-collection-compat" % scalaCollCompatVersion
 
 // WESO components
 lazy val document          = "es.weso"                    %% "document"        % documentVersion
 lazy val srdf              = "es.weso"                    %% "srdf"            % srdfVersion
 lazy val srdfJena          = "es.weso"                    %% "srdfjena"        % srdfVersion
 lazy val srdf4j            = "es.weso"                    %% "srdf4j"          % srdfVersion
-lazy val shapeMaps         = "es.weso"                    %% "shapemaps"       % shapeMapsVersion
+// lazy val shapeMaps         = "es.weso"                    %% "shapemaps"       % shapeMapsVersion
 lazy val utils             = "es.weso"                    %% "utils"           % utilsVersion
 lazy val typing            = "es.weso"                    %% "typing"          % utilsVersion
 lazy val validating        = "es.weso"                    %% "validating"      % utilsVersion
@@ -98,15 +100,9 @@ lazy val shexs = project
     packagingSettings, 
     publishSettings, 
     wixSettings)
-  .aggregate(depGraphs, shex, shexTest, rbe, wikibaserdf, shapepath)
+  .aggregate(depGraphs, shex, shexTest, rbe, wikibaserdf, shapepath, docs)
   .dependsOn(depGraphs, shex, shexTest, rbe, wikibaserdf, shapepath)
   .settings(
-    siteSubdirName in ScalaUnidoc := "scaladoc/latest",
-    addMappingsToSiteDir(mappings in (ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc),
-    unidocProjectFilter in (ScalaUnidoc, unidoc) := inAnyProject -- inProjects(noDocProjects: _*),
-    mappings in makeSite ++= Seq(
-      file("src/assets/favicon.ico") -> "favicon.ico"
-    ),
     libraryDependencies ++= Seq(
       catsCore,
       catsKernel,
@@ -149,7 +145,8 @@ lazy val shex = project
   )
   .dependsOn(
     rbe,
-    depGraphs
+    depGraphs,
+    shapeMaps
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -167,7 +164,6 @@ lazy val shex = project
       utilsTest % Test,
       validating,
       srdf,
-      shapeMaps,
       xercesImpl,
       srdfJena % Test,
       srdf4j   % Test,
@@ -176,6 +172,32 @@ lazy val shex = project
     ),
     testFrameworks += MUnitFramework
   )
+
+lazy val shapeMaps = project
+  .in(file("modules/shapeMaps"))
+  .enablePlugins(Antlr4Plugin)
+  .settings(commonSettings, publishSettings, antlrSettings("es.weso.shapemaps.parser"))
+  .dependsOn()
+  .settings(
+    crossScalaVersions := supportedScalaVersions,
+    libraryDependencies ++= Seq(
+      srdf,
+      utils,
+      srdfJena % Test,
+      // sext % Test,
+      catsCore,
+      catsKernel,
+      circeCore,
+      circeGeneric,
+      circeParser,
+      fs2, fs2io,
+      scalaCollCompat,
+      munit % Test,
+      munitEffect % Test
+      ),
+    testFrameworks += new TestFramework("munit.Framework")
+  )
+
 
 lazy val depGraphs = project
   .in(file("modules/depGraphs"))
@@ -219,7 +241,6 @@ lazy val shapepath = project
 
 lazy val wikibaserdf = project
   .in(file("modules/wikibaserdf"))
-//  .disablePlugins(RevolverPlugin)
   .settings(commonSettings, publishSettings)
   .settings(
     crossScalaVersions := supportedScalaVersions,
@@ -249,7 +270,8 @@ lazy val shexTest = project
     testOptions in CompatTest := Seq(Tests.Filter(compatFilter))
   )
   .dependsOn(
-    shex
+    shex,
+    shapeMaps
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -260,7 +282,6 @@ lazy val shexTest = project
       utils     % "test -> test; compile -> compile",
       testsuite,
       srdf,
-      shapeMaps,
       srdfJena,
       scalacheck % Test,
       munit % Test,
@@ -294,19 +315,50 @@ lazy val rbe = project
   .settings(
     crossScalaVersions := supportedScalaVersions,
     libraryDependencies ++= Seq(
-      //    compilerPlugin(("org.typelevel" %% "kind-projector" % kindProjectorVersion).cross(CrossVersion.full)),
       validating,
       typing,
-      // simulacrum,
       catsCore,
       catsKernel,
-      // catsMacros,
       scalacheck % Test,
       srdfJena   % Test,
       utils,
-      // scalaLogging
     ) ++ macroDependencies(scalaVersion.value)
   )
+
+lazy val docs = project   
+  .in(file("shexs-docs")) 
+  .settings(
+    noPublishSettings,
+    mdocSettings,
+    ScalaUnidoc / unidoc / unidocProjectFilter := inAnyProject -- inProjects(noDocProjects: _*)
+   )
+  .dependsOn(shex, shapeMaps, rbe, shexTest, wikibaserdf, shapepath, depGraphs)
+  .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin)
+
+lazy val mdocSettings = Seq(
+  mdocVariables := Map(
+    "VERSION" -> version.value
+  ),
+  ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(rbe, shex, shapeMaps, shapepath, depGraphs, wikibaserdf),
+  ScalaUnidoc / unidoc / target := (LocalRootProject / baseDirectory).value / "website" / "static" / "api",
+  cleanFiles += (ScalaUnidoc / unidoc / target).value,
+  docusaurusCreateSite := docusaurusCreateSite
+    .dependsOn(Compile / unidoc)
+    .value,
+  docusaurusPublishGhpages :=
+    docusaurusPublishGhpages
+      .dependsOn(Compile / unidoc)
+      .value,
+  ScalaUnidoc / unidoc / scalacOptions ++= Seq(
+    "-doc-source-url", s"https://github.com/weso/srdf/tree/v${(ThisBuild / version).value}€{FILE_PATH}.scala",
+    "-sourcepath", (LocalRootProject / baseDirectory).value.getAbsolutePath,
+    "-doc-title", "shex-s",
+    "-doc-version", s"v${(ThisBuild / version).value}"
+  )
+)
+
+lazy val noPublishSettings = publish / skip := true
+
 
 /* ********************************************************
  ******************** Grouped Settings ********************
@@ -314,10 +366,6 @@ lazy val rbe = project
 
 lazy val noDocProjects = Seq[ProjectReference](
   )
-
-lazy val noPublishSettings = Seq(
-  publishArtifact := false
-)
 
 lazy val sharedDependencies = Seq(
   libraryDependencies ++= Seq(
