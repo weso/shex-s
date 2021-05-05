@@ -4,38 +4,7 @@
     "next": "Next",
     "previous": "Previous",
     "tagline": "ShEx-s",
-    "docs": {
-      "commandline": {
-        "title": "Command line usage"
-      },
-      "depGraphs": {
-        "title": "Dependency graphs"
-      },
-      "java": {
-        "title": "Java interoperability"
-      },
-      "overview": {
-        "title": "Overview"
-      },
-      "rbe": {
-        "title": "RBE - Regular Bag Expressions"
-      },
-      "readme": {
-        "title": "Readme"
-      },
-      "shapemaps": {
-        "title": "ShapeMaps"
-      },
-      "shapepath": {
-        "title": "Shape Paths"
-      },
-      "shex": {
-        "title": "ShEx"
-      },
-      "srdfJena": {
-        "title": "SRDFJena"
-      }
-    },
+    "docs": {},
     "links": {
       "API Docs": "API Docs",
       "Documentation": "Documentation",
