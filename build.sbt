@@ -10,10 +10,10 @@ lazy val supportedScalaVersions = List(
 val Java11 = "adopt@1.11"  
 
 // Local dependencies
-lazy val srdfVersion           = "0.1.96"
+lazy val srdfVersion           = "0.1.100"
 // lazy val shapeMapsVersion      = "0.1.82"
-lazy val utilsVersion          = "0.1.81"
-lazy val documentVersion       = "0.0.17"
+lazy val utilsVersion          = "0.1.87"
+lazy val documentVersion       = "0.0.19"
 
 // Dependency versions
 lazy val antlrVersion          = "4.7.1"
@@ -100,8 +100,8 @@ lazy val shexs = project
     packagingSettings, 
     publishSettings, 
     wixSettings)
-  .aggregate(depGraphs, shex, shexTest, rbe, wikibaserdf, shapepath, docs)
-  .dependsOn(depGraphs, shex, shexTest, rbe, wikibaserdf, shapepath)
+  .aggregate(depGraphs, shex, shexTest, rbe, wikibaserdf, shapepath, shapemap, docs)
+  .dependsOn(depGraphs, shex, shexTest, rbe, wikibaserdf, shapepath, shapemap)
   .settings(
     libraryDependencies ++= Seq(
       catsCore,
@@ -146,7 +146,7 @@ lazy val shex = project
   .dependsOn(
     rbe,
     depGraphs,
-    shapeMaps
+    shapemap
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -173,8 +173,8 @@ lazy val shex = project
     testFrameworks += MUnitFramework
   )
 
-lazy val shapeMaps = project
-  .in(file("modules/shapeMaps"))
+lazy val shapemap = project
+  .in(file("modules/shapemap"))
   .enablePlugins(Antlr4Plugin)
   .settings(commonSettings, publishSettings, antlrSettings("es.weso.shapemaps.parser"))
   .dependsOn()
@@ -271,7 +271,7 @@ lazy val shexTest = project
   )
   .dependsOn(
     shex,
-    shapeMaps
+    shapemap
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -332,14 +332,14 @@ lazy val docs = project
     mdocSettings,
     ScalaUnidoc / unidoc / unidocProjectFilter := inAnyProject -- inProjects(noDocProjects: _*)
    )
-  .dependsOn(shex, shapeMaps, rbe, shexTest, wikibaserdf, shapepath, depGraphs)
+  .dependsOn(shex, shapemap, rbe, shexTest, wikibaserdf, shapepath, depGraphs)
   .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin)
 
 lazy val mdocSettings = Seq(
   mdocVariables := Map(
     "VERSION" -> version.value
   ),
-  ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(rbe, shex, shapeMaps, shapepath, depGraphs, wikibaserdf),
+  ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(rbe, shex, shapemap, shapepath, depGraphs, wikibaserdf),
   ScalaUnidoc / unidoc / target := (LocalRootProject / baseDirectory).value / "website" / "static" / "api",
   cleanFiles += (ScalaUnidoc / unidoc / target).value,
   docusaurusCreateSite := docusaurusCreateSite
