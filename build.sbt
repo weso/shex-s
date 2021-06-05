@@ -2,12 +2,12 @@ lazy val scala212 = "2.12.13"
 lazy val scala213 = "2.13.5"
 lazy val scala3   = "3.0.0-RC2"
 lazy val supportedScalaVersions = List(
-  scala213, 
+  scala213,
   scala212,
 //  scala3
   )
 
-val Java11 = "adopt@1.11"  
+val Java11 = "adopt@1.11"
 
 // Local dependencies
 lazy val srdfVersion           = "0.1.100"
@@ -86,19 +86,19 @@ ThisBuild / githubWorkflowJavaVersions := Seq(Java11)
 lazy val shexs = project
   .in(file("."))
   .enablePlugins(
-    ScalaUnidocPlugin, 
-    SiteScaladocPlugin, 
-    AsciidoctorPlugin, 
-    SbtNativePackager, 
-    WindowsPlugin, 
-    JavaAppPackaging, 
+    ScalaUnidocPlugin,
+    SiteScaladocPlugin,
+    AsciidoctorPlugin,
+    SbtNativePackager,
+    WindowsPlugin,
+    JavaAppPackaging,
     LauncherJarPlugin
     )
     .enablePlugins(BuildInfoPlugin)
   .settings(
-    commonSettings, 
-    packagingSettings, 
-    publishSettings, 
+    commonSettings,
+    packagingSettings,
+    publishSettings,
     wixSettings)
   .aggregate(depGraphs, shex, shexTest, rbe, wikibaserdf, shapepath, shapemap, docs)
   .dependsOn(depGraphs, shex, shexTest, rbe, wikibaserdf, shapepath, shapemap)
@@ -107,8 +107,8 @@ lazy val shexs = project
       catsCore,
       catsKernel,
       catsEffect,
-      decline, 
-      declineEffect, 
+      decline,
+      declineEffect,
       srdf,
       srdf4j,
       srdfJena,
@@ -212,7 +212,7 @@ lazy val depGraphs = project
       munitEffect,
       utils
     ),
-   testFrameworks += new TestFramework("munit.Framework") 
+   testFrameworks += new TestFramework("munit.Framework")
   )
 
 lazy val shapepath = project
@@ -289,9 +289,9 @@ lazy val shexTest = project
       utilsTest % Test,
       srdf4j % Test,
       typesafeConfig % Test,
-    ), 
+    ),
     testFrameworks ++= Seq(
-      new TestFramework("munit.Framework"), 
+      new TestFramework("munit.Framework"),
     )
   )
 
@@ -325,8 +325,8 @@ lazy val rbe = project
     ) ++ macroDependencies(scalaVersion.value)
   )
 
-lazy val docs = project   
-  .in(file("shexs-docs")) 
+lazy val docs = project
+  .in(file("shexs-docs"))
   .settings(
     noPublishSettings,
     mdocSettings,
@@ -371,7 +371,7 @@ lazy val sharedDependencies = Seq(
   libraryDependencies ++= Seq(
    munit % Test,
    munitEffect % Test
-  ), 
+  ),
   testFrameworks += new TestFramework("munit.Framework")
 )
 
@@ -428,7 +428,7 @@ lazy val wixSettings = Seq(
 //  git.remoteRepo := "git@github.com:labra/shaclex.git"
 //)
 
-lazy val commonSettings = compilationSettings ++ sharedDependencies ++ Seq(
+/*lazy val commonSettings = compilationSettings ++ sharedDependencies ++ Seq(
   organization := "es.weso",
   resolvers ++= Seq(
     Resolver.githubPackages("weso"),
@@ -436,9 +436,9 @@ lazy val commonSettings = compilationSettings ++ sharedDependencies ++ Seq(
     Resolver.sonatypeRepo("releases"),
   ),
   coverageHighlighting := true,
-  githubOwner := "weso", 
+  githubOwner := "weso",
   githubRepository := "shex-s",
-) ++ warnUnusedImport
+) ++ warnUnusedImport */
 
 def antlrSettings(packageName: String) = Seq(
   antlr4GenListener in Antlr4 := true,
@@ -447,7 +447,7 @@ def antlrSettings(packageName: String) = Seq(
   antlr4PackageName in Antlr4 := Some(packageName)
 )
 
-lazy val publishSettings = Seq(
+/*lazy val publishSettings = Seq(
   homepage := Some(url("https://github.com/labra/shaclex")),
   licenses := Seq("MIT" -> url("http://opensource.org/licenses/MIT")),
   scmInfo := Some(ScmInfo(url("https://github.com/labra/shaclex"), "scm:git:git@github.com:labra/shaclex.git")),
@@ -461,10 +461,29 @@ lazy val publishSettings = Seq(
                        </developer>
                      </developers>,
   publishMavenStyle := true,
-)
+)*/
 
 lazy val warnUnusedImport = Seq(
   scalacOptions ++= (if (isDotty.value) Nil else Seq("-Ywarn-unused:imports")),
   scalacOptions in (Compile, console) ~= { _.filterNot(Set("-Ywarn-unused-import", "-Ywarn-unused:imports")) },
   scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value
 )
+
+lazy val commonSettings = compilationSettings ++ sharedDependencies ++ Seq(
+  coverageHighlighting := priorTo2_13(scalaVersion.value),
+  organization := "es.weso",
+  sonatypeProfileName := ("es.weso"),
+  homepage            := Some(url("https://github.com/weso/shaclex")),
+  licenses            := Seq("MIT" -> url("http://opensource.org/licenses/MIT")),
+  scmInfo             := Some(ScmInfo(url("https://github.com/weso/shaclex"), "scm:git:git@github.com:weso/shaclex.git")),
+  autoAPIMappings     := true,
+  apiURL              := Some(url("http://weso.github.io/shaclex/latest/api/")),
+  autoAPIMappings     := true,
+  developers := List(
+    Developer(
+      id="labra",
+      name="Jose Emilio Labra Gayo",
+      email="jelabra@gmail.com",
+      url=url("https://weso.labra.es")
+    ))
+) ++ warnUnusedImport
