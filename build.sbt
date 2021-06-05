@@ -98,7 +98,6 @@ lazy val shexs = project
   .settings(
     commonSettings,
     packagingSettings,
-    publishSettings,
     wixSettings)
   .aggregate(depGraphs, shex, shexTest, rbe, wikibaserdf, shapepath, shapemap, docs)
   .dependsOn(depGraphs, shex, shexTest, rbe, wikibaserdf, shapepath, shapemap)
@@ -136,7 +135,6 @@ lazy val shex = project
   .settings(
     crossScalaVersions := supportedScalaVersions,
     commonSettings,
-    publishSettings,
     antlrSettings("es.weso.shex.parser"),
     inConfig(CompatTest)(Defaults.testTasks),
     Test / testOptions := Seq(Tests.Filter(testFilter)),
@@ -176,7 +174,7 @@ lazy val shex = project
 lazy val shapemap = project
   .in(file("modules/shapemap"))
   .enablePlugins(Antlr4Plugin)
-  .settings(commonSettings, publishSettings, antlrSettings("es.weso.shapemaps.parser"))
+  .settings(commonSettings, antlrSettings("es.weso.shapemaps.parser"))
   .dependsOn()
   .settings(
     crossScalaVersions := supportedScalaVersions,
@@ -201,7 +199,7 @@ lazy val shapemap = project
 
 lazy val depGraphs = project
   .in(file("modules/depGraphs"))
-  .settings(commonSettings, publishSettings)
+  .settings(commonSettings)
   .settings(
     crossScalaVersions := supportedScalaVersions,
     libraryDependencies ++= Seq(
@@ -221,7 +219,6 @@ lazy val shapepath = project
   .settings(
     crossScalaVersions := supportedScalaVersions,
     commonSettings,
-    publishSettings,
     antlrSettings("es.weso.shapepath.parser"),
     libraryDependencies ++= Seq(
       circeCore,
@@ -241,7 +238,7 @@ lazy val shapepath = project
 
 lazy val wikibaserdf = project
   .in(file("modules/wikibaserdf"))
-  .settings(commonSettings, publishSettings)
+  .settings(commonSettings)
   .settings(
     crossScalaVersions := supportedScalaVersions,
     libraryDependencies ++= Seq(
@@ -264,7 +261,6 @@ lazy val shexTest = project
   .settings(
     crossScalaVersions := supportedScalaVersions,
     commonSettings,
-    publishSettings,
     inConfig(CompatTest)(Defaults.testTasks),
     testOptions in Test := Seq(Tests.Filter(testFilter)),
     testOptions in CompatTest := Seq(Tests.Filter(compatFilter))
@@ -309,8 +305,7 @@ lazy val rbe = project
 //  .disablePlugins(RevolverPlugin)
   .dependsOn()
   .settings(
-    commonSettings,
-    publishSettings
+    commonSettings
   )
   .settings(
     crossScalaVersions := supportedScalaVersions,
