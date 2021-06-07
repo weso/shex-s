@@ -8,6 +8,7 @@ import scala.util._
 import cats.effect.IO
 import es.weso.depgraphs.Inheritance
 import es.weso.depgraphs.InheritanceJGraphT
+import es.weso.rdf.locations.Location
 
 /**
   * Represents a schema with all the imports resolved
@@ -20,7 +21,8 @@ case class ResolvedSchema(
   source: Schema,
   resolvedMapShapeExprs: Map[ShapeLabel, ResolvedShapeExpr],
   resolvedMapTripleExprs: Map[ShapeLabel, ResolvedTripleExpr],
-  inheritanceGraph: Inheritance[ShapeLabel]
+  inheritanceGraph: Inheritance[ShapeLabel],
+  labelLocationMap: Option[Map[ShapeLabel,Location]]
   ) extends AbstractSchema {
   
  def id = source.id
@@ -31,7 +33,12 @@ case class ResolvedSchema(
 
  override def labels: List[ShapeLabel] = (resolvedMapShapeExprs.keySet ++ resolvedMapTripleExprs.keySet).toList
 
- def shapes = source.shapes
+ override def shapes = {
+   val se = resolvedMapShapeExprs.toList.map { case (_,rse) => rse.se }
+   if (se.isEmpty) None 
+   else Some(se)
+ }
+
  def maybeTripleExprMap = source.tripleExprMap
  def imports = source.imports
  
@@ -64,8 +71,12 @@ object ResolvedSchema {
   } 
  }
 
- // TODO: I think this can be easier with cats instances but I am not sure now how to invoke it
- private def cnvMap[A,K,B](m: Map[K,A], f: A => B): Map[K,B] = m.map { case(k,a) => (k,f(a)) } 
+ // TODO: I think this can be easier with cats instances 
+ // but I am not sure now how to invoke it
+ private def cnvMap[A,K,B](
+     m: Map[K,A], 
+     f: A => B
+    ): Map[K,B] = m.map { case(k,a) => (k,f(a)) } 
 
  /**
     * Resolves import declarations in schema
@@ -86,7 +97,8 @@ object ResolvedSchema {
     source = schema, 
     resolvedMapShapeExprs = mapsImported.shapeExprMaps,
     resolvedMapTripleExprs = mapsImported.tripleExprMaps,
-    inheritanceGraph
+    inheritanceGraph,
+    labelLocationMap = schema.labelLocationMap
   )
 
   // TODO: make the following method tailrecursive
@@ -103,30 +115,38 @@ object ResolvedSchema {
     } yield sm
   }
 
-  private def addExtends(g: Inheritance[ShapeLabel],
+  private def addLs(g: Inheritance[ShapeLabel],
+                    ls: List[ShapeLabel], 
+                    sub: ShapeLabel) = {
+    def cmb(c: Unit, e: ShapeLabel): IO[Unit] = 
+      g.addInheritance(sub,e)
+    ls.foldM(())(cmb)
+  }
+  
+
+  private def addExtendsRestricts(g: Inheritance[ShapeLabel],
                          sub: ShapeLabel,
                          shape: Shape
-                         ): IO[Unit] = 
-    shape._extends match {
-      case None => ().pure[IO]
-      case Some(es) => {
-        def cmb(c: Unit, e: ShapeLabel): IO[Unit] = 
-             g.addInheritance(sub,e)
-        es.foldM(())(cmb)
-      }
+                         ): IO[Unit] = {
+    (shape._extends,shape.restricts) match {
+      case (None,None) => ().pure[IO]
+      case (Some(es),None) => addLs(g,es,sub) 
+      case (None,Some(rs)) => addLs(g,rs,sub)
+      case (Some(es),Some(rs)) => addLs(g,es ++ rs, sub)
    }
+  }
 
    private def addShapeExpr(g: Inheritance[ShapeLabel], 
                 sub: ShapeLabel, 
                 se: ShapeExpr
                 ): IO[Unit] = {
     se match {
-      case s: Shape => addExtends(g,sub, s) 
-      case s: ShapeAnd => {
+      case s: Shape => addExtendsRestricts(g,sub, s) 
+/*      case s: ShapeAnd => {
          def f(x: Unit, shape: Shape): IO[Unit] = 
            addExtends(g,sub,shape)
          s.shapeExprs.collect { case s: Shape => s}.foldM(())(f)
-      }
+      } */
       case ShapeDecl(l,_,se) => se match {
         case _ => addShapeExpr(g,sub, se)  
       }
@@ -152,7 +172,8 @@ object ResolvedSchema {
     source = Schema.empty, 
     resolvedMapShapeExprs = Map(),
     resolvedMapTripleExprs = Map(),
-    inheritanceGraph = ig
+    inheritanceGraph = ig,
+    labelLocationMap = None
   )
 
 }

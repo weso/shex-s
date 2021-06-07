@@ -1,11 +1,10 @@
 package es.weso.shex.validator
 import cats._
 import cats.implicits._
-import com.typesafe.scalalogging.LazyLogging
 import es.weso.rdf.PrefixMap
 import es.weso.typing._
 import es.weso.rdf.nodes._
-import es.weso.shapeMaps.{BNodeLabel, IRILabel => IRIMapLabel, _}
+import es.weso.shapemaps.{BNodeLabel, IRILabel => IRIMapLabel, _}
 import es.weso.shex.ShapeLabel
 import io.circe.Json
 import es.weso.shex.shexR.PREFIXES.sx_start
@@ -16,10 +15,9 @@ import io.circe.syntax._
 // import cats.effect._
 // import cats.effect.concurrent._
 
-
 case class ShapeTyping(
    t: Typing[RDFNode, ShapeType, ShExError, String]
-) extends LazyLogging {
+) {
    
   def showShort(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
     def showPos(ls: Set[ShapeType]): String = 
@@ -91,14 +89,23 @@ case class ShapeTyping(
     val status = if (t.isOK) Conformant else NonConformant
     val reason =
       if (t.isOK) t.getEvidences.map(_.mkString("\n"))
-      else t.getErrors.map(es => es.map(_.showQualified(nodesPrefixMap,shapesPrefixMap)).mkString("\n"))
+      else {
+       val s = t.getErrors.map(es => es.map(e => {
+         e.showQualified(nodesPrefixMap,shapesPrefixMap)
+         // e.msg
+       }
+       ).mkString("\n"))
+       s
+      }
     val appInfo = typingResult2Json(t) 
     Info(status, reason, Some(appInfo))
   }
 
   private def typingResult2Json(t: TypingResult[ShExError,String]): Json = {
      if (t.isOK) Json.obj(("evidences", Json.fromValues(t.getEvidences.getOrElse(List()).map(Json.fromString(_)))))
-     else Json.obj(("errors", Json.fromValues(t.getErrors.getOrElse(List()).map(_.asJson))))
+     else 
+       Json.obj(("errors", 
+         Json.fromValues(t.getErrors.getOrElse(List()).map(_.asJson))))
   }
 
   private def typing2Labels(m: collection.Map[ShapeType, TypingResult[ShExError, String]],
@@ -107,7 +114,7 @@ case class ShapeTyping(
                    ): Either[String, Map[ShapeMapLabel, Info]] = {
     def processType(m: Either[String, Map[ShapeMapLabel, Info]],
                     current: (ShapeType, TypingResult[ShExError, String])
-                   ): Either[String, Map[ShapeMapLabel, Info]] =
+                   ): Either[String, Map[ShapeMapLabel, Info]] = {
       cnvShapeType(current._1) match {
         case Left(s) => {
           m
@@ -117,25 +124,30 @@ case class ShapeTyping(
           m.map(_.updated(label, info))
         }
       }
-    val zero: Either[String, Map[ShapeMapLabel, Info]] = Either.right(Map[ShapeMapLabel, Info]())
+    }
+    val zero: Either[String, Map[ShapeMapLabel, Info]] = Map[ShapeMapLabel, Info]().asRight[String]
     m.foldLeft(zero)(processType)
   }
 
   def toShapeMap(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): Either[String, ResultShapeMap] = {
+
     type Result = Either[String, ResultShapeMap]
+
     def combine(m: Result,
                 current: (RDFNode, scala.collection.Map[ShapeType, TypingResult[ShExError, String]])
-               ): Result = for {
-      rm <- m
-      ls <- typing2Labels(current._2, nodesPrefixMap, shapesPrefixMap)
-    } yield
-      if (ls.nonEmpty) rm.addNodeAssociations(current._1, ls)
-      else rm
-    val zero: Either[String, ResultShapeMap] =
-      Either.right(ResultShapeMap.empty.
+               ): Result =  { 
+     for {
+       rm <- m
+       ls <- typing2Labels(current._2, nodesPrefixMap, shapesPrefixMap)
+     } yield {
+       if (ls.nonEmpty) rm.addNodeAssociations(current._1, ls)
+       else rm
+     }
+    }
+    
+    val zero: Result = ResultShapeMap.empty.
         addNodesPrefixMap(nodesPrefixMap).
-        addShapesPrefixMap(shapesPrefixMap)
-      )
+        addShapesPrefixMap(shapesPrefixMap).asRight[String]
     
     getMap.foldLeft(zero)(combine)
   }

@@ -1,31 +1,41 @@
 package es.weso.shex.extend
 
 import cats.syntax.either._
-import org.scalatest._
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
+import munit._
 
 
-class ExtendTest extends AnyFunSpec with Extend with Matchers with EitherValues {
+class ExtendTest extends FunSuite with Extend {
+  
   type Label = String
   case class Expr(es: List[Label])
   type Schema = Map[Label,Shape]
-  case class Shape(extend: Option[List[Label]], expr: Option[Expr]) {
+
+  case class Shape(
+    extend: Option[List[Label]], 
+    expr: Option[Expr]
+  ) {
+  
     def flattenExpr(schema: Schema): Either[String,Option[Expr]] = {
-      def combine(e1: Expr, e2: Expr): Expr = Expr(e1.es ++ e2.es)
-      def getEither(lbl: Label): Either[String,Shape] = schema.get(lbl).fold(Either.left[String,Shape](s"Not found"))(Either.right(_))
-      extendCheckingVisited[Shape,Expr,Label](this, getEither(_), _.extend, combine,_.expr)
+      
+      def combine(e1: Expr, e2: Expr): Expr = 
+       Expr(e1.es ++ e2.es)
+
+      def getEither(lbl: Label): Either[String,Shape] = 
+       schema.get(lbl).fold(Either.left[String,Shape](s"Not found"))(Either.right(_))
+
+      extendCheckingVisited[Shape,Expr,Label](
+        this, getEither(_), _.extend, combine, _.expr)
     }
   }
 
-  describe(s"VisitedTest") {
-    {
+  {
      val shape: Shape                           = Shape(None, Some(Expr(List("x"))))
      val schema: Schema                         = Map("s" -> shape)
      val expected: Either[String, Option[Expr]] = Right(Some(Expr(List("x"))))
      shouldFlattenExpr("No extensions", shape, schema, expected)
-    }
-    { // TODO: Not sure about the expected result
+  }
+  
+  { // TODO: Not sure about the expected result
       val shape: Shape                           = Shape(Some(List("s")), Some(Expr(List("x"))))
       val schema: Schema                         = Map("s" -> shape)
       val expected: Either[String, Option[Expr]] = Right(Some(Expr(List("x","x"))))
@@ -64,11 +74,10 @@ class ExtendTest extends AnyFunSpec with Extend with Matchers with EitherValues 
       shouldFlattenExpr("S extends T, T extends U,V, U extends T, circular dependency", s, schema, expected)
     }
 
-  }
 
-  def shouldFlattenExpr(msg: String, s: Shape, schema: Schema, expected: Either[String, Option[Expr]]) = {
-    it(s"$msg. Should flatten expr of $s and obtain $expected") {
-      s.flattenExpr(schema) should be(expected)
+  def shouldFlattenExpr(msg: String, s: Shape, schema: Schema, expected: Either[String, Option[Expr]])(implicit loc: munit.Location): Unit = {
+    test(s"$msg. Should flatten expr of $s and obtain $expected") {
+      assertEquals(s.flattenExpr(schema), expected)
     }
   }
 

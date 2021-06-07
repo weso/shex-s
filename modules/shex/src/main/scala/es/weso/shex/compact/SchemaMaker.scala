@@ -1,6 +1,5 @@
 package es.weso.shex.compact
 
-import com.typesafe.scalalogging.LazyLogging
 import es.weso.rdf.Prefix
 import es.weso.rdf.nodes._
 import es.weso.rdf.PREFIXES._
@@ -12,11 +11,13 @@ import es.weso.shex.values._
 import es.weso.utils.StrUtils._
 import es.weso.rdf.operations.Comparisons._
 import scala.jdk.CollectionConverters._
+import es.weso.rdf.locations.Location
+import org.antlr.v4.runtime.Token
 
 /**
  * Visits the AST and builds the corresponding ShEx abstract syntax
  */
-class SchemaMaker extends ShExDocBaseVisitor[Any] with LazyLogging {
+class SchemaMaker extends ShExDocBaseVisitor[Any] {
 
   type Start = Option[ShapeExpr]
   type NotStartAction = Either[Start, (ShapeLabel, ShapeExpr)]
@@ -31,18 +32,19 @@ class SchemaMaker extends ShExDocBaseVisitor[Any] with LazyLogging {
   val optional = (Some(0), Some(IntMax(1)))
 
   override def visitShExDoc(
-    ctx: ShExDocContext): Builder[Schema] = {
+    ctx: ShExDocContext
+    ): Builder[Schema] = {
     for {
       directives <- visitList(visitDirective, ctx.directive())
       startActions <- visitStartActions(ctx.startActions())
       notStartAction <- visitNotStartAction(ctx.notStartAction())
       statements <- visitList(visitStatement, ctx.statement())
-
       prefixMap <- getPrefixMap
       base <- getBase
       start <- getStart
       shapeMap <- getShapesMap
       tripleExprMap <- getTripleExprMap
+      labelLocationMap <- getLabelLocationMap 
     } yield {
       val importIRIs = directives.collect {
         case Right(Right(iri)) => iri
@@ -54,7 +56,8 @@ class SchemaMaker extends ShExDocBaseVisitor[Any] with LazyLogging {
         start = start,
         shapes = if (!shapeMap.isEmpty) Some(shapesMap2List(shapeMap)) else None,
         optTripleExprMap = if (!tripleExprMap.isEmpty) Some(tripleExprMap) else None,
-        imports = importIRIs
+        imports = importIRIs,
+        labelLocationMap = Some(labelLocationMap)
       )
     }
   }
@@ -148,10 +151,24 @@ class SchemaMaker extends ShExDocBaseVisitor[Any] with LazyLogging {
       case None => ok(None)
       case Some(v) => f(v).map(Some(_))
     }
+  
+  // TODO: Check more information about source  
+  private def getLocation(token: Token): Builder[Location] = {
+    ok(
+     Location(
+      line = token.getLine(), 
+      col = token.getCharPositionInLine(), 
+      tokenType = "label"
+     )
+    )
+  }
+
 
   override def visitShapeExprDecl(ctx: ShapeExprDeclContext): Builder[(ShapeLabel, ShapeExpr)] =
     for {
       label <- visitShapeExprLabel(ctx.shapeExprLabel())
+      location <- getLocation(ctx.start)
+      _ <- addLabelLocation(label,location)
       shapeExpr <- obtainShapeExpr(ctx)
       se <- if (isDefined(ctx.KW_ABSTRACT())) 
         ok(ShapeDecl(Some(label), true, shapeExpr))
@@ -159,7 +176,7 @@ class SchemaMaker extends ShExDocBaseVisitor[Any] with LazyLogging {
       _ <- addShape(label, se)
     } yield (label, se) 
 
-  def obtainShapeExpr(ctx: ShapeExprDeclContext): Builder[ShapeExpr] =
+  private def obtainShapeExpr(ctx: ShapeExprDeclContext): Builder[ShapeExpr] =
     if (isDefined(ctx.KW_EXTERNAL())) {
       // TODO: What happens if there are semantic actions after External??
       ok(ShapeExternal.empty)
@@ -1007,13 +1024,15 @@ class SchemaMaker extends ShExDocBaseVisitor[Any] with LazyLogging {
     val extras: Option[List[IRI]] =
       if (ls.isEmpty) None
       else Some(ls)
-    val inheritList = qualifiers.map(_.getIncluded).flatten
+    val inheritList = qualifiers.map(_.getExtends).flatten
+    val restrictsList = qualifiers.map(_.getRestricts).flatten
     val shape =
       Shape.empty.copy(
       closed = if (qualifiers.isEmpty) None else containsClosed,
       extra = extras,
       expression = tripleExpr,
       _extends = if (inheritList.isEmpty) None else Some(inheritList),
+      restricts = if (restrictsList.isEmpty) None else Some(restrictsList),
       actions = if (semActs.isEmpty) None else Some(semActs),
       annotations = if (anns.isEmpty) None else Some(anns)
     )
@@ -1025,6 +1044,8 @@ class SchemaMaker extends ShExDocBaseVisitor[Any] with LazyLogging {
       case _ if (isDefined(ctx.KW_CLOSED())) => ok(Closed)
       case _ if (isDefined(ctx.extension())) =>
         visitExtension(ctx.extension())
+      case _ if (isDefined(ctx.restriction())) =>
+        visitRestriction(ctx.restriction())
       case _ if (isDefined(ctx.extraPropertySet())) =>
         visitExtraPropertySet(ctx.extraPropertySet())
     }
@@ -1033,6 +1054,10 @@ class SchemaMaker extends ShExDocBaseVisitor[Any] with LazyLogging {
   override def visitExtension(ctx: ExtensionContext): Builder[Qualifier] = for {
     sl <- visitList(visitShapeRef,ctx.shapeRef())
   } yield Extends(sl)
+
+  override def visitRestriction(ctx: RestrictionContext): Builder[Qualifier] = for {
+    sl <- visitList(visitShapeRef,ctx.shapeRef())
+  } yield Restricts(sl)
 
   override def visitExtraPropertySet(ctx: ExtraPropertySetContext): Builder[Qualifier] = for {
     ls <- visitList(visitPredicate, ctx.predicate())
@@ -1196,6 +1221,7 @@ class SchemaMaker extends ShExDocBaseVisitor[Any] with LazyLogging {
            case None => (Some(min),Some(Star))
            case Some(m) => (Some(min),Some(m))
          }
+    case _ => err(s"visitRepeatRange: unknown value of ctx: ${ctx.getClass().getName()}")         
    }
 
   override def visitMin_range(
@@ -1216,13 +1242,13 @@ class SchemaMaker extends ShExDocBaseVisitor[Any] with LazyLogging {
       ok(None)
   }
 
-  override def visitPredicate(
-    ctx: PredicateContext): Builder[IRI] = {
+  override def visitPredicate(ctx: PredicateContext): Builder[IRI] = {
     ctx match {
       case _ if (isDefined(ctx.iri())) =>
         visitIri(ctx.iri())
       case _ if (isDefined(ctx.rdfType())) =>
         ok(`rdf:type`)
+      case _ =>  err(s"visitPredicate: Unknown value of ctx ${ctx.getClass.getName}")
     }
   }
 
@@ -1402,18 +1428,24 @@ class SchemaMaker extends ShExDocBaseVisitor[Any] with LazyLogging {
         case _ => List()
       }
     }
-    def getIncluded: List[ShapeLabel] = {
+    def getExtends: List[ShapeLabel] = {
       this match {
         case Extends(labels) => labels
         case _ => List()
       }
     }
+    def getRestricts: List[ShapeLabel] = {
+      this match {
+        case Restricts(labels) => labels
+        case _ => List()
+      }
+    }
+
   }
 
   case class Extra(iris: List[IRI]) extends Qualifier
-
   case class Extends(labels: List[ShapeLabel]) extends Qualifier
-
+  case class Restricts(labels: List[ShapeLabel]) extends Qualifier
   case object Closed extends Qualifier
 
   // Some generic utils

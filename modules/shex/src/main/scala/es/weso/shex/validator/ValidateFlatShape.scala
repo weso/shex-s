@@ -2,18 +2,18 @@ package es.weso.shex.validator
 
 import es.weso.shex._
 import es.weso.rdf.nodes._
-import ShExChecker._
 import es.weso.shex.normalized._
 // import es.weso.shex.implicits.showShEx._
 import cats.data._
 import cats.effect.IO
 //import cats._
 import cats.implicits._
-import es.weso.rdf.triples.RDFTriple
+// import es.weso.rdf.triples.RDFTriple
 import es.weso.rdf.RDFReader
 import es.weso.utils.eitherios.EitherIOUtils._
 import es.weso.shex.validator.ShExError._
 import es.weso.rdf.PrefixMap
+import es.weso.rdf.RDFBuilder
 
 /**
   * ShEx validator
@@ -21,8 +21,9 @@ import es.weso.rdf.PrefixMap
 case class ValidateFlatShape(
   validator: Validator,
   nodesPrefixMap: PrefixMap,
-  shapesPrefixMap: PrefixMap
-) {
+  shapesPrefixMap: PrefixMap,
+  builder: RDFBuilder
+) extends ShExChecker {
 
   private[validator] def checkFlatShape(
     attempt: Attempt, 
@@ -93,10 +94,11 @@ case class ValidateFlatShape(
     constraint.shape match {
       case None =>
         if (card.contains(values.size)) addEvidence(attempt.nodeShape, s"# of values fits $card")
-        else {
-          info(s"Cardinality error ${values.size} $card") >>
-          err(ErrCardinality(attempt, node, path, values.size, card))
-        }
+        else for {
+          rdf <- getRDF
+          _ <- info(s"Cardinality error ${values.size} $card") 
+          r <- err[ShapeTyping](ErrCardinality(attempt, node, path, values.size, card,rdf))
+        } yield r
       case Some(se) =>
         if (constraint.hasExtra) {
           for {
@@ -116,7 +118,7 @@ case class ValidateFlatShape(
                   )
                 } else {
                   info(s"Cardinality with Extra: ${passed.size} ${card}") >>
-                  err(ErrCardinalityWithExtra(attempt, node, path, passed.size, notPassed.size, card))
+                  err(ErrCardinalityWithExtra(attempt, node, path, passed.size, notPassed.size, card,rdf))
                 }
               } yield t
               p
@@ -140,12 +142,12 @@ case class ValidateFlatShape(
                 newt <- if (notPassed.isEmpty) {
                   addEvidence(attempt.nodeShape, s"${showNode(node)} passed ${constraint.showQualified(shapesPrefixMap)} for path ${path.showQualified(nodesPrefixMap)}")
                 } else
-                  err(ValuesNotPassed(attempt, node, path, passed.size, notPassed.toSet))
+                  err[ShapeTyping](ValuesNotPassed(attempt, node, path, passed.size, notPassed.toSet,rdf))
               } yield newt
               ct
             } else 
              info(s"Cardinality error: ${values.size}<>${card}") >>
-             err(ErrCardinality(attempt, node, path, values.size, card))
+             err(ErrCardinality(attempt, node, path, values.size, card,rdf))
           } yield t
     }
   }
@@ -166,7 +168,7 @@ case class ValidateFlatShape(
         // checkShapeBase(Attempt(NodeShape(node, ShapeType(s,s.id, schema)),None), node, s)
         mkErr(s"checkNodeShapeExprBasic: Not implemented yet Shape ")
       case _: ShapeExternal   => mkErr(s"Still don't know what to do with external shapes")
-      case nk: NodeConstraint => NodeConstraintChecker(validator.schema, rdf).nodeConstraintChecker(node, nk)
+      case nk: NodeConstraint => NodeConstraintChecker(validator.schema, rdf, builder).nodeConstraintChecker(node, nk)
       case sd: ShapeDecl => mkErr(s"checkNodeShapeExprBasic: Not implemented yet ShapeDecl($sd)")
       case _ => mkErr(s"checkNodeShapeExprBasic: Not implemented yet ShapeDecl($se)")
     }
@@ -177,6 +179,7 @@ case class ValidateFlatShape(
   private def mkOk(s: String): EitherT[IO, String, String] = EitherT.pure(s)
 
   private def cmb(els: List[EitherT[IO, String, String]]): EitherT[IO, String, String] = {
+    // val rs : EitherT[IO,String,List[String]] = 
     els.sequence.map(_.mkString("\n"))
   }
 

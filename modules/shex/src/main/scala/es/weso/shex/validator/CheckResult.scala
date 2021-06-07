@@ -1,19 +1,18 @@
 package es.weso.shex.validator
 import cats._
 import cats.implicits._
-// import cats.effect.IO
 
-case class CheckResult[E: Show, A: Show, Log: Show](r: (Log, Either[E, A])) {
+case class CheckResult[E: Show, A: Show, Log: Show](log: Log, eitherResult: Either[E, A]) {
 
   def getResult: Option[A] = toEither.toOption
 
-  def isOK: Boolean = r._2.isRight
+  def isOK: Boolean = eitherResult.isRight
 
   def errors: Seq[E] =
-    r._2.fold(e => List(e), _ => Seq())
+    eitherResult.fold(e => List(e), _ => Seq())
 
   def results: List[A] = {
-    r._2.fold(_ => List(), x => List(x))
+    eitherResult.fold(_ => List(), x => List(x))
   }
 
   def show: String = {
@@ -26,11 +25,11 @@ case class CheckResult[E: Show, A: Show, Log: Show](r: (Log, Either[E, A])) {
     val sb = new StringBuilder
     sb ++= result
     sb ++= "\n----------------------------log-----------------------\n"
-    sb ++= r._1.show
+    sb ++= log.show
     sb.toString
   }
 
-  def toEither: Either[E, A] = r._2
+  def toEither: Either[E, A] = eitherResult
 
 }
 

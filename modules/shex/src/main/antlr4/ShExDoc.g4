@@ -75,7 +75,7 @@ statement
  ;
 
 shapeExprDecl
- : KW_ABSTRACT? shapeExprLabel /* restrictions* */ (shapeExpression | KW_EXTERNAL)
+ : KW_ABSTRACT? shapeExprLabel (shapeExpression | KW_EXTERNAL)
  ;
 
 shapeExpression
@@ -224,6 +224,7 @@ inlineShapeDefinition
 
 qualifier
  : extension
+ | restriction
  | extraPropertySet
  | KW_CLOSED
  ;
@@ -460,7 +461,7 @@ extension
  | '&' shapeRef +
  ;
 
-restrictions
+restriction
  : KW_RESTRICTS shapeRef +
  | '-' shapeRef +
  ;

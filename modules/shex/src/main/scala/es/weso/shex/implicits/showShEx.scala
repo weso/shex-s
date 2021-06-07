@@ -13,9 +13,7 @@ object showShEx {
 
   implicit lazy val showSchema: Show[Schema] = new Show[Schema] {
     final def show(s: Schema): String =
-      CompactShow.showSchema(s) /*{
-      s"Schema(${optShow(s.prefixes)}, ${optShow(s.base)}, ${optShow(s.startActs)}, ${optShow(s.start)}, ${optShow(s.shapes)})"
-    } */
+      CompactShow.showSchema(s) 
   }
 
   implicit lazy val showPrefixMap: Show[PrefixMap] = new Show[PrefixMap] {
@@ -47,9 +45,9 @@ object showShEx {
 
   implicit lazy val showShape: Show[Shape] = new Show[Shape] {
     final def show(a: Shape): String = a match {
-      case Shape(None,None,None,None,None,None,None,None) => "."
+      case Shape(None,None,None,None,None,None,None,None,None) => "."
       case _ =>
-        s"${optShow(a.id)}${optShowBoolean(a.virtual, "VIRTUAL")}${optShowBoolean(a.closed," CLOSED")}${optShowExtras(a.extra)}${optShowExtends(a._extends)} { ${optShow(a.expression)} ${optShowLs(a.actions,"\n")} }"
+        s"${optShow(a.id)}${optShowBoolean(a.virtual, "VIRTUAL")}${optShowBoolean(a.closed," CLOSED")}${optShowExtras(a.extra)}${optShowExtends(a._extends)}${optShowRestricts(a.restricts)}{ ${optShow(a.expression)} ${optShowLs(a.actions,"\n")} }"
     }
   }
 
@@ -212,8 +210,8 @@ object showShEx {
 
   implicit lazy val showShapeLabel: Show[ShapeLabel] = new Show[ShapeLabel] {
     final def show(a: ShapeLabel): String = a match {
-      case IRILabel(iri) => iri.show
-      case BNodeLabel(bnode) => "_:" + bnode.id
+      case l: IRILabel => l.iri.show
+      case l: BNodeLabel => "_:" + l.bnode.id
       case Start => "Start"
     }
   }
@@ -243,6 +241,13 @@ object showShEx {
       case None => ""
       case Some(ls) => " extends " + ls.map(_.show).mkString(",")
     }
+
+  private def optShowRestricts(maybeValues: Option[List[ShapeLabel]]): String =
+    maybeValues match {
+      case None => ""
+      case Some(ls) => " restricts " + ls.map(_.show).mkString(",")
+    }
+
 
   private def optShowCard(maybeInt: Option[Int], maybeMax: Option[Max]): String =
     (maybeInt,maybeMax) match {

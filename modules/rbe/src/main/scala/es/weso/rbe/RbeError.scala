@@ -67,19 +67,25 @@ case class NonNullableError[A:Show](
     nonNullable: Rbe[A], 
     rbe: Rbe[A], 
     bag: Bag[A], 
-    open: Boolean
- ) extends RbeError(s"""|NonNullable: ${nonNullable.show}
-                        |Rbe: ${rbe.show}
-                        |Bag: ${bag.toString}
+    open: Boolean,
+    extraSymbols: Map[A,Int]
+ ) extends RbeError(s"""|Required properties not found: ${nonNullable.show}
+                        |Regular expression: ${rbe.show}
+                        |Properties found: ${bag.toString}
+                        |Extra symbols: ${extraSymbols.toList.map{ case (s,n) => s"${s.show}/${n} "}.mkString(",")}
                         |Open?: ${open.toString}
                         |""".stripMargin) {
     override def show: String = msg
     override def toJson: Json = 
        Json.obj(
-           ("type", "NonNullableError".asJson),
+           ("type", "RequiredPropertiesNotFound".asJson),
            ("interval", nonNullable.show.asJson),
-           ("rbe", rbe.show.asJson),
-           ("bag", bag.toString.asJson),
+           ("regularExpression", rbe.show.asJson),
+           ("propertiesFound", bag.toString.asJson),
+           ("extraProperties", Json.fromValues(extraSymbols.map{ case (s,n) => Json.obj(
+               ("property",s.show.asJson),
+               ("times",n.show.asJson),
+               )})),
            ("open", open.asJson)
        )
 }
@@ -128,14 +134,16 @@ case class Unexpected[A:Show](
     x: A,
     s: Rbe[A],
     open: Boolean
- ) extends RbeError(s"""|Unexpected ${x.show} doesn't match ${s.show}\nOpen?: $open
+ ) extends RbeError(s"""|Unexpected property: ${x.show} 
+                        |doesn't match regular expression: ${s.show}
+                        |Open?: $open
                         |""".stripMargin) {
     override def show: String = msg
     override def toJson: Json = 
        Json.obj(
            ("type", "Unexpected".asJson),
            ("found", x.show.asJson),
-           ("expected", s.show.asJson),
+           ("regularExpression", s.show.asJson),
            ("open", open.asJson),
        )
 }
@@ -143,13 +151,15 @@ case class Unexpected[A:Show](
 case class UnexpectedEmpty[A:Show](
     x: A,
     open: Boolean
- ) extends RbeError(s"""|Unexpected ${x.show} doesn't match empty. Open?: $open
+ ) extends RbeError(s"""|Unexpected property: ${x.show}
+                        |Doesn't match empty. 
+                        |Open?: $open
                         |""".stripMargin) {
     override def show: String = msg
     override def toJson: Json = 
        Json.obj(
            ("type", "Unexpected".asJson),
-           ("x", x.show.asJson),
+           ("property", x.show.asJson),
            ("open", open.asJson),
        )
 }

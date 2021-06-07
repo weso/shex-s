@@ -1,43 +1,38 @@
 package es.weso.wikibaserdf
 
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
 import WikibaseRDF._
 import cats.effect.IO
 import es.weso.rdf.triples.RDFTriple
 import es.weso.shex.Schema
 import es.weso.shex.ResolvedSchema
-import es.weso.shapeMaps.QueryShapeMap
-import es.weso.shapeMaps.ShapeMap
+import es.weso.shapemaps.QueryShapeMap
+import es.weso.shapemaps.ShapeMap
 import cats.data._  
 import cats.implicits._ 
 import es.weso.utils.IOUtils._
 import es.weso.shex.validator.Validator
-import es.weso.shapeMaps.ResultShapeMap
+import es.weso.shapemaps.ResultShapeMap
 import es.weso.rdf.nodes.IRI
 import es.weso.rdf.PREFIXES._
-import es.weso.shapeMaps.IRILabel
+import es.weso.shapemaps.IRILabel
 import es.weso.rdf.jena.RDFAsJenaModel
+import munit._
 
-class WikibaseRDFTest extends AnyFunSpec with Matchers {
+class WikibaseRDFTest extends CatsEffectSuite {
 
-  describe(s"Test Wikidata subjects") {
-    ignore(s"Should obtain triples for an item") {
+  val slow = new munit.Tag("Slow")
+
+  test(s"Should obtain triples for an item".tag(slow)) {
       val r: IO[List[RDFTriple]] = WikibaseRDF.wikidata.flatMap(_.use(wikibase => for {
         ts <- wikibase.triplesWithSubject(wd + "Q42").compile.toList
       } yield ts))
-      r.attempt.unsafeRunSync.fold(
-        s => s"Error: ${s.getMessage}",
-        vs => info(s"Triples: ${vs.length}")
-      )
-    }
+      r.map(vs => assertEquals(vs.length > 0, true))
   } 
 
-  describe(s"Test Wikidata subjects twice") {
-
+  {
     val item = IRI("http://www.wikidata.org/entity/Q29377880")
 
-    ignore(s"Should obtain triples for an item") {
+    test(s"Should obtain triples for an item".tag(slow)) {
       val r: IO[(List[RDFTriple],List[RDFTriple],List[RDFTriple],CachedState)] = WikibaseRDF.wikidata.flatMap(_.use(wikibase => 
       for {
         ts1 <- wikibase.triplesWithSubject(wd + "Q42").compile.toList
@@ -45,16 +40,13 @@ class WikibaseRDFTest extends AnyFunSpec with Matchers {
         ts3 <- wikibase.triplesWithSubject(wd + "Q42").compile.toList
         cs <- wikibase.refCached.get
       } yield (ts1,ts2,ts3,cs)))
-      r.attempt.unsafeRunSync.fold(
-        s => s"Error: ${s.getMessage}",
-        tuple => { 
+      r.map(tuple => { 
           val (ts1,ts2,ts3,cs) = tuple
-          info(s"Triples: ${ts1.length}, ${ts2.length}\nCachedState: ${cs.iris.mkString(",")}") 
-      }
-      )
+          println(s"Triples: ${ts1.length}, ${ts2.length}\nCachedState: ${cs.iris.mkString(",")}") 
+        })
     } 
    
-    it(s"Should use wikibase rdf once with the same item cached") {
+/*    it(s"Should use wikibase rdf once with the same item cached") {
        val r: IO[(Int,Int)] = WikibaseRDF.wikidata.flatMap(_.use(wd => for {
            ts1 <- wd.triplesWithSubject(item).compile.toList
            ts2 <- wd.triplesWithSubject(item).compile.toList
@@ -214,7 +206,7 @@ class WikibaseRDFTest extends AnyFunSpec with Matchers {
           }
       )
    }
-
+ */
  } 
-
+ 
 }

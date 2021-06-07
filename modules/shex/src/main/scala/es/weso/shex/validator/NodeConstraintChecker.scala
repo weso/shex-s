@@ -3,15 +3,18 @@ package es.weso.shex.validator
 // import cats._
 import cats.data._
 import cats.implicits._
-import com.typesafe.scalalogging.LazyLogging
 import es.weso.rdf.RDFReader
 import es.weso.rdf.nodes.{IRI, RDFNode}
 import es.weso.shex._
 import cats.effect.IO
+import es.weso.rdf.RDFBuilder
 
-
-case class NodeConstraintChecker(schema: AbstractSchema, rdf: RDFReader)
-  extends ShowValidator(schema) with LazyLogging {
+case class NodeConstraintChecker(
+  schema: AbstractSchema, 
+  rdf: RDFReader,
+  builder: RDFBuilder
+  )
+  extends ShExChecker with ShowValidator {
 
   def nodeConstraintChecker(value: RDFNode, nk: NodeConstraint
                            ): EitherT[IO,String, String] = {
@@ -43,7 +46,7 @@ case class NodeConstraintChecker(schema: AbstractSchema, rdf: RDFReader)
     else EitherT.fromEither(msgFalse.asLeft[String])
 
   private def checkValues(node: RDFNode)(values: List[ValueSetValue]): EitherT[IO,String, String] = {
-    val checker = ValueChecker(schema)
+    val checker = ValueChecker(schema,builder)
     checkSome(values.map(v => EitherT.fromEither[IO](checker.valueChecker(node,v))),
       s"Node doesn't belong to ${values.mkString(",")}"
     )
@@ -63,7 +66,7 @@ case class NodeConstraintChecker(schema: AbstractSchema, rdf: RDFReader)
   private def checkXsFacets(node: RDFNode)(facets: List[XsFacet]): EitherT[IO,String, String] =
    if (facets.isEmpty) EitherT.fromEither("".asRight[String])
    else {
-    val r = FacetChecker(schema,rdf).facetsChecker(node,facets)
+    val r = FacetChecker(schema, rdf, builder).facetsChecker(node,facets)
     // println(s"Result of facets checker: $r")
     r
   }

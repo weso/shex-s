@@ -4,33 +4,30 @@ import java.nio.file.Paths
 import com.typesafe.config.{Config, ConfigFactory}
 import io.circe.parser._
 import io.circe.syntax._
-import org.scalatest._
+import munit._
 import scala.io.Source
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
 
-class JsonResultTest extends AnyFunSpec with Matchers with TryValues with OptionValues{
+class JsonResultTest extends FunSuite {
 
   val conf: Config = ConfigFactory.load()
   val shexFolder = conf.getString("validationFolder")
   val shexFolderURI = Paths.get(shexFolder).normalize.toUri
 
-  describe(s"ShapeResult parsing") {
+  test(s"ShapeResult parsing") {
     val jsonStr = "{\"shape\": \"http://schema.example/IssueShape\", \"result\": true}"
     decode[ShapeResult](jsonStr).fold(
       e => fail(s"Error parsing: $e"),
-      result => info(s"Result parsed: $result")
+      result => assertEquals(result.value, true)
     )
   }
 
-
-  describe("ResultParsing") {
-   val name = "node_kind_example_results.json"
-    it(s"Should parse $name") {
-    val jsonStr = Source.fromURI(shexFolderURI.resolve(name)).mkString
-    decode[JsonResult](jsonStr).fold(
+  { 
+  val name = "node_kind_example_results.json"  
+  test(s"Should parse ResultParsing $name") {
+     val jsonStr = Source.fromURI(shexFolderURI.resolve(name)).mkString
+     decode[JsonResult](jsonStr).fold(
       e => fail(s"Error: $e"),
-      result => info(s"Result parsed: ${result.asJson.spaces2}"))
-   }
+      result => assertEquals(result.rmap.toList.size > 0, true))
   }
+ }
 }
