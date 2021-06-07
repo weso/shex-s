@@ -4,15 +4,14 @@ import java.nio.file._
 // import java.util.concurrent.Executors
 
 import cats.effect._
-import com.typesafe.scalalogging.LazyLogging
 import es.weso.rdf._
 import es.weso.rdf.jena.RDFAsJenaModel
 import es.weso.rdf.nodes._
 import es.weso.rdf.parser.RDFParser
 import ManifestPrefixes._
-import fs2._
+// import fs2._
 // import es.weso.utils.FileUtilsIO._
-import scala.concurrent.ExecutionContext
+// import scala.concurrent.ExecutionContext
 // import cats._
 import cats.arrow.FunctionK
 import cats.data._
@@ -22,10 +21,11 @@ import scala.util._
 import es.weso.rdf.parser._
 // import es.weso.utils.IOException
 import es.weso.utils.IOUtils.fromES
+import es.weso.utils.FileUtils._
 
 case class ManifestContext(base: Option[IRI], derefIncludes: Boolean, visited: List[IRI])
 
-class RDF2Manifest extends RDFParser with LazyLogging {
+class RDF2Manifest extends RDFParser {
 
   type ManifestParser[A] = ReaderT[RDFParser,ManifestContext,A]
   def liftParser[A](parser: RDFParser[A]): ManifestParser[A] = ReaderT.liftF(parser)
@@ -213,7 +213,7 @@ class RDF2Manifest extends RDFParser with LazyLogging {
       resultShapeMap = resultShapeMap
     )
 
-  private def result: RDFParser[Result] =
+  private def result: RDFParser[ResultExpected] =
     for {
       n <- getNode
       v <- n match {
@@ -222,7 +222,7 @@ class RDF2Manifest extends RDFParser with LazyLogging {
           for {
             b <- noType
             v <- if (b) {
-              val r: RDFParser[Result] = ok(IRIResult(iri))
+              val r: RDFParser[ResultExpected] = ok(IRIResult(iri))
               r
             } else compoundResult
           } yield v
@@ -231,7 +231,7 @@ class RDF2Manifest extends RDFParser with LazyLogging {
       }
     } yield v
 
-  private def compoundResult: RDFParser[Result] =
+  private def compoundResult: RDFParser[ResultExpected] =
     for {
       n         <- getNode
       maybeType <- optional(iriFromPredicate(rdf_type))
@@ -311,9 +311,9 @@ class RDF2Manifest extends RDFParser with LazyLogging {
     mfs <- liftParser(withRdf(rdf, rdf2Manifest.run(ctx)))
   } yield mfs
 
-  private def checkListManifests(mfs: List[ShExManifest]): RDFParser[ShExManifest] = 
+  /* private def checkListManifests(mfs: List[ShExManifest]): RDFParser[ShExManifest] = 
     if (mfs.size == 1) ok(mfs.head)
-    else parseFail(s"More than one manifests found: ${mfs} at iri $iri")
+    else parseFail(s"More than one manifests found: ${mfs} at iri $iri") */
 
 /*  private def derefRDF(iri: IRI): Resource[ManifestParser,RDFReader] =
     liftResource(RDFAsJenaModel.fromURI(iri.getLexicalForm, "TURTLE", Some(iri))) */
@@ -325,9 +325,9 @@ class RDF2Manifest extends RDFParser with LazyLogging {
       liftParser(liftIO(ioa))
   }
 
-  private def liftResource[A](r: Resource[IO,A]): Resource[ManifestParser,A] = {
+  /* private def liftResource[A](r: Resource[IO,A]): Resource[ManifestParser,A] = {
    r.mapK(io2parser)
-  }
+  } */
 
   private def parsePropertyList[A](pred: IRI, parser: RDFParser[A]): RDFParser[List[A]] =
     for {
@@ -371,7 +371,7 @@ class RDF2Manifest extends RDFParser with LazyLogging {
  */
 }
 
-object RDF2Manifest extends LazyLogging {
+object RDF2Manifest {
 
   private def getIriBase(base: Option[String]): IO[Option[IRI]] =
     base match {
@@ -384,15 +384,17 @@ object RDF2Manifest extends LazyLogging {
   }
 
   def read(
-      fileName: String,
+      path: Path,
       format: String,
       base: Option[String],
       derefIncludes: Boolean
   ): IO[ShExManifest] = {
-    val noIri : Option[IRI] = None
+    // val noIri : Option[IRI] = None
+
     val n : RDFNode = IRI("http://internal.base/")
+
     val r: IO[ShExManifest] = for {
-      cs <- getContents(fileName)
+      cs <- getContents(path)
       sm <- getRDF(cs.toString, format, base).flatMap(_.use(rdf => for {
         iriBase <- getIriBase(base)
         mfs <- {
@@ -419,15 +421,6 @@ object RDF2Manifest extends LazyLogging {
 
   private def getRDF(cs: String, format: String, base: Option[String]): IO[Resource[IO, RDFReader]] = {
     RDFAsJenaModel.fromChars(cs, format, base.map(IRI(_)))
-  }
-
-  private def getContents(fileName: String): IO[CharSequence] = {
-    val path = Paths.get(fileName)
-    implicit val cs = IO.contextShift(ExecutionContext.global)
-    val decoder: Pipe[IO,Byte,String] = fs2.text.utf8Decode
-    Stream.resource(Blocker[IO]).flatMap(blocker =>
-        fs2.io.file.readAll[IO](path, blocker,4096).through(decoder)
-    ).compile.string
   }
 
 }

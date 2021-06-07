@@ -1,7 +1,7 @@
 package es.weso.shextest.manifest
 import es.weso.rdf.nodes.RDFNode
-import es.weso.shapeMaps._
-import es.weso.shapeMaps.ShapeMapLabel._
+import es.weso.shapemaps._
+import es.weso.shapemaps.ShapeMapLabel._
 import io.circe._
 import io.circe.parser._
 import io.circe.syntax._

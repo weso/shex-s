@@ -5,7 +5,7 @@ import cats.data._
 import cats.implicits._
 import es.weso.rdf.RDFReader
 import es.weso.rdf.nodes.RDFNode
-import es.weso.shapeMaps._
+import es.weso.shapemaps._
 import es.weso.shex._
 import es.weso.typing.Typing
 
@@ -94,9 +94,9 @@ object BtValidator {
     } else unimplemented("checkTripleConstraint with inverse ")
 
 
-  def runCheck[A](rdf: RDFReader, schema: Schema, c: Check[A]): Either[ShExErr,A] = {
+/*  def runCheck[A](rdf: RDFReader, schema: Schema, c: Check[A]): Either[ShExErr,A] = {
     val env = Env(rdf,schema,Typing.empty,Monoid[VarTable].empty)
     c.value.run(env).unsafeRunSync()
-  }
+  } */
 
 }

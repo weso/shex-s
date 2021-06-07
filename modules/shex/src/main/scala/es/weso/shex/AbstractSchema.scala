@@ -9,6 +9,7 @@ import es.weso.rdf.nodes.{IRI, RDFNode}
 //import es.weso.utils.UriUtils._
 //import scala.io.Source
 import scala.util._
+import es.weso.rdf.locations.Location
 //import cats.effect.IO
 
 abstract class AbstractSchema { 
@@ -20,7 +21,8 @@ abstract class AbstractSchema {
   def shapes: Option[List[ShapeExpr]]
   def optTripleExprMap: Option[Map[ShapeLabel,TripleExpr]]
   def imports: List[IRI]
-  // def addShape(se: ShapeExpr): Schema 
+  def labelLocationMap: Option[Map[ShapeLabel, Location]]
+
   
   def getTripleExpr(lbl: ShapeLabel): Either[String,TripleExpr] 
   def getShape(lbl: ShapeLabel): Either[String,ShapeExpr]
@@ -53,6 +55,8 @@ abstract class AbstractSchema {
       case (sl,se) => s"${se.showQualified(prefixMap)}" 
     }.
     mkString("\n")
+
+
 
 }
 

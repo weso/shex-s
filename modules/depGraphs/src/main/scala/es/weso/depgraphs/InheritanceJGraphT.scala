@@ -4,7 +4,6 @@ import org.jgrapht.graph._
 import es.weso.utils.internal.CollectionCompat.CollectionConverters._
 // import cats.implicits._
 import cats.effect._
-import cats.effect.concurrent._
 
 case class Edge[Node](sub:Node, sup:Node) {
   def show(showNode: Node => String): String = 
