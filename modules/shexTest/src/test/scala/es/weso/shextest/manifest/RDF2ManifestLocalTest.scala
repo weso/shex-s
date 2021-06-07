@@ -1,11 +1,10 @@
 package es.weso.shextest.manifest
 
-// import java.nio.file.Paths
 
 import com.typesafe.config.{Config, ConfigFactory}
-import org.scalatest.funspec.AnyFunSpec
+import munit._
 
-class RDF2ManifestLocalTest extends AnyFunSpec with ValidateManifest {
+class RDF2ManifestLocalTest extends FunSuite with ValidateManifest {
 
   val conf: Config = ConfigFactory.load()
 
@@ -14,7 +13,7 @@ class RDF2ManifestLocalTest extends AnyFunSpec with ValidateManifest {
     parseManifestValidating("manifest","inheritance", localFolder, None)
   } */
 
-  describe("RDF2Manifest localTests") {
+  test("RDF2Manifest localTests") {
     val validationFolder = conf.getString("localTestsFolder")
     parseManifest("manifest", "schemas", validationFolder, None, List(), false)
   }

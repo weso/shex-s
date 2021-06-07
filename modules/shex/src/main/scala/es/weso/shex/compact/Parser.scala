@@ -3,7 +3,6 @@ package es.weso.shex.compact
 import java.io.{ByteArrayInputStream, InputStreamReader, Reader => JavaReader}
 import cats.data._
 import cats.implicits._
-import com.typesafe.scalalogging._
 import es.weso.rdf._
 import es.weso.rdf.nodes._
 import es.weso.shex._
@@ -14,8 +13,9 @@ import java.nio.charset.StandardCharsets
 import es.weso.utils.FileUtils
 
 import scala.collection.immutable.ListMap
+import es.weso.rdf.locations.Location
 
-object Parser extends LazyLogging {
+object Parser {
 
   type S[A] = State[BuilderState, A]
   type Builder[A] = EitherT[S, String, A]
@@ -54,6 +54,9 @@ object Parser extends LazyLogging {
   def getTripleExprMap: Builder[TripleExprMap] =
     getState.map(_.tripleExprMap)
 
+  def getLabelLocationMap: Builder[Map[ShapeLabel,Location]] =
+    getState.map(_.labelLocationMap)
+
   def getState: Builder[BuilderState] =
     EitherT.liftF[S, String, BuilderState](StateT.inspect(identity))
 
@@ -80,6 +83,11 @@ object Parser extends LazyLogging {
     updateState(s => s.copy(shapesMap = s.shapesMap + (label -> expr)))
   }
 
+  def addLabelLocation(label: ShapeLabel, location: Location): Builder[Unit] = {
+    updateState(s => s.copy(labelLocationMap = s.labelLocationMap + (label -> location)))
+  }
+
+
   def addPrefix(prefix: Prefix, iri: IRI): Builder[Unit] = {
     updateState(s => {
       val newS = s.copy(prefixMap = s.prefixMap.addPrefix(prefix, iri))
@@ -101,12 +109,12 @@ object Parser extends LazyLogging {
     val UTF8_BOM = "\uFEFF"
     val s =
       if (str.startsWith(UTF8_BOM)) {
-        logger.debug("BOM detected and removed")
+        // logger.debug("BOM detected and removed")
         str.substring(1)
       } else str
     val reader: JavaReader =
       new InputStreamReader(new ByteArrayInputStream(s.getBytes(StandardCharsets.UTF_8)))
-    logger.debug(s"s:$s")
+    // logger.debug(s"s:$s")
     parseSchemaReader(reader, base)
   }
 
@@ -131,7 +139,7 @@ object Parser extends LazyLogging {
 
     val maker = new SchemaMaker() // new DebugSchemaMaker()
     val builder = maker.visit(parser.shExDoc()).asInstanceOf[Builder[Schema]]
-    val errors = errorListener.getErrors
+    val errors = errorListener.getErrors()
     if (errors.length > 0) {
       Left(errors.mkString("\n"))
     } else {
@@ -141,7 +149,8 @@ object Parser extends LazyLogging {
 
   def run[A](c: Builder[A],
              base: Option[IRI]
-            ): (BuilderState, Either[String, A]) = c.value.run(initialState(base)).value
+            ): (BuilderState, Either[String, A]) = 
+    c.value.run(initialState(base)).value
 
   def initialState(base: Option[IRI]) =
     BuilderState(
@@ -149,13 +158,16 @@ object Parser extends LazyLogging {
       base,
       None,
       ListMap(),
-      Map())
+      Map(),
+      Map()
+    )
 
   case class BuilderState(prefixMap: PrefixMap,
                           base: Option[IRI],
                           start: Option[ShapeExpr],
                           shapesMap: ShapesMap,
-                          tripleExprMap: TripleExprMap
+                          tripleExprMap: TripleExprMap,
+                          labelLocationMap: Map[ShapeLabel,Location]
                          )
 
 }

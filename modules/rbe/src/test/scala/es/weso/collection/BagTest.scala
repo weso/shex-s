@@ -1,47 +1,44 @@
 package es.weso.collection
 
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
+import munit._
 
-class BagTest extends AnyFunSpec with Matchers {
+class BagTest extends FunSuite {
 
-  describe("A Bag") {
-
-    it("Should add one element and have multiplicity 1") {
+    test("Should add one element and have multiplicity 1") {
       val emptyBag: Bag[Char] = Bag.empty
-      emptyBag.insert('a').multiplicity('a') should be(1)
+      assertEquals(emptyBag.insert('a').multiplicity('a'), 1)
     }
 
-    it("Should add one element twice and have multiplicity 2") {
+    test("Should add one element twice and have multiplicity 2") {
       val emptyBag: Bag[Char] = Bag.empty
-      emptyBag.insert('a').insert('a').multiplicity('a') should be(2)
+      assertEquals(emptyBag.insert('a').insert('a').multiplicity('a'), 2)
     }
 
-    it("Should add one element twice, remove it and have multiplicity 1") {
+    test("Should add one element twice, remove it and have multiplicity 1") {
       val emptyBag: Bag[Char] = Bag.empty
-      emptyBag.insert('a').insert('a').delete('a').multiplicity('a') should be(1)
+      assertEquals(emptyBag.insert('a').insert('a').delete('a').multiplicity('a'), 1)
     }
 
-    it("Should add two elements and have size 2") {
+    test("Should add two elements and have size 2") {
       val emptyBag: Bag[Char] = Bag.empty
-      emptyBag.insert('a').insert('b').elems.size should be(2)
+      assertEquals(emptyBag.insert('a').insert('b').elems.size, 2)
     }
 
-    it("Should add one element three times and have multiplicity 3") {
+    test("Should add one element three times and have multiplicity 3") {
       val emptyBag: Bag[Char] = Bag.empty
-      emptyBag.add('a', 3).multiplicity('a') should be(3)
+      assertEquals(emptyBag.add('a', 3).multiplicity('a'), 3)
     }
 
-    it("Should add one element twice and have size 1") {
+    test("Should add one element twice and have size 1") {
       val emptyBag: Bag[Char] = Bag.empty
-      emptyBag.insert('a').insert('a').elems.size should be(1)
+      assertEquals(emptyBag.insert('a').insert('a').elems.size, 1)
     }
 
-    it("should calculate delta") {
+    test("should calculate delta") {
       val bag      = Bag.toBag(List(1, 1, 2, 2, 3))
       val delta    = Bag.delta(Seq(1, 2), bag)
       val expected = Bag.toBag(List(1, 1, 2, 2))
-      delta should be(expected)
+      assertEquals(delta, expected)
     }
 
     /*  TODO: I have removed the following checkers because there seem to be an
@@ -74,6 +71,5 @@ class BagTest extends AnyFunSpec with Matchers {
     }
 
    */
-  }
 
 }

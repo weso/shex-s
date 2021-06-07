@@ -1,0 +1,60 @@
+prefix : <http://example.org/>
+prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+
+# Inheritance graph
+#    :Issue           :Person  :InternalRep (abs)
+#       |                 \       /
+#   :SolvedIssue          :Employee
+#                             |  
+#                         :Programmer
+
+:Issue @_:Issue OR @:SolvedIssue
+:Person @_:Person OR @_:Employee OR @:Programmer
+
+:User @:Person AND {
+  :email IRI      ;
+  :knows @:User *
+}
+
+:SolvedIssue CLOSED {
+ :reported     @:Person     ;  # From :Issue
+ :reproduced   @:User       ;  # From :Issue 
+ :related      @:Issue  *   ;  # From :Issue
+ :reproduced   @:Employee   ;
+ :solved       @:Programmer 
+}
+
+:InternalRep @_:Employee OR @:Programmer
+:Employee @_:Employee OR @:Programmer
+
+:Programmer  {
+ ( :name xsd:string        |      # From :Employee :Person
+   :firstName xsd:string + ;      # From :Employee :Person
+   :lastName xsd:string ) ;       # From :Employee :Person  
+ :code xsd:integer        ;       # From :Employee :InternalRep      
+ :experience [ :senior :junior ]; # From :Programmer
+}
+
+_:Issue CLOSED {
+ :reported   @:Person   ;
+ :reproduced @:User     ;
+ :related    @:Issue  *
+}
+
+_:Person {
+ :name xsd:string        | 
+ :firstName xsd:string + ; 
+ :lastName xsd:string 
+}
+
+# Do we need this one?
+#_:InternalRep {
+# :code xsd:integer
+#}
+
+_:Employee {
+ ( :name xsd:string        |    # From :Person
+   :firstName xsd:string + ;    # From :Person
+   :lastName xsd:string ) ;     # From :Person  
+ :code xsd:integer              # From :InternalRep  
+} 

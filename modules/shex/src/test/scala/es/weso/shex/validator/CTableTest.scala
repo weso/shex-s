@@ -2,15 +2,12 @@ package es.weso.shex.validator
 
 import es.weso.rdf.nodes._
 import es.weso.shex._
-import org.scalatest._
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
+import munit._
 import es.weso.rdf.PrefixMap
 
-class CTableTest extends AnyFunSpec with Matchers with EitherValues {
-  describe(s"CTable") {
+class CTableTest extends FunSuite {
 
-    it(s"Should generate CTable basic") {
+    test(s"Should generate CTable basic") {
       val ex = "http://example.org/"
       val xsd = IRI(s"http://www.w3.org/2001/XMLSchema#")
       val p = IRI(ex) + "p"
@@ -26,7 +23,7 @@ class CTableTest extends AnyFunSpec with Matchers with EitherValues {
       shouldMakeCTable(te,extras,tripleExprMap,cs)
    }
 
-    it(s"Should generate CTable") {
+    test(s"Should generate CTable") {
       val ex = "http://example.org/"
       val xsd = IRI(s"http://www.w3.org/2001/XMLSchema#")
       val p = IRI(ex) + "p"
@@ -52,10 +49,8 @@ class CTableTest extends AnyFunSpec with Matchers with EitherValues {
          println(s"rbe: $rbe")
          println(s"rbe.symbols=${rbe.symbols}")
          println(s"symbols=${symbols}")
-         rbe.symbols should contain theSameElementsAs(symbols)
-         info(s"${ctable}")
+         assertEquals(rbe.symbols, symbols)
        }
       )
     }
-  }
 }

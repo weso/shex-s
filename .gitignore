@@ -1,6 +1,7 @@
 *.class
 *.log
 .bloop
+.bsp
 
 # sbt specific
 dist/*

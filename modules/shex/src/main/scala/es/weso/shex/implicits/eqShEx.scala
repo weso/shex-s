@@ -2,17 +2,15 @@ package es.weso.shex.implicits
 
 import cats._
 import cats.implicits._
-import com.typesafe.scalalogging.LazyLogging
 import es.weso.rdf.nodes._
 import es.weso.shex._
 import es.weso.rdf._
 
-object eqShEx extends LazyLogging {
+object eqShEx {
 
   implicit lazy val eqIRI = new Eq[IRI] {
-    final def eqv(n1: IRI, n2: IRI): Boolean = (n1, n2) match {
-      case (IRI(i1), IRI(i2)) => i1 == i2
-    }
+    final def eqv(n1: IRI, n2: IRI): Boolean = 
+     n1.uri == n2.uri
   }
 
   implicit lazy val eqSchema: Eq[Schema] = new Eq[Schema] {
@@ -39,10 +37,12 @@ object eqShEx extends LazyLogging {
     }
   }
 
+  // Equals comparison ignores locations
   implicit lazy val eqShapeLabel: Eq[ShapeLabel] = new Eq[ShapeLabel] {
     final def eqv(a1: ShapeLabel, a2: ShapeLabel): Boolean = (a1, a2) match {
-      case (IRILabel(b1), IRILabel(b2)) => b1 === b2
+      case (IRILabel(b1), IRILabel(b2)) => b1 === b2  
       case (BNodeLabel(b1), BNodeLabel(b2)) => b1 == b2
+      case (Start, Start) => true
       case (_, _) => false
     }
   }
