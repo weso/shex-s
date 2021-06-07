@@ -455,7 +455,7 @@ def antlrSettings(packageName: String) = Seq(
 )*/
 
 lazy val warnUnusedImport = Seq(
-  scalacOptions ++= (if (isDotty.value) Nil else Seq("-Ywarn-unused:imports")),
+ // scalacOptions ++= (if (isDotty.value) Nil else Seq("-Ywarn-unused:imports")),
   scalacOptions in (Compile, console) ~= { _.filterNot(Set("-Ywarn-unused-import", "-Ywarn-unused:imports")) },
   scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value
 )

@@ -14,8 +14,7 @@ import cats.effect.unsafe.implicits.global
 
 object ShExS {
 
-
-    def validate(
+  def validate(
         data: InputStream, 
         schema: InputStream, 
         shapeMap: InputStream, 
