@@ -4,7 +4,7 @@ import cats.data._
 import cats.implicits._
 import es.weso.rdf.RDFReader
 import es.weso.rdf.nodes.RDFNode
-import es.weso.shapeMaps._
+import es.weso.shapemaps._
 import es.weso.shex.Schema
 import es.weso.utils.internal.CollectionCompat._
 import cats.effect._

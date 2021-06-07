@@ -3,7 +3,6 @@ package es.weso.shex.shexR
 import es.weso.shex._
 import PREFIXES._
 import cats.implicits._
-import com.typesafe.scalalogging.LazyLogging
 import es.weso.rdf.nodes._
 import es.weso.rdf.PREFIXES._
 import es.weso.rdf.RDFBuilder
@@ -11,7 +10,7 @@ import es.weso.rdf.saver.RDFSaver
 import es.weso.rdf.operations.Comparisons._
 import cats.effect._
 
-trait ShEx2RDF extends RDFSaver with LazyLogging {
+trait ShEx2RDF extends RDFSaver {
 
   def serialize(shex: Schema, node: Option[IRI], format: String, rdfBuilder: RDFBuilder): IO[String] = 
    for {
@@ -286,8 +285,8 @@ trait ShEx2RDF extends RDFSaver with LazyLogging {
 
   private def label(lbl: ShapeLabel): RDFSaver[RDFNode] = lbl match {
     case Start => ok(sx_start)
-    case IRILabel(iri) => ok(iri)
-    case BNodeLabel(bnode) => ok(bnode)
+    case l: IRILabel => ok(l.iri)
+    case l: BNodeLabel => ok(l.bnode)
   }
 
   private def nodeKind(nk: NodeKind): RDFSaver[RDFNode] =
@@ -298,12 +297,9 @@ trait ShEx2RDF extends RDFSaver with LazyLogging {
       case NonLiteralKind => ok(sx_nonliteral)
     }
 
-  private def mkId(id: Option[ShapeLabel]): RDFSaver[RDFNode] = id match {
-    case None => createBNode
-    case Some(IRILabel(iri)) => ok(iri)
-    case Some(BNodeLabel(bNode)) => ok(bNode)
-    case Some(Start) => ok(sx_start)
-  }
+  private def mkId(id: Option[ShapeLabel]): RDFSaver[RDFNode] = 
+   id.map(label).getOrElse(createBNode()) 
+   
 
 }
 

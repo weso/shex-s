@@ -86,6 +86,20 @@ object ShExError {
       ) 
   }
 
+  case class ExceptionError(t: Throwable) extends ShExError(t.getMessage()) {
+    override def toString: String =
+      s"Exception: ${t.getMessage}\nStack: \n${t.getStackTrace().map(_.toString()).mkString("\n")}"
+
+    override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
+      s"ExceptionError: ${t.getMessage()}"
+    }
+
+    override def toJson: Json = Json.obj(
+       ("type", Json.fromString("ExceptionError")),
+       ("msg", Json.fromString(t.getMessage()))
+      ) 
+  }
+
   
   case class NotEnoughArcs(node: RDFNode,
                            values: Set[RDFNode],
@@ -318,7 +332,9 @@ object ShExError {
     table: CTable, 
     bag: Bag[ConstraintRef], 
     rbe: Rbe[ConstraintRef],
-    err: RbeError
+    err: RbeError,
+    node: RDFNode,
+    rdf: RDFReader
     ) extends ShExError(s"Error matching RBE: ${err.msg}") {
 
     override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
@@ -336,7 +352,7 @@ object ShExError {
 
     override def toJson: Json = Json.obj(
        ("type", Json.fromString("ErrorMatchingRegularExpression")),
-       ("node", Json.fromString(attempt.nodeShape.node.getLexicalForm)),
+       ("node", node2Json(node,rdf)),
        ("error", err.toJson),
        ("shape", Json.fromString(attempt.nodeShape.shape.label.map(_.toRDFNode.getLexicalForm).getOrElse("?"))),
        ("bag", Json.fromString(bag.toString)),
@@ -350,7 +366,9 @@ object ShExError {
   case class NoCandidate(attempt: Attempt, 
        bagChecker: BagChecker[ConstraintRef], 
        as: List[CandidateLine], 
-       ctable: CTable
+       ctable: CTable,
+       node: RDFNode,
+       rdf: RDFReader
       ) extends ShExError(s"No candidate matches") {
     
     override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
@@ -413,10 +431,13 @@ object ShExError {
 
   case class NoCandidateLine(
     attempt: Attempt,
-    table: CTable) extends ShExError(s"No candidate line found: ${attempt.show}") {
+    table: CTable,
+    node: RDFNode,
+    rdf: RDFReader) extends ShExError(s"No candidate line found: ${attempt.show}") {
     
     override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
       s"""|No candidates found to match
+          |Node: ${node.show}
           |Atempt: ${attempt.show}
           |Table: ${table.show}
           |""".stripMargin
@@ -424,22 +445,51 @@ object ShExError {
 
     override def toJson: Json = Json.obj(
        ("type", Json.fromString("NoCandidateLine")),
+       ("node", ShExError.node2Json(node,rdf)),
        ("attempt", attempt.asJson),
        ("table", table.asJson)
       )
   }
 
 
-  case class AbstractShapeErr(node: RDFNode, shape: ShapeExpr) extends ShExError(s"Node ${node.show} cannot conform to abstract shape ${shape}") {
+  case class AbstractShapeErr(node: RDFNode, shape: ShapeExpr, rdf: RDFReader) extends ShExError(s"Node ${node.show} cannot conform to abstract shape ${shape}") {
       override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
         s"""AbstractShapeError ${nodesPrefixMap.qualify(node)} cannot conform to abstract shape ${shape.showQualified(shapesPrefixMap)}"""
       }
 
      override def toJson: Json = Json.obj(
-       ("type", Json.fromString("AbstractShapeErr"))
+       ("type", Json.fromString("AbstractShapeErr")),
+       ("shape", shape.asJson),
+       ("node", ShExError.node2Json(node,rdf))
       ) 
 
   }
+
+  case class HasNoType(
+    node: RDFNode, 
+    label: ShapeLabel, 
+    shapeTyping: ShapeTyping, 
+    attempt: Attempt, 
+    rdf: RDFReader) 
+    extends ShExError(s"Node ${node.show} has not shape ${label.toRDFNode.show} in ${shapeTyping.showShapeTyping}") 
+    {
+      override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
+        s"""HasNoType ${nodesPrefixMap.qualify(node)} has not type ${shapesPrefixMap.qualify(label.toRDFNode)} in ${shapeTyping.showShort(nodesPrefixMap,shapesPrefixMap)}"""
+      }
+
+     override def toJson: Json = Json.obj(
+       ("type", Json.fromString("HasNoType")),
+       ("label", label.asJson),
+       ("node", {
+          println(s"node2Json ${node}")
+          ShExError.node2Json(node,rdf)
+         }
+       ),
+       ("shapeTyping", shapeTyping.showShapeTyping.asJson)
+      ) 
+
+  }
+
 
   case class AbstractShapeErrNoArgs() extends ShExError(s"Node cannot conform to abstract shape ") {
       override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
@@ -454,7 +504,7 @@ object ShExError {
 
 
 
-  case class NoDescendant(node: RDFNode, s:ShapeExpr, attempt: Attempt) extends ShExError(s"No descendant of shapeExpr ${s} matches node ${node.show}") {
+  case class NoDescendant(node: RDFNode, s:ShapeExpr, attempt: Attempt, rdf: RDFReader) extends ShExError(s"No descendant of shapeExpr ${s} matches node ${node.show}") {
       override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
         s"""|No descendant of ${s.showQualified(shapesPrefixMap)} matches ${nodesPrefixMap.qualify(node)}
             |Attempt: ${attempt.showQualified(nodesPrefixMap,shapesPrefixMap)}
@@ -464,14 +514,19 @@ object ShExError {
      override def toJson: Json = Json.obj(
        ("type", Json.fromString("NoDescendantMatches")),
        ("attempt", attempt.asJson),
-       ("node", Json.fromString(node.getLexicalForm)),
+       ("node", ShExError.node2Json(node,rdf)),
        ("shapeExpr", s.asJson)
       ) 
 
   }
 
-  case class ExtendFails(node: RDFNode, extended:ShapeLabel, attempt: Attempt, err: ShExError)
-    extends ShExError(
+  case class ExtendFails(
+    node: RDFNode, 
+    extended:ShapeLabel, 
+    attempt: Attempt, 
+    err: ShExError,
+    rdf: RDFReader
+    ) extends ShExError(
       s"""|ExtendFails: ${node.show} doesn't conform to extended shape ${extended.toRDFNode.show}
           |  Error obtained: ${err.msg}""".stripMargin) {
       override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
@@ -484,7 +539,7 @@ object ShExError {
      override def toJson: Json = Json.obj(
        ("type", Json.fromString("NoDescendantMatches")),
        ("attempt", attempt.asJson),
-       ("node", Json.fromString(node.getLexicalForm)),
+       ("node", ShExError.node2Json(node,rdf)),
        ("shape", Json.fromString(extended.toRDFNode.getLexicalForm)),
        ("error", err.asJson)
       ) 
@@ -513,6 +568,100 @@ object ShExError {
        ("shape", s.asJson),
 //       ("neighs", neighs.asJson),
        ("attempt", attempt.asJson)
+      ) 
+  }
+
+  case class PartitionFailed(
+    node: RDFNode,
+    attempt: Attempt, 
+    s: Shape,
+    extendLabel: ShapeLabel,
+    pair: (Set[Arc],Set[Arc])
+    ) extends ShExError(s"""|Partition of neighs from node ${node.show} failed to match ${s.id.map(_.toRDFNode.show).getOrElse("")}. 
+                            |Partition = ${pair} 
+                            |Extend label: ${extendLabel.toRDFNode.show}""".stripMargin) {
+    override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
+      s"""|Partition of neighs from node ${nodesPrefixMap.qualify(node)} failed to match shape ${shapesPrefixMap.qualify(extendLabel.toRDFNode)}
+      |Partition: ${pair.toString}
+      |Shape: ${s.showQualified(shapesPrefixMap)}
+      |ExtendLabel: ${shapesPrefixMap.qualify(extendLabel.toRDFNode)}
+      |Attempt: ${attempt.show}
+      |""".stripMargin
+    }
+
+    override def toJson: Json = Json.obj(
+       ("type", Json.fromString("PartitionFailed")),
+       ("shape", s.asJson),
+       ("pair", pair.toString.asJson),
+       ("attempt", attempt.asJson)
+      ) 
+
+  }
+
+  case class MultipleRestricts(
+    node: RDFNode,
+    attempt: Attempt, 
+    s: Shape,
+    rs: List[ShapeLabel]
+    ) extends ShExError(s"""|Multiple restricts not supported yet ${s.id.map(_.toRDFNode.show).getOrElse("")}. 
+                            |Restricts = ${rs}
+                            |""".stripMargin) {
+    override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
+      s"""|Multiple restricts not supported yet. 
+          |Node ${nodesPrefixMap.qualify(node)} 
+          |Shape: ${s.showQualified(shapesPrefixMap)}
+          |Attempt: ${attempt.show}
+          |Restricts: ${rs.toString}
+          |""".stripMargin
+    }
+
+    override def toJson: Json = Json.obj(
+       ("type", Json.fromString("MultipleRestricts")),
+       ("shape", s.asJson),
+       ("rs", rs.toString.asJson),
+       ("attempt", attempt.asJson)
+      ) 
+
+  }  
+
+
+  case class NoLabelExternal(
+    se: ShapeExternal
+    ) extends ShExError(s"""|No label to identify external shape ${se}
+                            |""".stripMargin) {
+    val s: ShapeExpr = se                          
+    override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
+      s"""|No label to identify external shape: ${se.showQualified(shapesPrefixMap)}
+          ||""".stripMargin
+    }
+
+    override def toJson: Json = Json.obj(
+       ("type", Json.fromString("NoLabelExternal")),
+       ("shapeExternal", s.asJson)
+      ) 
+
+  }
+
+  case class ClosedShapeWithRests(
+    s: Shape,
+    rest: Arc,
+    attempt: Attempt,
+    ignoredPathsClosed: List[Path],
+    extras: List[Path]
+  ) extends ShExError(s"""|Closed shape but rest ${rest.path.show} is not in ${ignoredPathsClosed.map(_.show).mkString(",")} or ${extras.map(_.show).mkString(",")}
+                          |""".stripMargin) {
+    override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
+      s"""|Closed shape but rest: ${rest.path.showQualified(shapesPrefixMap)} is not in ${ignoredPathsClosed.map(_.show).mkString(",")} or ${extras.map(_.show).mkString(",")}
+          |""".stripMargin
+    }
+
+    override def toJson: Json = Json.obj(
+       ("type", Json.fromString("ClosedShapeWithRests")),
+       ("shape", s.asJson),
+       ("attempt", attempt.asJson), 
+       ("rest", rest.path.toString.asJson),
+       ("extras", extras.map(_.show).mkString(",").asJson),
+       ("ignoredPathsClosed", ignoredPathsClosed.map(_.show).mkString(",").asJson),
       ) 
 
   }

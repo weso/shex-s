@@ -2,7 +2,6 @@ package es.weso.shex.validator
 
 import es.weso.shex._
 import es.weso.rdf.nodes._
-import ShExChecker._
 import es.weso.shex.normalized._
 // import es.weso.shex.implicits.showShEx._
 import cats.data._
@@ -14,6 +13,7 @@ import es.weso.rdf.RDFReader
 import es.weso.utils.eitherios.EitherIOUtils._
 import es.weso.shex.validator.ShExError._
 import es.weso.rdf.PrefixMap
+import es.weso.rdf.RDFBuilder
 
 /**
   * ShEx validator
@@ -21,8 +21,9 @@ import es.weso.rdf.PrefixMap
 case class ValidateFlatShape(
   validator: Validator,
   nodesPrefixMap: PrefixMap,
-  shapesPrefixMap: PrefixMap
-) {
+  shapesPrefixMap: PrefixMap,
+  builder: RDFBuilder
+) extends ShExChecker {
 
   private[validator] def checkFlatShape(
     attempt: Attempt, 
@@ -167,7 +168,7 @@ case class ValidateFlatShape(
         // checkShapeBase(Attempt(NodeShape(node, ShapeType(s,s.id, schema)),None), node, s)
         mkErr(s"checkNodeShapeExprBasic: Not implemented yet Shape ")
       case _: ShapeExternal   => mkErr(s"Still don't know what to do with external shapes")
-      case nk: NodeConstraint => NodeConstraintChecker(validator.schema, rdf).nodeConstraintChecker(node, nk)
+      case nk: NodeConstraint => NodeConstraintChecker(validator.schema, rdf, builder).nodeConstraintChecker(node, nk)
       case sd: ShapeDecl => mkErr(s"checkNodeShapeExprBasic: Not implemented yet ShapeDecl($sd)")
       case _ => mkErr(s"checkNodeShapeExprBasic: Not implemented yet ShapeDecl($se)")
     }

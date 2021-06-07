@@ -1,0 +1,245 @@
+{
+  "description": "collection of shape path tests",
+  "tests": [
+    {
+      "name": "2Eachdot_S_a",
+      "from": "./2Eachdot.json",
+      "shapePath": "/@<http://a.example/S>/<http://a.example/a>",
+      "expect": "2Eachdot_S_a",
+      "status": "accepted"
+    },
+    {
+      "name": "2Eachdot_S_b",
+      "from": "2Eachdot.json",
+      "shapePath": "/@<http://a.example/S>/<http://a.example/b>",
+      "expect": "2Eachdot_S_b",
+      "status": "accepted"
+    },
+    {
+      "name": "nested_S0_2_1_valueExpr",
+      "from": "./nested.json",
+      "shapePath": "@<S0>/2/1",
+      "expect": "nested_S0_p2_valueExpr",
+      "status": "accepted"
+    },
+    {
+      "name": "nested_s0_2_1*",
+      "from": "./nested.json",
+      "shapePath": "@<base:/S0>/2/1*",
+      "throws": true,
+      "expect": "Error: unable to parse at offset 15: *",
+      "status": "accepted"
+    },
+    {
+      "name": "nested_baseS0_p2_valueExpr",
+      "from": "./nested.json",
+      "shapePath": "@<base:/S0>/2/1",
+      "expect": "nested_S0_p2_valueExpr",
+      "status": "accepted"
+    },
+    {
+      "name": "nested_baseS0_p2_valueExpr_TC",
+      "from": "./nested.json",
+      "shapePath": "@<base:/S0>/EachOf 2/TripleConstraint/Shape/TripleConstraint",
+      "expect": "nested_S0_p2_valueExpr_TC",
+      "status": "review",
+      "comment": "review EachOf"
+    },
+    {
+      "name": "nested_baseS0_p2_EachOf 2_TripleConstraint",
+      "from": "./nested.json",
+      "shapePath": "@<base:/S0>/EachOf 2/TripleConstraint/",
+      "expect": "nested_S0_p2",
+      "status": "review",
+      "comment": "review EachOf"
+    },
+    {
+      "name": "nested_baseS0_EachOf 2",
+      "from": "./nested.json",
+      "shapePath": "@<base:/S0>/EachOf 2",
+      "expect": "nested_S0_p2",
+      "status": "review",
+      "comment": "review EachOf "
+    },
+    {
+      "name": "nested_S0_p2_valueExpr",
+      "from": "./nested.json",
+      "shapePath": "@<base:/S0>/EachOf 2/.valueExpr",
+      "expect": "nested_S0_p2_valueExpr",
+      "status": "pending",
+      "comment": "valueExpr not in the spec"
+    },
+    {
+      "name": "nested_baseS0_1",
+      "from": "./nested.json",
+      "shapePath": "@<base:/S0>/1",
+      "expect": "nested_S0_p1",
+      "status": "accepted"
+    },
+    {
+      "name": "nested_baseS0_EachOf_1",
+      "from": "./nested.json",
+      "shapePath": "@<base:/S0>/EachOf 1",
+      "expect": "nested_S0_p1",
+      "status": "review",
+      "comment": "Review EachOf"
+    },
+    {
+      "name": "nested_baseS0_1_valueExpr",
+      "from": "./nested.json",
+      "shapePath": "@<base:/S0>/1.valueExpr",
+      "expect": "nested_S0_p1_valueExpr",
+      "status": "pending",
+      "comment": "valueExpr is not in the spec"
+    },
+    {
+      "name": "nested_baseS0_EachOf_1_valueExpr",
+      "from": "./nested.json",
+      "shapePath": "@<base:/S0>/EachOf 1.valueExpr",
+      "expect": "nested_S0_p1_valueExpr",
+      "status": "pending",
+      "comment": "valueExpr is not in the spec"
+    },
+    {
+      "name": "nested_baseS0_EachOf_2_valueExpr",
+      "from": "./nested.json",
+      "shapePath": "@<base:/S0>/EachOf 2.valueExpr",
+      "expect": "nested_S0_p2_valueExpr",
+      "status": "pending",
+      "comment": "valueExpr is not in the spec"
+    },
+    {
+      "name": "1dotRefOR3_S1",
+      "from": "./1dotRefOR3.json",
+      "shapePath": "/@<http://a.example/S1>",
+      "expect": "1dotRefOR3_S1",
+      "status": "accepted"
+    },
+    {
+      "name": "1dotRefOR3_S4",
+      "from": "./1dotRefOR3.json",
+      "shapePath": "/@<http://a.example/S4>",
+      "expect": "1dotRefOR3_S4",
+      "status": "accepted"
+    },
+    {
+      "name": "1dotRefOR3_p1",
+      "from": "./1dotRefOR3.json",
+      "shapePath": "/@<http://a.example/S1>/<http://a.example/p1>",
+      "expect": "1dotRefOR3_p1",
+      "status": "accepted"
+    },
+    {
+      "name": "1dotRefOR3_p1_valueExpr",
+      "from": "./1dotRefOR3.json",
+      "shapePath": "/@<http://a.example/S1>/<http://a.example/p1>.valueExpr",
+      "expect": "1dotRefOR3_p1_valueExpr",
+      "status": "pending",
+      "comment": "valueExpr is not in the spec"
+    },
+    {
+      "name": "1dotRefOR3_p1_valueExpr_type",
+      "from": "./1dotRefOR3.json",
+      "shapePath": "/@<http://a.example/S1>/<http://a.example/p1>.valueExpr.type",
+      "expect": "1dotRefOR3_p1_valueExpr_type",
+      "status": "pending",
+      "comment": "valueExpr and type are not in the spec"
+    },
+    {
+      "name": "1dotRefOR3_S1_p1_valueExpr_3",
+      "from": "./1dotRefOR3.json",
+      "shapePath": "/@<http://a.example/S1>/<http://a.example/p1>.valueExpr/@3",
+      "expect": "1dotRefOR3_S4",
+      "status": "pending",
+      "comment": "valueExpr is not in the spec"
+    },
+    {
+      "name": "1dotRefOR3_S1_p1_at_3",
+      "from": "./1dotRefOR3.json",
+      "shapePath": "/@<http://a.example/S1>/<http://a.example/p1>/@3",
+      "expect": "1dotRefOR3_S4",
+      "status": "review"
+    },
+    {
+      "name": "1dotRefOR3_S1_p1_valueExpr_ShapeOr3",
+      "from": "./1dotRefOR3.json",
+      "shapePath": "/@<http://a.example/S1>/<http://a.example/p1>.valueExpr/@ShapeOr3",
+      "expect": "1dotRefOR3_S4",
+      "status": "pending",
+      "comment": ".valueExpr is not in the spec"
+    },
+    {
+      "name": "1dotRefOR3_S1_p1_valueExpr_at_ShapeAnd3",
+      "from": "./1dotRefOR3.json",
+      "shapePath": "/@<http://a.example/S1>/<http://a.example/p1>.valueExpr/@ShapeAnd3",
+      "expect": "empty",
+      "status": "pending",
+      "comment": ".valueExpr is not in the spec"
+
+    },
+    {
+      "name": "1dotRefOR3_S1_p1_at3",
+      "from": "./1dotRefOR3.json",
+      "shapePath": "/@<http://a.example/S1>/<http://a.example/p1>/@3",
+      "expect": "1dotRefOR3_S4",
+      "status": "review"
+    },
+    {
+      "name": "1dotRefOR3_S1_p1_at_ShapeOr3",
+      "from": "./1dotRefOR3.json",
+      "shapePath": "/@<http://a.example/S1>/<http://a.example/p1>/@ShapeOr3",
+      "expect": "1dotRefOR3_S4",
+      "status": "question",
+      "comment": "ShapeOr3 should be ShapeOr 3 ?"
+    },
+    {
+      "name": "1dotRefOR3_S1_p1_at_ShapeAnd3",
+      "from": "./1dotRefOR3.json",
+      "shapePath": "/@<http://a.example/S1>/<http://a.example/p1>/@ShapeAnd3",
+      "expect": "empty",
+      "status": "question",
+      "comment": "ShapeAnd3 should be ShapeAnd 3 ?"
+
+    },
+    {
+      "name": "1dotRefOR3_1",
+      "from": "./1dotRefOR3.json",
+      "shapePath": "/1",
+      "expect": "1dotRefOR3_S1",
+      "status": "question",
+      "comment": "Should it be /@1 ?"
+    },
+    {
+      "name": "1dotRefOR3_4",
+      "from": "./1dotRefOR3.json",
+      "shapePath": "/4",
+      "expect": "1dotRefOR3_S4",
+      "status": "question",
+      "comment": "Should it be /@4 ?"
+    },
+    {
+      "name": "1dotRefOR3_1_1",
+      "from": "./1dotRefOR3.json",
+      "shapePath": "/1/1",
+      "expect": "1dotRefOR3_p1",
+      "status": "question",
+      "comment": "Should it be /@1/1 ?"
+    },
+    {
+      "name": "1dotRefOR3_1_1_valueExpr",
+      "from": "./1dotRefOR3.json",
+      "shapePath": "/1/1.valueExpr",
+      "expect": "1dotRefOR3_p1_valueExpr",
+      "status": "pending",
+      "comment": "valueExpr is not part of the spec"
+    },
+    {
+      "name": "1dotRefOR3_1_1_valueExpr_at3",
+      "from": "./1dotRefOR3.json",
+      "shapePath": "/1/1.valueExpr/@3",
+      "expect": "1dotRefOR3_S4",
+      "status": "pending",
+      "comment": "valueExpr is not part of the spec"
+    }
+  ]
+}

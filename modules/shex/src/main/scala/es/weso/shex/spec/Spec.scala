@@ -5,7 +5,7 @@ import cats.implicits._
 import es.weso.shex.implicits.showShEx._
 import es.weso.rdf.{PrefixMap, RDFReader}
 import es.weso.rdf.nodes.{IRI, Literal, RDFNode}
-import es.weso.shapeMaps.{
+import es.weso.shapemaps.{
   BNodeLabel => BNodeShapeMapLabel,
   Conformant => ConformantStatus,
   IRILabel => IriShapeMapLabel,
@@ -16,12 +16,11 @@ import es.weso.shapeMaps.{
 }
 import es.weso.shex._
 import Check._
-import com.typesafe.scalalogging.LazyLogging
 import es.weso.shex.validator.Arc
 import es.weso.utils.{LogInfo, SetUtils}
 import es.weso.utils.internal.CollectionCompat._
 
-object Spec extends LazyLogging {
+object Spec {
   def logInfo(str: String, incr: Int):Unit = LogInfo(str, incr)
 
  /* def fixedShapeMap2Typing(m: FixedShapeMap): ShapeTyping = {

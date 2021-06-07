@@ -1,0 +1,17 @@
+package es.weso.shextest.manifest
+
+import weaver._
+import cats.effect._
+
+object WeaverSuite extends SimpleIOSuite {
+ 
+ val randomUUID = IO(java.util.UUID.randomUUID())
+
+  // A test for side-effecting functions
+  test("Failing fast expectations") {
+    for {
+      h <- IO.pure("hello")
+      _ <- expect(h.nonEmpty).failFast
+    } yield success
+  }
+} 

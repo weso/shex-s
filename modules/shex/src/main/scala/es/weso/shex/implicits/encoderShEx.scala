@@ -157,11 +157,12 @@ object encoderShEx {
 
   implicit lazy val encodeShapeLabel: Encoder[ShapeLabel] = new Encoder[ShapeLabel] {
     final def apply(a: ShapeLabel): Json = a match {
-      case IRILabel(iri) => iri.asJson
-      case BNodeLabel(bNode) => Json.fromString("_:" + bNode.id)
-      case Start => Json.fromString("Start")
-    }
+         case l: IRILabel => l.iri.asJson
+         case l: BNodeLabel => ("_:" + l.bnode.id).asJson
+         case Start => "Start".asJson
+      }
   }
+
   implicit lazy val encodeTripleExpr: Encoder[TripleExpr] = new Encoder[TripleExpr] {
     final def apply(a: TripleExpr): Json = a match {
       case s: OneOf => s.asJson

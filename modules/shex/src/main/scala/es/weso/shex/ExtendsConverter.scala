@@ -32,7 +32,8 @@ object ExtendsConverter {
      source = s.source,
      resolvedMapShapeExprs = nMap,
      resolvedMapTripleExprs = s.resolvedMapTripleExprs,
-     inheritanceGraph = s.inheritanceGraph 
+     inheritanceGraph = s.inheritanceGraph,
+     labelLocationMap = s.labelLocationMap 
     )
   } yield r).run(Set())
 

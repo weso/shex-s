@@ -8,11 +8,15 @@ import es.weso.depgraphs.DepGraph
 import es.weso.rdf.{PrefixMap, RDFBuilder, RDFReader}
 import es.weso.rdf.nodes._
 import es.weso.shex.shexR.{RDF2ShEx, ShEx2RDF}
-
 import scala.io.Source
 import scala.util._
 import cats.effect._
 import es.weso.utils.FileUtils
+import es.weso.rdf.locations.Location
+import compact.Parser._
+import java.io.InputStream
+import java.io.InputStreamReader
+import java.io.ByteArrayInputStream
 
 case class Schema private
                 ( id: IRI,
@@ -20,12 +24,27 @@ case class Schema private
                   base: Option[IRI],
                   startActs: Option[List[SemAct]],
                   start: Option[ShapeExpr],
+
+                  // TODO: Replace this by a map? 
                   shapes: Option[List[ShapeExpr]],
+
                   optTripleExprMap: Option[Map[ShapeLabel,TripleExpr]],
-                  imports: List[IRI]
+                  imports: List[IRI],
+                  labelLocationMap: Option[Map[ShapeLabel,Location]]
                  ) extends AbstractSchema {
 
-  def addShape(se: ShapeExpr): Schema = this.copy(shapes = addToOptionList(se,shapes))
+  def addShape(se: ShapeExpr): Schema = 
+    this.copy(shapes = shapes match {
+      case None => Some(List(se))
+      case Some(ls) => Some(se :: removeShapeWithLabel(se.id, ls))
+    })
+
+  private def removeShapeWithLabel(maybeLbl: Option[ShapeLabel], ls: List[ShapeExpr]): List[ShapeExpr] =
+   maybeLbl match {
+     case None => ls
+     case Some(lbl) => 
+       ls.filter { se => se.id.map(_ != lbl).getOrElse(true) }
+   }
 
   def getTripleExpr(lbl: ShapeLabel): Either[String,TripleExpr] = 
     optTripleExprMap match {
@@ -34,7 +53,7 @@ case class Schema private
     }
 
   def shapeLabel2Iri(l: ShapeLabel): Either[String, IRI] = l match {
-    case IRILabel(iri) => Right(iri)
+    case l: IRILabel => Right(l.iri)
     case _ => Left(s"Label $l can't be converted to IRI")
   }
 
@@ -47,8 +66,6 @@ case class Schema private
     }
   } yield se
 
-  def err[A](msg: String): IO[A] = IO.raiseError(new RuntimeException(msg))
-  def ok[A](x:A): IO[A] = IO.pure(x)
   
   lazy val localShapes: List[ShapeExpr] = shapes.getOrElse(List())
 
@@ -109,22 +126,22 @@ case class Schema private
 
   def relativize(maybeBase: Option[IRI]): Schema = maybeBase match {
     case None => this
-    case Some(baseIri) => Schema(
-      id.relativizeIRI(baseIri),
-      prefixes,
-      base.map(_.relativizeIRI(baseIri)),
-      startActs,
-      start.map(_.relativize(baseIri)),
-      shapes.map(_.map(_.relativize(baseIri))),
-      optTripleExprMap,
-      imports
+    case Some(baseIri) => this.copy(
+      id = id.relativizeIRI(baseIri),
+      base = base.map(_.relativizeIRI(baseIri)),
+      start = start.map(_.relativize(baseIri)),
+      shapes = shapes.map(_.map(_.relativize(baseIri))),
     )
   }
 
-  private def addToOptionList[A](x: A, maybeLs: Option[List[A]]): Option[List[A]] = maybeLs match {
+/*  private def addToOptionList[A](x: A, maybeLs: Option[List[A]]): Option[List[A]] = maybeLs match {
     case None => Some(List(x))
     case Some(xs) => Some(x :: xs)
-  }
+  } */
+
+  // TODO: Move this methods to other parts...
+  def err[A](msg: String): IO[A] = IO.raiseError(new RuntimeException(msg))
+  def ok[A](x:A): IO[A] = IO.pure(x)
 
 }
 
@@ -134,7 +151,7 @@ object Schema {
   def rdfDataFormats(rdfReader: RDFReader) = rdfReader.availableParseFormats.map(_.toUpperCase)
 
   def empty: Schema =
-    Schema(IRI(""),None, None, None, None, None, None, List())
+    Schema(IRI(""),None, None, None, None, None, None, List(), None)
 
   def fromIRI(i: IRI, base: Option[IRI]): IO[Schema] = {
     val uri = i.uri
@@ -178,47 +195,53 @@ object Schema {
    for {
     _ <- { println(s"Trying to deref $uri"); IO.pure(()); }
     str <- derefUri(uri)
-    _ <- { println(s"Str obtained...${str.linesIterator.take(2).mkString("\n")}\n..."); IO.pure(()); }
+    _ <- { println(s"Str obtained\n${str.linesIterator.take(2).mkString("\n")}\n---"); IO.pure(()); }
     schema <- Schema.fromString(str,format,base,None)
-    _ <- { println(s"Obtained schema at $uri"); IO.pure(()); }
+    _ <- { println(s"Obtained schema at $uri\n${schema}\n---\n"); IO.pure(()); }
    } yield schema
   }
 
 
 
   /**
-  * Reads a Schema from a char sequence
-    * @param cs char sequence
+  * Reads a Schema from a Reader
+    * @param is input stream
     * @param format syntax format
     * @param base base URL
     * @param maybeRDFBuilder RDFReader value from which to obtain RDF data formats (in case of RDF format)
     * @return either a Schema or a String message error
     */
-  def fromString(cs: CharSequence,
-                 format: String = "ShExC",
-                 base: Option[IRI] = None,
-                 maybeRDFBuilder: Option[RDFBuilder] = None
-                ): IO[Schema] = {
+  def fromInputStream(
+    is: InputStream,
+    format: String = "ShExC",
+    base: Option[IRI] = None,
+    maybeRDFBuilder: Option[RDFBuilder] = None
+    ): IO[Schema] = {
     val formatUpperCase = format.toUpperCase
     formatUpperCase match {
       case "SHEXC" => {
-        import compact.Parser.parseSchema
-        parseSchema(cs.toString, base).fold(e => err(e), ok)
+        val reader = new InputStreamReader(is)
+        parseSchemaReader(reader, base).fold(e => err(e), ok)
       }
+      // TODO: The following code loads the inputstream in memory...
+      // look for streaming alternatives!
       case "SHEXJ" => {
         import io.circe.parser._
         import es.weso.shex.implicits.decoderShEx._
-        decode[Schema](cs.toString).leftMap(_.getMessage).fold(e => err(e), ok)
+        getContents(is).flatMap(str => 
+         decode[Schema](str).leftMap(_.getMessage).fold(e => err(e), ok))
       }
       case _ => maybeRDFBuilder match {
         case None => err(s"Not implemented ShEx parser for format $format and no rdfReader provided")
         case Some(rdfBuilder) =>
-         if (rdfDataFormats(rdfBuilder).contains(formatUpperCase))
-           rdfBuilder.fromString(cs.toString, formatUpperCase, base).flatMap(_.use(rdf =>
+         if (rdfDataFormats(rdfBuilder).contains(formatUpperCase)) {
+           getContents(is).flatMap(str => 
+           rdfBuilder.fromString(str, formatUpperCase, base).flatMap(_.use(rdf =>
              for {
               eitherSchema <- RDF2ShEx.rdf2Schema(rdf)
               schema <- eitherSchema.fold(e => err(e), ok)
-             } yield schema))
+             } yield schema)))
+            }
          else err(s"Not implemented ShEx parser for format $format")
        }
     }
@@ -263,6 +286,24 @@ object Schema {
     schema <- fromString(cs,format,base,maybeRDFBuilder)
   } yield schema
 
+  /**
+   * @param reader input reader
+   * @param format format of reader. Default value = ShExC, other values = ShExJ, ShExR
+   * @param base optional IRI that acts as base, default value = None
+   * @param maybeRDFBuilder RDFBuilder
+   */ 
+  def fromString(str: String,
+                 format: String = "ShExC",
+                 base: Option[IRI] = None,
+                 maybeRDFBuilder: Option[RDFBuilder] = None
+                ): IO[Schema] = { 
+    val is = new ByteArrayInputStream(str.getBytes())
+    for {
+    schema <- fromInputStream(is,format,base,maybeRDFBuilder)
+    } yield schema
+  }
+
+
   import java.net.URI
 
   private def derefUri(uri: URI): IO[String] = {
@@ -277,8 +318,10 @@ object Schema {
       IO.raiseError(e)
     }, IO(_))
   }
+  
+  private def getContents(is: InputStream): IO[String] = 
+   IO(scala.io.Source.fromInputStream(is).mkString)
 
 
-//  def resolveSchema: IO[ResolvedSchema] = ???
 
 }

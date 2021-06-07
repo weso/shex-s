@@ -27,6 +27,7 @@ object TestSemanticAction {
         }
         IO.raiseError(FailSemanticAction(node, s"Error: $s. Processor: $processorName"))
       }
+      case "" => IO.unit
       case str => {
         IO.raiseError(FailSemanticAction(node, s"Unknown command: $str. Processor: $processorName"))
       }

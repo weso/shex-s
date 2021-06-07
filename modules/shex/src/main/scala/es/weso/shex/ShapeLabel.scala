@@ -1,25 +1,31 @@
 package es.weso.shex
 import es.weso.shex.shexR.PREFIXES.{sx_start}
 import es.weso.rdf.nodes.{BNode, IRI, RDFNode}
-import es.weso.shapeMaps.{ Start => StartMapLabel, IRILabel => IRIMapLabel, BNodeLabel => BNodeMapLabel, _}
+import es.weso.shapemaps.{ Start => StartMapLabel, IRILabel => IRIMapLabel, BNodeLabel => BNodeMapLabel, _}
+import es.weso.rdf.PrefixMap
 
-abstract sealed trait ShapeLabel {
+abstract sealed trait ShapeLabel extends Product with Serializable {
 
   def toRDFNode: RDFNode = this match {
-    case IRILabel(iri) => iri
-    case BNodeLabel(bn) => bn
+    case l : IRILabel => l.iri
+    case l : BNodeLabel => l.bnode
     case Start => sx_start
   }
 
   def relativize(base: IRI): ShapeLabel = this match {
-    case IRILabel(iri) => IRILabel(iri.relativizeIRI(base))
+    case l: IRILabel => IRILabel(l.iri.relativizeIRI(base))
     case other => other
   }
 
-
+  def showQualify(pm: PrefixMap): String = this match {
+    case Start => s"Start"
+    case IRILabel(iri) => pm.qualifyIRI(iri)
+    case BNodeLabel(bnode) => bnode.toString
+  }
+  
 }
 
-case object Start extends ShapeLabel
+case object Start extends ShapeLabel 
 case class IRILabel(iri: IRI) extends ShapeLabel
 case class BNodeLabel(bnode: BNode) extends ShapeLabel
 
@@ -36,7 +42,7 @@ object ShapeLabel {
   } yield label
 
   def fromShapeMapLabel(sml: ShapeMapLabel): ShapeLabel = sml match {
-    case StartMapLabel => Start
+    case StartMapLabel    => Start
     case IRIMapLabel(iri) => IRILabel(iri)
     case BNodeMapLabel(b) => BNodeLabel(b)
   }
