@@ -9,9 +9,7 @@ lazy val supportedScalaVersions = List(
 
 val Java11 = "adopt@1.11"
 
-// Local dependencies
 lazy val srdfVersion           = "0.1.101"
-// lazy val shapeMapsVersion      = "0.1.82"
 lazy val utilsVersion          = "0.1.94"
 lazy val documentVersion       = "0.0.26"
 
@@ -22,9 +20,7 @@ lazy val catsEffectVersion     = "3.0.2"
 lazy val commonsTextVersion    = "1.8"
 lazy val circeVersion          = "0.14.0-M5"
 lazy val declineVersion        = "2.0.0-RC1"
-// lazy val diffsonVersion        = "4.0.0"
 lazy val fs2Version            = "3.0.0"
-// lazy val effVersion            = "4.6.1"
 lazy val jenaVersion           = "3.16.0"
 lazy val junitVersion          = "4.13.1"
 lazy val junitInterfaceVersion = "0.11"
@@ -48,15 +44,15 @@ lazy val circeGeneric      = "io.circe"                   %% "circe-generic"    
 lazy val circeParser       = "io.circe"                   %% "circe-parser"        % circeVersion
 lazy val decline           = "com.monovore"               %% "decline"             % declineVersion
 lazy val declineEffect     = "com.monovore"               %% "decline-effect"      % declineVersion
-lazy val fs2            = "co.fs2"            %% "fs2-core" % fs2Version
-lazy val fs2io          = "co.fs2"            %% "fs2-io" % fs2Version
-lazy val jgraphtCore    = "org.jgrapht"       % "jgrapht-core"     % jgraphtVersion
-lazy val jenaArq        = "org.apache.jena"   % "jena-arq"         % jenaVersion
-lazy val jenaFuseki     = "org.apache.jena"   % "jena-fuseki-main" % jenaVersion
-lazy val junit          = "junit"             % "junit"            % junitVersion
-lazy val junitInterface = "com.novocode"      % "junit-interface"  % junitInterfaceVersion
-lazy val munit          = "org.scalameta"     %% "munit"           % munitVersion
-lazy val munitEffect    = "org.typelevel"     %% "munit-cats-effect-3" % munitEffectVersion
+lazy val fs2               = "co.fs2"            %% "fs2-core" % fs2Version
+lazy val fs2io             = "co.fs2"            %% "fs2-io" % fs2Version
+lazy val jgraphtCore       = "org.jgrapht"       % "jgrapht-core"     % jgraphtVersion
+lazy val jenaArq           = "org.apache.jena"   % "jena-arq"         % jenaVersion
+lazy val jenaFuseki        = "org.apache.jena"   % "jena-fuseki-main" % jenaVersion
+lazy val junit             = "junit"             % "junit"            % junitVersion
+lazy val junitInterface    = "com.novocode"      % "junit-interface"  % junitInterfaceVersion
+lazy val munit             = "org.scalameta"     %% "munit"           % munitVersion
+lazy val munitEffect       = "org.typelevel"     %% "munit-cats-effect-3" % munitEffectVersion
 lazy val MUnitFramework = new TestFramework("munit.Framework")
 
 lazy val rdf4j_runtime  = "org.eclipse.rdf4j" % "rdf4j-runtime"    % rdf4jVersion
