@@ -11,7 +11,7 @@ val Java11 = "adopt@1.11"
 
 lazy val srdfVersion           = "0.1.101"
 lazy val utilsVersion          = "0.1.94"
-lazy val documentVersion       = "0.0.26"
+lazy val documentVersion       = "0.0.30"
 
 // Dependency versions
 lazy val antlrVersion          = "4.7.1"
