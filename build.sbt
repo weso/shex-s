@@ -11,7 +11,7 @@ val Java11 = "adopt@1.11"
 
 lazy val srdfVersion           = "0.1.101"
 lazy val utilsVersion          = "0.1.94"
-lazy val documentVersion       = "0.0.26"
+lazy val documentVersion       = "0.0.30"
 
 // Dependency versions
 lazy val antlrVersion          = "4.7.1"
@@ -24,6 +24,7 @@ lazy val fs2Version            = "3.0.0"
 lazy val jenaVersion           = "3.16.0"
 lazy val junitVersion          = "4.13.1"
 lazy val junitInterfaceVersion = "0.11"
+lazy val jgraphtVersion        = "1.5.1"
 lazy val jgraphtVersion        = "1.3.1"
 lazy val munitVersion          = "0.7.26"
 lazy val munitEffectVersion    = "1.0.3"
