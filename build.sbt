@@ -1,5 +1,5 @@
 lazy val scala212 = "2.12.13"
-lazy val scala213 = "2.13.5"
+lazy val scala213 = "2.13.6"
 lazy val scala3   = "3.0.0-RC2"
 lazy val supportedScalaVersions = List(
   scala213,
@@ -11,28 +11,29 @@ val Java11 = "adopt@1.11"
 
 lazy val srdfVersion           = "0.1.101"
 lazy val utilsVersion          = "0.1.94"
-lazy val documentVersion       = "0.0.26"
+lazy val documentVersion       = "0.0.30"
 
 // Dependency versions
 lazy val antlrVersion          = "4.7.1"
-lazy val catsVersion           = "2.5.0"
-lazy val catsEffectVersion     = "3.0.2"
+lazy val catsVersion           = "2.6.1"
+lazy val catsEffectVersion     = "3.1.1"
 lazy val commonsTextVersion    = "1.8"
-lazy val circeVersion          = "0.14.0-M5"
-lazy val declineVersion        = "2.0.0-RC1"
-lazy val fs2Version            = "3.0.0"
+lazy val declineVersion        = "2.0.0"
+lazy val circeVersion          = "0.14.1"
+lazy val fs2Version            = "3.0.4"
 lazy val jenaVersion           = "3.16.0"
 lazy val junitVersion          = "4.13.1"
 lazy val junitInterfaceVersion = "0.11"
+lazy val jgraphtVersion        = "1.5.1"
 lazy val jgraphtVersion        = "1.3.1"
-lazy val munitVersion          = "0.7.22"
-lazy val munitEffectVersion    = "0.13.1"
+lazy val munitVersion          = "0.7.26"
+lazy val munitEffectVersion    = "1.0.3"
 lazy val pprintVersion         = "0.6.0"
 lazy val rdf4jVersion          = "3.4.2"
-lazy val scalaCollCompatVersion  = "2.4.3"
+lazy val scalaCollCompatVersion  = "2.4.4"
 lazy val scalacheckVersion     = "1.14.0"
 lazy val typesafeConfigVersion = "1.4.1"
-lazy val xercesVersion         = "2.12.0"
+lazy val xercesVersion         = "2.12.1"
 
 // Dependency modules
 lazy val antlr4            = "org.antlr"                  % "antlr4"               % antlrVersion
