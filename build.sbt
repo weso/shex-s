@@ -15,8 +15,8 @@ lazy val documentVersion       = "0.0.26"
 
 // Dependency versions
 lazy val antlrVersion          = "4.7.1"
-lazy val catsVersion           = "2.5.0"
-lazy val catsEffectVersion     = "3.0.2"
+lazy val catsVersion           = "2.6.1"
+lazy val catsEffectVersion     = "3.1.1"
 lazy val commonsTextVersion    = "1.8"
 lazy val circeVersion          = "0.14.0-M5"
 lazy val declineVersion        = "2.0.0-RC1"
@@ -26,13 +26,13 @@ lazy val junitVersion          = "4.13.1"
 lazy val junitInterfaceVersion = "0.11"
 lazy val jgraphtVersion        = "1.3.1"
 lazy val munitVersion          = "0.7.26"
-lazy val munitEffectVersion    = "0.13.1"
+lazy val munitEffectVersion    = "1.0.3"
 lazy val pprintVersion         = "0.6.0"
 lazy val rdf4jVersion          = "3.4.2"
 lazy val scalaCollCompatVersion  = "2.4.3"
 lazy val scalacheckVersion     = "1.14.0"
 lazy val typesafeConfigVersion = "1.4.1"
-lazy val xercesVersion         = "2.12.0"
+lazy val xercesVersion         = "2.12.1"
 
 // Dependency modules
 lazy val antlr4            = "org.antlr"                  % "antlr4"               % antlrVersion
