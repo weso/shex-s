@@ -32,7 +32,7 @@ lazy val rdf4jVersion          = "3.4.2"
 lazy val scalaCollCompatVersion  = "2.4.3"
 lazy val scalacheckVersion     = "1.14.0"
 lazy val typesafeConfigVersion = "1.4.1"
-lazy val xercesVersion         = "2.12.0"
+lazy val xercesVersion         = "2.12.1"
 
 // Dependency modules
 lazy val antlr4            = "org.antlr"                  % "antlr4"               % antlrVersion
