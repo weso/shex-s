@@ -4,9 +4,7 @@ import org.apache.jena.rdf.model.*;
 import org.junit.Test;
 import java.io.InputStream ;
 import java.io.ByteArrayInputStream;
-
-
-
+import es.weso.shapemaps.ResultShapeMap;
 
 public class WrapperTest {
 
@@ -16,11 +14,11 @@ public class WrapperTest {
                     ":S { :p . } " ;
     String dataStr = "prefix : <http://example.org/>\n" +
                   ":S { :p . } " ;                 
-    ValidatorWrapper vw = ValidatorWrapper.create(schemaStr, "ShEXC");
+    ValidatorWrapper vw = new ValidatorWrapper();
+    vw.parseSchema(schemaStr, "ShEXC");
     Model dataModel = ModelFactory.createDefaultModel();
     InputStream dataStream = new ByteArrayInputStream(dataStr.getBytes());
     dataModel.read(dataStream,"");
-
     ResultShapeMap result = vw.validate(dataModel);
   }
 

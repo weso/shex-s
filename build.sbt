@@ -1,17 +1,17 @@
-lazy val scala212 = "2.12.13"
+lazy val scala212 = "2.12.14"
 lazy val scala213 = "2.13.6"
-lazy val scala3   = "3.0.0-RC2"
+lazy val scala3   = "3.0.0"
 lazy val supportedScalaVersions = List(
   scala213,
   scala212,
-//  scala3
-  )
+  scala3
+)
 
 val Java11 = "adopt@1.11"
 
-lazy val srdfVersion           = "0.1.101"
-lazy val utilsVersion          = "0.1.94"
-lazy val documentVersion       = "0.0.30"
+lazy val srdfVersion           = "0.1.102"
+lazy val utilsVersion          = "0.1.98"
+lazy val documentVersion       = "0.0.32"
 
 // Dependency versions
 lazy val antlrVersion          = "4.7.1"
@@ -25,13 +25,12 @@ lazy val jenaVersion           = "3.16.0"
 lazy val junitVersion          = "4.13.1"
 lazy val junitInterfaceVersion = "0.11"
 lazy val jgraphtVersion        = "1.5.1"
-lazy val jgraphtVersion        = "1.3.1"
 lazy val munitVersion          = "0.7.26"
 lazy val munitEffectVersion    = "1.0.3"
 lazy val pprintVersion         = "0.6.6"
 lazy val rdf4jVersion          = "3.4.2"
 lazy val scalaCollCompatVersion  = "2.4.4"
-lazy val scalacheckVersion     = "1.14.0"
+lazy val scalacheckVersion     = "1.15.4"
 lazy val typesafeConfigVersion = "1.4.1"
 lazy val xercesVersion         = "2.12.1"
 
@@ -64,7 +63,6 @@ lazy val document          = "es.weso"                    %% "document"        %
 lazy val srdf              = "es.weso"                    %% "srdf"            % srdfVersion
 lazy val srdfJena          = "es.weso"                    %% "srdfjena"        % srdfVersion
 lazy val srdf4j            = "es.weso"                    %% "srdf4j"          % srdfVersion
-// lazy val shapeMaps         = "es.weso"                    %% "shapemaps"       % shapeMapsVersion
 lazy val utils             = "es.weso"                    %% "utils"           % utilsVersion
 lazy val typing            = "es.weso"                    %% "typing"          % utilsVersion
 lazy val validating        = "es.weso"                    %% "validating"      % utilsVersion
@@ -76,7 +74,6 @@ lazy val scalacheck     = "org.scalacheck"             %% "scalacheck"    % scal
 lazy val pprint         = "com.lihaoyi"                %% "pprint"        % pprintVersion
 lazy val typesafeConfig = "com.typesafe"               % "config"         % typesafeConfigVersion
 lazy val xercesImpl     = "xerces"                     % "xercesImpl"     % xercesVersion
-
 
 ThisBuild / githubWorkflowJavaVersions := Seq(Java11)
 

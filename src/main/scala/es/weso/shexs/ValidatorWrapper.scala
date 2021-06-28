@@ -12,32 +12,27 @@ import org.apache.jena.rdf.model.RDFNode
  * Validator wrapper is an auxiliary class than can be used to invoke the ShEx validator from Java
  * It avoids the use of IO and unsafeRunSync 
  **/
-case class ValidatorWrapper private(schema: Option[Schema] = None) {
+case class ValidatorWrapper(schema: Option[AbstractSchema] = None) {
+  
+  def this() = {
+    this(None)
+  }
 
-/*  def validate(dataModel: Model): ResultShapeMap = {
-    val cmp: IO[ResultShapeMap] = for {
-      emptyRes <- RDFAsJenaModel.empty
-      v <- emptyRes.use {
-        case builder => for {
-         rdf <- RDFAsJenaModel.fromModel(dataModel, None, None)
-         result <-  
-        }
-      }
-    } yield result
-    ???
-  } */
-}
-
-object ValidatorWrapper {
-  def create(schemaStr: String, format: String): ValidatorWrapper = {
+  def parseSchema(schemaStr: String, format: String): ValidatorWrapper = {
     val cmp: IO[ResolvedSchema] = for {
       schema <- Schema.fromString(schemaStr, format, None, None)
       resolvedSchema <- ResolvedSchema.resolve(schema, None)
     } yield resolvedSchema
 
-    Try(ValidatorWrapper(Some(cmp.unsafeRunSync()))) match {
-     case Success(v) => v
-     case Failure(exc) => throw(exc)
-    }
+    ValidatorWrapper(Some(cmp.unsafeRunSync()))
   }
+
+
+  def validate(dataModel: Model): ResultShapeMap = {
+    val cmp: IO[ResultShapeMap] = for {
+      emptyRes <- RDFAsJenaModel.empty
+    } yield ResultShapeMap.empty
+    ???
+  } 
 }
+
