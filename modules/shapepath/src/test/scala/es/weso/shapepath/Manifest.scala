@@ -27,12 +27,11 @@ case class ManifestEntry(
 ) {
   def toTestEntry(manifestPath: String): TestEntry = {
     val id = TestId(name)
-    TestEntry(id = id, action = 
-    throws match {
+    val action: IO[TestResult] = throws match {
         case None | Some(false) => processEntryPositive(id, from, shapePath, expect, manifestPath)
         case Some(true)         => processEntryNegative(id, shapePath, expect)
       }
-   )
+    TestEntry(id, action)
   }
 
   def processEntryPositive(id: TestId, from: String, shapePath: String, expect: String, manifestPath: String): IO[TestResult] = {

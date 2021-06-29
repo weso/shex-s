@@ -2,28 +2,16 @@ package es.weso.shextest.manifest
 
 import java.net.URI
 import java.nio.file.Paths
-// import es.weso.rdf.jena.RDFAsJenaModel
-// import es.weso.rdf.nodes.IRI
-// import es.weso.shapemaps.{BNodeLabel => BNodeMapLabel, IRILabel => IRIMapLabel, Start => StartMap, _}
-// import es.weso.shapeMaps.ShapeMap
-// import es.weso.utils.FileUtils
 import scala.util.{Either, Left, Right, Try}
 import cats.data.EitherT
 import cats.effect.IO
 import cats.implicits._
 import es.weso.shex._
-// import es.weso.shex.validator.{ExternalIRIResolver, Validator}
 import es.weso.shex.compact.CompareSchemas
 import es.weso.shextest.manifest.Utils._
-// import es.weso.shex.implicits.decoderShEx._
 import es.weso.shex.implicits.encoderShEx._
-// import scala.io._
 import io.circe.parser._
 import io.circe.syntax._
-// import es.weso.rdf._
-// import es.weso.rdf.nodes._
-// import ManifestPrefixes._
-// import es.weso.utils.IOUtils._
 
 
 trait RunManifest {
@@ -91,8 +79,6 @@ trait ValidateManifest extends RunManifest {
       s"\nNumber of failed tests: ${vs.length}" 
   }
 
-
-
   def parseManifest(
       name: String,
       folder: String,
@@ -104,11 +90,6 @@ trait ValidateManifest extends RunManifest {
     info(s"Parse manifest: name: ${name}, parentFolder: ${parentFolder}", verbose) *>
     runManifest(name, folder, parentFolder, nameIfSingle, ignoreList, processEntryValidating(verbose), verbose)
   }
-
-/*  def info(msg: String, verbose: Boolean): IO[Unit] = 
-    if (verbose) {
-      IO.println(msg)
-    } else IO(()) */
 
   def processEntryValidating(verbose: Boolean): EntryProcess = ep => {
      
