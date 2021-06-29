@@ -137,7 +137,7 @@ object IntOrUnbounded {
     }
   }
 
-  implicit def int2LimitInt(x: Int) = IntLimit(x)
+  implicit def int2LimitInt(x: Int): IntLimit = IntLimit(x)
 
   private def divIntUp(x: Int, y: Int): Int = {
     (x + y - 1) / y
