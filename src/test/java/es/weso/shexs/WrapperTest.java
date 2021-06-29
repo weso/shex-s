@@ -13,7 +13,7 @@ public class WrapperTest {
     String schemaStr = "prefix : <http://example.org/>\n" +
                     ":S { :p . } " ;
     String dataStr = "prefix : <http://example.org/>\n" +
-                  ":S { :p . } " ;                 
+                  ":x :p 1 . " ;                 
     ValidatorWrapper vw = new ValidatorWrapper();
     vw.parseSchema(schemaStr, "ShEXC");
     Model dataModel = ModelFactory.createDefaultModel();

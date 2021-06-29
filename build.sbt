@@ -4,7 +4,7 @@ lazy val scala3   = "3.0.0"
 lazy val supportedScalaVersions = List(
   scala213,
   scala212,
-  scala3
+  // scala3
 )
 
 val Java11 = "adopt@1.11"
@@ -23,7 +23,7 @@ lazy val circeVersion          = "0.14.1"
 lazy val fs2Version            = "3.0.4"
 lazy val jenaVersion           = "3.16.0"
 lazy val junitVersion          = "4.13.1"
-lazy val junitInterfaceVersion = "0.11"
+lazy val junitInterfaceVersion = "0.13.2"
 lazy val jgraphtVersion        = "1.5.1"
 lazy val munitVersion          = "0.7.26"
 lazy val munitEffectVersion    = "1.0.3"
@@ -50,12 +50,12 @@ lazy val jgraphtCore       = "org.jgrapht"       % "jgrapht-core"     % jgraphtV
 lazy val jenaArq           = "org.apache.jena"   % "jena-arq"         % jenaVersion
 lazy val jenaFuseki        = "org.apache.jena"   % "jena-fuseki-main" % jenaVersion
 lazy val junit             = "junit"             % "junit"            % junitVersion
-lazy val junitInterface    = "com.novocode"      % "junit-interface"  % junitInterfaceVersion
+lazy val junitInterface    = "com.github.sbt"    % "junit-interface"  % junitInterfaceVersion
 lazy val munit             = "org.scalameta"     %% "munit"           % munitVersion
 lazy val munitEffect       = "org.typelevel"     %% "munit-cats-effect-3" % munitEffectVersion
 lazy val MUnitFramework = new TestFramework("munit.Framework")
 
-lazy val rdf4j_runtime  = "org.eclipse.rdf4j" % "rdf4j-runtime"    % rdf4jVersion
+lazy val rdf4j_runtime     = "org.eclipse.rdf4j" % "rdf4j-runtime"    % rdf4jVersion
 lazy val scalaCollCompat   = "org.scala-lang.modules"     %% "scala-collection-compat" % scalaCollCompatVersion
 
 // WESO components
@@ -106,7 +106,6 @@ lazy val shexs = project
       srdf4j,
       srdfJena,
       pprint,
-      junit % Test,
       junitInterface % Test,
     ),
     cancelable in Global := true,
@@ -118,9 +117,9 @@ lazy val shexs = project
     buildInfoPackage := "buildinfo"
   )
 
-lazy val CompatTest                     = config("compat") extend (Test) describedAs ("Tests that check compatibility (some may fail)")
+lazy val CompatTest = config("compat") extend (Test) describedAs ("Tests that check compatibility (some may fail)")
 def compatFilter(name: String): Boolean = name endsWith "CompatTest"
-def testFilter(name: String): Boolean   = /*(name endsWith "Test") && */ !compatFilter(name)
+def noCompatFilter(name: String): Boolean   = !compatFilter(name)
 
 lazy val shex = project
   .in(file("modules/shex"))
@@ -131,7 +130,7 @@ lazy val shex = project
     commonSettings,
     antlrSettings("es.weso.shex.parser"),
     inConfig(CompatTest)(Defaults.testTasks),
-    Test / testOptions := Seq(Tests.Filter(testFilter)),
+    Test / testOptions := Seq(Tests.Filter(noCompatFilter)),
     Test / parallelExecution := false,
     CompatTest / testOptions := Seq(Tests.Filter(compatFilter))
   )
@@ -256,7 +255,7 @@ lazy val shexTest = project
     crossScalaVersions := supportedScalaVersions,
     commonSettings,
     inConfig(CompatTest)(Defaults.testTasks),
-    testOptions in Test := Seq(Tests.Filter(testFilter)),
+    testOptions in Test := Seq(Tests.Filter(noCompatFilter)),
     testOptions in CompatTest := Seq(Tests.Filter(compatFilter))
   )
   .dependsOn(
