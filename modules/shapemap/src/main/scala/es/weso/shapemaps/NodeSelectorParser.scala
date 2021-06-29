@@ -55,7 +55,7 @@ object ParserNodeSelector  {
       base: Option[String],
       nodesPrefixMap)
     val builder = maker.visit(parser.nodeSelector()).asInstanceOf[Builder[NodeSelector]]
-    val errors = errorListener.getErrors
+    val errors = errorListener.getErrors()
     if (errors.length > 0) {
       Left(errors.mkString("\n"))
     } else {
