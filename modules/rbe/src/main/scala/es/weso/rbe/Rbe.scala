@@ -5,7 +5,6 @@ import interval._
 import IntOrUnbounded._
 import cats._
 import cats.implicits._
-import com.typesafe.scalalogging.LazyLogging
 
 /**
  * This trait defines Single Occurrence Regular Bag Expressions (Rbe)
@@ -19,7 +18,7 @@ import com.typesafe.scalalogging.LazyLogging
  *     S. Staworko, I. Boneva, J. Labra, S. Hym, E. Prud'hommeaux, H. Solbrig
  *
  */
-sealed trait Rbe[+A] extends LazyLogging with Product with Serializable {
+sealed trait Rbe[+A] extends Product with Serializable {
 
   /**
    * Checks if a RBE contains repetitions

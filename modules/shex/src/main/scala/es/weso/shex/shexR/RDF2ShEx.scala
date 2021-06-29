@@ -1,5 +1,4 @@
 package es.weso.shex.shexR
-import com.typesafe.scalalogging.LazyLogging
 import es.weso.rdf.RDFReader
 import es.weso.rdf.parser.RDFParser
 import es.weso.shex._
@@ -17,7 +16,7 @@ import fs2.Stream
 /* Parses RDF into SHEx.
  * The parser follows ShExR definition: https://github.com/shexSpec/shexTest/blob/master/doc/ShExR.shex
  */
-trait RDF2ShEx extends RDFParser with LazyLogging {
+trait RDF2ShEx extends RDFParser {
 
   val initialNode = BNode("internalNode")
 
@@ -30,7 +29,7 @@ trait RDF2ShEx extends RDFParser with LazyLogging {
         case 0 => parseOk(Schema.empty)
         case 1 => parseOk(schemas.head)
         case _ => {
-          logger.warn(s"More than one schema obtained when parsing RDF\n${rdf.serialize("TURTLE")}")
+          // logger.warn(s"More than one schema obtained when parsing RDF\n${rdf.serialize("TURTLE")}")
           parseOk(schemas.head)
         }
       }

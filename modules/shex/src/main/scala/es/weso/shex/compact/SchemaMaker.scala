@@ -1,6 +1,5 @@
 package es.weso.shex.compact
 
-import com.typesafe.scalalogging.LazyLogging
 import es.weso.rdf.Prefix
 import es.weso.rdf.nodes._
 import es.weso.rdf.PREFIXES._
@@ -18,7 +17,7 @@ import org.antlr.v4.runtime.Token
 /**
  * Visits the AST and builds the corresponding ShEx abstract syntax
  */
-class SchemaMaker extends ShExDocBaseVisitor[Any] with LazyLogging {
+class SchemaMaker extends ShExDocBaseVisitor[Any] {
 
   type Start = Option[ShapeExpr]
   type NotStartAction = Either[Start, (ShapeLabel, ShapeExpr)]

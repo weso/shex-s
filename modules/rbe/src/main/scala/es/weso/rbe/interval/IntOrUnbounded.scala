@@ -1,7 +1,7 @@
 package es.weso.rbe.interval
 
 import cats._
-import org.scalactic._
+// import org.scalactic._
 import scala.math.{ max => intMax }
 import scala.math.{ min => intMin }
 import io.circe._
@@ -106,7 +106,7 @@ case object Unbounded extends IntOrUnbounded {
 /**
  * Positive integers
  */
-case class IntLimit(m: Int) extends IntOrUnbounded with Requirements {
+case class IntLimit(m: Int) extends IntOrUnbounded  {
 
   // Commented because it raises null pointer exception when testing
   // require(m >= 0)
@@ -137,7 +137,7 @@ object IntOrUnbounded {
     }
   }
 
-  implicit def int2LimitInt(x: Int) = IntLimit(x)
+  implicit def int2LimitInt(x: Int): IntLimit = IntLimit(x)
 
   private def divIntUp(x: Int, y: Int): Int = {
     (x + y - 1) / y

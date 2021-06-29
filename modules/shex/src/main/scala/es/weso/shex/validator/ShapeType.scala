@@ -33,7 +33,7 @@ object ShapeType {
    opt match {
      case None => obj
      case Some(x) => { 
-       println(s"Adding label: ${label} to ${obj}")
+       // println(s"Adding label: ${label} to ${obj}")
        obj.add(label,f(x)) 
      }
    }
@@ -56,12 +56,12 @@ object ShapeType {
 
   implicit val shapeTypeEncoder: Encoder[ShapeType] = new Encoder[ShapeType] {
     final def apply(v: ShapeType): Json = {
-      println(s"@@@@@@###### ShapeTypeEncoder!!: ${v}")
+      // println(s"@@@@@@###### ShapeTypeEncoder!!: ${v}")
       val obj = JsonObject(("type","Shape".asJson))
       val extended = v.label match {
         case None => obj
         case Some(lbl) => {
-          println(s"@@@ Label: ${lbl}. LocationMap: ${v.schema.labelLocationMap} " )
+          // println(s"@@@ Label: ${lbl}. LocationMap: ${v.schema.labelLocationMap} " )
           optAdd(v.schema.labelLocationMap.map(_.get(lbl)).flatten, 
           obj.add("label", lbl.toRDFNode.getLexicalForm.asJson),
           "location",

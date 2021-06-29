@@ -1,41 +1,35 @@
 package es.weso.depgraphs
 
-import org.scalatest._
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
+import munit._
 
 class InheritanceTest
-  extends AnyFunSpec
-  with Matchers
-  with EitherValues {
+  extends CatsEffectSuite {
 
-  describe("An inheritance Graph") {
-
-    it("should be able to create empty graph") {
+  test("should be able to create empty graph") {
       val cmp = InheritanceJGraphT.empty[String].flatMap(_.nodes)
-      cmp.unsafeRunSync should contain theSameElementsAs Set()
+      assertIO(cmp, Set[String]())
     }
 
-    it("Should add one element") {
+    test("Should add one element") {
       val cmp = for {
         g <- InheritanceJGraphT.empty[String]
         _ <- g.addNode("a")
         ns <- g.nodes
       } yield ns
-      cmp.unsafeRunSync should contain theSameElementsAs Set("a")
+      assertIO(cmp, Set("a"))
     }
 
-    it("Should get descendants") {
+    test("Should get descendants") {
       val cmp = for {
         g <- InheritanceJGraphT.empty[String]
         _ <- g.addInheritance("A","B")
         _ <- g.addInheritance("B","C")
         ds <- g.descendants("A")
       } yield ds
-      cmp.unsafeRunSync() should contain theSameElementsAs List("B","C")
+      assertIO(cmp, Set("B","C"))
     }
 
-    it("Should get ancestors") {
+    test("Should get ancestors") {
       val cmp = for {
         g <- InheritanceJGraphT.empty[String]
         _ <- g.addInheritance("A","B")
@@ -44,18 +38,16 @@ class InheritanceTest
         asB <- g.ancestors("B")
         asC <- g.ancestors("C")
       } yield (asA,asB,asC)
-      cmp.attempt.unsafeRunSync().fold(
-        e => fail(s"Error: ${e.getMessage}"),
-        ps => {
+      cmp.map(ps => {
           val (asA,asB,asC) = ps
-          asA should contain theSameElementsAs List()
-          asB should contain theSameElementsAs List("A")
-          asC should contain theSameElementsAs List("A","B")
+          assertEquals(asA, Set[String]())
+          assertEquals(asB, Set("A"))
+          assertEquals(asC, Set("A","B"))
         }
       ) 
     }
 
-    it("Should get ancestors ordered?") {
+    test("Should get ancestors ordered?") {
       val cmp = for {
         g <- InheritanceJGraphT.empty[String]
         _ <- g.addInheritance("A","B")
@@ -67,19 +59,17 @@ class InheritanceTest
         asC <- g.ancestors("C")
         asD <- g.ancestors("D")
       } yield (asA,asB,asC,asD)
-      cmp.attempt.unsafeRunSync().fold(
-        e => fail(s"Error: ${e.getMessage}"),
-        ps => {
+      cmp.map(ps => {
           val (asA,asB,asC,asD) = ps
-          asA should contain theSameElementsAs List()
-          asB should contain theSameElementsAs List("A","C","D")
-          asC should contain theSameElementsAs List("A")
-          asD should contain theSameElementsAs List("A","C")
+          assertEquals(asA, Set[String]())
+          assertEquals(asB, Set("A","C","D"))
+          assertEquals(asC, Set("A"))
+          assertEquals(asD, Set("A","C"))
         }
       ) 
     }
 
-    it("Should fail with cycles") {
+    test("Should fail with cycles") {
       val cmp = for {
         g <- InheritanceJGraphT.empty[String]
         _ <- g.addInheritance("A","B")
@@ -87,26 +77,16 @@ class InheritanceTest
         asA <- g.ancestors("A")
         asB <- g.ancestors("B")
       } yield (asA,asB)
-      cmp.attempt.unsafeRunSync().fold(
-        e => info(s"Cycle detected: ${e.getMessage}"),
-        ps => fail(s"Should fail but obtained ${ps}")
-      ) 
+      cmp.attempt.map(e => assertEquals(e.isLeft, true))
     }    
 
-    it("Should fail without nodes") {
+    test("Should fail without nodes") {
       val cmp = for {
         g <- InheritanceJGraphT.empty[String]
         asA <- g.ancestors("A")
       } yield (asA)
-      cmp.attempt.unsafeRunSync().fold(
-        e => fail(s"Failed with error ${e}"),
-        ps => ps should contain theSameElementsAs List()
-      ) 
+      cmp.map(e => assertEquals(e,Set[String]()))
     }    
-
-
-  }
-
 
 }
 

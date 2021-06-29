@@ -2,33 +2,25 @@ package es.weso.shextest.manifest
 
 import java.net.URI
 import java.nio.file.Paths
-import es.weso.rdf.jena.RDFAsJenaModel
-import es.weso.rdf.nodes.IRI
-import es.weso.shapemaps.{BNodeLabel => BNodeMapLabel, IRILabel => IRIMapLabel, Start => StartMap, _}
-// import es.weso.shapeMaps.ShapeMap
-// import es.weso.utils.FileUtils
 import scala.util.{Either, Left, Right, Try}
 import cats.data.EitherT
 import cats.effect.IO
 import cats.implicits._
 import es.weso.shex._
-import es.weso.shex.validator.{ExternalIRIResolver, Validator}
 import es.weso.shex.compact.CompareSchemas
 import es.weso.shextest.manifest.Utils._
-import es.weso.shex.implicits.decoderShEx._
 import es.weso.shex.implicits.encoderShEx._
-import scala.io._
 import io.circe.parser._
 import io.circe.syntax._
-import es.weso.rdf._
-import es.weso.rdf.nodes._
-import ManifestPrefixes._
-import es.weso.utils.IOUtils._
 
 
 trait RunManifest {
 
-  case class Result(name: String, isOk: Boolean, reason: String)
+  def info(msg: String, verbose: Boolean): IO[Unit] = 
+    if (verbose) {
+      IO.println(msg)
+    } else IO(())
+
   case class EntryParam(entry: es.weso.shextest.manifest.Entry, 
     name: String, 
     parentFolder: String, 
@@ -44,15 +36,18 @@ trait RunManifest {
       parentFolder: String,
       nameIfSingle: Option[String],
       ignoreList: List[String],
-      withEntry: EntryProcess
+      withEntry: EntryProcess,
+      verbose: Boolean
   ): IO[List[Result]] = {
     val parentFolderURI = Try { Paths.get(parentFolder).normalize.toUri.toString }.getOrElse("")
     val manifestFolder  = s"$parentFolder/$folder"
     val fileName        = s"$manifestFolder/$name.ttl"
     for {
-      mf <- RDF2Manifest.read(fileName, "TURTLE", Some(s"$parentFolderURI/$folder/"), true)
-      v <- processManifest(mf, name, manifestFolder, nameIfSingle, ignoreList, withEntry)
-    } yield v
+      mf <- RDF2Manifest.read(Paths.get(fileName), "TURTLE", Some(s"$parentFolderURI/$folder/"), true)
+      _ <- info(s"Manifest read with ${mf.entries.size} entries", verbose)
+      rs <- processManifest(mf, name, manifestFolder, nameIfSingle, ignoreList, withEntry, verbose)
+      _ <-  info(s"Total results: ${rs.size}", verbose)
+    } yield rs
   }
 
   private def processManifest(
@@ -61,21 +56,20 @@ trait RunManifest {
       parentFolder: String,
       nameIfSingle: Option[String],
       ignoreList: List[String],
-      withEntry: EntryProcess
+      withEntry: EntryProcess, 
+      verbose: Boolean
   ): IO[List[Result]] =
     for {
-      vs1 <- m.includes
-        .map {
+      rs1 <- m.includes.map {
           case (includeNode, manifest) =>
             val folder = Try { Paths.get(includeNode.getLexicalForm).getParent.toString }.getOrElse("")
-            runManifest(includeNode.getLexicalForm, folder, parentFolder, nameIfSingle, ignoreList, withEntry)
-        }
-        .sequence
-        .map(_.flatten)
-      vs2 <- m.entries.map(e => 
-       withEntry(EntryParam(e, name, parentFolder, nameIfSingle, ignoreList))
-      ).sequence
-    } yield (vs1 ++ vs2.flatten[Result])
+            runManifest(includeNode.getLexicalForm, folder, parentFolder, nameIfSingle, ignoreList, withEntry, verbose)
+        }.sequence.map(_.flatten)
+      _ <- info(s"Results from imports: ${rs1.size}", verbose)
+      maybeResults <- m.entries.map(e => withEntry(EntryParam(e, name, parentFolder, nameIfSingle, ignoreList))).sequence
+      rs2 = maybeResults.flatten[Result]
+      _ <- info(s"Results from entries: ${rs2.size}", verbose)
+    } yield (rs1 ++ rs2)
 }
 
 trait ValidateManifest extends RunManifest {
@@ -85,8 +79,6 @@ trait ValidateManifest extends RunManifest {
       s"\nNumber of failed tests: ${vs.length}" 
   }
 
-
-
   def parseManifest(
       name: String,
       folder: String,
@@ -95,11 +87,12 @@ trait ValidateManifest extends RunManifest {
       ignoreList: List[String],
       verbose: Boolean
   ): IO[List[Result]] = {
-    runManifest(name, folder, parentFolder, nameIfSingle, ignoreList, processEntryValidating(verbose))
+    info(s"Parse manifest: name: ${name}, parentFolder: ${parentFolder}", verbose) *>
+    runManifest(name, folder, parentFolder, nameIfSingle, ignoreList, processEntryValidating(verbose), verbose)
   }
 
   def processEntryValidating(verbose: Boolean): EntryProcess = ep => {
-
+     
     if (ep.nameIfSingle == None || 
         ep.nameIfSingle.getOrElse("") == ep.entry.name
     ) {
@@ -108,14 +101,15 @@ trait ValidateManifest extends RunManifest {
       } else {
       val folderURI = Paths.get(ep.parentFolder).normalize.toUri
       val base = Paths.get(".").toUri
-      println(s"## Processing entry: ${ep.entry.name}")
-       
+
       ep.entry match {
 
         case v: ValidationTest => {
           v.action match {
-            case focusAction: FocusAction => validateFocusAction(focusAction, base, v, true, v.name, folderURI, verbose)
-            case mr: MapResultAction      => validateMapResult(mr, base, v, v.name, folderURI)
+            case focusAction: FocusAction => 
+             validateFocusAction(focusAction, base, v, true, v.name, folderURI, verbose)
+            case mr: MapResultAction      => 
+             validateMapResult(mr, base, v, v.name, folderURI, verbose)
             case ma: ManifestAction       =>
               result(v.name, false, s"Not implemented validate ManifestAction yet")
           }
@@ -123,8 +117,10 @@ trait ValidateManifest extends RunManifest {
        
         case v: ValidationFailure => {
           v.action match {
-            case focusAction: FocusAction => validateFocusAction(focusAction, base, v, false, v.name, folderURI, verbose)
-            case mr: MapResultAction      => validateMapResult(mr, base, v, v.name, folderURI)
+            case focusAction: FocusAction => 
+             validateFocusAction(focusAction, base, v, false, v.name, folderURI, verbose)
+            case mr: MapResultAction      => 
+             validateMapResult(mr, base, v, v.name, folderURI, verbose)
             case ma: ManifestAction       => result(v.name, false, s"Not implemented validationFailure ManifestAction yet")
           }
         }
@@ -135,11 +131,12 @@ trait ValidateManifest extends RunManifest {
         case other => result(other.name,false, s"Unsupported type of entry: ${ep.entry}")
       }
      }
-    } else None.pure[IO]
+    } else { 
+      None.pure[IO]
+    }
   }
 
-  private def result[A](name: String, isOk: Boolean, reason: String): IO[Option[Result]] =
-    IO.pure(Some(Result(name, isOk, reason)))
+
 
 /*  def getContents(name: String, folder: String, value: Option[IRI]): EitherT[IO, String, String] = value match {
     case None      => EitherT.fromEither[IO](s"No value for $name".asLeft)
@@ -160,13 +157,14 @@ trait ValidateManifest extends RunManifest {
 
   def representationTest(repTest: RepresentationTest,
                          folderURI: URI): IO[Option[Result]] = {
+    // implicit val decodeSchema : Decoder[Schema] = es.weso.shex.implicits.decoderShEx.decodeSchema                           
     val resolvedJson      = mkLocal(repTest.json, schemasBase, folderURI) // IRI(shexFolderURI).resolve(r.json).uri
     val resolvedShEx      = mkLocal(repTest.shex, schemasBase, folderURI) // IRI(shexFolderURI).resolve(r.shex).uri
     val r: IO[Option[Result]] = for {
      jsonStr <- derefUriIO(resolvedJson)
      schemaStr <- derefUriIO(resolvedShEx)
      schema <- Schema.fromString(schemaStr, "SHEXC", None)
-     expectedSchema <- fromES(decode[Schema](jsonStr).leftMap(e => e.toString))
+     expectedSchema <- jsonStr2Schema(jsonStr)// fromES(decode[Schema](jsonStr).leftMap(e => e.toString))
      r <- if (CompareSchemas.compareSchemas(schema, expectedSchema)) {
        parse(jsonStr) match {
          case Left(err) => result(repTest.name, false,s"Schemas are equal but error parsing Json $jsonStr")
@@ -187,96 +185,7 @@ trait ValidateManifest extends RunManifest {
     r
   }
 
-  def testInfo(msg: String, verbose: Boolean): IO[Unit] = 
-    if (verbose) IO {
-      println(msg); 
-    } else IO(())
-
-  def testInfoValue(msg: String, value: Any, verbose: Boolean): IO[Unit] = 
-   if (verbose) IO { pprint.log(value, tag = msg); () }
-   else IO(())
-
-  def validateFocusAction(
-      fa: FocusAction,
-      base: URI,
-      v: ValidOrFailureTest,
-      shouldValidate: Boolean,
-      name: String,
-      folderURI: URI,
-      verbose: Boolean
-  ): IO[Option[Result]] = {
-    val focus     = fa.focus
-    val schemaUri = mkLocal(fa.schema, schemasBase, folderURI)
-    val dataUri   = mkLocal(fa.data, schemasBase, folderURI)
-    for {
-      //_         <- testInfo(s"Validating focusAction: $name",verbose)
-      schemaStr <- derefUriIO(schemaUri)
-      //_         <- testInfo(s"schemaStr:\n$schemaStr\n-----end schemaStr\nNest step: deref: $dataUri", verbose)
-      dataStr   <- derefUriIO(dataUri)
-      //_         <- testInfo(s"dataStr:\n$dataStr\n-----end dataStr", verbose)
-      schema    <- Schema.fromString(schemaStr, "SHEXC", Some(fa.schema))
-      //_         <- testInfoValue(s"schema", schema.asJson.spaces2, verbose)
-      result      <- for {
-        res1 <- RDFAsJenaModel.fromChars(dataStr, "TURTLE", Some(fa.data))
-        res2 <- RDFAsJenaModel.empty
-        vv <- (res1,res2).tupled.use{ case (data, builder) =>
-       for {
-         dataPrefixMap <- data.getPrefixMap
-         // _         <- testInfoValue(s"data", data, verbose)
-         lbl = getLabel(fa)
-         // _         <- testInfoValue(s"label", lbl, verbose)
-         ok <- if (v.traits contains sht_Greedy) {
-           result(name, true, "Ignored sht:Greedy")
-         } else {
-           val shapeMap = FixedShapeMap(Map(focus -> Map(lbl -> Info())), dataPrefixMap, schema.prefixMap)
-           for {
-             // _         <- testInfoValue(s"shapeMap", shapeMap, verbose)
-             resolvedSchema <- ResolvedSchema.resolve(schema, Some(fa.schema))
-             // _         <- testInfoValue(s"resolvedSchema", resolvedSchema, verbose)
-             resultVal <- Validator(schema = resolvedSchema, 
-                externalResolver = ExternalIRIResolver(fa.shapeExterns),
-                builder = builder
-               ).validateShapeMap(data, shapeMap)
-             resultShapeMap <- resultVal.toResultShapeMap
-             _         <- testInfoValue(s"resultShapeMap", resultShapeMap, verbose)
-             ok <- if (resultShapeMap.getConformantShapes(focus) contains lbl) {
-               if (shouldValidate) result(name, true, "Conformant shapes match")
-               else
-                 result(name, false, s"Focus $focus conforms to $lbl but should not" ++
-                   s"\nData: \n${dataStr}\nSchema: ${schemaStr}\n" ++
-                   s"${resultShapeMap.getInfo(focus, lbl)}\n" // ++
-                   // s"Schema: ${schema}\n" ++
-                   // s"Data: ${data}"
-                 )
-             } else {
-               if (!shouldValidate) result(name, true, "Doesn't validate as expected")
-               else
-                 result(name, false,
-                   s"Focus $focus does not conform to $lbl but should" ++
-                     s"\nData: \n${dataStr}\nSchema: ${schemaStr}\n" ++
-                     s"${resultShapeMap.getInfo(focus, lbl)}\n" /* ++
-                     s"Schema: ${schema}\n" ++
-                     s"Data: ${data}" */
-                 )
-             }
-           } yield ok
-         }
-        } yield ok }
-      } yield vv 
-     } yield result
-  }
-
-  private def getLabel(fa: FocusAction): ShapeMapLabel =
-    fa.shape match {
-    case None           => StartMap: ShapeMapLabel
-    case Some(i: IRI)   => IRIMapLabel(i)
-    case Some(b: BNode) => BNodeMapLabel(b)
-    case Some(other) => {
-      IRIMapLabel(IRI(s"UnknownLabel"))
-    }
-  }
-
-  def validateMapResult(
+/*  private def validateMapResultDel(
       mr: MapResultAction,
       base: URI,
       v: ValidOrFailureTest,
@@ -319,7 +228,7 @@ trait ValidateManifest extends RunManifest {
         r
       }
     }
-  }
+  } */
 
   def negativeSyntax(ns: NegativeSyntax, folderURI: URI): IO[Option[Result]] = {
     val schemaUri    = mkLocal(ns.shex, negativeSyntaxBase, folderURI)
@@ -344,20 +253,6 @@ trait ValidateManifest extends RunManifest {
                        )
     } yield result
     r
-  }
-
-
-  def derefUriIO(uri: URI): IO[String] = {
-    Try {
-      val urlCon = uri.toURL.openConnection()
-      urlCon.setConnectTimeout(4000)
-      urlCon.setReadTimeout(2000)
-      val is = urlCon.getInputStream()
-      Source.fromInputStream(is).mkString
-     }.fold(
-      e => IO.raiseError(new RuntimeException(s"derefUri($uri): Error: ${e.getMessage}")),
-      IO(_)
-    )
   }
 
 }

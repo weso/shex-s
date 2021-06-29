@@ -8,8 +8,6 @@ import es.weso.shex.Schema
 // import org.scalatest._
 
 import scala.util._
-import org.scalatest.funspec.AnyFunSpecLike
-import org.scalatest.matchers.should.Matchers
 import cats.implicits._
 import cats.effect._
 import es.weso.shex.ResolvedSchema
@@ -17,17 +15,18 @@ import es.weso.shex.implicits.encoderShEx._
 // import io.circe._
 import io.circe.syntax._
 import es.weso.utils.IOUtils.fromES
+import munit._
 
-
-trait ShouldValidateShapeMap extends AnyFunSpecLike with Matchers {
+trait ShouldValidateShapeMap extends CatsEffectSuite {
 
 
   def shouldValidateWithShapeMap(rdfStr: String,
                                  shexStr: String,
                                  shapeMapStr: String,
                                  expected: String,
-                                 verbose: Boolean = false): Unit = {
-    it(s"Should validate shapeMap: ${shapeMapStr} and return: $expected\nUsing RDF: \n ${rdfStr}\nand schema:\n${shexStr}") {
+                                 verbose: Boolean = false)
+                                 (implicit loc: munit.Location): Unit = {
+    test(s"Should validate shapeMap: ${shapeMapStr} and return: $expected\nUsing RDF: \n ${rdfStr}\nand schema:\n${shexStr}") {
 
       def info(msg:String): IO[Unit] =
         if (verbose) IO(println(msg))
@@ -48,7 +47,7 @@ trait ShouldValidateShapeMap extends AnyFunSpecLike with Matchers {
           shex <- Schema.fromString(shexStr, "ShExC", Some(IRI("")))
           _ <- info(s"Schema: ${shex.asJson}")
           rdfPrefixMap <- rdf.getPrefixMap
-          shapeMap <- fromES(ShapeMap.fromCompact(shapeMapStr, shex.base, rdfPrefixMap, shex.prefixMap))
+          shapeMap <- fromES(ShapeMap.fromCompact(shapeMapStr, shex.base, rdfPrefixMap, shex.prefixMap).leftMap(_.toList.mkString("\n")))
           _ <- info(s"ShapeMap: ${shapeMap}") 
           fixedShapeMap <- ShapeMap.fixShapeMap(shapeMap, rdf, rdfPrefixMap, shex.prefixMap)
           _ <- info(s"Fixed shapeMap: ${fixedShapeMap}") 
@@ -70,10 +69,7 @@ trait ShouldValidateShapeMap extends AnyFunSpecLike with Matchers {
         } yield compare 
        }
       } yield vv
-      validate.attempt.unsafeRunSync match {
-        case Left(msg) => fail(s"Error: $msg")
-        case Right(v) => v should be(true)
-      }
+      assertIO(validate, true)
     }
   }
 

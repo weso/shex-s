@@ -1,6 +1,6 @@
 package es.weso.shapepath.schemamappings
 
-import com.typesafe.scalalogging.LazyLogging
+// import com.typesafe.scalalogging.LazyLogging
 import cats.implicits._
 // import es.weso.rdf.Prefix
 import es.weso.rdf.nodes._
@@ -21,7 +21,7 @@ import es.weso.rdf.Prefix
 /**
  * Visits the AST and builds the corresponding abstract syntax
  */
-class SchemaMappingsMaker extends SchemaMappingsDocBaseVisitor[Any] with LazyLogging {
+class SchemaMappingsMaker extends SchemaMappingsDocBaseVisitor[Any] {
 
   type Directive = Either[(Prefix, IRI),  // Prefix decl
                    Either[IRI,            // Base decl

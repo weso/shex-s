@@ -4,9 +4,10 @@ Scala implementation of SHEX.
 
 This project contains an implementation of [ShEx](http://www.shex.io).
 
-[![Build Status](https://travis-ci.org/weso/shex-s.svg?branch=master)](https://travis-ci.org/weso/shex-s)
+[![Continuous Integration](https://github.com/weso/shex-s/actions/workflows/ci.yml/badge.svg)](https://github.com/weso/shex-s/actions/workflows/ci.yml)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/d421668975834528bf562ca81bff4433)](https://www.codacy.com/gh/weso/shex-s?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=weso/shex-s&amp;utm_campaign=Badge_Grade)
 [![codecov](https://codecov.io/gh/weso/shex-s/branch/master/graph/badge.svg)](https://codecov.io/gh/weso/shex-s)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/es.weso/shexs_2.13/badge.svg)](https://maven-badges.herokuapp.com/maven-central/es.weso/shexs_2.13)
 
 ## Introduction
 
@@ -44,6 +45,19 @@ sbt:shexRoot> project shex
 sbt:shex> test
 ```
 -->
+
+## Publishing to OSS-Sonatype
+
+This project uses [the sbt ci release](https://github.com/olafurpg/sbt-ci-release) plugin for publishing to [OSS Sonatype](https://oss.sonatype.org/).
+
+##### SNAPSHOT Releases
+Open a PR and merge it to watch the CI release a -SNAPSHOT version
+
+##### Full Library Releases
+1. Push a tag and watch the CI do a regular release
+2. `git tag -a v0.1.0 -m "v0.1.0"`
+3. `git push origin v0.1.0`
+_Note that the tag version MUST start with v._
 
 ## More information
 

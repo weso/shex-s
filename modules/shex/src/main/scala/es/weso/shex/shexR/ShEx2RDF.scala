@@ -3,7 +3,6 @@ package es.weso.shex.shexR
 import es.weso.shex._
 import PREFIXES._
 import cats.implicits._
-import com.typesafe.scalalogging.LazyLogging
 import es.weso.rdf.nodes._
 import es.weso.rdf.PREFIXES._
 import es.weso.rdf.RDFBuilder
@@ -11,7 +10,7 @@ import es.weso.rdf.saver.RDFSaver
 import es.weso.rdf.operations.Comparisons._
 import cats.effect._
 
-trait ShEx2RDF extends RDFSaver with LazyLogging {
+trait ShEx2RDF extends RDFSaver {
 
   def serialize(shex: Schema, node: Option[IRI], format: String, rdfBuilder: RDFBuilder): IO[String] = 
    for {

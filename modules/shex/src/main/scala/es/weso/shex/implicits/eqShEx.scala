@@ -2,12 +2,11 @@ package es.weso.shex.implicits
 
 import cats._
 import cats.implicits._
-import com.typesafe.scalalogging.LazyLogging
 import es.weso.rdf.nodes._
 import es.weso.shex._
 import es.weso.rdf._
 
-object eqShEx extends LazyLogging {
+object eqShEx {
 
   implicit lazy val eqIRI = new Eq[IRI] {
     final def eqv(n1: IRI, n2: IRI): Boolean = 

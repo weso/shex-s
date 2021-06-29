@@ -3,7 +3,6 @@ package es.weso.shex.validator
 import cats._
 import implicits._
 import cats.effect.IO
-import com.typesafe.scalalogging.LazyLogging
 import es.weso.shex._
 import es.weso.rdf._
 import es.weso.rdf.nodes._
@@ -17,7 +16,6 @@ import Function.tupled
 import es.weso.shex.validator.ShExError._
 import es.weso.shex.validator.ConstraintRef.{showConstraintRef => _}
 import es.weso.utils.internal.CollectionCompat._
-import cats.data._
 
 /**
   * ShEx validator
@@ -27,8 +25,7 @@ case class Validator(schema: ResolvedSchema,
                      builder: RDFBuilder
                      )
     extends ShExChecker
-    with ShowValidator
-    with LazyLogging {
+    with ShowValidator {
 
   type ShapeChecker     = ShapeExpr => CheckTyping
   type NodeShapeChecker = (RDFNode, Shape) => CheckTyping
@@ -60,23 +57,6 @@ case class Validator(schema: ResolvedSchema,
       _ <- info(s"end of checkNodeShapes: ${t.showShort(nodesPrefixMap,schema.prefixMap)}")
       _ <- info(s"returning...")
     } yield t 
-
-/*  private def removeAbstractShapes(t: ShapeTyping): CheckTyping = for {
-    ls <- fromIO(abstractNoDescendants(t,schema.inheritanceGraph))
-    newT = ls.map(st => addNotEvidence(st,))  // t.negateShapeTypesWith(abstractNoDescendants(t,schema.inheritanceGraph), AbstractShapeErrNoArgs())
-  } yield newT 
-  
-  private def abstractNoDescendants(t: ShapeTyping, inheritanceGraph: Inheritance[ShapeLabel])(st: ShapeType): IO[List[ShapeType]] = {
-    if (st.isAbstract) st.label match {
-     case None => false
-     case Some(lbl) => {
-       val descendants = inheritanceGraph.ancestors(lbl)
-       pprint.log(descendants.map(_.show),"descendants")
-       descendants.map()
-       ???
-     }
-   } else false
-  } */
 
   private def checkNodeShapeMapLabel(node: RDFNode, label: ShapeMapLabel, info: Info): CheckTyping =
     info.status match {
@@ -360,17 +340,6 @@ case class Validator(schema: ResolvedSchema,
    ok(t.addNotEvidence(node,ShapeType(s,s.id,schema), AbstractShapeErr(node,s,rdf))))
     
 
-/*  private def checkHasType(node: RDFNode, 
-                           t: ShapeTyping)
-                          (lbl: ShapeLabel): Check[Unit] = {
-   val vs: List[ShapeLabel] = 
-     t.getOkValues(node).map(_.label).toList.flatten
-   if (vs contains lbl) ok(())
-   else 
-    getRDF.flatMap(rdf => 
-    err(HasNoType(node,lbl,t,attempt, rdf)))
-  } */
-  
   private def getDescendants(s: ShapeExpr): Check[Set[ShapeLabel]] = s.id match {
     case None => ok(Set())
     case Some(lbl) => for {
@@ -503,7 +472,6 @@ case class Validator(schema: ResolvedSchema,
         // t <- combineTypings(t1,t2)
         // _ <- infoTyping(t,s"checkShapeExtendLs(${es.map(_.toRDFNode.show).mkString(",")}): After checkShapeExtend, t = ",schema.prefixMap)
       } yield t2
-//       case _        => errStr(s"Multiple inheritance not supported yet: ${es.map(_.show).mkString(",")}")
     }
   }
 
@@ -727,7 +695,7 @@ case class Validator(schema: ResolvedSchema,
           )
         }
         case _ => {
-          logger.info(s"Unsupported semantic action processor: $name")
+          // logger.info(s"Unsupported semantic action processor: $name")
           addAction2Log(Action(name, code))
           ok(unit)
         }

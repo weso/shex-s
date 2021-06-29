@@ -1,7 +1,6 @@
 package es.weso.shex.validator
 import cats._
 import cats.implicits._
-import com.typesafe.scalalogging.LazyLogging
 import es.weso.rdf.PrefixMap
 import es.weso.typing._
 import es.weso.rdf.nodes._
@@ -18,7 +17,7 @@ import io.circe.syntax._
 
 case class ShapeTyping(
    t: Typing[RDFNode, ShapeType, ShExError, String]
-) extends LazyLogging {
+) {
    
   def showShort(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
     def showPos(ls: Set[ShapeType]): String = 

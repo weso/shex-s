@@ -2,7 +2,9 @@ package es.weso.shextest.manifest
 
 import es.weso.rdf.nodes._
 
-sealed trait Result {
+case class Result(name: String, isOk: Boolean, reason: String)
+
+sealed trait ResultExpected {
 
     def asBoolean: Option[Boolean] = {
       this match {
@@ -19,7 +21,7 @@ sealed trait Result {
     }
   }
   
-  final case class ResultShapeMapIRI(iri: IRI) extends Result {
+  final case class ResultShapeMapIRI(iri: IRI) extends ResultExpected {
     override val isValid = false
   }
   
@@ -27,19 +29,17 @@ sealed trait Result {
     node: RDFNode,
     shape: RDFNode)
   
-  final case class BooleanResult(value: Boolean) extends Result {
+  final case class BooleanResult(value: Boolean) extends ResultExpected {
     override val isValid = value
   }
   
   final case class IRIResult(
-    value: IRI) extends Result {
+    value: IRI) extends ResultExpected {
     override val isValid = false
   }
   
   final case object EmptyResult
-    extends Result {
+    extends ResultExpected {
     override val isValid = true
   }
   
-  
-  case class Status(iri: IRI)

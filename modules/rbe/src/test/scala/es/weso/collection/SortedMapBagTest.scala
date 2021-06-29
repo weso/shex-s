@@ -1,18 +1,15 @@
 package es.weso.collection
 
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
+import munit._
 
 import scala.collection.SortedMap
 
-class SortedMapBagTest extends AnyFunSpec with Matchers {
+class SortedMapBagTest extends FunSuite {
 
-  describe("A SortedMap Bag") {
-    it("Should add one element and have multiplicity 1") {
+  test("Should add one element and have multiplicity 1") {
       val sm: SortedMap[Char, Int] = SortedMap[Char, Int]()
       val bag                      = BagSortedMap[Char](sm)
       val expected                 = SortedMap[Char, Int]('b' -> 3)
-      bag.add('b', 3).asSortedMap should be(expected)
-    }
+      assertEquals(bag.add('b', 3).asSortedMap, expected)
   }
 }

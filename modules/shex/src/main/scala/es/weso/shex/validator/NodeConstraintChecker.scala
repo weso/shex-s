@@ -3,7 +3,6 @@ package es.weso.shex.validator
 // import cats._
 import cats.data._
 import cats.implicits._
-import com.typesafe.scalalogging.LazyLogging
 import es.weso.rdf.RDFReader
 import es.weso.rdf.nodes.{IRI, RDFNode}
 import es.weso.shex._
@@ -15,9 +14,7 @@ case class NodeConstraintChecker(
   rdf: RDFReader,
   builder: RDFBuilder
   )
-  extends ShExChecker
-  with ShowValidator 
-  with LazyLogging {
+  extends ShExChecker with ShowValidator {
 
   def nodeConstraintChecker(value: RDFNode, nk: NodeConstraint
                            ): EitherT[IO,String, String] = {
