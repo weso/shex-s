@@ -9,7 +9,7 @@ import es.weso.utils.testsuite._
 import scala.concurrent.duration._
 import es.weso.utils.FileUtils._
 
-class ValidationManifestTest extends CatsEffectSuite with ValidateManifest {
+class ValidationManifestCompatTest extends CatsEffectSuite with ValidateManifest {
 
   override def munitTimeout: Duration = 5 minutes
 
@@ -103,7 +103,7 @@ val cmp: IO[TestResults] = for {
 def showFailedResults(results: TestResults): String = 
    results.failed.map(_.entry.id.show).mkString(",\n")
 
-test("single".only) {
+test("single") {
     val cmp: IO[TestResult] = for {
       manifest <- RDF2Manifest.read(Paths.get(shexFolder + "/" + "manifest.ttl"), "Turtle", Some(shexFolderURI.toString), false)
       testSuite = manifest.toTestSuite(shexFolderURI, false)
