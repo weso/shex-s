@@ -55,7 +55,7 @@ object Parser  {
 
     val maker = new ShapeMapsMaker(base,nodesPrefixMap,shapesPrefixMap)
     val builder = maker.visit(parser.shapeMap()).asInstanceOf[Builder[QueryShapeMap]]
-    val errors = errorListener.getErrors
+    val errors = errorListener.getErrors()
     NonEmptyList.fromList(errors).fold(
       builder.leftMap(NonEmptyList.one(_)))(
       _.asLeft
