@@ -481,7 +481,6 @@ object ShExError {
        ("type", Json.fromString("HasNoType")),
        ("label", label.asJson),
        ("node", {
-          println(s"node2Json ${node}")
           ShExError.node2Json(node,rdf)
          }
        ),
