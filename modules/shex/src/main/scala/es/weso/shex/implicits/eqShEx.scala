@@ -8,7 +8,7 @@ import es.weso.rdf._
 
 object eqShEx {
 
-  implicit lazy val eqIRI = new Eq[IRI] {
+  implicit lazy val eqIRI: Eq[IRI] = new Eq[IRI] {
     final def eqv(n1: IRI, n2: IRI): Boolean = 
      n1.uri == n2.uri
   }
@@ -127,7 +127,7 @@ object eqShEx {
         s1.obj == s2.obj // TODO?
   }
 
-  implicit lazy val eqNodeKind = new Eq[NodeKind] {
+  implicit lazy val eqNodeKind: Eq[NodeKind] = new Eq[NodeKind] {
     final def eqv(n1: NodeKind, n2: NodeKind): Boolean = (n1, n2) match {
       case (IRIKind, IRIKind) => true
       case (BNodeKind, BNodeKind) => true

@@ -59,6 +59,24 @@ case class Schema private
 
   def addId(i: IRI): Schema = this.copy(id = i)
 
+  def withPrefixMap(maybePrefixMap: Option[PrefixMap]): Schema = this.copy(prefixes = maybePrefixMap)
+
+  def withStartActions(maybeStartActions: Option[List[SemAct]]): Schema = this.copy(startActs = maybeStartActions)
+
+  def withStart(start: Option[ShapeExpr]): Schema = this.copy(start = start)
+
+  def withBase(base: Option[IRI]): Schema = this.copy(base = base)
+
+  def withShapes(shapes: Option[List[ShapeExpr]]): Schema = this.copy(shapes = shapes)
+
+  def withImports(imports: List[IRI]): Schema = this.copy(imports = imports)
+
+  def withOptTripleExprMap(optTripleExprMap: Option[Map[ShapeLabel,TripleExpr]]): Schema = 
+    this.copy(optTripleExprMap = optTripleExprMap)
+
+  def withLabelLocationMap(labelLocationMap: Option[Map[ShapeLabel,Location]]): Schema = 
+    this.copy(labelLocationMap = labelLocationMap)
+
   def getShape(label: ShapeLabel): Either[String,ShapeExpr] = for {
     se <- shapesMap.get(label) match {
       case None => s"Not found $label in schema. Available labels: ${shapesMap.keySet.mkString}".asLeft[ShapeExpr]

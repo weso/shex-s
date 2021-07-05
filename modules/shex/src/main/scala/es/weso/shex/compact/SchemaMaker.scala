@@ -49,16 +49,17 @@ class SchemaMaker extends ShExDocBaseVisitor[Any] {
       val importIRIs = directives.collect {
         case Right(Right(iri)) => iri
       }
-      Schema.empty.copy(
-        prefixes = if (!prefixMap.isEmpty) Some(prefixMap) else None,
-        base = base,
-        startActs = startActions,
-        start = start,
-        shapes = if (!shapeMap.isEmpty) Some(shapesMap2List(shapeMap)) else None,
-        optTripleExprMap = if (!tripleExprMap.isEmpty) Some(tripleExprMap) else None,
-        imports = importIRIs,
-        labelLocationMap = Some(labelLocationMap)
-      )
+      val pm = if (!prefixMap.isEmpty) Some(prefixMap) else None
+      val shapes = if (!shapeMap.isEmpty) Some(shapesMap2List(shapeMap)) else None
+      val optTripleExprMap = if (!tripleExprMap.isEmpty) Some(tripleExprMap) else None
+      Schema.empty.
+       withPrefixMap(pm).
+       withBase(base).
+       withStartActions(startActions).
+       withStart(start).
+       withShapes(shapes).
+       withOptTripleExprMap(optTripleExprMap).
+       withImports(importIRIs).withLabelLocationMap(Some(labelLocationMap))
     }
   }
 
@@ -1098,7 +1099,7 @@ class SchemaMaker extends ShExDocBaseVisitor[Any] {
                visitBracketedTripleExpr(ctx.bracketedTripleExpr())
               else if (isDefined(ctx.tripleConstraint()))
                visitTripleConstraint(ctx.tripleConstraint())
-              else err(s"visitUnaryTripleExpr: unknown $ctx")
+              else err[TripleExpr](s"visitUnaryTripleExpr: unknown $ctx")
         te1 <- maybeLbl match {
           case None => ok(te)
           case Some(lbl) => addTripleExprLabel(lbl,te)

@@ -70,7 +70,7 @@ object ExtendsConverter {
       _ <- info(s"Abstract: ${showId(schema)(maybeId)}")
       maybeR <- cnvDescendants(schema)(se)
       r <-  maybeR match {
-        case Nil => err(s"No descendants for ${showId(schema)(maybeId)}?")
+        case Nil => err[ShapeExpr](s"No descendants for ${showId(schema)(maybeId)}?")
         case s :: Nil => maybeId match { 
           case Some(id) => ok(s.addId(id))
           case None => ok(s) // TODO: Should remove id although I thinks this is an impossible case

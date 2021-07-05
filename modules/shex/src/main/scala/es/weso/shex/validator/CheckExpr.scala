@@ -15,7 +15,7 @@ private[validator] case class Neg(se: ShapeExpr, semActs: Option[List[SemAct]]) 
 private[validator] object CheckExpr {
   import es.weso.shex.implicits.showShEx._
 
-  implicit lazy val showCheckExpr = new Show[CheckExpr] {
+  implicit lazy val showCheckExpr: Show[CheckExpr] = new Show[CheckExpr] {
     override def show(ce: CheckExpr): String = {
       ce match {
         case Pos(se,semActs) => se.show

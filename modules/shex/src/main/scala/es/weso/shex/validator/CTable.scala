@@ -197,7 +197,7 @@ object CTable {
     }
   
 
-  implicit lazy val showCTable = new Show[CTable] {
+  implicit lazy val showCTable: Show[CTable] = new Show[CTable] {
     override def show(table: CTable) = {
       def showConstraints(cs: ConstraintsMap): String = {
         def combine(s: List[String], current: (ConstraintRef, CheckExpr)): List[String] = {
@@ -215,7 +215,7 @@ object CTable {
     }
   }
 
-  implicit val crefKeyEncoder = new KeyEncoder[ConstraintRef] {
+  implicit val crefKeyEncoder: KeyEncoder[ConstraintRef] = new KeyEncoder[ConstraintRef] {
     override def apply(cref: ConstraintRef): String = cref.toString
   }
 
