@@ -128,7 +128,7 @@ object SchemaMappingsParser {
 
     val maker = new SchemaMappingsMaker()
     val builder: Builder[SchemaMappings] = maker.visit(parser.schemaMappingsDoc()).asInstanceOf[Builder[SchemaMappings]]
-    val errors = errorListener.getErrors
+    val errors = errorListener.getErrors()
     if (errors.length > 0) {
       Left(errors.mkString("\n"))
     } else {

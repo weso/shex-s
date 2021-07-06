@@ -36,7 +36,7 @@ case class Attempt(
 
 object Attempt {
   
-  implicit def showAttempt = new Show[Attempt] {
+  implicit def showAttempt: Show[Attempt] = new Show[Attempt] {
     import NodeShape._
     override def show(t: Attempt): String = {
       s"Attempt: ${t.nodeShape.show}\npath: ${t.path.map(_.str).getOrElse("")}"

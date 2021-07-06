@@ -82,7 +82,10 @@ case class IRIRefExclusion(iri: IRI) extends IRIExclusion {
   override def relativize(base: IRI) = IRIRefExclusion(iri.relativizeIRI(base))
 }
 case class IRIStemExclusion(iriStem: IRIStem) extends IRIExclusion {
-  override def relativize(base: IRI) = IRIStemExclusion(iriStem.relativize(base))
+  override def relativize(base: IRI) = {
+    val relIriStem: IRIStem = IRIStem(iriStem.stem.relativizeIRI(base)) // iriStem.relativize(base)
+    IRIStemExclusion(relIriStem)
+  }
 }
 
 case class LanguageStem(stem: Lang) extends ValueSetValue {

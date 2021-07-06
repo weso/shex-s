@@ -13,7 +13,7 @@ case class Arc(path: Path, node: RDFNode) {
 
 object Arc {
 
-  implicit lazy val showArc = new Show[Arc] {
+  implicit lazy val showArc: Show[Arc] = new Show[Arc] {
     def show(arc: Arc): String = {
       s"${arc.path.show} ${arc.node.show}"
     }

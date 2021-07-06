@@ -10,7 +10,7 @@ class EqShExTest extends FunSuite {
     test(s"Should compare single schemas without ignoring namespaces") {
       val s1 = Schema.empty 
       val pm: PrefixMap = PrefixMap(Map(Prefix("ex") -> IRI("http://example.org/")))
-      val s2 = Schema.empty.copy(prefixes = Some(pm)) 
+      val s2 = Schema.empty.withPrefixMap(Some(pm)) 
       assertNotEquals(s1, s2)
     }
 

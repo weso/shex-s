@@ -169,13 +169,13 @@ object ShapeTyping {
     def show(n: RDFNode) = s"$n"
   }
 
-  implicit def showShapeTyping = new Show[ShapeTyping] {
+  implicit def showShapeTyping: Show[ShapeTyping] = new Show[ShapeTyping] {
     override def show(t: ShapeTyping): String = {
       t.showShapeTyping
     }
   }
 
-  implicit def monoidShapeTyping = new Monoid[ShapeTyping] {
+  implicit def monoidShapeTyping: Monoid[ShapeTyping] = new Monoid[ShapeTyping] {
     override def empty: ShapeTyping = emptyShapeTyping
 
     override def combine(
@@ -190,7 +190,7 @@ object ShapeTyping {
     )
   }
 
-  implicit def showPair = new Show[(ShapeTyping, Evidences)] {
+  implicit def showPair: Show[(ShapeTyping, Evidences)] = new Show[(ShapeTyping, Evidences)] {
     def show(e: (ShapeTyping, Evidences)): String = {
       s"Typing: ${e._1.show}\n Evidences:\n${e._2.show}"
     }

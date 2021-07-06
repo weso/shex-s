@@ -11,15 +11,15 @@ trait StringGraph extends Graph[String, String] {
 
 object StringGraph {
 
-  implicit val readErr = new Read[MsgError] {
+  implicit val readErr: Read[MsgError] = new Read[MsgError] {
     def read(str: String) = MsgError(str)
   }
   
-  implicit val readString = new Read[String] {
+  implicit val readString: Read[String] = new Read[String] {
     def read(str: String) = str
   }
 
-  implicit def mkErr = MsgError
+  implicit def mkErr: MsgError = MsgError("error")
 
   type Pred_ = Pred[String, RbeError, String]
   /**
