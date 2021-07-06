@@ -323,7 +323,7 @@ class ShapePathMaker extends ShapePathDocBaseVisitor[Any]  {
        lbl <- visitBlankNodeLabel(ctx.blankNodeLabel())
      } yield
        lbl
-     case _ => err(s"visitTripleExprLabel: unknown ctx: $ctx")
+     case _ => err[ShapeLabel](s"visitTripleExprLabel: unknown ctx: $ctx")
    }
   } yield (lbl, maybeInt)
 

@@ -259,7 +259,7 @@ class SchemaMappingsMaker extends SchemaMappingsDocBaseVisitor[Any] {
        lbl <- visitBlankNodeLabel(ctx.blankNodeLabel())
      } yield
        lbl
-     case _ => err("visitTripleExprLabel: unknown ctx: $ctx")
+     case _ => err[ShapeLabel]("visitTripleExprLabel: unknown ctx: $ctx")
    }
   } yield (lbl, maybeInt)
 

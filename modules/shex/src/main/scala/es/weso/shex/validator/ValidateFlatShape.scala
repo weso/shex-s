@@ -55,13 +55,14 @@ case class ValidateFlatShape(
       extra <- extraPreds(node, shape.preds)
       _ <- info(s"Extra preds: $extra. Closed? ${shape.closed}")
       typing <- if (shape.closed && extra.nonEmpty) {
-        err(ClosedButExtraPreds(extra))  
-        // TODO: Not sure about this check
+        errClosedButExtraPreds(extra)
       } else 
         shape.slots.foldLeft(zero)(cmb)
       _ <- info(s"FlatShape(${node.show}@${shape.show}}) successful")  
     } yield typing
   }
+
+  private def errClosedButExtraPreds(extra: Set[IRI]): CheckTyping = err(ClosedButExtraPreds(extra))
 
   // Returns the list of paths that are different from a given list
   private def extraPreds(node: RDFNode, preds: Set[IRI]): Check[Set[IRI]] =
@@ -116,10 +117,7 @@ case class ValidateFlatShape(
                     attempt.nodeShape,
                     s"Number of values for ${showNode(node)} with ${path.showQualified(nodesPrefixMap)} that satisfy ${constraint.shape} = ${passed.size} matches cardinality ${constraint.card}"
                   )
-                } else {
-                  info(s"Cardinality with Extra: ${passed.size} ${card}") >>
-                  err(ErrCardinalityWithExtra(attempt, node, path, passed.size, notPassed.size, card,rdf))
-                }
+                } else errCardinalityExtra(attempt,node, path, passed.size, notPassed.size, card, rdf) 
               } yield t
               p
             }
@@ -145,12 +143,18 @@ case class ValidateFlatShape(
                   err[ShapeTyping](ValuesNotPassed(attempt, node, path, passed.size, notPassed.toSet,rdf))
               } yield newt
               ct
-            } else 
-             info(s"Cardinality error: ${values.size}<>${card}") >>
-             err(ErrCardinality(attempt, node, path, values.size, card,rdf))
+            } else errCardinality(attempt,node,path,values.size, card, rdf)
           } yield t
     }
   }
+
+  private def errCardinality(attempt: Attempt, node: RDFNode, path: Path, size: Int, card: Cardinality, rdf: RDFReader): CheckTyping = 
+    info(s"Cardinality error: ${size}<>${card}") >>
+    err(ErrCardinality(attempt, node, path, size, card,rdf))
+
+  private def errCardinalityExtra(attempt: Attempt, node: RDFNode, path: Path, passedSize: Int, notPassedSize: Int, card: Cardinality, rdf: RDFReader): CheckTyping = 
+   info(s"Cardinality with Extra: ${passedSize} ${card}") >>
+   err(ErrCardinalityWithExtra(attempt, node, path, passedSize, notPassedSize, card,rdf))
 
   private def checkNodeShapeExprBasic(node: RDFNode, se: ShapeExpr, rdf: RDFReader): EitherT[IO, String, String] =
     se match {

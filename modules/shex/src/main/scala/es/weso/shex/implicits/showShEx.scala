@@ -22,7 +22,7 @@ object showShEx {
     }
   }
 
-  implicit lazy val showMax = new Show[Max] {
+  implicit lazy val showMax: Show[Max] = new Show[Max] {
     final def show(a: Max): String = a match {
       case Star => "*"
       case IntMax(n) => n.show

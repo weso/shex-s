@@ -1,6 +1,10 @@
 package es.weso.shex
 
+/**
+  * Represents the maximum cardinality which can be a number or unbounded
+  */
 abstract sealed trait Max {
+
   def show = this match {
     case IntMax(v) => v.toString
     case Star => "*"
@@ -20,5 +24,14 @@ abstract sealed trait Max {
 
 }
 
+/**
+  * Unbounded cardinality
+  */
 case object Star extends Max
+
+/**
+  * Bounded cardinality represented by an Int value
+  *
+  * @param v maximum cardinality
+  */
 case class IntMax(v: Int) extends Max

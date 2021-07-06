@@ -45,7 +45,7 @@ trait RDF2ShEx extends RDFParser {
     pm <- liftIO(rdf.getPrefixMap)
     // TODO: import
   } yield {
-    Schema(IRI(""),Some(pm), None, startActions, start, ls2Option(shapes),None, List(),None)
+    Schema.empty.withPrefixMap(Some(pm)).withStartActions(startActions).withStart(start).withShapes(Some(shapes))
   }
 
   /*  def cnvShapePairs(ps: List[(RDFNode,ShapeExpr)]): Try[Map[ShapeLabel,ShapeExpr]] = {
@@ -162,7 +162,7 @@ trait RDF2ShEx extends RDFParser {
      case IntegerLiteral(n,repr) => parseOk(NumericInt(n, repr))
      case DoubleLiteral(d,repr) => parseOk(NumericDouble(d, repr))
      case DecimalLiteral(d,repr) => parseOk(NumericDecimal(d, repr))
-     case _ => parseFail(s"Expected numeric literal but found $n")
+     case _ => parseFail[NumericLiteral](s"Expected numeric literal but found $n")
     } 
   } yield v
 
@@ -181,7 +181,7 @@ trait RDF2ShEx extends RDFParser {
      case `sx_bnode` => parseOk(BNodeKind)
      case `sx_literal` => parseOk(LiteralKind)
      case `sx_nonliteral` => parseOk(NonLiteralKind)
-     case _ => parseFail(s"Expected nodekind, found: $n")
+     case _ => parseFail[NodeKind](s"Expected nodekind, found: $n")
     }
   } yield v 
 
@@ -280,7 +280,7 @@ trait RDF2ShEx extends RDFParser {
     n <- getNode 
     v <- n match {
      case StringLiteral(str) => parseOk(LiteralStemRangeString(str))
-     case _ => parseFail(s"LiteralStemRangeString: Expected string for $n")
+     case _ => parseFail[LiteralStemRangeValue](s"LiteralStemRangeString: Expected string for $n")
    }
   } yield v
 
@@ -304,7 +304,7 @@ trait RDF2ShEx extends RDFParser {
     n <- getNode
     v <- n match {
      case StringLiteral(str) => parseOk(LanguageStemRangeLang(Lang(str)))
-     case _ => parseFail(s"LanguageStemRangeLang: Expected string for $n")
+     case _ => parseFail[LanguageStemRangeValue](s"LanguageStemRangeLang: Expected string for $n")
     }
    } yield v
 
@@ -327,7 +327,7 @@ trait RDF2ShEx extends RDFParser {
     n <- getNode 
     v <- n match {
     case iri: IRI => parseOk(IRIRefExclusion(iri))
-    case _ => parseFail(s"iriRefExclusion: expected an IRI for $n")
+    case _ => parseFail[IRIExclusion](s"iriRefExclusion: expected an IRI for $n")
    }
   } yield v
 
@@ -335,7 +335,7 @@ trait RDF2ShEx extends RDFParser {
     vs <- iriStem
     iriStem <- vs match {
       case i: IRIStem => ok(i)
-      case _ => parseFail(s"Expected iriStem")
+      case _ => parseFail[IRIStem](s"Expected iriStem")
     }
   } yield IRIStemExclusion(iriStem)
 
@@ -343,7 +343,7 @@ trait RDF2ShEx extends RDFParser {
     n <- getNode 
     v <- n match {
      case StringLiteral(str) => parseOk(LiteralStringExclusion(str))
-     case _ => parseFail(s"literalStringExclusion: expected a StringLiteral for $n")
+     case _ => parseFail[LiteralExclusion](s"literalStringExclusion: expected a StringLiteral for $n")
     }
   } yield v 
 
@@ -351,7 +351,7 @@ trait RDF2ShEx extends RDFParser {
     vsv <- literalStem
     ls <- vsv match {
       case l: LiteralStem => ok(l)
-      case _ => parseFail(s"Expected $vsv to be a LiteralStem")
+      case _ => parseFail[LiteralStem](s"Expected $vsv to be a LiteralStem")
     }
   } yield LiteralStemExclusion(ls)
 
@@ -380,7 +380,7 @@ trait RDF2ShEx extends RDFParser {
     n <- getNode
     v <- n match {
      case DatatypeLiteral(str, iri) if iri == `xsd:anyUri` => parseOk(str)
-     case _ => parseFail(s"Expected typed literal with datatype xsd:anyUri. Obtained: $n")
+     case _ => parseFail[String](s"Expected typed literal with datatype xsd:anyUri. Obtained: $n")
    }
   } yield v
 
@@ -424,7 +424,7 @@ trait RDF2ShEx extends RDFParser {
     case StringLiteral(str) => parseOk(StringValue(str))
     case DatatypeLiteral(str, iri) => parseOk(DatatypeString(str, iri))
     case LangLiteral(lex, lan) => parseOk(LangString(lex, lan))
-    case _ => parseFail(s"Unexpected object value: $n must be an IRI or a Literal")
+    case _ => parseFail[ValueSetValue](s"Unexpected object value: $n must be an IRI or a Literal")
    }
   } yield v
 
@@ -433,7 +433,7 @@ trait RDF2ShEx extends RDFParser {
     v <- n match {
     case IntegerLiteral(n,_) => parseOk(IntMax(n))
     case StringLiteral("*") => parseOk(Star)
-    case _ => parseFail(s"Unexpected node parsing max cardinality: $n")
+    case _ => parseFail[Max](s"Unexpected node parsing max cardinality: $n")
    }
   } yield v
 

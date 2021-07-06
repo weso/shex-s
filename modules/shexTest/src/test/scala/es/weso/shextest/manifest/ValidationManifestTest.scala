@@ -11,7 +11,7 @@ import es.weso.utils.FileUtils._
 
 class ValidationManifestCompatTest extends CatsEffectSuite with ValidateManifest {
 
-  override def munitTimeout: Duration = 5 minutes
+  override def munitTimeout: Duration = 5.minutes
 
   // If the following variable is None, it runs all tests
   // Otherwise, it runs only the test whose name is equal to the value of this variable
@@ -77,7 +77,7 @@ val cmp: IO[TestResults] = for {
       manifest <- RDF2Manifest.read(Paths.get(shexFolder + "/" + "manifest.ttl"), "Turtle", Some(shexFolderURI.toString), false)
       testSuite = manifest.toTestSuite(shexFolderURI, false)
       ioresults <- testSuite.runAll(
-        TestConfig.initial.copy(maxTimePerTest = 3 seconds), 
+        TestConfig.initial.copy(maxTimePerTest = 3.seconds), 
         except
       ).background.use(res => res.flatMap(_.fold(
        IO.raiseError(new RuntimeException(s"Cancelled")),

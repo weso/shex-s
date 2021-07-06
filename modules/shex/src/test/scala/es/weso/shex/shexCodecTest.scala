@@ -15,20 +15,21 @@ import es.weso.rdf.nodes._
 
 class shexCodecTest extends FunSuite {
 
-    test("Should parse prefix") {
+  test("Should parse prefix") {
       val str = "pepe"
       parsePrefix(str) match {
         case Right(p) => ()
         case Left(e) => fail(s"Error parsing $str: $e")
       }
-    }
-    test("Should parse lang string") {
+  }
+  
+  test("Should parse lang string") {
       val str = "\"pepe\"@es"
       parseLang(str) match {
         case Right(p) => ()
         case Left(e) => fail(s"Error parsing $str: $e")
       }
-    }
+  }
 
 
   codecValueTest[IRI](IRI("x"))
@@ -77,7 +78,7 @@ class shexCodecTest extends FunSuite {
     }
   }
 
-  def codecStrTest[A: Encoder: Decoder: Manifest: Eq](str: String, expected: String)(implicit loc: munit.Location): Unit = {
+  def codecStrTest[A: Encoder: Decoder: Eq](str: String, expected: String)(implicit loc: munit.Location): Unit = {
     test(s"Should decode $str and obtain $expected through decoder") { // of type ${manifest[A].runtimeClass.getSimpleName}") {
       decode[A](str).fold(
         e => fail(s"Error parsing $str: $e"),

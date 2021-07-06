@@ -9,7 +9,7 @@ case class Candidate(arc: Arc, crefs: Set[ConstraintRef]) {
 
 object Candidate {
 
- implicit lazy val showCandidate = new Show[Candidate] {
+ implicit lazy val showCandidate: Show[Candidate] = new Show[Candidate] {
    override def show(c:Candidate): String = {
      s"${c.arc.show} ~ ${c.crefs.map(_.show).mkString(" ")} "
    }

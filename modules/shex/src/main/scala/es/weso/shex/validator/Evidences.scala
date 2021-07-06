@@ -13,7 +13,7 @@ case class Evidences(ls: List[(NodeShape, String)]) {
 object Evidences {
   def initial = Evidences(List())
 
-  implicit def showEvidences = new Show[Evidences] {
+  implicit def showEvidences: Show[Evidences] = new Show[Evidences] {
     // TODO: Improve this...
     def show(e: Evidences): String = {
       e.ls.toString

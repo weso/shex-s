@@ -163,7 +163,7 @@ class RDF2Manifest extends RDFParser {
         case `sht_Validate`           => validateTest
         case `sht_ValidationTest`     => validationTest
         case `sht_ValidationFailure`  => validationFailure
-        case _                        => parseFail(s"Unsupported entry type: $entryTypeUri")
+        case _                        => parseFail[Entry](s"Unsupported entry type: $entryTypeUri")
       }
     } yield entry
 
@@ -227,7 +227,7 @@ class RDF2Manifest extends RDFParser {
             } else compoundResult
           } yield v
         case bNode: BNode => compoundResult
-        case _            => parseFail("Unexpected type of result " + n)
+        case _            => parseFail[ResultExpected]("Unexpected type of result " + n)
       }
     } yield v
 
@@ -236,12 +236,12 @@ class RDF2Manifest extends RDFParser {
       n         <- getNode
       maybeType <- optional(iriFromPredicate(rdf_type))
       v <- maybeType match {
-        case None => parseFail(s"compoundResult. No rdf:type for node: $n")
+        case None => parseFail[ResultExpected](s"compoundResult. No rdf:type for node: $n")
         case Some(`sht_ResultShapeMap`) =>
           for {
             iri <- iriFromPredicate(`sht_resultShapeMap`)
           } yield ResultShapeMapIRI(iri)
-        case Some(other) => parseFail(s"Unsupported type of compound result: $other")
+        case Some(other) => parseFail[ResultExpected](s"Unsupported type of compound result: $other")
       }
     } yield v
 
@@ -302,7 +302,7 @@ class RDF2Manifest extends RDFParser {
          r
         } else liftParser(ok((iri, None)))
       case _ =>
-        liftParser(parseFail(s"Trying to deref an include from node $node which is not an IRI"))
+        liftParser(parseFail[(IRI, Option[ShExManifest])](s"Trying to deref an include from node $node which is not an IRI"))
     }
   } yield pair
 

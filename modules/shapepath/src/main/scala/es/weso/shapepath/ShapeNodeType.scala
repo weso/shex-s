@@ -32,7 +32,7 @@ case object TripleConstraintType extends ContextType {
 }
 
 object ContextType {
-  implicit lazy val shapetypeShow = new Show[ContextType] {
+  implicit lazy val shapetypeShow: Show[ContextType] = new Show[ContextType] {
     final def show(c: ContextType): String = c.symbol
   }
 }

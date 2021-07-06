@@ -43,7 +43,7 @@ case class ExprStep(
 
 object Step {
 
-  implicit lazy val stepShow = new Show[Step] {
+  implicit lazy val stepShow: Show[Step] = new Show[Step] {
     final def show(s: Step): String = s match {
       case ExprStep(None,index, _) => s"${index.show}"
       case ExprStep(Some(ctx),index, _) => s"${ctx.show} ${index.show}"
