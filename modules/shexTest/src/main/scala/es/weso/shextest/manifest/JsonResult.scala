@@ -59,7 +59,7 @@ object JsonResult {
   }
   }
 
-  implicit val rdfnodeKeyDecoder = new KeyDecoder[RDFNode] {
+  implicit val rdfnodeKeyDecoder: KeyDecoder[RDFNode] = new KeyDecoder[RDFNode] {
     override def apply(key: String): Option[RDFNode] = RDFNode.fromString(key).fold(_ => None, Some(_))
   }
 

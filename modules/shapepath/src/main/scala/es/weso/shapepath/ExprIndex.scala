@@ -32,7 +32,7 @@ case class LabelTripleExprIndex(lbl: ShapeLabel, n: Option[Int]) extends TripleE
 }
 
 object ExprIndex {
-  implicit lazy val indexShow = new Show[ExprIndex] {
+  implicit lazy val indexShow: Show[ExprIndex] = new Show[ExprIndex] {
     final def show(e: ExprIndex): String = e match {
       case IntShapeIndex(i) => s"@$i"
       case ShapeLabelIndex(lbl) => s"@${lbl.show}"
