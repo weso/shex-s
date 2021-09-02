@@ -37,6 +37,7 @@ import scala.collection.immutable.HashMap;
 import es.weso.shexs.ShExS;
 import es.weso.shexs.ShExsOptions;
 import es.weso.shapemaps.Conformant ;
+import java.io.OutputStream; 
 
 public class FhirTest3 {
 
