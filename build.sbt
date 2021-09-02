@@ -7,7 +7,7 @@ lazy val supportedScalaVersions = List(
   scala212,
 )
 
-val Java11 = "adopt@1.11"
+// val Java11 = "adopt@1.11"
 val Java8 = "adopt@1.8"
 
 lazy val srdfVersion           = "0.1.104"
