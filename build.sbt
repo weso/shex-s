@@ -8,10 +8,11 @@ lazy val supportedScalaVersions = List(
 )
 
 val Java11 = "adopt@1.11"
+val Java8 = "adopt@1.8"
 
-lazy val srdfVersion           = "0.1.102"
-lazy val utilsVersion          = "0.1.98"
-lazy val documentVersion       = "0.0.32"
+lazy val srdfVersion           = "0.1.104"
+lazy val utilsVersion          = "0.1.99"
+lazy val documentVersion       = "0.0.33"
 
 // Dependency versions
 lazy val antlrVersion          = "4.7.1"
@@ -75,7 +76,7 @@ lazy val pprint         = "com.lihaoyi"                %% "pprint"        % ppri
 lazy val typesafeConfig = "com.typesafe"               % "config"         % typesafeConfigVersion
 lazy val xercesImpl     = "xerces"                     % "xercesImpl"     % xercesVersion
 
-ThisBuild / githubWorkflowJavaVersions := Seq(Java11)
+ThisBuild / githubWorkflowJavaVersions := Seq(Java8)
 
 lazy val shexs = project
   .in(file("."))
