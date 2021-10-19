@@ -11,7 +11,7 @@ lazy val supportedScalaVersions = List(
 val Java8 = "adopt@1.8"
 
 lazy val srdfVersion           = "0.1.104"
-lazy val utilsVersion          = "0.1.99"
+lazy val utilsVersion          = "0.1.100"
 lazy val documentVersion       = "0.0.33"
 
 // Dependency versions
