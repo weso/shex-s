@@ -173,7 +173,7 @@ sealed trait Rbe[+A] extends Product with Serializable {
       if (s.m == IntLimit(0))
         Fail(MaxCardinalityZeroFoundValue(x,s))
       else
-        mkRangeSymbol(s.a, math.max(s.n - 1, 0), s.m minusOne)
+        mkRangeSymbol(s.a, math.max(s.n - 1, 0), s.m.minusOne)
     } else if (open && !(controlled contains x)) {
       this
     } else {
@@ -224,7 +224,7 @@ sealed trait Rbe[+A] extends Product with Serializable {
       case Repeat(e, m, n) => {
         lazy val d: Rbe[U] = e.deriv(x, open, controlled)(r)
         // println(s"Repeat: deriv of $e/$x = $d")
-        lazy val rest = mkRange(e, math.max(m - 1, 0), n minusOne)
+        lazy val rest = mkRange(e, math.max(m - 1, 0), n.minusOne)
         // println(s"Repeat: rest $rest")
         val v = mkAnd(d, rest)
         // println(s"Repeat: and: $r")

@@ -1,32 +1,33 @@
-lazy val scala212 = "2.12.14"
-lazy val scala213 = "2.13.6"
-lazy val scala3   = "3.0.0"
+lazy val scala212 = "2.12.15"
+lazy val scala213 = "2.13.7"
+lazy val scala3   = "3.0.1-RC2"
 lazy val supportedScalaVersions = List(
+  scala3,
   scala213,
   scala212,
-  // scala3
 )
 
-val Java11 = "adopt@1.11"
+// val Java11 = "adopt@1.11"
+val Java8 = "adopt@1.8"
 
-lazy val srdfVersion           = "0.1.102"
-lazy val utilsVersion          = "0.1.98"
-lazy val documentVersion       = "0.0.32"
+lazy val srdfVersion           = "0.1.104"
+lazy val utilsVersion          = "0.1.99"
+lazy val documentVersion       = "0.0.33"
 
 // Dependency versions
-lazy val antlrVersion          = "4.7.2"
-lazy val catsVersion           = "2.6.1"
-lazy val catsEffectVersion     = "3.1.1"
+lazy val antlrVersion          = "4.7.1"
+lazy val catsVersion           = "2.7.0"
+lazy val catsEffectVersion     = "3.3.0"
 lazy val commonsTextVersion    = "1.8"
-lazy val declineVersion        = "2.0.0"
+lazy val declineVersion        = "2.1.0"
 lazy val circeVersion          = "0.14.1"
 lazy val fs2Version            = "3.0.4"
-lazy val jenaVersion           = "3.16.0"
+lazy val jenaVersion           = "4.1.0"
 lazy val junitVersion          = "4.13.1"
 lazy val junitInterfaceVersion = "0.13.2"
-lazy val jgraphtVersion        = "1.5.1"
-lazy val munitVersion          = "0.7.26"
-lazy val munitEffectVersion    = "1.0.3"
+lazy val jgraphtVersion        = "1.4.0"
+lazy val munitVersion          = "0.7.27"
+lazy val munitEffectVersion    = "1.0.5"
 lazy val pprintVersion         = "0.6.6"
 lazy val rdf4jVersion          = "3.4.2"
 lazy val scalaCollCompatVersion  = "2.4.4"
@@ -75,7 +76,7 @@ lazy val pprint         = "com.lihaoyi"                %% "pprint"        % ppri
 lazy val typesafeConfig = "com.typesafe"               % "config"         % typesafeConfigVersion
 lazy val xercesImpl     = "xerces"                     % "xercesImpl"     % xercesVersion
 
-ThisBuild / githubWorkflowJavaVersions := Seq(Java11)
+ThisBuild / githubWorkflowJavaVersions := Seq(Java8)
 
 lazy val shexs = project
   .in(file("."))
@@ -176,6 +177,27 @@ lazy val shapemap = project
       utils,
       srdfJena % Test,
       // sext % Test,
+      catsCore,
+      catsKernel,
+      circeCore,
+      circeGeneric,
+      circeParser,
+      fs2, fs2io,
+      scalaCollCompat,
+      munit % Test,
+      munitEffect % Test
+      ),
+    testFrameworks += new TestFramework("munit.Framework")
+  )
+
+lazy val wshex = project
+  .in(file("modules/wshex"))
+  .enablePlugins(Antlr4Plugin)
+  .settings(commonSettings, antlrSettings("es.weso.wshex.parser"))
+  .dependsOn(shex)
+  .settings(
+    crossScalaVersions := supportedScalaVersions,
+    libraryDependencies ++= Seq(
       catsCore,
       catsKernel,
       circeCore,

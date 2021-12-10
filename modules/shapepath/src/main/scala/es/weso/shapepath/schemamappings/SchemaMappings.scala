@@ -42,7 +42,7 @@ case class SchemaMappings(
      case (acc, mapping) => 
       acc.flatMap(s => mapping.convert(s))
    }
-   .map(_.copy(prefixes = schema.prefixes.map(_.merge(prefixMap))))
+   .map(_.withPrefixMap(schema.prefixes.map(_.merge(prefixMap))))
   }
 
   override def toString: String = 

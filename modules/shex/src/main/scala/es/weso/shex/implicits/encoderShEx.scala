@@ -12,7 +12,7 @@ import es.weso.rdf.PREFIXES._
 
 object encoderShEx {
 
-  implicit lazy val encodeSchema = new Encoder[Schema] {
+  implicit lazy val encodeSchema: Encoder[Schema] = new Encoder[Schema] {
     final def apply(s: Schema): Json =
       mkObjectTyped(
         "Schema",
@@ -31,7 +31,7 @@ object encoderShEx {
           optField("shapes", s.shapes)))
   }
 
-  implicit lazy val encoderPrefix = new Encoder[Prefix] {
+  implicit lazy val encoderPrefix: Encoder[Prefix] = new Encoder[Prefix] {
     final def apply(p: Prefix): Json = Json.fromString(p.str)
   }
 

@@ -34,13 +34,13 @@ object Value {
     final def apply(p: SchemaItem): Json = p.s.asJson
   } */
 
-  implicit lazy val shapeExprItemEncoder = new Encoder[ShapeExprItem] {
+  implicit lazy val shapeExprItemEncoder: Encoder[ShapeExprItem] = new Encoder[ShapeExprItem] {
     final def apply(p: ShapeExprItem): Json = p.se.asJson
   }
-  implicit lazy val tripleExprItemEncoder = new Encoder[TripleExprItem] {
+  implicit lazy val tripleExprItemEncoder: Encoder[TripleExprItem] = new Encoder[TripleExprItem] {
     final def apply(p: TripleExprItem): Json = p.te.asJson
   }
-  implicit lazy val itemEncoder = new Encoder[ShapeNode] {
+  implicit lazy val itemEncoder: Encoder[ShapeNode] = new Encoder[ShapeNode] {
     final def apply(p: ShapeNode): Json = p match {
       // case s : SchemaItem => s.asJson
       case se: ShapeExprItem => se.asJson
@@ -48,11 +48,11 @@ object Value {
       case IRIItem(iri) => iri.asJson
     }
   }
-  implicit lazy val valueEncoder = new Encoder[Value] {
+  implicit lazy val valueEncoder: Encoder[Value] = new Encoder[Value] {
     final def apply(p: Value): Json = p.items.asJson
   }
 
-  implicit lazy val itemShow = new Show[ShapeNode] {
+  implicit lazy val itemShow: Show[ShapeNode] = new Show[ShapeNode] {
     final def show(i: ShapeNode): String = i match {
       // case s: SchemaItem => s"Schema: ${s.s.show}"
       case se: ShapeExprItem => s"ShapeExpr: ${se.se.show}"
@@ -61,7 +61,7 @@ object Value {
     }
   }
 
-  implicit lazy val valueShow = new Show[Value] {
+  implicit lazy val valueShow: Show[Value] = new Show[Value] {
     final def show(v: Value): String = s"Value(${v.items.map(_.show).mkString(",")})"
   }
 

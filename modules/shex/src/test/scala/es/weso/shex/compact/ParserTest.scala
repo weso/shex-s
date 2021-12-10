@@ -12,7 +12,7 @@ class ParserTest extends FunSuite {
     Schema
     .empty
     .addShape(Shape.empty.copy(id = Some(IRILabel(IRI("S")))))
-    .copy(labelLocationMap = Some(Map(IRILabel(IRI("S")) -> Location(line = 1, col=0, tokenType="label"))))
+    .withLabelLocationMap(Some(Map(IRILabel(IRI("S")) -> Location(line = 1, col=0, tokenType="label"))))
   )
 
   shouldParse(s"<S> extends @<T> { }", None,
@@ -22,7 +22,7 @@ class ParserTest extends FunSuite {
         id = Some(IRILabel(IRI("S"))),
         closed = Some(false),
         _extends=Some(List(IRILabel(IRI("T"))))))
-    .copy(labelLocationMap = Some(Map(IRILabel(IRI("S")) -> Location(line = 1, col=0, tokenType="label"))))
+    .withLabelLocationMap(Some(Map(IRILabel(IRI("S")) -> Location(line = 1, col=0, tokenType="label"))))
   )
 
     def shouldParse(str:String, base: Option[String], expected: Schema): Unit = {

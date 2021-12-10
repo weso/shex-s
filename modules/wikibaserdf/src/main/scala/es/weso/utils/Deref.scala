@@ -10,11 +10,16 @@ import scala.concurrent.ExecutionContext.global
 import es.weso.rdf._
 import es.weso.rdf.nodes._
 import es.weso.rdf.jena._
+
 import java.net._
-import java.net.http._
-import java.net.http.HttpResponse.BodyHandlers
+// import java.net.http._
+// import java.net.http.HttpResponse.BodyHandlers
+// import java.net.http.HttpClient.Redirect
 import java.time.Duration
-import java.net.http.HttpClient.Redirect
+import java.io.InputStream
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import scala.collection.JavaConverters._
 
 object Deref {
 
@@ -43,15 +48,28 @@ object Deref {
 
   def derefRDFJava(iri: IRI): IO[Resource[IO,RDFAsJenaModel]] = for {
     str <- IO {
-      val client = HttpClient.newBuilder().followRedirects(Redirect.ALWAYS).build()
+      // This code is commented because it depends on Java 1.11
+      /* val client = HttpClient.newBuilder().followRedirects(Redirect.ALWAYS).build()
       val request: HttpRequest = HttpRequest.newBuilder()
       .uri(iri.uri)
       .timeout(Duration.ofMinutes(4))
       .header("Accept", "text/turtle").GET.build()
       println(s"Request: ${request}")
-      val response = client.send(request, BodyHandlers.ofString)
+      val response = client.send(request, BodyHandlers.ofString) 
       // println(s"Body: ${response.body()}\nEND BODY (drefJava)")
-      response.body()
+      response.body() */
+      // Java 1.8 code
+    val url: URL = iri.uri.toURL
+    val conn: HttpURLConnection = url.openConnection().asInstanceOf[HttpURLConnection]
+    conn.setRequestMethod("GET")
+    conn.setRequestProperty("Accept", "text/turtle")
+    conn.setInstanceFollowRedirects(true)
+    // I think redirects still are required to be done manually. See: https://mkyong.com/java/java-httpurlconnection-follow-redirect-example/
+    conn.setReadTimeout(5000)
+    val in = new BufferedReader(new InputStreamReader(conn.getInputStream()))
+    val str = in.lines().iterator.asScala.mkString
+    conn.connect()
+    str
     }
     rdf <- RDFAsJenaModel.fromString(str,"TURTLE")
   } yield rdf

@@ -514,6 +514,9 @@ case class Validator(schema: ResolvedSchema,
     } yield t
   }
 
+  private def errPartitionFailed(node: RDFNode, attempt: Attempt, shape: Shape, extendLabel: ShapeLabel, pair: (Set[Arc], Set[Arc])): Check[ShapeTyping] = 
+    err(PartitionFailed(node,attempt,shape,extendLabel,pair))
+
   private def checkPartitionPair(extended: ShapeExpr, 
                                  extendLabel: ShapeLabel,
                                  shape: Shape, 
@@ -555,14 +558,7 @@ case class Validator(schema: ResolvedSchema,
        _ <- infoTyping(typing, s"""| step3/checkPartitionPair(${node.show}@${extendLabel.toRDFNode.show}) / typing  = """.stripMargin, schema.prefixMap)
        _ <- info(s"#### Partition successful############")
        } yield typing
-      else {
-        info(s"""|@@@Failing ${node.show}@${shape.id.map(_.toRDFNode.show).getOrElse("?")}|extend(${extendLabel.toRDFNode.show})
-                 |neighs1=${neighs1}
-                 |neighs2=${neighs2}
-                 |""".stripMargin) *>
-        // errStr[ShapeTyping]("Failing partition") // addNotEvidence(NodeShape(node,st),ExtendFails(node,extendLabel,attempt),s"Node ${node.show} doesn't conform to extended shape ${extendLabel.show}").map(t => (t,false))
-        err(PartitionFailed(node,attempt,shape,extendLabel,pair))
-      }
+      else errPartitionFailed(node,attempt,shape,extendLabel,pair) 
     } yield pair 
   }
 

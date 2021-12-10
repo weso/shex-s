@@ -53,7 +53,7 @@ object ShExDiff {
     pm: Option[PrefixMap],
     db: Option[IRI],
     ds: Option[List[SemAct]]): Schema = 
-     Schema(IRI(""),pm, db, ds, None, None,None, List(),None)
+     Schema.empty.withPrefixMap(pm).withBase(db).withStartActions(ds)     
 
   def prefixesDiff: Diff[Option[PrefixMap]] =
     optDiff(prefixMapDiff)

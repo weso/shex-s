@@ -338,7 +338,7 @@ object Spec {
   def getShape(lbl: ShapeLabel): Check[ShapeExpr] = for {
     schema <- getSchema
     shape <- schema.getShape(lbl) match {
-      case Left(e) => err(e)
+      case Left(e) => err[ShapeExpr](e)
       case Right(se) => pure(se)
     }
   } yield shape
@@ -347,7 +347,7 @@ object Spec {
     schema <- getSchema
     shape <- lbl match {
       case StartMapLabel => schema.start match {
-        case None => err(s"Not found Start in schema")
+        case None => err[ShapeExpr](s"Not found Start in schema")
         case Some(se) => pure(se)
       }
       case IriShapeMapLabel(iri) => getShape(IRILabel(iri))
