@@ -1,13 +1,13 @@
-lazy val scala212 = "2.12.14"
-lazy val scala213 = "2.13.6"
-lazy val scala3   = "3.0.2"
+lazy val scala212 = "2.12.15"
+lazy val scala213 = "2.13.7"
+lazy val scala3   = "3.0.1-RC2"
 lazy val supportedScalaVersions = List(
   scala3,
   scala213,
   scala212,
 )
 
-val Java11 = "adopt@1.11"
+// val Java11 = "adopt@1.11"
 val Java8 = "adopt@1.8"
 
 lazy val srdfVersion           = "0.1.104"
@@ -16,8 +16,8 @@ lazy val documentVersion       = "0.0.33"
 
 // Dependency versions
 lazy val antlrVersion          = "4.7.1"
-lazy val catsVersion           = "2.6.1"
-lazy val catsEffectVersion     = "3.1.1"
+lazy val catsVersion           = "2.7.0"
+lazy val catsEffectVersion     = "3.3.0"
 lazy val commonsTextVersion    = "1.8"
 lazy val declineVersion        = "2.1.0"
 lazy val circeVersion          = "0.14.1"
@@ -177,6 +177,27 @@ lazy val shapemap = project
       utils,
       srdfJena % Test,
       // sext % Test,
+      catsCore,
+      catsKernel,
+      circeCore,
+      circeGeneric,
+      circeParser,
+      fs2, fs2io,
+      scalaCollCompat,
+      munit % Test,
+      munitEffect % Test
+      ),
+    testFrameworks += new TestFramework("munit.Framework")
+  )
+
+lazy val wshex = project
+  .in(file("modules/wshex"))
+  .enablePlugins(Antlr4Plugin)
+  .settings(commonSettings, antlrSettings("es.weso.wshex.parser"))
+  .dependsOn(shex)
+  .settings(
+    crossScalaVersions := supportedScalaVersions,
+    libraryDependencies ++= Seq(
       catsCore,
       catsKernel,
       circeCore,
