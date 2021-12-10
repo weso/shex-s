@@ -1,6 +1,6 @@
-package es.weso.wdsub.spark.wbmodel
+package es.weso.wbmodel
 
-import es.weso.wdsub.spark.simpleshex.ShapeLabel
+import es.weso.wshex.ShapeLabel
 import org.wikidata.wdtk.datamodel.helpers.JsonSerializer
 import org.wikidata.wdtk.datamodel.implementation._
 import org.wikidata.wdtk.datamodel.interfaces.{SiteLink => WBSiteLink, _}

@@ -3,7 +3,7 @@ package es.weso.wshex
 import cats.implicits._
 import es.weso.rbe.interval.IntOrUnbounded
 import es.weso.rbe._
-import es.weso.wdsub.spark.wbmodel._
+import es.weso.wbmodel._
 
 sealed abstract class TripleExpr extends Product with Serializable {
 
@@ -218,7 +218,7 @@ sealed abstract class TripleConstraint extends TripleExpr with Serializable with
                     |matches: $matches
                     |failed: $failed
                     |""".stripMargin) */
-        if (min <= matches && max >= matches) Right(Right(tl.property,matches,failed))
+        if (min <= matches && max >= matches) Right(Right((tl.property,matches,failed)))
          else Left(CardinalityError(tl.property,matches,min,max))
        }
     }
@@ -241,7 +241,7 @@ sealed abstract class TripleConstraint extends TripleExpr with Serializable with
             .matchLocal(s.literal))
             .collect { case Right(()) => () }.size
         val failed = found.size - matches
-        if (min <= matches && max >= matches) Right(Right(tl.property,matches,failed))
+        if (min <= matches && max >= matches) Right(Right((tl.property,matches,failed)))
          else Left(Reason.cardinalityError)
        }
     }

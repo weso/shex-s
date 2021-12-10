@@ -1,12 +1,9 @@
-package es.weso.wdsub.spark.wbmodel
+package es.weso.wbmodel
 
-import es.weso.wdsub.spark.graphxhelpers._
-import es.weso.wdsub.spark.graphxhelpers.GraphBuilder.{Builder, getIdUpdate}
-import org.apache.spark.graphx._
 import cats.implicits._
 import cats._
 import es.weso.rdf.nodes._
-import es.weso.wdsub.spark.simpleshex.ShapeLabel
+import es.weso.wshex.ShapeLabel
 import org.wikidata.wdtk.datamodel.interfaces.DatatypeIdValue
 
 object Utils {
@@ -22,6 +19,8 @@ object Utils {
   }
 
 }
+
+case class VertexId(value: Long) extends AnyVal
 
 sealed abstract trait Value extends Product with Serializable
 
@@ -232,32 +231,6 @@ object Value {
 
   lazy val siteDefault = "http://www.wikidata.org/entity"
 
-  def vertexEdges(
-                   triplets: List[(Entity, PropertyRecord, Entity, List[Qualifier])]
-                 ):(Seq[Vertex[Entity]], Seq[Edge[Statement]]) = {
-    val subjects: Seq[Entity] =
-      triplets.map(_._1)
-    val objects: Seq[Entity] =
-      triplets.map(_._3)
-    val properties: Seq[PropertyRecord] =
-      triplets.map(_._2)
-    val qualProperties: Seq[PropertyId] =
-      triplets.map(_._4.map(_.propertyId)).flatten
-    val qualEntities: Seq[Entity] =
-      triplets.collect { case (_, _, e: Entity, _)  => e }
-    val values: Seq[Vertex[Entity]] =
-      subjects
-        .union(objects)
-        .union(qualEntities)
-        .map(v => Vertex(v.vertexId,v)
-        )
-    val edges =
-      triplets
-        .map(t =>
-          statement(t._1, t._2, t._3, t._4)
-        ).toSeq
-    (values,edges)
-  }
 
   def triple(
               subj: Entity, prop: Property, value: Entity
@@ -281,30 +254,9 @@ object Value {
     (subj, prop.prec, value, qs)
   }
 
-  def Q(num: Int, label: String, site: String = siteDefault): Builder[Item] =  for {
-    id <- getIdUpdate
-  } yield {
-    val qid = "Q" + num
-    Item(ItemId(qid, iri = mkSite(site, qid)), id, Map(Lang("en") -> label), Map(), Map(), site, List(), List())
-  }
+   def mkSite(base: String, localName: String) = IRI(base + "/" + localName)
 
-  def Qid(num: Int, label: String, id: Long, site: String = siteDefault): Item = {
-    val qid = "Q" + num
-    Item(ItemId(qid, iri = mkSite(site, qid)), id, Map(Lang("en") -> label), Map(), Map(), site, List(), List())
-  }
-
-  def mkSite(base: String, localName: String) = IRI(base + "/" + localName)
-
-  def P(num: Int, label: String, site: String = siteDefault, datatype: Datatype = Datatype.defaultDatatype): Builder[Property] = for {
-    id <- getIdUpdate
-  } yield {
-    val pid = "P" + num
-    Property(
-      PropertyId(pid, mkSite(site,pid)),
-      id, Map(Lang("en") -> label), Map(), Map(), site, List()
-    )
-  }
-
+ 
   def Date(date: String): DateValue =
     DateValue(date)
 
@@ -316,19 +268,5 @@ object Value {
     PropertyId(pid, mkSite(site, pid))
   }
 
-  def statement(
-                 subject: Entity,
-                 propertyRecord: PropertyRecord,
-                 value: Entity,
-                 qs: List[Qualifier]): Edge[Statement] = {
-    val localQs = qs.collect { case lq: LocalQualifier => lq }
-    val entityQs = qs.collect { case eq: EntityQualifier => eq }
-    Edge(
-      subject.vertexId,
-      value.vertexId,
-      Statement(propertyRecord).withQualifiers(entityQs)
-    )
-  }
-
-
+ 
 }

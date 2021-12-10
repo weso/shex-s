@@ -5,7 +5,7 @@ import es.weso.rbe.Rbe
 import cats.data._
 import es.weso.rbe.RbeError
 import es.weso.rbe.interval.IntOrUnbounded
-import es.weso.wdsub.spark.wbmodel._
+import es.weso.wbmodel._
 
 case class ReasonCode(code: Int) extends AnyVal
 

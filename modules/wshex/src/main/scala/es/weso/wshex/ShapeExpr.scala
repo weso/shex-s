@@ -5,7 +5,7 @@ import es.weso.rbe.interval.IntervalChecker
 import es.weso.collection.Bag
 import cats._
 import cats.implicits._
-import es.weso.wdsub.spark.wbmodel._
+import es.weso.wbmodel._
 import es.weso.rdf.nodes._
 
 sealed abstract class ShapeExpr extends Product with Serializable {

@@ -5,6 +5,7 @@ import es.weso.rdf.PrefixMap
 import cats.implicits._
 import java.nio.file.Path
 import cats.effect.IO
+import es.weso.wbmodel._
 
 
 sealed trait WShExFormat
@@ -91,7 +92,7 @@ object Schema {
         import cats.effect.unsafe.implicits.global
         try {
           val schema = es.weso.shex.Schema.fromString(str,cnvFormat(format)).unsafeRunSync()
-          val wShEx = ShEx2SimpleShEx().convertSchema(schema)
+          val wShEx = ShEx2WShEx().convertSchema(schema)
           wShEx.bimap(ConversionError(_), identity)
         } catch {
             case e: Exception => ParseException(e).asLeft
@@ -104,7 +105,7 @@ object Schema {
    ): IO[Schema] = for {
     schema <- es.weso.shex.Schema.fromFile(path.toFile().getAbsolutePath(), cnvFormat(format))
     resolvedSchema <- es.weso.shex.ResolvedSchema.resolve(schema, None)
-    schema <- IO.fromEither(ShEx2SimpleShEx().convertSchema(resolvedSchema))
+    schema <- IO.fromEither(ShEx2WShEx().convertSchema(resolvedSchema))
   } yield schema
 
   def fromString(
@@ -113,7 +114,7 @@ object Schema {
               ): IO[Schema] = for {
     schema <- es.weso.shex.Schema.fromString(schemaString, cnvFormat(format))
     resolvedSchema <- es.weso.shex.ResolvedSchema.resolve(schema, None)
-    schema <- IO.fromEither(ShEx2SimpleShEx().convertSchema(resolvedSchema))
+    schema <- IO.fromEither(ShEx2WShEx().convertSchema(resolvedSchema))
   } yield schema
 
  /**

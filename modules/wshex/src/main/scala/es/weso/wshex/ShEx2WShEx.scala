@@ -7,14 +7,15 @@ import cats._
 import cats.implicits._
 import es.weso.rbe.interval.Unbounded
 import es.weso.rbe.interval.IntLimit
-import es.weso.wdsub.spark.wbmodel._
+import es.weso.wbmodel._
 
 case class ConvertOptions(siteIri: IRI)
+
 object ConvertOptions {
   val default = ConvertOptions(IRI("http://www.wikidata.org/entity/"))
 }
 
-case class ShEx2SimpleShEx(convertOptions: ConvertOptions) {
+case class ShEx2WShEx(convertOptions: ConvertOptions) {
 
   /**
    * Convert a ShEx schema to a WShEx
@@ -201,11 +202,11 @@ case class ShEx2SimpleShEx(convertOptions: ConvertOptions) {
 
 }
 
-object ShEx2SimpleShEx {
+object ShEx2WShEx {
   def apply(
     convertOptions: ConvertOptions = ConvertOptions.default
-    ): ShEx2SimpleShEx = {
+    ): ShEx2WShEx = {
     // Note: I think 'new' is needed to avoid infinite loop  
-    new ShEx2SimpleShEx(convertOptions)
+    new ShEx2WShEx(convertOptions)
   }
 }
