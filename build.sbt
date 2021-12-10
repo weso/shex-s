@@ -10,61 +10,60 @@ lazy val supportedScalaVersions = List(
 // val Java11 = "adopt@1.11"
 val Java8 = "adopt@1.8"
 
-lazy val srdfVersion             = "0.1.104"
-lazy val utilsVersion            = "0.2.2"
-lazy val documentVersion         = "0.0.34"
+lazy val srdfVersion     = "0.1.104"
+lazy val utilsVersion    = "0.2.2"
+lazy val documentVersion = "0.0.34"
 
 // Dependency versions
-lazy val antlrVersion            = "4.7.1"
-lazy val catsVersion             = "2.7.0"
-lazy val catsEffectVersion       = "3.3.0"
-lazy val commonsTextVersion      = "1.8"
-lazy val declineVersion          = "2.1.0"
-lazy val circeVersion            = "0.14.1"
-lazy val fs2Version              = "3.2.3"
-lazy val jenaVersion             = "4.1.0"
-lazy val junitVersion            = "4.13.1"
-lazy val junitInterfaceVersion   = "0.13.2"
-lazy val jgraphtVersion          = "1.4.0"
-lazy val munitVersion            = "0.7.29"
-lazy val munitEffectVersion      = "1.0.7"
-lazy val pprintVersion           = "0.6.6"
-lazy val rdf4jVersion            = "3.4.2"
-lazy val scalaCollCompatVersion  = "2.4.4"
-lazy val scalacheckVersion       = "1.15.4"
-lazy val typesafeConfigVersion   = "1.4.1"
-lazy val wikidataToolkitVersion  = "0.12.1"
-lazy val xercesVersion           = "2.12.1"
+lazy val antlrVersion           = "4.7.1"
+lazy val catsVersion            = "2.7.0"
+lazy val catsEffectVersion      = "3.3.0"
+lazy val commonsTextVersion     = "1.8"
+lazy val declineVersion         = "2.1.0"
+lazy val circeVersion           = "0.14.1"
+lazy val fs2Version             = "3.2.3"
+lazy val jenaVersion            = "4.1.0"
+lazy val junitVersion           = "4.13.1"
+lazy val junitInterfaceVersion  = "0.13.2"
+lazy val jgraphtVersion         = "1.4.0"
+lazy val munitVersion           = "0.7.29"
+lazy val munitEffectVersion     = "1.0.7"
+lazy val pprintVersion          = "0.6.6"
+lazy val rdf4jVersion           = "3.4.2"
+lazy val scalaCollCompatVersion = "2.6.0"
+lazy val scalacheckVersion      = "1.15.4"
+lazy val typesafeConfigVersion  = "1.4.1"
+lazy val wikidataToolkitVersion = "0.12.1"
+lazy val xercesVersion          = "2.12.1"
 
 // Dependency modules
-lazy val antlr4            = "org.antlr"                  % "antlr4"               % antlrVersion
-lazy val catsCore          = "org.typelevel"              %% "cats-core"           % catsVersion
-lazy val catsKernel        = "org.typelevel"              %% "cats-kernel"         % catsVersion
-lazy val catsEffect        = "org.typelevel"              %% "cats-effect"         % catsEffectVersion
-lazy val circeCore         = "io.circe"                   %% "circe-core"          % circeVersion
-lazy val circeGeneric      = "io.circe"                   %% "circe-generic"       % circeVersion
-lazy val circeParser       = "io.circe"                   %% "circe-parser"        % circeVersion
-lazy val decline           = "com.monovore"               %% "decline"             % declineVersion
-lazy val declineEffect     = "com.monovore"               %% "decline-effect"      % declineVersion
-lazy val fs2               = "co.fs2"            %% "fs2-core" % fs2Version
-lazy val fs2io             = "co.fs2"            %% "fs2-io" % fs2Version
-lazy val jgraphtCore       = "org.jgrapht"       % "jgrapht-core"     % jgraphtVersion
-lazy val jenaArq           = "org.apache.jena"   % "jena-arq"         % jenaVersion
-lazy val jenaFuseki        = "org.apache.jena"   % "jena-fuseki-main" % jenaVersion
-lazy val junit             = "junit"             % "junit"            % junitVersion
-lazy val junitInterface    = "com.github.sbt"    % "junit-interface"  % junitInterfaceVersion
-lazy val munit             = "org.scalameta"     %% "munit"           % munitVersion
-lazy val munitEffect       = "org.typelevel"     %% "munit-cats-effect-3" % munitEffectVersion
+lazy val antlr4         = "org.antlr"       % "antlr4"               % antlrVersion
+lazy val catsCore       = "org.typelevel"   %% "cats-core"           % catsVersion
+lazy val catsKernel     = "org.typelevel"   %% "cats-kernel"         % catsVersion
+lazy val catsEffect     = "org.typelevel"   %% "cats-effect"         % catsEffectVersion
+lazy val circeCore      = "io.circe"        %% "circe-core"          % circeVersion
+lazy val circeGeneric   = "io.circe"        %% "circe-generic"       % circeVersion
+lazy val circeParser    = "io.circe"        %% "circe-parser"        % circeVersion
+lazy val decline        = "com.monovore"    %% "decline"             % declineVersion
+lazy val declineEffect  = "com.monovore"    %% "decline-effect"      % declineVersion
+lazy val fs2            = "co.fs2"          %% "fs2-core"            % fs2Version
+lazy val fs2io          = "co.fs2"          %% "fs2-io"              % fs2Version
+lazy val jgraphtCore    = "org.jgrapht"     % "jgrapht-core"         % jgraphtVersion
+lazy val jenaArq        = "org.apache.jena" % "jena-arq"             % jenaVersion
+lazy val jenaFuseki     = "org.apache.jena" % "jena-fuseki-main"     % jenaVersion
+lazy val junit          = "junit"           % "junit"                % junitVersion
+lazy val junitInterface = "com.github.sbt"  % "junit-interface"      % junitInterfaceVersion
+lazy val munit          = "org.scalameta"   %% "munit"               % munitVersion
+lazy val munitEffect    = "org.typelevel"   %% "munit-cats-effect-3" % munitEffectVersion
 
-lazy val wdtkDumpFiles =   "org.wikidata.wdtk" % "wdtk-dumpfiles"   % wikidataToolkitVersion
-lazy val wdtkBaseApi   =   "org.wikidata.wdtk" % "wdtk-wikibaseapi" % wikidataToolkitVersion
-lazy val wdtkDataModel =   "org.wikidata.wdtk" % "wdtk-datamodel"   % wikidataToolkitVersion
-lazy val wdtkRDF       =   "org.wikidata.wdtk" % "wdtk-rdf"         % wikidataToolkitVersion
-lazy val wdtkStorage   =   "org.wikidata.wdtk" % "wdtk-storage"     % wikidataToolkitVersion
-lazy val wdtkUtil      =   "org.wikidata.wdtk" % "wdtk-util"        % wikidataToolkitVersion
+lazy val wdtkDumpFiles = "org.wikidata.wdtk" % "wdtk-dumpfiles"   % wikidataToolkitVersion
+lazy val wdtkBaseApi   = "org.wikidata.wdtk" % "wdtk-wikibaseapi" % wikidataToolkitVersion
+lazy val wdtkDataModel = "org.wikidata.wdtk" % "wdtk-datamodel"   % wikidataToolkitVersion
+lazy val wdtkRDF       = "org.wikidata.wdtk" % "wdtk-rdf"         % wikidataToolkitVersion
+lazy val wdtkStorage   = "org.wikidata.wdtk" % "wdtk-storage"     % wikidataToolkitVersion
+lazy val wdtkUtil      = "org.wikidata.wdtk" % "wdtk-util"        % wikidataToolkitVersion
 
-
-lazy val MUnitFramework    = new TestFramework("munit.Framework")
+lazy val MUnitFramework = new TestFramework("munit.Framework")
 
 lazy val rdf4j_runtime   = "org.eclipse.rdf4j"      % "rdf4j-runtime"            % rdf4jVersion
 lazy val scalaCollCompat = "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollCompatVersion
@@ -211,8 +210,14 @@ lazy val wshex = project
       circeCore,
       circeGeneric,
       circeParser,
-      fs2, fs2io,
-      wdtkBaseApi, wdtkDataModel, wdtkDumpFiles, wdtkRDF, wdtkStorage, wdtkUtil,
+      fs2,
+      fs2io,
+      wdtkBaseApi,
+      wdtkDataModel,
+      wdtkDumpFiles,
+      wdtkRDF,
+      wdtkStorage,
+      wdtkUtil,
       scalaCollCompat,
       munit       % Test,
       munitEffect % Test
