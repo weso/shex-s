@@ -15,7 +15,7 @@ lazy val utilsVersion            = "0.2.2"
 lazy val documentVersion         = "0.0.34"
 
 // Dependency versions
-lazy val antlrVersion            = "4.7.2"
+lazy val antlrVersion            = "4.9.3"
 lazy val catsVersion             = "2.7.0"
 lazy val catsEffectVersion       = "3.3.0"
 lazy val commonsTextVersion      = "1.8"
@@ -104,8 +104,8 @@ lazy val shexs = project
     commonSettings,
     packagingSettings,
     wixSettings)
-  .aggregate(depGraphs, shex, shexTest, rbe, wikibaserdf, shapepath, shapemap, docs)
-  .dependsOn(depGraphs, shex, shexTest, rbe, wikibaserdf, shapepath, shapemap)
+  .aggregate(depGraphs, wshex, shex, shexTest, rbe, wikibaserdf, shapepath, shapemap, docs)
+  .dependsOn(depGraphs, wshex, shex, shexTest, rbe, wikibaserdf, shapepath, shapemap)
   .settings(
     libraryDependencies ++= Seq(
       catsCore,
