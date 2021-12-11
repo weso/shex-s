@@ -95,7 +95,7 @@ case class Item(
                  okShapes: Set[ShapeLabel] = Set()
                ) extends Entity {
 
-  lazy val entityId = itemId
+  val entityId: EntityId = itemId
   def iri: IRI = IRI(siteIri + "/" + itemId.id)
 
   override def toString = s"${itemId.id}-${labels.get(Lang("en")).getOrElse("")}@$vertexId"
@@ -124,7 +124,7 @@ case class Property(
                      okShapes: Set[ShapeLabel] = Set()
                    ) extends Entity {
 
-  lazy val entityId = propertyId
+  val entityId: EntityId = propertyId
 
   def iri: IRI = IRI(siteIri + "/" + propertyId.id)
 

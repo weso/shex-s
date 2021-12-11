@@ -12,8 +12,8 @@ sealed abstract class TripleExpr extends Product with Serializable {
   def dependsOn(): Set[ShapeLabel] = this match {
     case tcr: TripleConstraintRef => Set(tcr.value.label)
     case tcl: TripleConstraintLocal => Set()
-    case eo: EachOf => eo.exprs.foldLeft(Set[ShapeLabel]()){ case (e,s) => e.union(s.dependsOn) }
-    case oo: OneOf => oo.exprs.foldLeft(Set[ShapeLabel]()){ case (e,s) => e.union(s.dependsOn) }
+    case eo: EachOf => eo.exprs.foldLeft(Set[ShapeLabel]()){ case (e,s) => e.union(s.dependsOn()) }
+    case oo: OneOf => oo.exprs.foldLeft(Set[ShapeLabel]()){ case (e,s) => e.union(s.dependsOn()) }
     case _ => Set()  
   }
 

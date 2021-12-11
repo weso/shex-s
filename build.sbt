@@ -353,8 +353,19 @@ lazy val docs = project
     mdocSettings,
     ScalaUnidoc / unidoc / unidocProjectFilter := inAnyProject -- inProjects(noDocProjects: _*)
    )
-  .dependsOn(shex, shapemap, rbe, shexTest, wikibaserdf, shapepath, depGraphs)
+  .dependsOn(shex, shapemap, rbe, shexTest, wikibaserdf, shapepath, depGraphs, wshex)
   .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin)
+  .settings(
+    // This is based on this question: https://issueexplorer.com/issue/scalameta/mdoc/545
+    // mdoc (transitively) depends on sourcecode_2.13,
+    // which conflicts with core's dependency on sourcecode_3
+    libraryDependencies := libraryDependencies.value.map(_ excludeAll (
+      ExclusionRule(organization = "com.lihaoyi", name = "sourcecode_2.13"),
+      ExclusionRule(organization = "com.lihaoyi", name = "fansi_2.13"),
+      ExclusionRule(organization = "com.lihaoyi", name = "pprint_2.13"),
+      ExclusionRule(organization = "org.scala-lang.modules", name = "scala-collection-compat_2.13"),
+    )),
+   )
 
 lazy val mdocSettings = Seq(
   mdocVariables := Map(

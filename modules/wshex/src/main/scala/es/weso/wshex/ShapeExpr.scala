@@ -1,6 +1,6 @@
 package es.weso.wshex
 
-import es.weso.rbe._
+import es.weso.rbe.{Schema => _, _}
 import es.weso.rbe.interval.IntervalChecker
 import es.weso.collection.Bag
 import cats._
@@ -17,9 +17,9 @@ sealed abstract class ShapeExpr extends Product with Serializable {
       case Some(te) => te.dependsOn()
     }
     case e: NodeConstraint => Set()
-    case sand: ShapeAnd => sand.exprs.map(_.dependsOn).toSet.flatten
-    case sor: ShapeOr => sor.exprs.map(_.dependsOn).toSet.flatten
-    case sn: ShapeNot => sn.shapeExpr.dependsOn
+    case sand: ShapeAnd => sand.exprs.map(_.dependsOn()).toSet.flatten
+    case sor: ShapeOr => sor.exprs.map(_.dependsOn()).toSet.flatten
+    case sn: ShapeNot => sn.shapeExpr.dependsOn()
   }
 
   lazy val empty: Rbe[(PropertyId,ShapeLabel)] = Empty
