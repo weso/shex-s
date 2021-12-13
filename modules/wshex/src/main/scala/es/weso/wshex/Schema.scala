@@ -78,6 +78,30 @@ case class Schema(
      }
    }
  }
+
+ lazy val shapes: List[ShapeExpr] = {
+    shapesMap.values.toList
+ }
+
+
+  /**
+   * Get a shape with label 
+   *
+   * @param lbl
+   * @return the shape expression with that label
+   */ 
+ def getShape(lbl: ShapeLabel): Option[ShapeExpr] =
+    shapesMap.get(lbl)
+
+
+  /**
+   * Start shape expression in a schema
+   *
+   * @return the start shape expression if it has been declared or the first one. None if there are no shape expressions 
+   */   
+  lazy val startShapeExpr: Option[ShapeExpr] = 
+    getShape(Start).orElse(shapes.headOption)   
+
 }
 
 object Schema {
