@@ -7,6 +7,7 @@ import org.wikidata.wdtk.datamodel.interfaces.{SiteLink => WBSiteLink, _}
 
 import java.io.ByteArrayOutputStream
 import scala.collection.JavaConverters._
+import es.weso.rdf.RDFBuilder
 
 object ValueWriter {
 

@@ -206,7 +206,7 @@ object ShEx2WShEx {
   def apply(
     convertOptions: ConvertOptions = ConvertOptions.default
     ): ShEx2WShEx = {
-    // Note: I think 'new' is needed to avoid infinite loop  
+    // Note: 'new' is needed to avoid infinite loop  
     new ShEx2WShEx(convertOptions)
   }
 }

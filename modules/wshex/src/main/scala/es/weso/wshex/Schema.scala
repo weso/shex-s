@@ -7,15 +7,6 @@ import java.nio.file.Path
 import cats.effect.IO
 import es.weso.wbmodel._
 
-
-sealed trait WShExFormat
-case object CompactFormat extends WShExFormat 
-case object JSONFormat extends WShExFormat
-
-sealed abstract class ParseError(msg: String) extends Product with Serializable
-case class ParseException(e: Throwable) extends ParseError(e.getMessage())
-case class ConversionError(e: ConvertError) extends ParseError(s"Error converting shEx to WShEx\nError: ${e}")
-
 case class Schema(
   shapesMap: Map[ShapeLabel, ShapeExpr],
   start: Option[ShapeExpr] = None,
@@ -112,17 +103,6 @@ object Schema {
     }
 
     
- def unsafeFromString(str: String, format: WShExFormat): Either[ParseError, Schema] = {
-        import cats.effect.unsafe.implicits.global
-        try {
-          val schema = es.weso.shex.Schema.fromString(str,cnvFormat(format)).unsafeRunSync()
-          val wShEx = ShEx2WShEx().convertSchema(schema)
-          wShEx.bimap(ConversionError(_), identity)
-        } catch {
-            case e: Exception => ParseException(e).asLeft
-        }
-    }
-
   def fromPath(
    path: Path, 
    format: WShExFormat = CompactFormat
@@ -158,12 +138,33 @@ object Schema {
     fromPath(path, format).unsafeRunSync()
   }
 
+    /**
+    * Read a Schema from a file
+    * This version is unsafe in the sense that it can throw exceptions
+    * Use `fromPath` for a safe version which returns an `IO[Schema]`
+    *
+    * @param str string that represents the schema
+    * @param format it can be CompactFormat or JsonFormat
+    * @return the schema
+    */
+   def unsafeFromString(str: String, format: WShExFormat): Either[ParseError, Schema] = {
+        import cats.effect.unsafe.implicits.global
+        try {
+          val schema = es.weso.shex.Schema.fromString(str,cnvFormat(format)).unsafeRunSync()
+          val wShEx = ShEx2WShEx().convertSchema(schema)
+          wShEx.bimap(ConversionError(_), identity)
+        } catch {
+            case e: Exception => ParseException(e).asLeft
+        }
+    }
+
+
   /**
     * Read a Schema from a file
     * This version is unsafe in the sense that it can throw exceptions
     * Use `fromPath` for a safe version which returns an `IO[Schema]`
     *
-    * @param path file to read
+    * @param str String that represents the schema
     * @param format it can be CompactFormat or JsonFormat
     * @return the schema
     */
