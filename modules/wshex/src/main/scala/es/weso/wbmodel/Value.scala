@@ -6,20 +6,6 @@ import es.weso.rdf.nodes._
 import es.weso.wshex.ShapeLabel
 import org.wikidata.wdtk.datamodel.interfaces.DatatypeIdValue
 
-object Utils {
-
-  def splitIri(iri: IRI): (String, String) = {
-    val iriStr = iri.getLexicalForm
-    val separator = iriStr.lastIndexOf('/') + 1;
-    try {
-      (iriStr.substring(separator), iriStr.substring(0, separator))
-    } catch {
-      case e: IllegalArgumentException => throw new IllegalArgumentException("Invalid Wikibase entity IRI: " + iriStr, e)
-    }
-  }
-
-}
-
 case class VertexId(value: Long) extends AnyVal
 
 sealed abstract trait Value extends Product with Serializable
@@ -50,6 +36,7 @@ case class PropertyId(
                      ) extends EntityId {
   override def toString = s"$id"
 }
+
 object PropertyId {
   implicit val showPropertyId: Show[PropertyId] = Show.show(p => p.id.toString)
   implicit val orderingById: Ordering[PropertyId] = Ordering.by(_.id)
@@ -266,6 +253,11 @@ object Value {
   def Pid(num: Int, site: String = siteDefault): PropertyId = {
     val pid = "P" + num
     PropertyId(pid, mkSite(site, pid))
+  }
+
+  def Qid(num: Int, label: String, id: Long, site: String = Value.siteDefault): Item = {
+    val qid = "Q" + num
+    Item(ItemId(qid, iri = mkSite(site, qid)), VertexId(id), Map(Lang("en") -> label), Map(), Map(), site, List(), List())
   }
 
  
