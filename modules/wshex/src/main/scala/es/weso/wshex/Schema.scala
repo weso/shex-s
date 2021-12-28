@@ -7,15 +7,6 @@ import java.nio.file.Path
 import cats.effect.IO
 import es.weso.wbmodel._
 
-
-sealed trait WShExFormat
-case object CompactFormat extends WShExFormat 
-case object JSONFormat extends WShExFormat
-
-sealed abstract class ParseError(msg: String) extends Product with Serializable
-case class ParseException(e: Throwable) extends ParseError(e.getMessage())
-case class ConversionError(e: ConvertError) extends ParseError(s"Error converting shEx to WShEx\nError: ${e}")
-
 case class Schema(
   shapesMap: Map[ShapeLabel, ShapeExpr],
   start: Option[ShapeExpr] = None,
@@ -78,6 +69,30 @@ case class Schema(
      }
    }
  }
+
+ lazy val shapes: List[ShapeExpr] = {
+    shapesMap.values.toList
+ }
+
+
+  /**
+   * Get a shape with label 
+   *
+   * @param lbl
+   * @return the shape expression with that label
+   */ 
+ def getShape(lbl: ShapeLabel): Option[ShapeExpr] =
+    shapesMap.get(lbl)
+
+
+  /**
+   * Start shape expression in a schema
+   *
+   * @return the start shape expression if it has been declared or the first one. None if there are no shape expressions 
+   */   
+  lazy val startShapeExpr: Option[ShapeExpr] = 
+    getShape(Start).orElse(shapes.headOption)   
+
 }
 
 object Schema {
@@ -88,17 +103,6 @@ object Schema {
     }
 
     
- def unsafeFromString(str: String, format: WShExFormat): Either[ParseError, Schema] = {
-        import cats.effect.unsafe.implicits.global
-        try {
-          val schema = es.weso.shex.Schema.fromString(str,cnvFormat(format)).unsafeRunSync()
-          val wShEx = ShEx2WShEx().convertSchema(schema)
-          wShEx.bimap(ConversionError(_), identity)
-        } catch {
-            case e: Exception => ParseException(e).asLeft
-        }
-    }
-
   def fromPath(
    path: Path, 
    format: WShExFormat = CompactFormat
@@ -134,12 +138,33 @@ object Schema {
     fromPath(path, format).unsafeRunSync()
   }
 
+    /**
+    * Read a Schema from a file
+    * This version is unsafe in the sense that it can throw exceptions
+    * Use `fromPath` for a safe version which returns an `IO[Schema]`
+    *
+    * @param str string that represents the schema
+    * @param format it can be CompactFormat or JsonFormat
+    * @return the schema
+    */
+   def unsafeFromString(str: String, format: WShExFormat): Either[ParseError, Schema] = {
+        import cats.effect.unsafe.implicits.global
+        try {
+          val schema = es.weso.shex.Schema.fromString(str,cnvFormat(format)).unsafeRunSync()
+          val wShEx = ShEx2WShEx().convertSchema(schema)
+          wShEx.bimap(ConversionError(_), identity)
+        } catch {
+            case e: Exception => ParseException(e).asLeft
+        }
+    }
+
+
   /**
     * Read a Schema from a file
     * This version is unsafe in the sense that it can throw exceptions
     * Use `fromPath` for a safe version which returns an `IO[Schema]`
     *
-    * @param path file to read
+    * @param str String that represents the schema
     * @param format it can be CompactFormat or JsonFormat
     * @return the schema
     */

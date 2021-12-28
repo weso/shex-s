@@ -7,22 +7,24 @@ lazy val supportedScalaVersions = List(
   scala212,
 )
 
-// val Java11 = "adopt@1.11"
-val Java8 = "adopt@1.8"
+val Java11 = JavaSpec.temurin("11") // "adopt@1.11"
 
-lazy val srdfVersion             = "0.1.105"
+// val Java11 = "adopt@1.11"
+// val Java8 = "adopt@1.8"
+
+lazy val srdfVersion             = "0.1.106"
 lazy val utilsVersion            = "0.2.2"
 lazy val documentVersion         = "0.0.34"
 
 // Dependency versions
-lazy val antlrVersion            = "4.9.3"
+// lazy val antlrVersion            = "4.9.3"
 lazy val catsVersion             = "2.7.0"
-lazy val catsEffectVersion       = "3.3.0"
+lazy val catsEffectVersion       = "3.3.1"
 lazy val commonsTextVersion      = "1.8"
 lazy val declineVersion          = "2.2.0"
 lazy val circeVersion            = "0.14.1"
-lazy val fs2Version              = "3.2.3"
-lazy val jenaVersion             = "4.1.0"
+lazy val fs2Version              = "3.2.4"
+lazy val jenaVersion             = "4.3.2"
 lazy val junitVersion            = "4.13.2"
 lazy val junitInterfaceVersion   = "0.13.2"
 lazy val jgraphtVersion          = "1.4.0"
@@ -37,7 +39,7 @@ lazy val wikidataToolkitVersion  = "0.12.1"
 lazy val xercesVersion           = "2.12.1"
 
 // Dependency modules
-lazy val antlr4            = "org.antlr"                  % "antlr4"               % antlrVersion
+// lazy val antlr4            = "org.antlr"                  % "antlr4"               % antlrVersion
 lazy val catsCore          = "org.typelevel"              %% "cats-core"           % catsVersion
 lazy val catsKernel        = "org.typelevel"              %% "cats-kernel"         % catsVersion
 lazy val catsEffect        = "org.typelevel"              %% "cats-effect"         % catsEffectVersion
@@ -86,7 +88,7 @@ lazy val pprint         = "com.lihaoyi"                %% "pprint"        % ppri
 lazy val typesafeConfig = "com.typesafe"               % "config"         % typesafeConfigVersion
 lazy val xercesImpl     = "xerces"                     % "xercesImpl"     % xercesVersion
 
-ThisBuild / githubWorkflowJavaVersions := Seq(Java8)
+ThisBuild / githubWorkflowJavaVersions := Seq(Java11)
 
 lazy val shexs = project
   .in(file("."))
@@ -252,7 +254,7 @@ lazy val shapepath = project
       circeParser,
       catsEffect,
       pprint,
-      antlr4,
+      // antlr4,
       testsuite,
       scalacheck % Test,
       munit % Test,
@@ -475,7 +477,7 @@ lazy val wixSettings = Seq(
 def antlrSettings(packageName: String) = Seq(
   antlr4GenListener in Antlr4 := true,
   antlr4GenVisitor in Antlr4 := true,
-  antlr4Dependency in Antlr4 := antlr4,
+  // antlr4Dependency in Antlr4 := antlr4,
   antlr4PackageName in Antlr4 := Some(packageName)
 )
 
