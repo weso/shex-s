@@ -9,7 +9,5 @@ addSbtPlugin("com.typesafe.sbt"  % "sbt-native-packager" % "1.8.1")
 addSbtPlugin("org.lyranthe.sbt"  % "partial-unification" % "1.1.2")
 addSbtPlugin("org.scalameta"     % "sbt-mdoc"            % "2.2.24")
 addSbtPlugin("org.scoverage"     % "sbt-scoverage"       % "1.8.2")
-
 addSbtPlugin("com.simplytyped"   % "sbt-antlr4"          % "0.8.3")
-// addSbtPlugin("ch.epfl.lamp"      % "sbt-dotty"           % "0.4.2")
 addCompilerPlugin("com.olegpy"   %% "better-monadic-for" % "0.3.1")
