@@ -18,8 +18,7 @@ import java.io.InputStream
 import java.io.InputStreamReader
 import java.io.ByteArrayInputStream
 
-case class Schema private
-                ( id: IRI,
+case class Schema(id: IRI,
                   prefixes: Option[PrefixMap],
                   base: Option[IRI],
                   startActs: Option[List[SemAct]],
