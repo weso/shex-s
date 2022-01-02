@@ -471,10 +471,10 @@ object ShExError {
     shapeTyping: ShapeTyping, 
     attempt: Attempt, 
     rdf: RDFReader) 
-    extends ShExError(s"Node ${node.show} has not shape ${label.toRDFNode.show} in ${shapeTyping.showShapeTyping}") 
+    extends ShExError(s"Node ${node.show} doesn't have shape ${label.toRDFNode.show} in ${shapeTyping.showShapeTyping}") 
     {
       override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
-        s"""HasNoType ${nodesPrefixMap.qualify(node)} has not type ${shapesPrefixMap.qualify(label.toRDFNode)} in ${shapeTyping.showShort(nodesPrefixMap,shapesPrefixMap)}"""
+        s"""${nodesPrefixMap.qualify(node)} doesn't have shape ${shapesPrefixMap.qualify(label.toRDFNode)} in ${shapeTyping.showShort(nodesPrefixMap,shapesPrefixMap)}"""
       }
 
      override def toJson: Json = Json.obj(
@@ -484,7 +484,7 @@ object ShExError {
           ShExError.node2Json(node,rdf)
          }
        ),
-       ("shapeTyping", shapeTyping.showShapeTyping.asJson)
+       ("shapeTyping", shapeTyping.asJson)
       ) 
 
   }
