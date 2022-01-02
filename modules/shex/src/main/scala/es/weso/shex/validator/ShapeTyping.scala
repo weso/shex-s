@@ -11,10 +11,6 @@ import es.weso.shex.shexR.PREFIXES.sx_start
 import io.circe._
 import io.circe.syntax._
 
-// import es.weso.rdf.RDFBuilder
-// import cats.effect._
-// import cats.effect.concurrent._
-
 case class ShapeTyping(
    t: Typing[RDFNode, ShapeType, ShExError, String]
 ) {
@@ -49,6 +45,7 @@ case class ShapeTyping(
   def hasNoType(node: RDFNode, label: ShapeLabel): Boolean = {
     getFailedValues(node).filter(_.hasLabel(label)).nonEmpty
   }
+
 
   def getTypingResult(node: RDFNode, label: ShapeLabel): Option[TypingResult[ShExError, String]] =
     t.getMap.get(node).map(_.toList.filter(_._1.label.contains(label)).map(_._2).head)
@@ -97,15 +94,8 @@ case class ShapeTyping(
        ).mkString("\n"))
        s
       }
-    val appInfo = typingResult2Json(t) 
+    val appInfo = ShapeTyping.typingResult2Json(t) 
     Info(status, reason, Some(appInfo))
-  }
-
-  private def typingResult2Json(t: TypingResult[ShExError,String]): Json = {
-     if (t.isOK) Json.obj(("evidences", Json.fromValues(t.getEvidences.getOrElse(List()).map(Json.fromString(_)))))
-     else 
-       Json.obj(("errors", 
-         Json.fromValues(t.getErrors.getOrElse(List()).map(_.asJson))))
   }
 
   private def typing2Labels(m: collection.Map[ShapeType, TypingResult[ShExError, String]],
@@ -156,6 +146,7 @@ case class ShapeTyping(
     import ShapeTyping._
     t.show
   }
+
 }
 
 object ShapeTyping {
@@ -193,6 +184,31 @@ object ShapeTyping {
   implicit def showPair: Show[(ShapeTyping, Evidences)] = new Show[(ShapeTyping, Evidences)] {
     def show(e: (ShapeTyping, Evidences)): String = {
       s"Typing: ${e._1.show}\n Evidences:\n${e._2.show}"
+    }
+  }
+
+  def typingResult2Json(t: TypingResult[ShExError,String]): Json = {
+     if (t.isOK) Json.obj(("evidences", Json.fromValues(t.getEvidences.getOrElse(List()).map(Json.fromString(_)))))
+     else 
+       Json.obj(("errors", 
+         Json.fromValues(t.getErrors.getOrElse(List()).map(_.asJson))))
+  }
+
+
+  implicit def encoderShapeTyping: Encoder[ShapeTyping] = new Encoder[ShapeTyping] {
+    implicit lazy val keyEncoderRDFNode: KeyEncoder[RDFNode] = new KeyEncoder[RDFNode] {
+     final def apply(p: RDFNode): String = p.show
+    }
+    implicit lazy val keyEncoderShapeType: KeyEncoder[ShapeType] = new KeyEncoder[ShapeType] {
+     final def apply(p: ShapeType): String = p.show
+    }
+    implicit lazy val typingResultEncoder: Encoder[TypingResult[ShExError,String]] = new Encoder[TypingResult[ShExError,String]] {
+      final def apply(t: TypingResult[ShExError,String]): Json = typingResult2Json(t)
+    }
+
+    final def apply(t: ShapeTyping): Json = {
+      val m = t.getMap
+      m.asJson
     }
   }
 
