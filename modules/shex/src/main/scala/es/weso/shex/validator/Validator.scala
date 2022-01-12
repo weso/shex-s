@@ -21,7 +21,7 @@ import es.weso.utils.internal.CollectionCompat._
   * ShEx validator
   */
 case class Validator(schema: ResolvedSchema,
-                     externalResolver: ExternalResolver = NoAction,
+                     externalResolver: ExternalResolver = ExternalResolver.NoAction,
                      builder: RDFBuilder
                      )
     extends ShExChecker
@@ -924,7 +924,7 @@ object Validator {
                builder: RDFBuilder,
                verbose: Boolean = false
               ): IO[Result] = {
-    val validator = Validator(schema, NoAction, builder)
+    val validator = Validator(schema, ExternalResolver.NoAction, builder)
     validator.validateShapeMap(rdf, fixedShapeMap, verbose)
   } 
 

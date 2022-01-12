@@ -20,8 +20,9 @@ import es.weso.rdf.jena.RDFAsJenaModel
 import es.weso.shex.ResolvedSchema
 import es.weso.shex.validator.Validator
 import es.weso.rdf.PrefixMap
-import es.weso.shex.validator.ExternalIRIResolver
+import es.weso.shex.validator.ExternalResolver._
 import ManifestPrefixes._
+import es.weso.shex.validator.ExternalResolver
 
 object Utils {
 
@@ -122,8 +123,9 @@ object Utils {
              // _         <- testInfoValue(s"shapeMap", shapeMap, verbose)
              resolvedSchema <- ResolvedSchema.resolve(schema, Some(fa.schema))
              // _         <- testInfoValue(s"resolvedSchema", resolvedSchema, verbose)
+             externalResolver: ExternalResolver = fa.shapeExterns.fold[ExternalResolver](ExternalResolver.NoAction)(ExternalResolver.ExternalIRIResolver(_))
              resultVal <- Validator(schema = resolvedSchema, 
-                externalResolver = ExternalIRIResolver(fa.shapeExterns),
+                externalResolver = externalResolver,  // ExternalIRIResolver(fa.shapeExterns),
                 builder = builder
                ).validateShapeMap(data, shapeMap)
              resultShapeMap <- resultVal.toResultShapeMap
