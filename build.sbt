@@ -19,7 +19,7 @@ lazy val documentVersion         = "0.0.34"
 // Dependency versions
 // lazy val antlrVersion            = "4.9.3"
 lazy val catsVersion             = "2.7.0"
-lazy val catsEffectVersion       = "3.3.1"
+lazy val catsEffectVersion       = "3.3.4"
 lazy val circeVersion            = "0.14.1"
 lazy val commonsTextVersion      = "1.8"
 lazy val declineVersion          = "2.2.0"
@@ -106,8 +106,9 @@ lazy val shexs = project
     commonSettings,
     packagingSettings,
     wixSettings)
-  .aggregate(depGraphs, wshex, shex, shexTest, rbe, wikibaserdf, shapepath, shapemap, docs)
-  .dependsOn(depGraphs, wshex, shex, shexTest, rbe, wikibaserdf, shapepath, shapemap)
+  .aggregate(depGraphs, wshex, shex, shexTest, rbe, wikibaserdf, shapepath, shapemap, docs, shexsjena)
+  .aggregate(depGraphs, wshex, shex, shexTest, rbe, wikibaserdf, shapepath, shapemap, docs, shexsjena)
+  .dependsOn(depGraphs, wshex, shex, shexTest, rbe, wikibaserdf, shapepath, shapemap, shexsjena)
   .settings(
     libraryDependencies ++= Seq(
       catsCore,
@@ -278,7 +279,7 @@ lazy val wikibaserdf = project
       srdfJena,
     ),
     testFrameworks ++= Seq(MUnitFramework),
-    testOptions.in(Test) += Tests.Argument(MUnitFramework, "--exclude-tags=Slow")
+    Test / testOptions += Tests.Argument(MUnitFramework, "--exclude-tags=Slow")
   ).dependsOn(
     shex
   )
@@ -290,8 +291,8 @@ lazy val shexTest = project
     crossScalaVersions := supportedScalaVersions,
     commonSettings,
     inConfig(CompatTest)(Defaults.testTasks),
-    testOptions in Test := Seq(Tests.Filter(noCompatFilter)),
-    testOptions in CompatTest := Seq(Tests.Filter(compatFilter))
+    Test / testOptions := Seq(Tests.Filter(noCompatFilter)),
+    CompatTest / testOptions := Seq(Tests.Filter(compatFilter))
   )
   .dependsOn(
     shex,
@@ -348,6 +349,25 @@ lazy val rbe = project
     ) ++ macroDependencies(scalaVersion.value)
   )
 
+lazy val shexsjena = project
+  .in(file("modules/shexsjena"))
+//  .disablePlugins(RevolverPlugin)
+  .dependsOn(shex)
+  .settings(
+    commonSettings
+  )
+  .settings(
+    crossScalaVersions := supportedScalaVersions,
+    libraryDependencies ++= Seq(
+      catsCore,
+      catsKernel,
+      srdfJena,
+      catsEffect,
+      utils,
+    ) ++ macroDependencies(scalaVersion.value)
+  )
+
+
 lazy val docs = project
   .in(file("shexs-docs"))
   .settings(
@@ -355,7 +375,7 @@ lazy val docs = project
     mdocSettings,
     ScalaUnidoc / unidoc / unidocProjectFilter := inAnyProject -- inProjects(noDocProjects: _*)
    )
-  .dependsOn(shex, shapemap, rbe, shexTest, wikibaserdf, shapepath, depGraphs, wshex)
+  .dependsOn(shex, shapemap, rbe, shexTest, wikibaserdf, shapepath, depGraphs, wshex, shexsjena)
   .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin)
   .settings(
     // This is based on this question: https://issueexplorer.com/issue/scalameta/mdoc/545
@@ -410,12 +430,12 @@ lazy val sharedDependencies = Seq(
 )
 
 lazy val packagingSettings = Seq(
-  mainClass in Compile := Some("es.weso.shexs.Main"),
-  mainClass in assembly := Some("es.weso.shexs.Main"),
-  test in assembly := {},
-  assemblyJarName in assembly := "shex-s.jar",
-  packageSummary in Linux := name.value,
-  packageSummary in Windows := name.value,
+  Compile / mainClass := Some("es.weso.shexs.Main"),
+  assembly / mainClass := Some("es.weso.shexs.Main"),
+  assembly / test := {},
+  assembly / assemblyJarName  := "shex-s.jar",
+  Linux / packageSummary  := name.value,
+  Windows / packageSummary  := name.value,
   packageDescription := name.value
 )
 
@@ -475,10 +495,10 @@ lazy val wixSettings = Seq(
 ) ++ warnUnusedImport */
 
 def antlrSettings(packageName: String) = Seq(
-  antlr4GenListener in Antlr4 := true,
-  antlr4GenVisitor in Antlr4 := true,
+  Antlr4 / antlr4GenListener  := true,
+  Antlr4 / antlr4GenVisitor := true,
   // antlr4Dependency in Antlr4 := antlr4,
-  antlr4PackageName in Antlr4 := Some(packageName)
+  Antlr4 / antlr4PackageName := Some(packageName)
 )
 
 /*lazy val publishSettings = Seq(
@@ -499,8 +519,8 @@ def antlrSettings(packageName: String) = Seq(
 
 lazy val warnUnusedImport = Seq(
  // scalacOptions ++= (if (isDotty.value) Nil else Seq("-Ywarn-unused:imports")),
-  scalacOptions in (Compile, console) ~= { _.filterNot(Set("-Ywarn-unused-import", "-Ywarn-unused:imports")) },
-  scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value
+  Compile / console / scalacOptions ~= { _.filterNot(Set("-Ywarn-unused-import", "-Ywarn-unused:imports")) },
+  Test / console /scalacOptions := (Compile / console / scalacOptions).value
 )
 
 lazy val commonSettings = compilationSettings ++ sharedDependencies ++ Seq(
