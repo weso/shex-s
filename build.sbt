@@ -18,25 +18,25 @@ lazy val documentVersion = "0.0.34"
 
 // Dependency versions
 // lazy val antlrVersion            = "4.9.3"
-lazy val catsVersion             = "2.7.0"
-lazy val catsEffectVersion       = "3.3.4"
-lazy val circeVersion            = "0.14.1"
-lazy val commonsTextVersion      = "1.8"
-lazy val declineVersion          = "2.2.0"
-lazy val fs2Version              = "3.2.4"
-lazy val jenaVersion             = "4.3.2"
-lazy val junitVersion            = "4.13.2"
-lazy val junitInterfaceVersion   = "0.13.2"
-lazy val jgraphtVersion          = "1.4.0"
-lazy val munitVersion            = "0.7.29"
-lazy val munitEffectVersion      = "1.0.7"
-lazy val pprintVersion           = "0.6.6"
-lazy val rdf4jVersion            = "3.4.2"
-lazy val scalaCollCompatVersion  = "2.6.0"
-lazy val scalacheckVersion       = "1.15.4"
-lazy val typesafeConfigVersion   = "1.4.1"
-lazy val wikidataToolkitVersion  = "0.12.1"
-lazy val xercesVersion           = "2.12.1"
+lazy val catsVersion            = "2.7.0"
+lazy val catsEffectVersion      = "3.3.4"
+lazy val circeVersion           = "0.14.1"
+lazy val commonsTextVersion     = "1.8"
+lazy val declineVersion         = "2.2.0"
+lazy val fs2Version             = "3.2.4"
+lazy val jenaVersion            = "4.3.2"
+lazy val junitVersion           = "4.13.2"
+lazy val junitInterfaceVersion  = "0.13.3"
+lazy val jgraphtVersion         = "1.4.0"
+lazy val munitVersion           = "0.7.29"
+lazy val munitEffectVersion     = "1.0.7"
+lazy val pprintVersion          = "0.6.6"
+lazy val rdf4jVersion           = "3.4.2"
+lazy val scalaCollCompatVersion = "2.6.0"
+lazy val scalacheckVersion      = "1.15.4"
+lazy val typesafeConfigVersion  = "1.4.1"
+lazy val wikidataToolkitVersion = "0.12.1"
+lazy val xercesVersion          = "2.12.1"
 
 // Dependency modules
 // lazy val antlr4            = "org.antlr"                  % "antlr4"               % antlrVersion
@@ -98,12 +98,9 @@ lazy val shexs = project
     WindowsPlugin,
     JavaAppPackaging,
     LauncherJarPlugin
-    )
-    .enablePlugins(BuildInfoPlugin)
-  .settings(
-    commonSettings,
-    packagingSettings,
-    wixSettings)
+  )
+  .enablePlugins(BuildInfoPlugin)
+  .settings(commonSettings, packagingSettings, wixSettings)
   .aggregate(depGraphs, wshex, shex, shexTest, rbe, wikibaserdf, shapepath, shapemap, docs, shexsjena)
   .aggregate(depGraphs, wshex, shex, shexTest, rbe, wikibaserdf, shapepath, shapemap, docs, shexsjena)
   .dependsOn(depGraphs, wshex, shex, shexTest, rbe, wikibaserdf, shapepath, shapemap, shexsjena)
@@ -286,7 +283,8 @@ lazy val wikibaserdf = project
     ),
     testFrameworks ++= Seq(MUnitFramework),
     Test / testOptions += Tests.Argument(MUnitFramework, "--exclude-tags=Slow")
-  ).dependsOn(
+  )
+  .dependsOn(
     shex
   )
 
@@ -369,10 +367,9 @@ lazy val shexsjena = project
       catsKernel,
       srdfJena,
       catsEffect,
-      utils,
+      utils
     ) ++ macroDependencies(scalaVersion.value)
   )
-
 
 lazy val docs = project
   .in(file("shexs-docs"))
@@ -380,7 +377,7 @@ lazy val docs = project
     noPublishSettings,
     mdocSettings,
     ScalaUnidoc / unidoc / unidocProjectFilter := inAnyProject -- inProjects(noDocProjects: _*)
-   )
+  )
   .dependsOn(shex, shapemap, rbe, shexTest, wikibaserdf, shapepath, depGraphs, wshex, shexsjena)
   .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin)
   .settings(
@@ -444,9 +441,9 @@ lazy val packagingSettings = Seq(
   Compile / mainClass := Some("es.weso.shexs.Main"),
   assembly / mainClass := Some("es.weso.shexs.Main"),
   assembly / test := {},
-  assembly / assemblyJarName  := "shex-s.jar",
-  Linux / packageSummary  := name.value,
-  Windows / packageSummary  := name.value,
+  assembly / assemblyJarName := "shex-s.jar",
+  Linux / packageSummary := name.value,
+  Windows / packageSummary := name.value,
   packageDescription := name.value
 )
 
@@ -506,7 +503,7 @@ lazy val wixSettings = Seq(
 ) ++ warnUnusedImport */
 
 def antlrSettings(packageName: String) = Seq(
-  Antlr4 / antlr4GenListener  := true,
+  Antlr4 / antlr4GenListener := true,
   Antlr4 / antlr4GenVisitor := true,
   // antlr4Dependency in Antlr4 := antlr4,
   Antlr4 / antlr4PackageName := Some(packageName)
@@ -529,9 +526,9 @@ def antlrSettings(packageName: String) = Seq(
 )*/
 
 lazy val warnUnusedImport = Seq(
- // scalacOptions ++= (if (isDotty.value) Nil else Seq("-Ywarn-unused:imports")),
+  // scalacOptions ++= (if (isDotty.value) Nil else Seq("-Ywarn-unused:imports")),
   Compile / console / scalacOptions ~= { _.filterNot(Set("-Ywarn-unused-import", "-Ywarn-unused:imports")) },
-  Test / console /scalacOptions := (Compile / console / scalacOptions).value
+  Test / console / scalacOptions := (Compile / console / scalacOptions).value
 )
 
 lazy val commonSettings = compilationSettings ++ sharedDependencies ++ Seq(
