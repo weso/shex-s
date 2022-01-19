@@ -1,5 +1,5 @@
 lazy val scala212 = "2.12.15"
-lazy val scala213 = "2.13.7"
+lazy val scala213 = "2.13.8"
 lazy val scala3   = "3.1.0"
 lazy val supportedScalaVersions = List(
   scala3,
@@ -9,11 +9,9 @@ lazy val supportedScalaVersions = List(
 
 val Java11 = JavaSpec.temurin("11") // "adopt@1.11"
 
-// val Java11 = "adopt@1.11"
-// val Java8 = "adopt@1.8"
 
 lazy val srdfVersion             = "0.1.106"
-lazy val utilsVersion            = "0.2.2"
+lazy val utilsVersion            = "0.2.3"
 lazy val documentVersion         = "0.0.34"
 
 // Dependency versions
@@ -26,11 +24,11 @@ lazy val declineVersion          = "2.2.0"
 lazy val fs2Version              = "3.2.4"
 lazy val jenaVersion             = "4.3.2"
 lazy val junitVersion            = "4.13.2"
-lazy val junitInterfaceVersion   = "0.13.2"
+lazy val junitInterfaceVersion   = "0.13.3"
 lazy val jgraphtVersion          = "1.4.0"
 lazy val munitVersion            = "0.7.29"
 lazy val munitEffectVersion      = "1.0.7"
-lazy val pprintVersion           = "0.6.6"
+lazy val pprintVersion           = "0.7.1"
 lazy val rdf4jVersion            = "3.4.2"
 lazy val scalaCollCompatVersion  = "2.6.0"
 lazy val scalacheckVersion       = "1.15.4"
@@ -96,7 +94,7 @@ lazy val shexs = project
     ScalaUnidocPlugin,
     SiteScaladocPlugin,
     AsciidoctorPlugin,
-    SbtNativePackager,
+    // SbtNativePackager,
     WindowsPlugin,
     JavaAppPackaging,
     LauncherJarPlugin
@@ -314,6 +312,7 @@ lazy val shexTest = project
       utilsTest % Test,
       srdf4j % Test,
       typesafeConfig % Test,
+      pprint % Test
     ),
     testFrameworks ++= Seq(
       new TestFramework("munit.Framework"),
@@ -473,52 +472,17 @@ def priorTo2_13(scalaVersion: String): Boolean =
 lazy val wixSettings = Seq(
   wixProductId := "39b564d5-d381-4282-ada9-87244c76e14b",
   wixProductUpgradeId := "6a710435-9af4-4adb-a597-98d3dd0bade1"
-// The same numbers as in the docs?
-// wixProductId := "ce07be71-510d-414a-92d4-dff47631848a",
-// wixProductUpgradeId := "4552fb0e-e257-4dbd-9ecb-dba9dbacf424"
 )
 
-//lazy val ghPagesSettings = Seq(
-//  git.remoteRepo := "git@github.com:labra/shaclex.git"
-//)
-
-/*lazy val commonSettings = compilationSettings ++ sharedDependencies ++ Seq(
-  organization := "es.weso",
-  resolvers ++= Seq(
-    Resolver.githubPackages("weso"),
-    Resolver.sonatypeRepo("snapshots"),
-    Resolver.sonatypeRepo("releases"),
-  ),
-  coverageHighlighting := true,
-  githubOwner := "weso",
-  githubRepository := "shex-s",
-) ++ warnUnusedImport */
 
 def antlrSettings(packageName: String) = Seq(
+  Antlr4 / antlr4Version := "4.9.3",
   Antlr4 / antlr4GenListener  := true,
   Antlr4 / antlr4GenVisitor := true,
-  // antlr4Dependency in Antlr4 := antlr4,
   Antlr4 / antlr4PackageName := Some(packageName)
 )
 
-/*lazy val publishSettings = Seq(
-  homepage := Some(url("https://github.com/labra/shaclex")),
-  licenses := Seq("MIT" -> url("http://opensource.org/licenses/MIT")),
-  scmInfo := Some(ScmInfo(url("https://github.com/labra/shaclex"), "scm:git:git@github.com:labra/shaclex.git")),
-  autoAPIMappings := true,
-  apiURL := Some(url("http://labra.github.io/shaclex/latest/api/")),
-  pomExtra := <developers>
-                       <developer>
-                         <id>labra</id>
-                         <name>Jose Emilio Labra Gayo</name>
-                         <url>https://github.com/labra/</url>
-                       </developer>
-                     </developers>,
-  publishMavenStyle := true,
-)*/
-
 lazy val warnUnusedImport = Seq(
- // scalacOptions ++= (if (isDotty.value) Nil else Seq("-Ywarn-unused:imports")),
   Compile / console / scalacOptions ~= { _.filterNot(Set("-Ywarn-unused-import", "-Ywarn-unused:imports")) },
   Test / console /scalacOptions := (Compile / console / scalacOptions).value
 )

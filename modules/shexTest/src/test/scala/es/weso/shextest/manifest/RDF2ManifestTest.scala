@@ -21,7 +21,8 @@ class RDF2ManifestTest extends CatsEffectSuite with ValidateManifest {
   }
 
   test("RDF2Manifest negativeSyntax") {
-    checkResults(parseManifest("manifest", "negativeSyntax", validationFolder, None, List("1unknowndatatypeMaxInclusive"), true))
+    checkResults(parseManifest("manifest", "negativeSyntax", 
+      validationFolder, None, List("1unknowndatatypeMaxInclusive"), true))
   }
 
   test("RDF2Manifest negativeStructure") {
@@ -45,12 +46,12 @@ class RDF2ManifestTest extends CatsEffectSuite with ValidateManifest {
     ))
   } 
 
-  test("RDF2Manifest validating".ignore) {
+  test("RDF2Manifest validating".only) {
     checkResults(parseManifest("manifest", 
        "validation", 
        validationFolder, 
-       None,
-       // Some("vitals-RESTRICTS-pass_lie-BP"),
+       // None,
+       Some("vitals-RESTRICTS-pass_lie-BP"),
        List(
          "startNoCode1_pass",
          "1dotNoCode1_pass",
@@ -85,18 +86,14 @@ class RDF2ManifestTest extends CatsEffectSuite with ValidateManifest {
          
          */
        ), 
-       false))
+       true), true)
   }
 
-  def checkResults(process: IO[List[Result]]): IO[Unit] = for { 
+  def checkResults(process: IO[List[Result]], verbose: Boolean = false): IO[Unit] = for { 
       results <- process
       failedValues = results.filter(_.isOk == false)
-      _ <- IO { println(s"${failedValues.size}/${results.size} values failed")}
-      _ <- failedValues.map(fv => 
-        IO { 
-          println(s"Failed value: ${fv.name}\n Reason: ${fv.reason}")
-        }
-      ).sequence
+      _ <- IO.println(s"${failedValues.size}/${results.size} values failed")
+      _ <- failedValues.map(fv => IO.println(s"Failed value: ${fv.name}\n${if (verbose) s"Reason: ${fv.reason}" else ""}")).sequence
   } yield assertEquals(failedValues.map(_.name),List())
 
 }

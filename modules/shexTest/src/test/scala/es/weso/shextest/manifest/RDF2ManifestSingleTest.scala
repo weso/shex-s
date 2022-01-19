@@ -17,7 +17,7 @@ class RDF2ManifestSingleTest extends CatsEffectSuite with ValidateManifest {
        // None, 
        Some(
          // "Extend3G-pass"
-         "1dotRefOR3_fail"
+         "vitals-RESTRICTS-pass_lie-BP"
          ),
        List(),
        verbose = true).map(rs => assertEquals(rs.size > 0, true))
