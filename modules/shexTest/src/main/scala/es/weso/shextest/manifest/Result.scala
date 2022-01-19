@@ -2,7 +2,7 @@ package es.weso.shextest.manifest
 
 import es.weso.rdf.nodes._
 
-case class Result(name: String, isOk: Boolean, reason: String)
+case class Result(name: String, isOk: Boolean, reason: Reason)
 
 sealed trait ResultExpected {
 

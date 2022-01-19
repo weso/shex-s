@@ -23,6 +23,7 @@ import es.weso.rdf.PrefixMap
 import es.weso.shex.validator.ExternalResolver._
 import ManifestPrefixes._
 import es.weso.shex.validator.ExternalResolver
+import Reason._
 
 object Utils {
 
@@ -116,7 +117,7 @@ object Utils {
          lbl = getLabel(fa)
          // _         <- testInfoValue(s"label", lbl, verbose)
          ok <- if (v.traits contains sht_Greedy) {
-           result(name, true, "Ignored sht:Greedy")
+           result(name, true, Ignored("Ignored sht:Greedy"))
          } else {
            val shapeMap = FixedShapeMap(Map(focus -> Map(lbl -> Info())), dataPrefixMap, schema.prefixMap)
            for {
@@ -131,24 +132,14 @@ object Utils {
              resultShapeMap <- resultVal.toResultShapeMap
              _         <- testInfoValue(s"resultShapeMap", resultShapeMap, verbose)
              ok <- if (resultShapeMap.getConformantShapes(focus) contains lbl) {
-               if (shouldValidate) result(name, true, "Conformant shapes match")
+               if (shouldValidate) 
+                 result(name, true, ConformantMatch(focus,lbl,resultShapeMap))
                else
-                 result(name, false, s"Focus $focus conforms to $lbl but should not" ++
-                   s"\nData: \n${dataStr}\nSchema: ${schemaStr}\n" ++
-                   s"${resultShapeMap.getInfo(focus, lbl)}\n" // ++
-                   // s"Schema: ${schema}\n" ++
-                   // s"Data: ${data}"
-                 )
+                 result(name, false, ConformsButShoudnt(focus, lbl, dataStr, schemaStr, resultShapeMap))
              } else {
-               if (!shouldValidate) result(name, true, "Doesn't validate as expected")
+               if (!shouldValidate) result(name, true, DoesntValidateAsExpected)
                else
-                 result(name, false,
-                   s"Focus $focus does not conform to $lbl but should" ++
-                     s"\nData: \n${dataStr}\nSchema: ${schemaStr}\n" ++
-                     s"${resultShapeMap.getInfo(focus, lbl)}\n" /* ++
-                     s"Schema: ${schema}\n" ++
-                     s"Data: ${data}" */
-                 )
+                 result(name, false, DoesntConformButShould(focus,lbl,dataStr,schemaStr,resultShapeMap))
              }
            } yield ok
          }
@@ -157,7 +148,7 @@ object Utils {
      } yield result
   }
 
-  def result[A](name: String, isOk: Boolean, reason: String): IO[Option[Result]] =
+  def result[A](name: String, isOk: Boolean, reason: Reason): IO[Option[Result]] =
     IO.pure(Some(Result(name, isOk, reason)))
 
   private def getLabel(fa: FocusAction): ShapeMapLabel =
@@ -330,9 +321,9 @@ object Utils {
 
              jsonResult     <- fromES(JsonResult.fromJsonString(resultMapStr))
              r <- if (jsonResult.compare(resultShapeMap))
-                    result(name, true, "Json results match")
+                    result(name, true, JsonResultsMatch(jsonResult))
                   else
-                    result(name,false, s"Json results are different. Expected: ${jsonResult.asJson.spaces2}\nObtained: ${resultShapeMap.toString}")
+                    result(name,false, JsonResultsDifferent(resultShapeMap, jsonResult))
            } yield r }
           } yield vv 
           } yield rr))

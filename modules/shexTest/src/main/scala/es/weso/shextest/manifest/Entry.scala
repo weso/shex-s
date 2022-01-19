@@ -111,9 +111,9 @@ case class Validate(override val node: RDFNode,
                 maybeR => maybeR match {
                  case None => FailedResult(id,Some("No result"),None,None)
                  case Some(res) => if (res.isOk == shouldPass) {
-                  PassedResult(id,msg = Some(res.reason)) 
+                  PassedResult(id,msg = Some(res.reason.toString)) 
                  } else {
-                  FailedResult(id, msg = Some(res.reason))
+                  FailedResult(id, msg = Some(res.reason.toString))
                  }
               })
             case mr: MapResultAction => 
@@ -121,9 +121,9 @@ case class Validate(override val node: RDFNode,
                maybeR => maybeR match {
                  case None => FailedResult(id,Some("No result"),None,None)
                  case Some(res) => if (res.isOk == shouldPass) {
-                  PassedResult(id,msg = Some(res.reason)) 
+                  PassedResult(id,msg = Some(res.reason.toString)) 
                  } else {
-                  FailedResult(id, msg = Some(res.reason))
+                  FailedResult(id, msg = Some(res.reason.toString))
                  }
               })
             case ma: ManifestAction => 

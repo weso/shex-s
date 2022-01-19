@@ -6,8 +6,9 @@ import com.typesafe.config.{Config, ConfigFactory}
 import cats.effect._
 import cats.implicits._
 import munit._
+import ValidateManifest._
 
-class RDF2ManifestTest extends CatsEffectSuite with ValidateManifest {
+class RDF2ManifestTest extends CatsEffectSuite {
 
   val conf: Config = ConfigFactory.load()
   val validationFolder = conf.getString("testsFolder")
@@ -21,8 +22,13 @@ class RDF2ManifestTest extends CatsEffectSuite with ValidateManifest {
   }
 
   test("RDF2Manifest negativeSyntax") {
-    checkResults(parseManifest("manifest", "negativeSyntax", 
-      validationFolder, None, List("1unknowndatatypeMaxInclusive"), true))
+    checkResults(
+      parseManifest("manifest", "negativeSyntax", 
+        validationFolder, 
+        None, 
+        List("1unknowndatatypeMaxInclusive"), 
+        true)
+     )
   }
 
   test("RDF2Manifest negativeStructure") {
@@ -50,8 +56,8 @@ class RDF2ManifestTest extends CatsEffectSuite with ValidateManifest {
     checkResults(parseManifest("manifest", 
        "validation", 
        validationFolder, 
-       // None,
-       Some("vitals-RESTRICTS-pass_lie-BP"),
+       None,
+       // Some("vitals-RESTRICTS-pass_lie-BP"),
        List(
          "startNoCode1_pass",
          "1dotNoCode1_pass",
@@ -86,7 +92,7 @@ class RDF2ManifestTest extends CatsEffectSuite with ValidateManifest {
          
          */
        ), 
-       true), true)
+       false), false)
   }
 
   def checkResults(process: IO[List[Result]], verbose: Boolean = false): IO[Unit] = for { 

@@ -1,10 +1,10 @@
 package es.weso.shextest.manifest
 
-
 import com.typesafe.config.{Config, ConfigFactory}
 import munit._
+import ValidateManifest._
 
-class RDF2ManifestLocalTest extends FunSuite with ValidateManifest {
+class RDF2ManifestLocalTest extends FunSuite {
 
   val conf: Config = ConfigFactory.load()
 

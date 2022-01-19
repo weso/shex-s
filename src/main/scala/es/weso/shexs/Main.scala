@@ -1,21 +1,12 @@
 package es.weso.shexs
-// import java.nio.file.Paths
-// import cats.arrow.FunctionK
-// import cats.data.StateT
 import cats.effect._
 import cats.implicits._
-// import cats.~>
 import es.weso.rdf._
 import es.weso.rdf.jena.RDFAsJenaModel
 import es.weso.shapemaps.ShapeMap
 import es.weso.shex.{ResolvedSchema, Schema}
 import es.weso.shex.validator.Validator
-//import org.rogach.scallop._
-//import org.rogach.scallop.exceptions._
 import es.weso.shextest.manifest._
-// import es.weso.shextest.manifest.ShExManifest
-// import fs2._
-//import es.weso.shex.validator.ValidationLog
 import com.monovore.decline._
 import com.monovore.decline.effect._
 import buildinfo._
@@ -28,11 +19,11 @@ import es.weso.shapemaps.ResultShapeMap
 import java.net.URI
 import scala.util.Try
 import cats.data.Validated
-// import es.weso.utils.IOException
 import es.weso.rdf.jena.Endpoint
 import es.weso.rdf.nodes.IRI
 import es.weso.wikibaserdf.WikibaseRDF
 import es.weso.utils.FileUtils._
+import es.weso.shextest.manifest.ValidateManifest._
 
 // Commands  
 case class SchemaMapping(
@@ -57,14 +48,17 @@ case class WikibaseValidate(
     baseIRI: Option[IRI],
     showResultFormat: String, 
     output: Option[Path], verbose: Boolean)
+
 case class ShapePathEval(
     schemaSpec: SchemaSpec, 
     shapePath: String, 
     baseIRI: Option[IRI],
     output: Option[Path], 
     verbose: Boolean)
+
 case class Manifest(
     manifestPath: Path, 
+    testName: TestSelector,
     verbose: Boolean
 )
   
@@ -116,7 +110,10 @@ lazy val schemaPath: Opts[SchemaPath] =
 lazy val dataPath: Opts[DataPath] = (dataOpt,dataFormatOpt).mapN {
     case (path,format) => DataPath(path,Some(format))
   }
-    
+
+lazy val testName: Opts[TestSelector] = 
+  Opts.option[String]("test-name", short = "n", help = "Test name (if none provided, it will run all").orNone.map(TestSelector.fromOption(_))
+
 lazy val endpoint: Opts[EndpointOpt] = uri("endpoint", "endpoint URL").map(EndpointOpt)
 
 def uri(name: String, helpStr: String): Opts[URI] = 
@@ -169,7 +166,7 @@ lazy val manifestOpt = Opts.option[Path]("manifest", short = "m", help = "Path t
 
 lazy val manifestCommand: Opts[Manifest] =
     Opts.subcommand("manifest", "Run manifest file containing tests") {
-      (manifestOpt, verboseOpt).mapN(Manifest)
+      (manifestOpt, testName, verboseOpt).mapN(Manifest)
     }
   
 
@@ -310,7 +307,7 @@ def getShapeMapFromFile(filePath: Path,
     } yield sm
 
 def runManifest(mf: Manifest): IO[ExitCode] =
-    for {
+/*    for {
       eitherManifest <- RDF2Manifest.read(mf.manifestPath, "Turtle", None, true).attempt
       exitCode <- eitherManifest.fold(
         e =>
@@ -323,6 +320,10 @@ def runManifest(mf: Manifest): IO[ExitCode] =
           ) *>
           IO(ExitCode.Success)
       )
-    } yield exitCode
+    } yield exitCode */
+  for {
+    results <- parseManifest(mf.manifestPath.getFileName().toString, mf.manifestPath.getParent().getFileName().toString, mf.manifestPath.getParent().getParent().toString, mf.testName, List(), mf.verbose)
+    _ <- IO.println(results)
+  } yield ExitCode.Success
 
 }

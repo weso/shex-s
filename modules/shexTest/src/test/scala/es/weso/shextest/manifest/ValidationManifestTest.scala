@@ -9,7 +9,7 @@ import es.weso.utils.testsuite._
 import scala.concurrent.duration._
 import es.weso.utils.FileUtils._
 
-class ValidationManifestCompatTest extends CatsEffectSuite with ValidateManifest {
+class ValidationManifestCompatTest extends CatsEffectSuite {
 
   override def munitTimeout: Duration = 5.minutes
 

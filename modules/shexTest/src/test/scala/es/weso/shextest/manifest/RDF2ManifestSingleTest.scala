@@ -2,8 +2,9 @@ package es.weso.shextest.manifest
 import java.nio.file.Paths
 import com.typesafe.config.{Config, ConfigFactory}
 import munit._
+import ValidateManifest._
 
-class RDF2ManifestSingleTest extends CatsEffectSuite with ValidateManifest {
+class RDF2ManifestSingleTest extends CatsEffectSuite {
 
   val conf: Config = ConfigFactory.load()
   val validationFolder = conf.getString("testsFolder")
