@@ -35,6 +35,7 @@ lazy val scalacheckVersion       = "1.15.4"
 lazy val typesafeConfigVersion   = "1.4.1"
 lazy val wikidataToolkitVersion  = "0.12.1"
 lazy val xercesVersion           = "2.12.1"
+lazy val slf4jVersion            = "1.7.3"
 
 // Dependency modules
 // lazy val antlr4            = "org.antlr"                  % "antlr4"               % antlrVersion
@@ -55,6 +56,8 @@ lazy val junit             = "junit"             % "junit"            % junitVer
 lazy val junitInterface    = "com.github.sbt"    % "junit-interface"  % junitInterfaceVersion
 lazy val munit             = "org.scalameta"     %% "munit"           % munitVersion
 lazy val munitEffect       = "org.typelevel"     %% "munit-cats-effect-3" % munitEffectVersion
+lazy val slf4jAPI          = "org.slf4j"         % "slf4j-api"            % slf4jVersion
+lazy val slf4jSimple       = "org.slf4j"         % "slf4j-simple"         % slf4jVersion
 
 lazy val wdtkDumpFiles =   "org.wikidata.wdtk" % "wdtk-dumpfiles"   % wikidataToolkitVersion
 lazy val wdtkBaseApi   =   "org.wikidata.wdtk" % "wdtk-wikibaseapi" % wikidataToolkitVersion
@@ -114,6 +117,7 @@ lazy val shexs = project
       catsEffect,
       decline,
       declineEffect,
+      slf4jAPI, slf4jSimple,
       srdf,
       srdf4j,
       srdfJena,

@@ -23,7 +23,6 @@ import es.weso.rdf.jena.Endpoint
 import es.weso.rdf.nodes.IRI
 import es.weso.wikibaserdf.WikibaseRDF
 import es.weso.utils.FileUtils._
-import es.weso.shextest.manifest.ValidateManifest._
 
 // Commands  
 case class SchemaMapping(
@@ -56,11 +55,6 @@ case class ShapePathEval(
     output: Option[Path], 
     verbose: Boolean)
 
-case class Manifest(
-    manifestPath: Path, 
-    testName: TestSelector,
-    verbose: Boolean
-)
   
 sealed abstract class SchemaSpec
 case class SchemaPath(schema: Path, schemaFormat: String) extends SchemaSpec
@@ -111,8 +105,6 @@ lazy val dataPath: Opts[DataPath] = (dataOpt,dataFormatOpt).mapN {
     case (path,format) => DataPath(path,Some(format))
   }
 
-lazy val testName: Opts[TestSelector] = 
-  Opts.option[String]("test-name", short = "n", help = "Test name (if none provided, it will run all").orNone.map(TestSelector.fromOption(_))
 
 lazy val endpoint: Opts[EndpointOpt] = uri("endpoint", "endpoint URL").map(EndpointOpt)
 
@@ -162,12 +154,6 @@ lazy val wikibaseCommand: Opts[WikibaseValidate] =
       .mapN(WikibaseValidate)
     }
 
-lazy val manifestOpt = Opts.option[Path]("manifest", short = "m", help = "Path to manifest file.")
-
-lazy val manifestCommand: Opts[Manifest] =
-    Opts.subcommand("manifest", "Run manifest file containing tests") {
-      (manifestOpt, testName, verboseOpt).mapN(Manifest)
-    }
   
 
 def info(msg: String, verbose: Boolean): IO[Unit] = 
@@ -178,13 +164,13 @@ override def main: Opts[IO[ExitCode]] =
    (schemaMappingCommand orElse 
     validateCommand orElse
     shapePathValidateCommand orElse 
-    manifestCommand orElse
+    Manifest.manifestCommand orElse
     wikibaseCommand
    ).map {
      case smc: SchemaMapping => doSchemaMapping(smc) 
      case vc : Validate => doValidate(vc)
      case spc: ShapePathEval => doShapePathEval(spc)
-     case mf: Manifest => runManifest(mf)
+     case mf: Manifest => mf.run()
      case wc: WikibaseValidate => doWikibaseValidate(wc)
    }.map(
      _.handleErrorWith(infoError)
@@ -305,25 +291,5 @@ def getShapeMapFromFile(filePath: Path,
       sm <- IO.fromEither(ShapeMap.fromString(str.toString, shapeMapFormat, baseIRI, nodesPrefixMap,shapesPrefixMap)
         .leftMap(err => new RuntimeException(s"Error parsing shapeMap: ${err})")))
     } yield sm
-
-def runManifest(mf: Manifest): IO[ExitCode] =
-/*    for {
-      eitherManifest <- RDF2Manifest.read(mf.manifestPath, "Turtle", None, true).attempt
-      exitCode <- eitherManifest.fold(
-        e =>
-          IO.println(s"Error reading manifest: $e") *>
-          IO(ExitCode.Error),
-        manifest =>
-          IO.println(
-            s"""|Manifest read with ${manifest.entries.length} entries
-          |Number of includes: ${manifest.includes.length}""".stripMargin
-          ) *>
-          IO(ExitCode.Success)
-      )
-    } yield exitCode */
-  for {
-    results <- parseManifest(mf.manifestPath.getFileName().toString, mf.manifestPath.getParent().getFileName().toString, mf.manifestPath.getParent().getParent().toString, mf.testName, List(), mf.verbose)
-    _ <- IO.println(results)
-  } yield ExitCode.Success
 
 }
