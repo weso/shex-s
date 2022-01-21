@@ -7,6 +7,8 @@ import cats.effect._
 import cats.implicits._
 import munit._
 import ValidateManifest._
+import TestSelector._
+import es.weso.utils.VerboseLevel
 
 class RDF2ManifestTest extends CatsEffectSuite {
 
@@ -15,9 +17,9 @@ class RDF2ManifestTest extends CatsEffectSuite {
     
   test("RDF2Manifest schemas") {
     checkResults(parseManifest("manifest", "schemas", validationFolder, 
-      None, 
+      All, 
       List("AND3G","Extend3G","ExtendANDExtend3GAND3G"), 
-      false)
+      VerboseLevel.Nothing)
     )
   }
 
@@ -25,9 +27,9 @@ class RDF2ManifestTest extends CatsEffectSuite {
     checkResults(
       parseManifest("manifest", "negativeSyntax", 
         validationFolder, 
-        None, 
+        All, 
         List("1unknowndatatypeMaxInclusive"), 
-        true)
+        VerboseLevel.Info)
      )
   }
 
@@ -36,7 +38,7 @@ class RDF2ManifestTest extends CatsEffectSuite {
       "manifest",
       "negativeStructure",
       validationFolder,
-      None,
+      All,
       List(
         "1MissingRef",
         "1focusMissingRefdot",
@@ -48,7 +50,7 @@ class RDF2ManifestTest extends CatsEffectSuite {
         "Cycle2Negation",
         "Cycle2Extra"
       ),
-      false
+      VerboseLevel.Nothing
     ))
   } 
 
@@ -56,7 +58,7 @@ class RDF2ManifestTest extends CatsEffectSuite {
     checkResults(parseManifest("manifest", 
        "validation", 
        validationFolder, 
-       None,
+       All,
        // Some("vitals-RESTRICTS-pass_lie-BP"),
        List(
          "startNoCode1_pass",
@@ -92,7 +94,7 @@ class RDF2ManifestTest extends CatsEffectSuite {
          
          */
        ), 
-       false), false)
+       VerboseLevel.Nothing), false)
   }
 
   def checkResults(process: IO[List[Result]], verbose: Boolean = false): IO[Unit] = for { 

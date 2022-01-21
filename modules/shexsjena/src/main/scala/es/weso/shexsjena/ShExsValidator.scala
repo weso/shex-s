@@ -20,6 +20,7 @@ import cats.effect.unsafe.implicits.global
 import es.weso.utils.IOUtils._
 import es.weso.shapemaps._
 import cats.data.NonEmptyList
+import es.weso.utils.VerboseLevel
 
 /*case class ValidatingNodeShapeException(
  schema: Schema, 
@@ -38,7 +39,7 @@ case class ShExsValidator(schema: Schema) {
       model: Model,  
       node: String, 
       shape: String, 
-      verbose: Boolean
+      verbose: VerboseLevel
       ): ResultShapeMap = {
         val cmp: IO[ResultShapeMap] = RDFAsJenaModel.empty.flatMap(_.use(builder => 
             for {
@@ -56,7 +57,7 @@ case class ShExsValidator(schema: Schema) {
     def validateShapeMapSync(
       model: Model,  
       shapeMap: String, 
-      verbose: Boolean
+      verbose: VerboseLevel
       ): ResultShapeMap = {
         val cmp: IO[ResultShapeMap] = RDFAsJenaModel.empty.flatMap(_.use(builder => 
             for {

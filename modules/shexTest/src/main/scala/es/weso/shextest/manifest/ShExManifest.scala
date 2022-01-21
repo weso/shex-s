@@ -5,6 +5,7 @@ import java.nio.file.Path
 import cats.effect.IO
 import es.weso.utils.testsuite.TestSuite
 import java.net.URI
+import es.weso.utils._
 
 
 case class ShExManifest(
@@ -13,7 +14,7 @@ case class ShExManifest(
   entries: List[Entry],
   includes: List[(RDFNode, Option[ShExManifest])]) {
 
-  def toTestSuite(uri: URI, verbose: Boolean): TestSuite = 
+  def toTestSuite(uri: URI, verbose: VerboseLevel): TestSuite = 
    TestSuite(entries.map(_.toTestEntry(uri, verbose)))  
 }
 

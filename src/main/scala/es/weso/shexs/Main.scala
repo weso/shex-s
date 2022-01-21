@@ -23,6 +23,7 @@ import es.weso.rdf.jena.Endpoint
 import es.weso.rdf.nodes.IRI
 import es.weso.wikibaserdf.WikibaseRDF
 import es.weso.utils.FileUtils._
+import es.weso.utils.VerboseLevel
 
 // Commands  
 case class SchemaMapping(
@@ -30,7 +31,7 @@ case class SchemaMapping(
     mapping: Path, 
     baseIRI: Option[IRI],
     output: Option[Path], 
-    verbose: Boolean)
+    verbose: VerboseLevel)
 case class Validate(
     schemaSpec: SchemaSpec, 
     dataSpec: DataSpec, 
@@ -38,7 +39,7 @@ case class Validate(
     baseIRI: Option[IRI], 
     showResultFormat: String, 
     output: Option[Path], 
-    verbose: Boolean)
+    verbose: VerboseLevel)
 case class WikibaseValidate(
     schemaSpec: SchemaSpec, 
     endpoint: EndpointOpt, 
@@ -46,14 +47,15 @@ case class WikibaseValidate(
     shapeMapSpec: ShapeMapSpec, 
     baseIRI: Option[IRI],
     showResultFormat: String, 
-    output: Option[Path], verbose: Boolean)
+    output: Option[Path], 
+    verbose: VerboseLevel)
 
 case class ShapePathEval(
     schemaSpec: SchemaSpec, 
     shapePath: String, 
     baseIRI: Option[IRI],
     output: Option[Path], 
-    verbose: Boolean)
+    verbose: VerboseLevel)
 
   
 sealed abstract class SchemaSpec
@@ -89,7 +91,6 @@ lazy val availableShapeMapFormatsStr = availableShapeMapFormats.mkString(",")
 lazy val schemaOpt = Opts.option[Path]("schema", short = "s", help = "Path to ShEx file.")
 lazy val schemaFormatOpt = Opts.option[String]("schemaFormat", metavar = "format", help = s"Schema format, default = ($defaultSchemaFormat). Possible values = ($availableSchemaFormatsStr)").withDefault(defaultSchemaFormat)
 lazy val outputOpt = Opts.option[Path]("output","Output to file (default = console)").orNone
-lazy val verboseOpt = Opts.flag("verbose", "show extra information").orFalse
 lazy val mappingOpt = Opts.option[Path]("mapping", short = "m", metavar = "mappings-file", help = "Path to Mappings file.")
 lazy val dataOpt = Opts.option[Path]("data", short = "d", help = "Path to data file.")
   
@@ -131,18 +132,18 @@ lazy val shapeMapSpec = (shapeMapOpt, shapeMapFormatOpt).mapN(ShapeMapSpec)
   
 lazy val schemaMappingCommand: Opts[SchemaMapping] = 
     Opts.subcommand("mapping", "Convert a schema through a mapping") {
-      (schemaSpec, mappingOpt, baseIRI, outputOpt, verboseOpt).mapN(SchemaMapping)
+      (schemaSpec, mappingOpt, baseIRI, outputOpt, VerboseLevelOpt.verboseLevel).mapN(SchemaMapping)
     }
 
 lazy val validateCommand: Opts[Validate] = 
     Opts.subcommand("validate", "Validate RDF data using a schema and a shape map") {
-      (schemaSpec, dataSpec, shapeMapSpec, baseIRI, showResultFormatOpt, outputOpt, verboseOpt)
+      (schemaSpec, dataSpec, shapeMapSpec, baseIRI, showResultFormatOpt, outputOpt, VerboseLevelOpt.verboseLevel)
       .mapN(Validate)
     }
 
 lazy val shapePathValidateCommand: Opts[ShapePathEval] =
     Opts.subcommand("shapePath","Validate a shape path") {
-      (schemaSpec, shapePathOpt, baseIRI,outputOpt, verboseOpt)
+      (schemaSpec, shapePathOpt, baseIRI,outputOpt, VerboseLevelOpt.verboseLevel)
       .mapN(ShapePathEval)
     }
 
@@ -150,7 +151,7 @@ lazy val prefixMapPath: Opts[Option[Path]] = Opts.option[Path]("prefixMapPath","
 
 lazy val wikibaseCommand: Opts[WikibaseValidate] = 
     Opts.subcommand("wikibase", "Validate RDF data from wikibase") {
-      (schemaSpec, endpoint, prefixMapPath, shapeMapSpec, baseIRI, showResultFormatOpt, outputOpt, verboseOpt)
+      (schemaSpec, endpoint, prefixMapPath, shapeMapSpec, baseIRI, showResultFormatOpt, outputOpt, VerboseLevelOpt.verboseLevel)
       .mapN(WikibaseValidate)
     }
 

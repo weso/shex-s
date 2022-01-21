@@ -24,6 +24,9 @@ import es.weso.shex.validator.ExternalResolver._
 import ManifestPrefixes._
 import es.weso.shex.validator.ExternalResolver
 import Reason._
+import es.weso.utils._
+import es.weso.utils.VerboseLevel.{Info => InfoLevel, _}
+
 
 object Utils {
 
@@ -94,17 +97,21 @@ object Utils {
       shouldValidate: Boolean,
       name: String,
       folderURI: URI,
-      verbose: Boolean
+      verbose: VerboseLevel
   ): IO[Option[Result]] = {
     val focus     = fa.focus
     val schemaUri = mkLocal(fa.schema, schemasBase, folderURI)
     val dataUri   = mkLocal(fa.data, schemasBase, folderURI)
     for {
-      //_         <- testInfo(s"Validating focusAction: $name",verbose)
+      _         <- testInfo(s"Validating focusAction: $name",verbose)
+      _         <- testInfo(s"Schema uri: $schemaUri", verbose)
+      _         <- testInfo(s"Data uri: $dataUri", verbose)
+      _         <- testInfo(s"FOCUS: ${fa.focus}", verbose)
+      _         <- testInfo(s"Shape: ${fa.shape.getOrElse("<>")}", verbose)
       schemaStr <- derefUriIO(schemaUri)
-      //_         <- testInfo(s"schemaStr:\n$schemaStr\n-----end schemaStr\nNest step: deref: $dataUri", verbose)
+//      _         <- testInfo(s"schemaStr:\n$schemaStr\n-----end schemaStr\nNest step: deref: $dataUri", verbose)
       dataStr   <- derefUriIO(dataUri)
-      //_         <- testInfo(s"dataStr:\n$dataStr\n-----end dataStr", verbose)
+//      _         <- testInfo(s"dataStr:\n$dataStr\n-----end dataStr", verbose)
       schema    <- Schema.fromString(schemaStr, "SHEXC", Some(fa.schema))
       //_         <- testInfoValue(s"schema", schema.asJson.spaces2, verbose)
       result      <- for {
@@ -125,12 +132,13 @@ object Utils {
              resolvedSchema <- ResolvedSchema.resolve(schema, Some(fa.schema))
              // _         <- testInfoValue(s"resolvedSchema", resolvedSchema, verbose)
              externalResolver: ExternalResolver = fa.shapeExterns.fold[ExternalResolver](ExternalResolver.NoAction)(ExternalResolver.ExternalIRIResolver(_))
-             resultVal <- Validator(schema = resolvedSchema, 
-                externalResolver = externalResolver,  // ExternalIRIResolver(fa.shapeExterns),
+             validator = Validator(schema = resolvedSchema, 
+                externalResolver = externalResolver,  
                 builder = builder
-               ).validateShapeMap(data, shapeMap)
+               )
+             resultVal <- validator.validateShapeMap(data, shapeMap, verbose)
              resultShapeMap <- resultVal.toResultShapeMap
-             _         <- testInfoValue(s"resultShapeMap", resultShapeMap, verbose)
+             _         <- testInfo(s"resultShapeMap: ${resultShapeMap.showShapeMap(verbose.asBoolean)}", verbose)
              ok <- if (resultShapeMap.getConformantShapes(focus) contains lbl) {
                if (shouldValidate) 
                  result(name, true, ConformantMatch(focus,lbl,resultShapeMap))
@@ -161,13 +169,16 @@ object Utils {
     }
   }
 
-  def testInfo(msg: String, verbose: Boolean): IO[Unit] = 
-    if (verbose) IO {
-      println(msg); 
-    } else IO(())
+  def testInfo(msg: String, verboseLevel: VerboseLevel): IO[Unit] = 
+    verboseLevel.info(msg) 
 
-  def testInfoValue(msg: String, value: Any, verbose: Boolean): IO[Unit] = 
-   if (verbose) IO { pprint.log(value, tag = msg); () }
+
+  def testDebug(msg: String, verboseLevel: VerboseLevel): IO[Unit] = 
+    verboseLevel.debug(msg) 
+
+
+  def testInfoValue(msg: String, value: Any, verboseLevel: VerboseLevel): IO[Unit] = 
+   if (verboseLevel > InfoLevel) IO { pprint.log(value, tag = msg); () }
    else IO(())
 
 
@@ -281,7 +292,7 @@ object Utils {
       v: ValidOrFailureTest,
       name: String,
       folderURI: URI,
-      verbose: Boolean
+      verbose: VerboseLevel
   ): IO[Option[Result]] = {
     v.maybeResult match {
       case None => IO(None) // fail(s"No result specified")
@@ -294,7 +305,7 @@ object Utils {
         for {
           _             <- testInfo(s"Validating mapResult: $name", verbose)
           schemaStr     <- derefUriIO(schemaUri)
-          _             <- testInfo(s"Schema:\n$schemaStr", verbose)
+          _             <- testInfo(s"Schema URI:\n$schemaStr", verbose)
           resultMapStr  <- derefUriIO(resultMapUri)
           
           smapStr       <- derefUriIO(shapeMapUri)
@@ -313,7 +324,7 @@ object Utils {
             res2 <- RDFAsJenaModel.empty
             vv <- ( res1, res2).tupled.use{ case (data,builder) =>
            for {
-             resultVal <- Validator(schema = resolvedSchema, builder = builder).validateShapeMap(data, fixedShapeMap)
+             resultVal <- Validator(schema = resolvedSchema, builder = builder).validateShapeMap(data, fixedShapeMap, verbose)
              resultShapeMap <- resultVal.toResultShapeMap
 
              _             <- testInfo(s"ResultShapeMap:\n$resultShapeMap", verbose)

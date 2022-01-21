@@ -13,23 +13,14 @@ import es.weso.shex.implicits.encoderShEx._
 import io.circe.parser._
 import io.circe.syntax._
 import Reason._
-
+import es.weso.utils._
+import es.weso.utils.VerboseLevel._
 
 trait RunManifest {
 
-  def info(msg: String, verbose: Boolean): IO[Unit] = 
-    if (verbose) {
-      IO.println(msg)
-    } else IO(())
-
-  case class EntryParam(entry: es.weso.shextest.manifest.Entry, 
-    name: String, 
-    parentFolder: String, 
-    testSelector: TestSelector, 
-    ignoreList: List[String]
-    )
-
-  type EntryProcess = EntryParam => IO[Option[Result]]
+/*  def info(msg: String, verbose: VerboseLevel): IO[Unit] = 
+    if (verbose >= Info) IO.println(msg)
+    else IO(()) */
 
   def runManifest(
       name: String,
@@ -37,17 +28,17 @@ trait RunManifest {
       parentFolder: String,
       nameIfSingle: TestSelector,
       ignoreList: List[String],
-      withEntry: EntryProcess,
-      verbose: Boolean
+      withEntry: EntryParam => IO[Option[Result]],
+      verbose: VerboseLevel
   ): IO[List[Result]] = {
     val parentFolderURI = Try { Paths.get(parentFolder).normalize.toUri.toString }.getOrElse("")
     val manifestFolder  = s"$parentFolder/$folder"
     val fileName        = s"$manifestFolder/$name.ttl"
     for {
       mf <- RDF2Manifest.read(Paths.get(fileName), "TURTLE", Some(s"$parentFolderURI/$folder/"), true)
-      _ <- info(s"Manifest read with ${mf.entries.size} entries", verbose)
+      _ <- testInfo(s"Manifest read with ${mf.entries.size} entries", verbose)
       rs <- processManifest(mf, name, manifestFolder, nameIfSingle, ignoreList, withEntry, verbose)
-      _ <-  info(s"Total results: ${rs.size}", verbose)
+      _ <-  testInfo(s"Total results: ${rs.size}", verbose)
     } yield rs
   }
 
@@ -57,8 +48,8 @@ trait RunManifest {
       parentFolder: String,
       nameIfSingle: TestSelector,
       ignoreList: List[String],
-      withEntry: EntryProcess, 
-      verbose: Boolean
+      withEntry: EntryParam => IO[Option[Result]], 
+      verbose: VerboseLevel
   ): IO[List[Result]] =
     for {
       rs1 <- m.includes.map {
@@ -66,10 +57,10 @@ trait RunManifest {
             val folder = Try { Paths.get(includeNode.getLexicalForm).getParent.toString }.getOrElse("")
             runManifest(includeNode.getLexicalForm, folder, parentFolder, nameIfSingle, ignoreList, withEntry, verbose)
         }.sequence.map(_.flatten)
-      _ <- info(s"Results from imports: ${rs1.size}", verbose)
+      _ <- testInfo(s"Results from imports: ${rs1.size}", verbose)
       maybeResults <- m.entries.map(e => withEntry(EntryParam(e, name, parentFolder, nameIfSingle, ignoreList))).sequence
       rs2 = maybeResults.flatten[Result]
-      _ <- info(s"Results from entries: ${rs2.size}", verbose)
+      _ <- testInfo(s"Results from entries: ${rs2.size}", verbose)
     } yield (rs1 ++ rs2)
 }
 
@@ -86,13 +77,13 @@ object ValidateManifest extends RunManifest {
       testsFolder: String,
       testSelector: TestSelector,
       ignoreList: List[String],
-      verbose: Boolean
+      verbose: VerboseLevel
   ): IO[List[Result]] = {
-    info(s"Parse manifest: name: ${name}, folder: $folderName, parentFolder: ${testsFolder}", verbose) *>
+    testInfo(s"Parse manifest: name: ${name}, folder: $folderName, parentFolder: ${testsFolder}", verbose) *>
     runManifest(name, folderName, testsFolder, testSelector, ignoreList, processEntryValidating(verbose), verbose)
   }
 
-  def processEntryValidating(verbose: Boolean): EntryProcess = ep => {
+  def processEntryValidating(verbose: VerboseLevel)(ep: EntryParam): IO[Option[Result]] = {
     val name = ep.entry.name 
     if (ep.testSelector.matches(name)) {
       if (ep.ignoreList contains(name)) {

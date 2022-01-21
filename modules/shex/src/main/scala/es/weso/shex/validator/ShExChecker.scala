@@ -27,6 +27,7 @@ import es.weso.shex.IRILabel
 import es.weso.rdf.PREFIXES._
 import es.weso.utils.internal.CollectionCompat.LazyList
 import ValidationLog._
+import es.weso.utils.VerboseLevel
 
 case class ConfigEnv(cfg: ShExConfig, env: Context)
 case class State()
@@ -424,12 +425,7 @@ trait ShExChecker {
 
   def info(msg:String): Check[Unit] = for {
     verbose <- getVerbose
-    _ <- fromIO(
-      if (verbose) 
-       IO(println(s"$msg"))
-      else 
-       IO.pure(())  
-    )
+    _ <- fromIOUnsafe(verbose.info(msg))
   } yield ()
 
   def checkCond(condition: Boolean,
@@ -486,7 +482,7 @@ trait ShExChecker {
 
 
   def getRDF: Check[RDFReader] = getConfig.map(_.rdf) 
-  def getVerbose: Check[Boolean] = getConfig.map(_.verbose)
+  def getVerbose: Check[VerboseLevel] = getConfig.map(_.verboseLevel)
 
   def getTyping: Check[ShapeTyping] = for {
     env <- getEnv
@@ -594,7 +590,7 @@ trait ShExChecker {
   def runCheck[A: Show](
     c: Check[A],
     rdf: RDFReader,
-    verbose: Boolean = false): IO[CheckResult[ShExError, A, Log]] = {
+    verbose: VerboseLevel = VerboseLevel.Nothing): IO[CheckResult[ShExError, A, Log]] = {
     val initial: Context = Monoid[Context].empty
     for {
       result <- run(c)(ShExConfig(rdf, verbose))(initial)
@@ -643,9 +639,7 @@ trait ShExChecker {
   def infoTyping(t: ShapeTyping, msg: String, shapesPrefixMap: PrefixMap): Check[Unit] = for {
    verbose <- getVerbose 
    nodesPrefixMap <- getNodesPrefixMap
-   _ <- if (verbose) 
-    info(s"$msg: ${t.showShort(nodesPrefixMap,shapesPrefixMap)}")
-   else ok(()) 
+   _ <- info(s"$msg: ${t.showShort(nodesPrefixMap,shapesPrefixMap)}")
   } yield ()
 
   def getNodesPrefixMap: Check[PrefixMap] = for {

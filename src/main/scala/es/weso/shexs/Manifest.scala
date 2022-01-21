@@ -8,6 +8,9 @@ import es.weso.shextest.manifest.ValidateManifest._
 import cats.effect.IO
 import cats.effect.ExitCode
 import es.weso.shextest.manifest.Result
+import VerboseLevelOpt._
+import es.weso.shextest.manifest._
+import es.weso.utils.VerboseLevel
 
 
 case class Manifest(
@@ -19,7 +22,7 @@ case class Manifest(
 ) {
 
   def run(): IO[ExitCode] = for {
-    results <- parseManifest(manifestFileName, parentPath, testsFolderPath.toString, testName, List(), verbose.asBoolean)
+    results <- parseManifest(manifestFileName, parentPath, testsFolderPath.toString, testName, List(), verbose)
     _ <- printResults(results)
   } yield ExitCode.Success
 
@@ -54,7 +57,7 @@ lazy val testName: Opts[TestSelector] =
 
 lazy val manifestCommand: Opts[Manifest] =
     Opts.subcommand("manifest", "Run manifest file containing tests") {
-      (manifestFileName, parentPath, testsFolder, testName, VerboseLevel.verboseLevel)
+      (manifestFileName, parentPath, testsFolder, testName, verboseLevel)
       .mapN(Manifest.apply)
     }
 

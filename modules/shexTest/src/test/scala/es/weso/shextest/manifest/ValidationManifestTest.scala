@@ -8,6 +8,7 @@ import munit._
 import es.weso.utils.testsuite._
 import scala.concurrent.duration._
 import es.weso.utils.FileUtils._
+import es.weso.utils.VerboseLevel
 
 class ValidationManifestCompatTest extends CatsEffectSuite {
 
@@ -72,10 +73,9 @@ class ValidationManifestCompatTest extends CatsEffectSuite {
 "node_kind_example" // Pending to parse result shape maps from TestSuite
 ).map(TestId(_))
 
-    // val xs: OutcomeIO[TestResults] = ??? 
 val cmp: IO[TestResults] = for {
       manifest <- RDF2Manifest.read(Paths.get(shexFolder + "/" + "manifest.ttl"), "Turtle", Some(shexFolderURI.toString), false)
-      testSuite = manifest.toTestSuite(shexFolderURI, false)
+      testSuite = manifest.toTestSuite(shexFolderURI, VerboseLevel.Nothing)
       ioresults <- testSuite.runAll(
         TestConfig.initial.copy(maxTimePerTest = 3.seconds), 
         except
@@ -106,7 +106,7 @@ def showFailedResults(results: TestResults): String =
 test("single") {
     val cmp: IO[TestResult] = for {
       manifest <- RDF2Manifest.read(Paths.get(shexFolder + "/" + "manifest.ttl"), "Turtle", Some(shexFolderURI.toString), false)
-      testSuite = manifest.toTestSuite(shexFolderURI, false)
+      testSuite = manifest.toTestSuite(shexFolderURI, VerboseLevel.Nothing)
       // _ <- IO.println(s"Tests: ${testSuite.tests.map(_.id).mkString("\n")}")
       result <- testSuite.runSingle(TestId("startNoCode1_pass"),TestConfig.initial)
       _ <- IO.println(s"Result: ${result}")

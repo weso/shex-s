@@ -1,8 +1,10 @@
 package es.weso.shextest.manifest
 import java.nio.file.Paths
 import com.typesafe.config.{Config, ConfigFactory}
-import munit._
+import munit.{Only => _, _}
 import ValidateManifest._
+import TestSelector.Only
+import es.weso.utils.VerboseLevel
 
 class RDF2ManifestSingleTest extends CatsEffectSuite {
 
@@ -16,12 +18,12 @@ class RDF2ManifestSingleTest extends CatsEffectSuite {
        "validation", 
        validationFolder, 
        // None, 
-       Some(
+       Only(
          // "Extend3G-pass"
          "vitals-RESTRICTS-pass_lie-BP"
          ),
        List(),
-       verbose = true).map(rs => assertEquals(rs.size > 0, true))
+       VerboseLevel.Nothing).map(rs => assertEquals(rs.size > 0, true))
   }
 
 }

@@ -3,6 +3,8 @@ package es.weso.shextest.manifest
 import com.typesafe.config.{Config, ConfigFactory}
 import munit._
 import ValidateManifest._
+import TestSelector._
+import es.weso.utils.VerboseLevel
 
 class RDF2ManifestLocalTest extends FunSuite {
 
@@ -15,6 +17,6 @@ class RDF2ManifestLocalTest extends FunSuite {
 
   test("RDF2Manifest localTests") {
     val validationFolder = conf.getString("localTestsFolder")
-    parseManifest("manifest", "schemas", validationFolder, None, List(), false)
+    parseManifest("manifest", "schemas", validationFolder, All, List(), VerboseLevel.Nothing)
   }
 }

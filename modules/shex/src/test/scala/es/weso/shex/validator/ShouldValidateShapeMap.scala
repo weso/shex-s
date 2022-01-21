@@ -16,6 +16,7 @@ import es.weso.shex.implicits.encoderShEx._
 import io.circe.syntax._
 import es.weso.utils.IOUtils.fromES
 import munit._
+import es.weso.utils.VerboseLevel
 
 trait ShouldValidateShapeMap extends CatsEffectSuite {
 
@@ -24,13 +25,12 @@ trait ShouldValidateShapeMap extends CatsEffectSuite {
                                  shexStr: String,
                                  shapeMapStr: String,
                                  expected: String,
-                                 verbose: Boolean = false)
+                                 verbose: VerboseLevel)
                                  (implicit loc: munit.Location): Unit = {
     test(s"Should validate shapeMap: ${shapeMapStr} and return: $expected\nUsing RDF: \n ${rdfStr}\nand schema:\n${shexStr}") {
 
       def info(msg:String): IO[Unit] =
-        if (verbose) IO(println(msg))
-        else IO.pure(())
+        verbose.info(msg)
 
       
       val validate: IO[Boolean] = for {

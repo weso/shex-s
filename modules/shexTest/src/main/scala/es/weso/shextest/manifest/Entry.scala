@@ -11,13 +11,14 @@ import es.weso.shex.compact.CompareSchemas
 import io.circe.parser._
 import java.nio.file.Paths
 import es.weso.utils.IOUtils._
+import es.weso.utils._
 
 abstract trait Entry {
  def node: RDFNode
  def entryType: IRI
  def status: Status
  def name: String
- def toTestEntry(uri: URI, verbose: Boolean): TestEntry
+ def toTestEntry(uri: URI, verbose: VerboseLevel): TestEntry
 }
   
 case class RepresentationTest(
@@ -29,7 +30,7 @@ case class RepresentationTest(
   ttl: IRI) extends Entry {
     override val entryType = sht_RepresentationTest
 
-    override def toTestEntry(shexFolderURI: URI, verbose: Boolean): TestEntry = {
+    override def toTestEntry(shexFolderURI: URI, verbose: VerboseLevel): TestEntry = {
       val id = TestId(name)
       TestEntry(
        id = id, 
@@ -80,7 +81,7 @@ case class Validate(override val node: RDFNode,
                       specRef: Option[IRI]
                      ) extends Entry {
     override val entryType = sht_Validate
-    override def toTestEntry(uri: URI, verbose: Boolean): TestEntry = {
+    override def toTestEntry(uri: URI, verbose: VerboseLevel): TestEntry = {
       val id = TestId(name)
       TestEntry(
         id = id, 
@@ -99,7 +100,7 @@ case class Validate(override val node: RDFNode,
                                 val entryType : IRI,
                                 val shouldPass: Boolean
                                 ) extends Entry {
-    override def toTestEntry(uri: URI, verbose: Boolean): TestEntry = {
+    override def toTestEntry(uri: URI, verbose: VerboseLevel): TestEntry = {
       val id = TestId(name)
       TestEntry(
         id = id, 
@@ -107,7 +108,7 @@ case class Validate(override val node: RDFNode,
           val base = Paths.get(".").toUri
           action match {
             case focusAction: FocusAction => 
-              validateFocusAction(focusAction, base, this, true, name, uri, false).map(
+              validateFocusAction(focusAction, base, this, true, name, uri, verbose).map(
                 maybeR => maybeR match {
                  case None => FailedResult(id,Some("No result"),None,None)
                  case Some(res) => if (res.isOk == shouldPass) {
@@ -162,7 +163,7 @@ case class Validate(override val node: RDFNode,
                             shex: IRI
                            ) extends Entry {
     override val entryType = sht_NegativeSyntax
-    override def toTestEntry(uri: URI, verbose: Boolean): TestEntry = {
+    override def toTestEntry(uri: URI, verbose: VerboseLevel): TestEntry = {
      val id = TestId(name) 
      TestEntry(
         id = id, 
@@ -177,7 +178,7 @@ case class Validate(override val node: RDFNode,
                             shex: IRI
                            ) extends Entry {
     override val entryType = sht_NegativeStructure
-    override def toTestEntry(uri: URI, verbose: Boolean): TestEntry = {
+    override def toTestEntry(uri: URI, verbose: VerboseLevel): TestEntry = {
       val id = TestId(name)
       TestEntry(
         id = id, 

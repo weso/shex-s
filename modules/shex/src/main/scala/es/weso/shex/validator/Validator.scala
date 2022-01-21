@@ -16,6 +16,7 @@ import Function.tupled
 import es.weso.shex.validator.ShExError._
 import es.weso.shex.validator.ConstraintRef.{showConstraintRef => _}
 import es.weso.utils.internal.CollectionCompat._
+import es.weso.utils.VerboseLevel
 
 /**
   * ShEx validator
@@ -843,7 +844,7 @@ case class Validator(schema: ResolvedSchema,
   /**
    * Validate a node against the START declaration
    **/
-  def validateNodeStart(rdf: RDFReader, node: IRI, verbose: Boolean = false): IO[Result] = {
+  def validateNodeStart(rdf: RDFReader, node: IRI, verbose: VerboseLevel): IO[Result] = {
     runValidator(checkNodeStart(node), rdf, verbose)
   }
 
@@ -852,14 +853,14 @@ case class Validator(schema: ResolvedSchema,
    * This methods follows SHACL convention and could be deprecated in the future
    * 
    **/
-  def validateNodeDecls(rdf: RDFReader, verbose: Boolean = false): IO[Result] = {	
+  def validateNodeDecls(rdf: RDFReader, verbose: VerboseLevel): IO[Result] = {	
     runValidator(checkTargetNodeDeclarations, rdf, verbose)	
   }
 
   /**
    * Validate a node against a shape
    **/
-  def validateNodeShape(rdf: RDFReader, node: IRI, shape: String, verbose: Boolean = false): IO[Result] = {	
+  def validateNodeShape(rdf: RDFReader, node: IRI, shape: String, verbose: VerboseLevel): IO[Result] = {	
     ShapeLabel	
       .fromString(shape)	
       .fold(	
@@ -873,11 +874,9 @@ case class Validator(schema: ResolvedSchema,
    **/
   def validateShapeMap(rdf: RDFReader, 
                        shapeMap: FixedShapeMap, 
-                       verbose: Boolean = false): IO[Result] = 
+                       verbose: VerboseLevel): IO[Result] = 
   for {
-    // _ <- IO { println(s"validateShapeMap") }
     r <- runValidator(checkShapeMap(shapeMap), rdf, verbose)
-    // _ <- IO { println(s"end of checkShapeMap") }
   } yield r
 
   /**
@@ -886,7 +885,10 @@ case class Validator(schema: ResolvedSchema,
    * param rdf RDFReader
    * verbose boolean flag to show internal messages
    **/
-  def runValidator(chk: Check[ShapeTyping], rdf: RDFReader, verbose: Boolean = false): IO[Result] = for {
+  def runValidator(
+   chk: Check[ShapeTyping], 
+   rdf: RDFReader, 
+   verbose: VerboseLevel): IO[Result] = for {
     r <- runCheck(chk, rdf, verbose)
     pm <- rdf.getPrefixMap
   } yield cnvResult(r, rdf, pm)
@@ -922,7 +924,7 @@ object Validator {
                fixedShapeMap: FixedShapeMap, 
                rdf: RDFReader, 
                builder: RDFBuilder,
-               verbose: Boolean = false
+               verbose: VerboseLevel
               ): IO[Result] = {
     val validator = Validator(schema, ExternalResolver.NoAction, builder)
     validator.validateShapeMap(rdf, fixedShapeMap, verbose)

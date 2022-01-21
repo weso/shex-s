@@ -1,9 +1,10 @@
 package es.weso.shexs
 
 import es.weso.rdf.nodes._
+import es.weso.utils.VerboseLevel
 
 case class ShExsOptions(
-   verbose: Boolean,
+   verbose: VerboseLevel,
    dataFormat: String,
    schemaFormat: String,
    shapemapFormat: String,
@@ -13,7 +14,7 @@ case class ShExsOptions(
 object ShExsOptions {
    def defaultOptions(): ShExsOptions = 
       new ShExsOptions(
-          verbose = false, 
+          verbose = VerboseLevel.Nothing, 
           dataFormat = "TURTLE",
           schemaFormat = "ShExC",
           shapemapFormat = "Compact",
