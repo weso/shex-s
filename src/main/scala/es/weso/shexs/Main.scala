@@ -29,14 +29,12 @@ import es.weso.utils.VerboseLevel
 case class SchemaMapping(
     schemaSpec: SchemaSpec, 
     mapping: Path, 
-    baseIRI: Option[IRI],
     output: Option[Path], 
     verbose: VerboseLevel)
 case class Validate(
     schemaSpec: SchemaSpec, 
     dataSpec: DataSpec, 
     shapeMapSpec: ShapeMapSpec, 
-    baseIRI: Option[IRI], 
     showResultFormat: String, 
     output: Option[Path], 
     verbose: VerboseLevel)
@@ -45,7 +43,6 @@ case class WikibaseValidate(
     endpoint: EndpointOpt, 
     prefixMapPath: Option[Path], 
     shapeMapSpec: ShapeMapSpec, 
-    baseIRI: Option[IRI],
     showResultFormat: String, 
     output: Option[Path], 
     verbose: VerboseLevel)
@@ -53,14 +50,10 @@ case class WikibaseValidate(
 case class ShapePathEval(
     schemaSpec: SchemaSpec, 
     shapePath: String, 
-    baseIRI: Option[IRI],
     output: Option[Path], 
     verbose: VerboseLevel)
 
   
-sealed abstract class SchemaSpec
-case class SchemaPath(schema: Path, schemaFormat: String) extends SchemaSpec
-case class SchemaURI(uri: URI) extends SchemaSpec
   
 sealed abstract class DataSpec
 case class DataPath(dataPath: Path, dataFormat: Option[String]) extends DataSpec
@@ -76,9 +69,6 @@ object Main extends CommandIOApp (
   version = BuildInfo.version
   ) {
  
-lazy val availableSchemaFormats = List("ShExC", "ShExJ")
-lazy val defaultSchemaFormat = availableSchemaFormats.head
-lazy val availableSchemaFormatsStr = availableSchemaFormats.mkString(",")
 
 lazy val availableDataFormats = List("Turtle", "NTriples","RDF/XML","JSON-LD")
 lazy val defaultDataFormat = availableDataFormats.head
@@ -88,8 +78,6 @@ lazy val availableShapeMapFormats = List("Compact", "JSON")
 lazy val defaultShapeMapFormat = availableShapeMapFormats.head
 lazy val availableShapeMapFormatsStr = availableShapeMapFormats.mkString(",")
 
-lazy val schemaOpt = Opts.option[Path]("schema", short = "s", help = "Path to ShEx file.")
-lazy val schemaFormatOpt = Opts.option[String]("schemaFormat", metavar = "format", help = s"Schema format, default = ($defaultSchemaFormat). Possible values = ($availableSchemaFormatsStr)").withDefault(defaultSchemaFormat)
 lazy val outputOpt = Opts.option[Path]("output","Output to file (default = console)").orNone
 lazy val mappingOpt = Opts.option[Path]("mapping", short = "m", metavar = "mappings-file", help = "Path to Mappings file.")
 lazy val dataOpt = Opts.option[Path]("data", short = "d", help = "Path to data file.")
@@ -99,51 +87,33 @@ lazy val shapeMapOpt = Opts.option[Path]("shapeMap", short = "sm", help = "Path 
 lazy val shapeMapFormatOpt = Opts.option[String]("shapeMapFormat", help = s"ShapeMap format, default=$defaultShapeMapFormat, available formats=$availableShapeMapFormats").withDefault(defaultShapeMapFormat)
 lazy val shapePathOpt = Opts.option[String]("shapePath", help = s"ShapePath to validate a schema")
 lazy val showResultFormatOpt = Opts.option[String]("showResultFormat", help = s"showResultFormat").withDefault("details")
-lazy val schemaPath: Opts[SchemaPath] = 
-    (schemaOpt, schemaFormatOpt).mapN { case (path, format) => SchemaPath(path, format)}
 
 lazy val dataPath: Opts[DataPath] = (dataOpt,dataFormatOpt).mapN {
     case (path,format) => DataPath(path,Some(format))
   }
 
 
-lazy val endpoint: Opts[EndpointOpt] = uri("endpoint", "endpoint URL").map(EndpointOpt)
+lazy val endpoint: Opts[EndpointOpt] = UriOpt.uri("endpoint", "endpoint URL").map(EndpointOpt)
 
-def uri(name: String, helpStr: String): Opts[URI] = 
-    Opts.option[String](name, help =helpStr).mapValidated(s => 
-      Try(new URI(s)).fold(
-        exc => Validated.invalidNel(s"Error converting to URL: ${exc.getMessage}"), 
-        url => Validated.valid(url))
-    )
   
-lazy val schemaURI: Opts[SchemaURI] = 
-    (uri("schemaURL", "URL of schema")).map(SchemaURI)
-
-lazy val baseIRI: Opts[Option[IRI]] =
-    (uri(s"baseIRI", "base IRI")).orNone.map {
-      case Some(uri) => Some(IRI(uri))
-      case None => Some(IRI(s"http://base/"))
-    }
-
-lazy val schemaSpec: Opts[SchemaSpec] = schemaPath orElse schemaURI
 lazy val dataSpec: Opts[DataSpec] = dataPath orElse endpoint
 
 lazy val shapeMapSpec = (shapeMapOpt, shapeMapFormatOpt).mapN(ShapeMapSpec)
   
 lazy val schemaMappingCommand: Opts[SchemaMapping] = 
     Opts.subcommand("mapping", "Convert a schema through a mapping") {
-      (schemaSpec, mappingOpt, baseIRI, outputOpt, VerboseLevelOpt.verboseLevel).mapN(SchemaMapping)
+      (SchemaSpec.schemaSpec, mappingOpt, outputOpt, VerboseLevelOpt.verboseLevel).mapN(SchemaMapping)
     }
 
 lazy val validateCommand: Opts[Validate] = 
     Opts.subcommand("validate", "Validate RDF data using a schema and a shape map") {
-      (schemaSpec, dataSpec, shapeMapSpec, baseIRI, showResultFormatOpt, outputOpt, VerboseLevelOpt.verboseLevel)
+      (SchemaSpec.schemaSpec, dataSpec, shapeMapSpec, showResultFormatOpt, outputOpt, VerboseLevelOpt.verboseLevel)
       .mapN(Validate)
     }
 
 lazy val shapePathValidateCommand: Opts[ShapePathEval] =
     Opts.subcommand("shapePath","Validate a shape path") {
-      (schemaSpec, shapePathOpt, baseIRI,outputOpt, VerboseLevelOpt.verboseLevel)
+      (SchemaSpec.schemaSpec, shapePathOpt, outputOpt, VerboseLevelOpt.verboseLevel)
       .mapN(ShapePathEval)
     }
 
@@ -151,7 +121,7 @@ lazy val prefixMapPath: Opts[Option[Path]] = Opts.option[Path]("prefixMapPath","
 
 lazy val wikibaseCommand: Opts[WikibaseValidate] = 
     Opts.subcommand("wikibase", "Validate RDF data from wikibase") {
-      (schemaSpec, endpoint, prefixMapPath, shapeMapSpec, baseIRI, showResultFormatOpt, outputOpt, VerboseLevelOpt.verboseLevel)
+      (SchemaSpec.schemaSpec, endpoint, prefixMapPath, shapeMapSpec, showResultFormatOpt, outputOpt, VerboseLevelOpt.verboseLevel)
       .mapN(WikibaseValidate)
     }
 
@@ -166,13 +136,15 @@ override def main: Opts[IO[ExitCode]] =
     validateCommand orElse
     shapePathValidateCommand orElse 
     Manifest.manifestCommand orElse
-    wikibaseCommand
+    wikibaseCommand orElse 
+    SchemaCommand.schemaCommand
    ).map {
      case smc: SchemaMapping => doSchemaMapping(smc) 
      case vc : Validate => doValidate(vc)
      case spc: ShapePathEval => doShapePathEval(spc)
      case mf: Manifest => mf.run()
      case wc: WikibaseValidate => doWikibaseValidate(wc)
+     case sc: SchemaCommand => sc.run()
    }.map(
      _.handleErrorWith(infoError)
    ) 
@@ -183,7 +155,7 @@ def infoError(err: Throwable): IO[ExitCode] =
   
 
 def doSchemaMapping(smc: SchemaMapping): IO[ExitCode] = for {
-       schema <- getSchema(smc.schemaSpec, smc.baseIRI)
+       schema <- smc.schemaSpec.getSchema
        mappingStr <- getContents(smc.mapping)
        mapping <- IO.fromEither(SchemaMappings
         .fromString(mappingStr.toString)
@@ -205,11 +177,6 @@ def doSchemaMapping(smc: SchemaMapping): IO[ExitCode] = for {
        } 
      } yield ExitCode.Success
 
-def getSchema(schemaSpec: SchemaSpec, baseIRI: Option[IRI]): IO[Schema] = schemaSpec match {
-     case SchemaPath(schema, schemaFormat) => 
-       Schema.fromFile(schema.toFile().getAbsolutePath(), schemaFormat, baseIRI, None)
-     case SchemaURI(uri) => Schema.fromIRI(IRI(uri), baseIRI)
-   }
 
 def getRDFData(dataSpec: DataSpec, baseIRI: Option[IRI]): IO[Resource[IO,RDFReader]] = dataSpec match {
      case DataPath(dataPath, dataFormat) => RDFAsJenaModel.fromURI(dataPath.toUri().toString(), dataFormat.getOrElse(defaultDataFormat), baseIRI)
@@ -219,14 +186,14 @@ def getRDFData(dataSpec: DataSpec, baseIRI: Option[IRI]): IO[Resource[IO,RDFRead
 
 def doValidate(vc: Validate): IO[ExitCode] = 
     for {
-        res1 <- getRDFData(vc.dataSpec, vc.baseIRI) // RDFAsJenaModel.fromURI(vc.data.toUri().toString(),vc.dataFormat,None)
+        res1 <- getRDFData(vc.dataSpec, vc.schemaSpec.baseIRI) // RDFAsJenaModel.fromURI(vc.data.toUri().toString(),vc.dataFormat,None)
         res2 <- RDFAsJenaModel.empty
         vv <- (res1,res2).tupled.use { 
       case (rdf,builder) => for {
        nodesPrefixMap <- rdf.getPrefixMap
-       schema <- getSchema(vc.schemaSpec, vc.baseIRI) 
+       schema <- vc.schemaSpec.getSchema
        resolvedSchema <- ResolvedSchema.resolve(schema,None)
-       shapeMap <- getShapeMapFromFile(vc.shapeMapSpec.shapeMap,vc.shapeMapSpec.shapeMapFormat,nodesPrefixMap, schema.prefixMap, vc.baseIRI)
+       shapeMap <- getShapeMapFromFile(vc.shapeMapSpec.shapeMap,vc.shapeMapSpec.shapeMapFormat,nodesPrefixMap, schema.prefixMap, vc.schemaSpec.baseIRI)
        fixedMap <- ShapeMap.fixShapeMap(shapeMap, rdf, nodesPrefixMap, resolvedSchema.prefixMap)
        result   <- Validator.validate(resolvedSchema, fixedMap, rdf, builder, vc.verbose)
        resultShapeMap <- result.toResultShapeMap
@@ -242,9 +209,9 @@ def doWikibaseValidate(wc: WikibaseValidate): IO[ExitCode] =
         vv <- (res1,res2).tupled.use { 
       case (rdf,builder) => for {
        nodesPrefixMap <- rdf.getPrefixMap
-       schema <- getSchema(wc.schemaSpec, wc.baseIRI) 
+       schema <- wc.schemaSpec.getSchema
        resolvedSchema <- ResolvedSchema.resolve(schema,None)
-       shapeMap <- getShapeMapFromFile(wc.shapeMapSpec.shapeMap,wc.shapeMapSpec.shapeMapFormat,nodesPrefixMap, schema.prefixMap, wc.baseIRI)
+       shapeMap <- getShapeMapFromFile(wc.shapeMapSpec.shapeMap,wc.shapeMapSpec.shapeMapFormat,nodesPrefixMap, schema.prefixMap, wc.schemaSpec.baseIRI)
        fixedMap <- ShapeMap.fixShapeMap(shapeMap, rdf, nodesPrefixMap, resolvedSchema.prefixMap)
        result   <- Validator.validate(resolvedSchema, fixedMap, rdf, builder, wc.verbose)
        resultShapeMap <- result.toResultShapeMap
@@ -265,7 +232,7 @@ def getWikibaseRDF(ep: EndpointOpt, pm: PrefixMap): IO[Resource[IO,WikibaseRDF]]
    WikibaseRDF.fromEndpoint(IRI(ep.uri), pm)
 
 def doShapePathEval(spc: ShapePathEval): IO[ExitCode] = for {
-     schema <- getSchema(spc.schemaSpec, spc.baseIRI) 
+     schema <- spc.schemaSpec.getSchema 
      shapePath <- IO.fromEither(ShapePath.fromString(spc.shapePath, "Compact", None, schema.prefixMap).leftMap(err => new RuntimeException(s"Error parsing shapePath: ${err}")))
      result <- { 
        val (ls,v) = ShapePath.eval(shapePath,schema)

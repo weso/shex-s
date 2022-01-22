@@ -124,15 +124,19 @@ object ShExError {
 
   case class LabelNotFound(
     label: ShapeLabel, 
+    err: String,
     availableLabels: List[ShapeLabel]
-    ) extends ShExError(s"Label not found: ${label}") {
+    ) extends ShExError(s"Label not found: ${label}. Available labels = ${availableLabels.map(_.toString).mkString(",")}") {
     override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
-      s"""Label not found: ${shapesPrefixMap.qualify(label.toRDFNode)}
-      Available labels: ${availableLabels.map(label => shapesPrefixMap.qualify(label.toRDFNode)).mkString(",")}"""
+      s"""|Label not found: ${shapesPrefixMap.qualify(label.toRDFNode)}
+          |Available labels: ${availableLabels.map(label => shapesPrefixMap.qualify(label.toRDFNode)).mkString(",")}
+          |Msg: $err
+          |""".stripMargin
     }
 
     override def toJson: Json = Json.obj(
        ("type", Json.fromString("LabelNotFound")),
+       ("label", label.asJson)
       ) 
 
   }
@@ -393,19 +397,18 @@ object ShExError {
 
 
   private def showCandidateLine(c: CandidateLine, table: CTable): String = {
-      def compare(pair1:(Arc,ConstraintRef), pair2:(Arc,ConstraintRef)): Boolean =
-        Ordering[ConstraintRef].compare(pair1._2, pair2._2) <= 0
+      def compare(ac1:ArcConstraintRef, ac2:ArcConstraintRef): Boolean =
+        Ordering[ConstraintRef].compare(ac1.cRef, ac2.cRef) <= 0
 
-      s"Candidate line:\n${c.values.sortWith(compare).map{ 
-        case (arc,cref) => 
-        s"${arc.show} as ${cref.show}/${table.constraints.get(cref).map(_.show).getOrElse("?")}"
+      s"Candidate line:\n${c.values.sortWith(compare).map{ ac => 
+        s"${ac.arc.show} as ${ac.cRef.show}/${table.constraints.get(ac.cRef).map(_.show).getOrElse("?")}"
       }.mkString("\n")}"
   }
 
   private def showIris(pm: PrefixMap, iris: List[IRI]): String =
     iris.map(pm.qualify(_)).mkString(",")
 
-}
+
 
   case class SemanticActionException(attempt: Attempt, node: RDFNode, action: SemAct, exc: Throwable) extends ShExError(s"Semantic Action exception: ${exc.getMessage()}") {
     
@@ -664,3 +667,23 @@ object ShExError {
       ) 
 
   }
+
+  case class NotConformantConforms(
+    node: RDFNode,
+    label: ShapeLabel,
+    rdf: RDFReader
+  ) extends ShExError(s"""|Node ${node.show} conforms to ${label} but should not conform
+                          |""".stripMargin) {
+    override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
+      s"""|Node ${node.show} conforms to label ${shapesPrefixMap.qualify(label.toRDFNode)} but shouldn't
+          |""".stripMargin
+    }
+
+    override def toJson: Json = Json.obj(
+       ("type", Json.fromString("NodeConformsButShoudnt")),
+       ("node", node2Json(node,rdf)),
+       ("label", label.asJson), 
+      ) 
+
+  }
+}

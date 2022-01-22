@@ -423,10 +423,10 @@ trait ShExChecker {
     } yield r
   }
 
-  def info(msg:String): Check[Unit] = for {
-    verbose <- getVerbose
-    _ <- fromIOUnsafe(verbose.info(msg))
-  } yield ()
+  def info(msg:String): Check[Unit] = getVerbose.flatMap(v => fromIOUnsafe(v.info(msg)))
+  def debug(msg:String): Check[Unit] = getVerbose.flatMap(v => fromIOUnsafe(v.debug(msg)))
+  def step(msg:String): Check[Unit] = getVerbose.flatMap(v => fromIOUnsafe(v.step(msg)))
+
 
   def checkCond(condition: Boolean,
                 attempt: Attempt,
@@ -436,8 +436,10 @@ trait ShExChecker {
     newTyping <- addEvidence(attempt.nodeShape, evidence)
   } yield newTyping
 
+  val iriActions = IRI("http://shex.io/actions/log")
+
   def addEvidence(nodeShape: NodeShape, msg: String): Check[ShapeTyping] = {
-    val action = Action(IRI("http://shex.io/actions/log"),Some(s"Evidence added: $nodeShape: $msg"))
+    val action = Action(iriActions,Some(s"Evidence added: $nodeShape: $msg"))
     for {
       t <- getTyping
       _ <- addAction2Log(action)
@@ -445,7 +447,7 @@ trait ShExChecker {
   }
 
   def addNotEvidence(nodeShape: NodeShape, e: ShExError, msg: String): Check[ShapeTyping] = {
-    val action = Action(IRI("http://shex.io/actions/log"),Some(s"Not Evidence: $nodeShape: $msg"))
+    val action = Action(iriActions,Some(s"Not Evidence: $nodeShape: $msg"))
     val node = nodeShape.node
     val shape = nodeShape.shape
     for {
