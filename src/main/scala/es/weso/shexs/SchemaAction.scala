@@ -2,13 +2,19 @@ package es.weso.shexs
 
 import com.monovore.decline.Opts
 import cats.data.Validated._
+import es.weso.shex.ShapeLabel
 
 sealed abstract class SchemaAction {
     val name: String 
 }
 object SchemaAction {
+
   case object ShowInheritanceGraph extends SchemaAction {
       val name = "inheritance"
+  }
+
+  case class ShowShape(shapeLabel: ShapeLabel) extends SchemaAction {
+      val name = "shape"
   }
 
   val availableActions: List[SchemaAction] = List(ShowInheritanceGraph)

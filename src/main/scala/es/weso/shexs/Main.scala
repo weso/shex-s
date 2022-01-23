@@ -125,8 +125,6 @@ lazy val wikibaseCommand: Opts[WikibaseValidate] =
       .mapN(WikibaseValidate)
     }
 
-  
-
 def info(msg: String, verbose: Boolean): IO[Unit] = 
    if (verbose) IO.println(msg)
    else IO(())
@@ -192,7 +190,7 @@ def doValidate(vc: Validate): IO[ExitCode] =
       case (rdf,builder) => for {
        nodesPrefixMap <- rdf.getPrefixMap
        schema <- vc.schemaSpec.getSchema
-       resolvedSchema <- ResolvedSchema.resolve(schema,None)
+       resolvedSchema <- ResolvedSchema.resolve(schema,None, vc.verbose)
        shapeMap <- getShapeMapFromFile(vc.shapeMapSpec.shapeMap,vc.shapeMapSpec.shapeMapFormat,nodesPrefixMap, schema.prefixMap, vc.schemaSpec.baseIRI)
        fixedMap <- ShapeMap.fixShapeMap(shapeMap, rdf, nodesPrefixMap, resolvedSchema.prefixMap)
        result   <- Validator.validate(resolvedSchema, fixedMap, rdf, builder, vc.verbose)
@@ -210,7 +208,7 @@ def doWikibaseValidate(wc: WikibaseValidate): IO[ExitCode] =
       case (rdf,builder) => for {
        nodesPrefixMap <- rdf.getPrefixMap
        schema <- wc.schemaSpec.getSchema
-       resolvedSchema <- ResolvedSchema.resolve(schema,None)
+       resolvedSchema <- ResolvedSchema.resolve(schema,None, wc.verbose)
        shapeMap <- getShapeMapFromFile(wc.shapeMapSpec.shapeMap,wc.shapeMapSpec.shapeMapFormat,nodesPrefixMap, schema.prefixMap, wc.schemaSpec.baseIRI)
        fixedMap <- ShapeMap.fixShapeMap(shapeMap, rdf, nodesPrefixMap, resolvedSchema.prefixMap)
        result   <- Validator.validate(resolvedSchema, fixedMap, rdf, builder, wc.verbose)

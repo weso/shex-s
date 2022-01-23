@@ -17,6 +17,7 @@ import compact.Parser._
 import java.io.InputStream
 import java.io.InputStreamReader
 import java.io.ByteArrayInputStream
+import es.weso.utils.VerboseLevel
 
 case class Schema(id: IRI,
                   prefixes: Option[PrefixMap],
@@ -151,14 +152,8 @@ case class Schema(id: IRI,
     )
   }
 
-/*  private def addToOptionList[A](x: A, maybeLs: Option[List[A]]): Option[List[A]] = maybeLs match {
-    case None => Some(List(x))
-    case Some(xs) => Some(x :: xs)
-  } */
-
-  // TODO: Move this methods to other parts...
-  def err[A](msg: String): IO[A] = IO.raiseError(new RuntimeException(msg))
-  def ok[A](x:A): IO[A] = IO.pure(x)
+  def resolve(base: Option[IRI], verbose: VerboseLevel): IO[ResolvedSchema] =
+    ResolvedSchema.resolve(this, base, verbose)
 
 }
 
@@ -338,7 +333,5 @@ object Schema {
   
   private def getContents(is: InputStream): IO[String] = 
    IO(scala.io.Source.fromInputStream(is).mkString)
-
-
 
 }

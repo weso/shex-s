@@ -45,7 +45,7 @@ case class ShExsValidator(schema: Schema) {
             for {
             nodeIri <- fromES(IRI.fromString(node))
             rdf <- RDFAsJenaModel.fromModel(model, None, None, Map())     
-            resolvedSchema <- ResolvedSchema.resolve(schema, None)
+            resolvedSchema <- ResolvedSchema.resolve(schema, None, verbose)
             validator = Validator(resolvedSchema, NoAction, builder)
             result <- validator.validateNodeShape(rdf, nodeIri, shape, verbose)
             resultShapeMap <- result.toResultShapeMap
@@ -62,7 +62,7 @@ case class ShExsValidator(schema: Schema) {
         val cmp: IO[ResultShapeMap] = RDFAsJenaModel.empty.flatMap(_.use(builder => 
             for {
             rdf <- RDFAsJenaModel.fromModel(model, None, None, Map())     
-            resolvedSchema <- ResolvedSchema.resolve(schema, None)
+            resolvedSchema <- ResolvedSchema.resolve(schema, None, verbose)
             validator = Validator(resolvedSchema, NoAction, builder)
             rdfPrefixMap <- rdf.getPrefixMap
             shapeMap <- fromESNel(ShapeMap.fromString(shapeMap,"COMPACT", None, rdfPrefixMap, schema.prefixMap))

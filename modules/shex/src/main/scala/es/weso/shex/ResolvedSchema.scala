@@ -9,6 +9,7 @@ import cats.effect.IO
 import es.weso.depgraphs.Inheritance
 import es.weso.depgraphs.InheritanceJGraphT
 import es.weso.rdf.locations.Location
+import es.weso.utils.VerboseLevel
 
 /**
   * Represents a schema with all the imports resolved
@@ -72,7 +73,7 @@ object ResolvedSchema {
  }
 
  // TODO: I think this can be easier with cats instances 
- // but I am not sure now how to invoke it
+ // but I am not sure now how to invoke it at this moment
  private def cnvMap[A,K,B](
      m: Map[K,A], 
      f: A => B
@@ -83,7 +84,7 @@ object ResolvedSchema {
     * @param schema
     * @return a resolved schema
     */
-  def resolve(schema: Schema, base: Option[IRI]): IO[ResolvedSchema] =
+  def resolve(schema: Schema, base: Option[IRI], verboseLevel: VerboseLevel): IO[ResolvedSchema] =
    for {
      mapsImported <- closureImports(schema.imports,
       List(schema.id), 
@@ -92,7 +93,7 @@ object ResolvedSchema {
         cnvMap(schema.tripleExprMap, (v: TripleExpr) => ResolvedTripleExpr(v))
         ),
       base)
-     inheritanceGraph <- mkInheritanceGraph(mapsImported.shapeExprMaps)
+     inheritanceGraph <- mkInheritanceGraph(mapsImported.shapeExprMaps, verboseLevel)
    } yield ResolvedSchema(
     source = schema, 
     resolvedMapShapeExprs = mapsImported.shapeExprMaps,
@@ -138,32 +139,37 @@ object ResolvedSchema {
 
    private def addShapeExpr(g: Inheritance[ShapeLabel], 
                 sub: ShapeLabel, 
-                se: ShapeExpr
+                se: ShapeExpr,
+                verbose: VerboseLevel
                 ): IO[Unit] = {
     se match {
       case s: Shape => addExtendsRestricts(g,sub, s) 
-/*      case s: ShapeAnd => {
-         def f(x: Unit, shape: Shape): IO[Unit] = 
-           addExtends(g,sub,shape)
+      /*case s: ShapeAnd => {
+         def f(x: Unit, shape: Shape): IO[Unit] = {
+           verbose.debug(s"Inside and of ${sub.toRDFNode.show}: new shape: ${shape.id.map(_.toRDFNode.show).getOrElse("?")}") *>
+           addExtendsRestricts(g,sub,shape)
+         }
+         verbose.debug(s"ShapeAnd: ${sub.toRDFNode.show}: $s") *>  
          s.shapeExprs.collect { case s: Shape => s}.foldM(())(f)
       } */
       case ShapeDecl(l,_,se) => se match {
-        case _ => addShapeExpr(g,sub, se)  
+        case _ => addShapeExpr(g,sub, se, verbose)  
       }
       case _ => ().pure[IO]
      }
    }
   
-  private def addPair(g: Inheritance[ShapeLabel])(u: Unit, pair: (ShapeLabel,ResolvedShapeExpr)): IO[Unit] = {
+  private def addPair(g: Inheritance[ShapeLabel], verboseLevel: VerboseLevel)(u: Unit, pair: (ShapeLabel,ResolvedShapeExpr)): IO[Unit] = {
      val (shapeLabel,rse) = pair
-     addShapeExpr(g, shapeLabel, rse.se)
+     addShapeExpr(g, shapeLabel, rse.se, verboseLevel)
    }
 
   private def mkInheritanceGraph(
-    m: Map[ShapeLabel,ResolvedShapeExpr]
+    m: Map[ShapeLabel,ResolvedShapeExpr],
+    verboseLevel: VerboseLevel
   ): IO[Inheritance[ShapeLabel]] = for {
     g <- InheritanceJGraphT.empty[ShapeLabel]
-    _ <- m.toList.foldM(())(addPair(g))
+    _ <- m.toList.foldM(())(addPair(g, verboseLevel))
    } yield g
 
   def empty: IO[ResolvedSchema] = for {

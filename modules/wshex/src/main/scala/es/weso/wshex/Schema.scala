@@ -6,6 +6,7 @@ import cats.implicits._
 import java.nio.file.Path
 import cats.effect.IO
 import es.weso.wbmodel._
+import es.weso.utils.VerboseLevel
 
 case class Schema(
   shapesMap: Map[ShapeLabel, ShapeExpr],
@@ -105,19 +106,21 @@ object Schema {
     
   def fromPath(
    path: Path, 
-   format: WShExFormat = CompactFormat
+   format: WShExFormat = CompactFormat,
+   verbose: VerboseLevel
    ): IO[Schema] = for {
     schema <- es.weso.shex.Schema.fromFile(path.toFile().getAbsolutePath(), cnvFormat(format))
-    resolvedSchema <- es.weso.shex.ResolvedSchema.resolve(schema, None)
+    resolvedSchema <- es.weso.shex.ResolvedSchema.resolve(schema, None, verbose)
     schema <- IO.fromEither(ShEx2WShEx().convertSchema(resolvedSchema))
   } yield schema
 
   def fromString(
                 schemaString: String,
-                format: WShExFormat = CompactFormat
+                format: WShExFormat = CompactFormat,
+                verbose: VerboseLevel
               ): IO[Schema] = for {
     schema <- es.weso.shex.Schema.fromString(schemaString, cnvFormat(format))
-    resolvedSchema <- es.weso.shex.ResolvedSchema.resolve(schema, None)
+    resolvedSchema <- es.weso.shex.ResolvedSchema.resolve(schema, None, verbose)
     schema <- IO.fromEither(ShEx2WShEx().convertSchema(resolvedSchema))
   } yield schema
 
@@ -132,10 +135,11 @@ object Schema {
    */ 
  def unsafeFromPath(
    path: Path, 
-   format: WShExFormat = CompactFormat
+   format: WShExFormat = CompactFormat,
+   verbose: VerboseLevel
    ): Schema = {
     import cats.effect.unsafe.implicits.global
-    fromPath(path, format).unsafeRunSync()
+    fromPath(path, format, verbose).unsafeRunSync()
   }
 
     /**
@@ -170,9 +174,10 @@ object Schema {
     */
   def unsafeFromString2(
                       schemaString: String,
-                      format: WShExFormat = CompactFormat
+                      format: WShExFormat = CompactFormat,
+                      verbose: VerboseLevel
                     ): Schema = {
     import cats.effect.unsafe.implicits.global
-    fromString(schemaString, format).unsafeRunSync()
+    fromString(schemaString, format, verbose).unsafeRunSync()
   }
 }

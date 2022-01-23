@@ -129,7 +129,7 @@ object Utils {
            val shapeMap = FixedShapeMap(Map(focus -> Map(lbl -> Info())), dataPrefixMap, schema.prefixMap)
            for {
              // _         <- testInfoValue(s"shapeMap", shapeMap, verbose)
-             resolvedSchema <- ResolvedSchema.resolve(schema, Some(fa.schema))
+             resolvedSchema <- ResolvedSchema.resolve(schema, Some(fa.schema), verbose)
              // _         <- testInfoValue(s"resolvedSchema", resolvedSchema, verbose)
              externalResolver: ExternalResolver = fa.shapeExterns.fold[ExternalResolver](ExternalResolver.NoAction)(ExternalResolver.ExternalIRIResolver(_))
              validator = Validator(schema = resolvedSchema, 
@@ -313,7 +313,7 @@ object Utils {
           _             <- testInfo(s"ShapeMap:\n$smapStr", verbose)
           sm            <- fromES(ShapeMap.fromJson(smapStr).leftMap(s => s"Error parsing shapeMap: $s\nShapeMap:\n$smapStr"))
           schema        <- Schema.fromString(schemaStr, "SHEXC", None)
-          resolvedSchema <- ResolvedSchema.resolve(schema, None)
+          resolvedSchema <- ResolvedSchema.resolve(schema, None, verbose)
           fixedShapeMap <- ShapeMap.fixShapeMap(sm, emptyRdf, PrefixMap.empty, PrefixMap.empty)
           dataUri = mkLocal(mr.data, schemasBase, folderURI)
           strData        <- derefUriIO(dataUri)
