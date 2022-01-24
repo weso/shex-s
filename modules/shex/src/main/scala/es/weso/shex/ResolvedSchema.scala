@@ -137,6 +137,7 @@ object ResolvedSchema {
    }
   }
 
+  // TODO: Check possible infinite loop when shape exprs contain themselves...
    private def addShapeExpr(g: Inheritance[ShapeLabel], 
                 sub: ShapeLabel, 
                 se: ShapeExpr,
@@ -144,14 +145,15 @@ object ResolvedSchema {
                 ): IO[Unit] = {
     se match {
       case s: Shape => addExtendsRestricts(g,sub, s) 
-      /*case s: ShapeAnd => {
-         def f(x: Unit, shape: Shape): IO[Unit] = {
-           verbose.debug(s"Inside and of ${sub.toRDFNode.show}: new shape: ${shape.id.map(_.toRDFNode.show).getOrElse("?")}") *>
-           addExtendsRestricts(g,sub,shape)
+      case s: ShapeAnd => {
+         def f(x: Unit, se: ShapeExpr): IO[Unit] = {
+           verbose.debug(s"Inside and of git${sub.toRDFNode.show}: new shape: ${se.id.map(_.toRDFNode.show).getOrElse("?")}") *>
+           // TODO: Check visited before?
+           addShapeExpr(g, sub, se, verbose)
          }
          verbose.debug(s"ShapeAnd: ${sub.toRDFNode.show}: $s") *>  
-         s.shapeExprs.collect { case s: Shape => s}.foldM(())(f)
-      } */
+         s.shapeExprs.foldM(())(f)
+      }
       case ShapeDecl(l,_,se) => se match {
         case _ => addShapeExpr(g,sub, se, verbose)  
       }
@@ -159,9 +161,14 @@ object ResolvedSchema {
      }
    }
   
-  private def addPair(g: Inheritance[ShapeLabel], verboseLevel: VerboseLevel)(u: Unit, pair: (ShapeLabel,ResolvedShapeExpr)): IO[Unit] = {
-     val (shapeLabel,rse) = pair
-     addShapeExpr(g, shapeLabel, rse.se, verboseLevel)
+  private def addPair(
+    g: Inheritance[ShapeLabel], 
+    verboseLevel: VerboseLevel)(
+    u: Unit, 
+    pair: (ShapeLabel,ResolvedShapeExpr)
+    ): IO[Unit] = {
+     val (shapeLabel,resolvedShapeExpr) = pair
+     addShapeExpr(g, shapeLabel, resolvedShapeExpr.se, verboseLevel)
    }
 
   private def mkInheritanceGraph(

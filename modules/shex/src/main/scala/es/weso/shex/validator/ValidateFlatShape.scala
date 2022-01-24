@@ -25,6 +25,9 @@ case class ValidateFlatShape(
   builder: RDFBuilder
 ) extends ShExChecker {
 
+  private def showId(s: FlatShape): String = 
+    s.id.map(lbl => shapesPrefixMap.qualify(lbl.toRDFNode)).getOrElse("?")
+
   private[validator] def checkFlatShape(
     attempt: Attempt, 
     node: RDFNode, 
@@ -35,10 +38,9 @@ case class ValidateFlatShape(
             ): CheckTyping = {
       val (path, constraint) = slot
       for {
-        _ <- { info(s"""|CheckFlatShape 
+        _ <- { debug(s"""|checkFlatShape in slot
                         |  Slot path=${path.show}, 
                         |  constraint=${constraint.show}
-                        |  Attempt: ${attempt}
                         |""".stripMargin) }
         typing1 <- checkTyping
         typing2 <- checkConstraint(attempt, node, path, constraint)
@@ -48,17 +50,14 @@ case class ValidateFlatShape(
       }
     }
     for {
-      _ <- info(s"""|FlatShape 
-                    | shape: ${shape.show}
-                    | node: ${node.show}
-                    |""".stripMargin)
+      _ <- info(s"""|checkFlatShape(${node.show}@{${showId(shape)}}""".stripMargin)
       extra <- extraPreds(node, shape.preds)
-      _ <- info(s"Extra preds: $extra. Closed? ${shape.closed}")
+      _ <- debug(s"Extra preds: $extra. Closed? ${shape.closed}")
       typing <- if (shape.closed && extra.nonEmpty) {
         errClosedButExtraPreds(extra)
       } else 
         shape.slots.foldLeft(zero)(cmb)
-      _ <- info(s"FlatShape(${node.show}@${shape.show}}) successful")  
+      _ <- debug(s"FlatShape(${node.show}@${showId(shape)}}) successful")  
     } yield typing
   }
 
@@ -72,11 +71,11 @@ case class ValidateFlatShape(
 
   private def checkConstraint(attempt: Attempt, node: RDFNode, path: Path, constraint: Constraint): CheckTyping =
     for {
-      _ <- info(s"checkConstraint: ${constraint.show} for ${showNode(node)} with path ${path.show}")
+      _ <- debug(s"checkConstraint: ${constraint.show} for ${showNode(node)} with path ${path.show}")
       values <- getValuesPath(node, path)
-      _ <- info(s"Values of node ${showNode(node)} with path ${path.show} = [${values.map(_.show).mkString(",")}]")
+      _ <- debug(s"Values of node ${showNode(node)} with path ${path.show} = [${values.map(_.show).mkString(",")}]")
       typing <- checkValuesConstraint(values, constraint, node, path, attempt)
-      _ <- info(s"After checkConstraint: typing = ${typing.show}")
+      _ <- debug(s"After checkConstraint(${node.show}, Constraint: ${constraint.show}): ${typing.show}")
     } yield typing
 
   private def getExistingPredicates(node: RDFNode): Check[Set[IRI]] =
@@ -94,16 +93,16 @@ case class ValidateFlatShape(
     val card: Cardinality = constraint.card
     constraint.shape match {
       case None =>
-        if (card.contains(values.size)) addEvidence(attempt.nodeShape, s"# of values fits $card")
+        if (card.contains(values.size)) addEvidence(attempt.nodeShape, s"Node ${node.show}: number of values (${values.size}) for path ${path.show} fits card ${card.show}")
         else for {
           rdf <- getRDF
-          _ <- info(s"Cardinality error ${values.size} $card") 
+          _ <- debug(s"Cardinality error ${values.size} for path ${path.show} ${card.show}") 
           r <- err[ShapeTyping](ErrCardinality(attempt, node, path, values.size, card,rdf))
         } yield r
       case Some(se) =>
         if (constraint.hasExtra) {
           for {
-            _ <- info(s"Constraint has EXTRA")
+            _ <- debug(s"Constraint ${constraint.show} has EXTRA")
             rdf <- getRDF
             t <- {
               val rs: List[EitherT[IO, String, String]]            = values.toList.map(checkNodeShapeExprBasic(_, se, rdf))
@@ -111,7 +110,7 @@ case class ValidateFlatShape(
               val p: Check[ShapeTyping] = for {
                 partition <- doPartition
                 (notPassed, passed) = partition
-                _ <- info(s"Partition: \nPassed: ${(passed)}\nNot passed: ${notPassed}")
+                _ <- debug(s"Partition: \nPassed: ${(passed)}\nNot passed: ${notPassed}")
                 t <- if (card.contains(passed.size)) {
                   addEvidence(
                     attempt.nodeShape,
@@ -124,7 +123,7 @@ case class ValidateFlatShape(
           } yield t
         } else
           for {
-            _ <- info(s"Constraint has no EXTRA")
+            _ <- debug(s"Constraint has no EXTRA")
             rdf <- getRDF
             t <- if (constraint.card.contains(values.size)) {
               val rs: List[EitherT[IO, (RDFNode, String), (RDFNode, String)]] =
@@ -134,9 +133,7 @@ case class ValidateFlatShape(
               val ct: Check[ShapeTyping] = for {
                 partition <- doPartition
                 (notPassed, passed) = partition
-                /*              val (notPassed, passed) =
-                setPartitionMap(values.map(v => (v, checkNodeShapeExprBasic(v, se, rdf))))(mapFun) */
-                _ <- info(s"Passed: \n${passed.map(_.toString).mkString(s"\n")}\nNo passed\n${notPassed.map(_.toString).mkString(s"\n")}")
+                _ <- debug(s"Passed: \n${passed.map(_.toString).mkString(s"\n")}\nNo passed\n${notPassed.map(_.toString).mkString(s"\n")}")
                 newt <- if (notPassed.isEmpty) {
                   addEvidence(attempt.nodeShape, s"${showNode(node)} passed ${constraint.showQualified(shapesPrefixMap)} for path ${path.showQualified(nodesPrefixMap)}")
                 } else
@@ -149,11 +146,11 @@ case class ValidateFlatShape(
   }
 
   private def errCardinality(attempt: Attempt, node: RDFNode, path: Path, size: Int, card: Cardinality, rdf: RDFReader): CheckTyping = 
-    info(s"Cardinality error: ${size}<>${card}") >>
+    debug(s"Cardinality error: ${size}<>${card}") >>
     err(ErrCardinality(attempt, node, path, size, card,rdf))
 
   private def errCardinalityExtra(attempt: Attempt, node: RDFNode, path: Path, passedSize: Int, notPassedSize: Int, card: Cardinality, rdf: RDFReader): CheckTyping = 
-   info(s"Cardinality with Extra: ${passedSize} ${card}") >>
+   debug(s"Cardinality with Extra: ${passedSize} ${card}") >>
    err(ErrCardinalityWithExtra(attempt, node, path, passedSize, notPassedSize, card,rdf))
 
   private def checkNodeShapeExprBasic(node: RDFNode, se: ShapeExpr, rdf: RDFReader): EitherT[IO, String, String] =

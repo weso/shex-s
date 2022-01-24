@@ -423,9 +423,9 @@ trait ShExChecker {
     } yield r
   }
 
-  def info(msg:String): Check[Unit] = getVerbose.flatMap(v => fromIOUnsafe(v.info(msg)))
-  def debug(msg:String): Check[Unit] = getVerbose.flatMap(v => fromIOUnsafe(v.debug(msg)))
-  def step(msg:String): Check[Unit] = getVerbose.flatMap(v => fromIOUnsafe(v.step(msg)))
+  def info(msg:String): Check[Unit] = getVerbose.flatMap(v => fromIO(v.info(msg)))
+  def debug(msg:String): Check[Unit] = getVerbose.flatMap(v => fromIO(v.debug(msg)))
+  def step(msg:String): Check[Unit] = getVerbose.flatMap(v => fromIO(v.step(msg)))
 
 
   def checkCond(condition: Boolean,
@@ -639,9 +639,8 @@ trait ShExChecker {
   } yield () 
 
   def infoTyping(t: ShapeTyping, msg: String, shapesPrefixMap: PrefixMap): Check[Unit] = for {
-   verbose <- getVerbose 
    nodesPrefixMap <- getNodesPrefixMap
-   _ <- info(s"$msg: ${t.showShort(nodesPrefixMap,shapesPrefixMap)}")
+   _ <- debug(s"$msg: ${t.showShort(nodesPrefixMap,shapesPrefixMap)}")
   } yield ()
 
   def getNodesPrefixMap: Check[PrefixMap] = for {

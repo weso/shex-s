@@ -13,7 +13,7 @@ import es.weso.shex.implicits.showShEx._
   * It can be represented as a map from a path to a constraint.
   * @param slots a vector of pairs (Path, Constraint)
   */
-case class FlatShape(slots: Map[Path, Constraint], closed: Boolean) {
+case class FlatShape(id: Option[ShapeLabel], slots: Map[Path, Constraint], closed: Boolean) {
   lazy val paths: Set[Path]               = slots.keySet
   lazy val preds: Set[IRI]                = paths.collect { case Direct(p) => p }
   lazy val hasRepeatedProperties: Boolean = false
@@ -27,7 +27,7 @@ object FlatShape {
       cs <- shape.expression.fold(empty.asRight[String])(
         flattenTripleExpr(_, empty, shape.extraPaths, schema)
       )
-    } yield FlatShape(cs, shape.isClosed)
+    } yield FlatShape(shape.id, cs, shape.isClosed)
   }
 
   private def flattenTripleExpr(
@@ -82,7 +82,7 @@ object FlatShape {
 
   implicit lazy val showFlatShape: Show[FlatShape] = new Show[FlatShape] {
     final def show(c: FlatShape): String = {
-      s"FlatShape, closed: ${c.closed}\n${c.slots.map(showSlot).mkString("\n")}"
+      s"FlatShape(${c.id.map(_.toRDFNode.show).getOrElse("?")}), closed: ${c.closed}\n${c.slots.map(showSlot).mkString("\n")}"
     }
 
     private def showSlot(pair: (Path, Constraint)): String = {
