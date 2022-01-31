@@ -78,6 +78,7 @@ case class FacetChecker(schema: AbstractSchema, rdf: RDFReader, builder: RDFBuil
         val str = node.getLexicalForm
         // pprint.log(str, tag = "str")
         // pprint.log(p, tag = "p")
+        // pprint.log(flags, tag = "flags")
         RegEx(p, flags).matches(str) match {
           case Right(b) => {
             // pprint.log(b, tag = "b")

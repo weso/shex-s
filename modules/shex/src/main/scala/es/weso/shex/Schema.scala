@@ -165,7 +165,7 @@ object Schema {
   def empty: Schema =
     Schema(IRI(""),None, None, None, None, None, None, List(), None)
 
-  def fromIRI(i: IRI, base: Option[IRI]): IO[Schema] = {
+  def fromIRI(i: IRI, base: Option[IRI], verbose: VerboseLevel): IO[Schema] = {
     val uri = i.uri
     if (uri.getScheme == "file") {
         if (Files.exists(Paths.get(i.uri))) {
@@ -189,27 +189,27 @@ object Schema {
         }}}
       else
        for {
-         schema <- getSchemaWithExts(i, List(("","ShExC"),("shex","ShExC"), ("json", "JSON")),base)
+         schema <- getSchemaWithExts(i, List(("","ShExC"),("shex","ShExC"), ("json", "JSON")), base, verbose)
        } yield schema.addId(i)
   }
 
- private def getSchemaWithExts(iri: IRI, exts: List[(String,String)], base: Option[IRI] ): IO[Schema] = 
+ private def getSchemaWithExts(iri: IRI, exts: List[(String,String)], base: Option[IRI], verbose: VerboseLevel): IO[Schema] = 
   exts match {
-    case (e :: es) => getSchemaExt(iri,e,base) orElse getSchemaWithExts(iri,es,base)
+    case (e :: es) => getSchemaExt(iri, e, base, verbose) orElse getSchemaWithExts(iri,es,base, verbose)
     case Nil => err(s"Can not obtain schema from iri: $iri, Exts: ${exts} ")
   }
 
- private def getSchemaExt(iri: IRI, pair: (String,String), base: Option[IRI]): IO[Schema] = {
-   println(s"getSchemaExt: ${iri} ${pair}") 
+ private def getSchemaExt(iri: IRI, pair: (String,String), base: Option[IRI], verbose: VerboseLevel): IO[Schema] = {
    val (ext,format) = pair
    val uri = if (ext == "") iri.uri
    else (iri + "." + ext).uri
    for {
-    _ <- { println(s"Trying to deref $uri"); IO.pure(()); }
-    str <- derefUri(uri)
-    _ <- { println(s"Str obtained\n${str.linesIterator.take(2).mkString("\n")}\n---"); IO.pure(()); }
+    _ <- verbose.info(s"""|getSchemaExt(iri: $IRI, ext: $ext, format: $format
+                           |Effective uri to deref:$uri""".stripMargin)
+    str <- derefUri(uri,verbose)
+    _ <- verbose.debug(s"Str obtained\n${str.linesIterator.take(2).mkString("\n")}")
     schema <- Schema.fromString(str,format,base,None)
-    _ <- { println(s"Obtained schema at $uri\n${schema}\n---\n"); IO.pure(()); }
+    _ <- verbose.details(s"Obtained schema at $uri\n${schema}")
    } yield schema
   }
 
@@ -318,7 +318,7 @@ object Schema {
 
   import java.net.URI
 
-  private def derefUri(uri: URI): IO[String] = {
+  private def derefUri(uri: URI, verbose: VerboseLevel): IO[String] = {
     Try {
         val urlCon = uri.toURL.openConnection()
         urlCon.setConnectTimeout(10000)
@@ -326,7 +326,7 @@ object Schema {
         val is = urlCon.getInputStream()
         Source.fromInputStream(is).mkString
     }.fold(e => {
-      println(s"Error trying to access $uri: ${e.getMessage()}\n${e.getClass()}\n")
+      verbose.info(s"Error trying to access $uri: ${e.getMessage()}\n${e.getClass()}\n")
       IO.raiseError(e)
     }, IO(_))
   }

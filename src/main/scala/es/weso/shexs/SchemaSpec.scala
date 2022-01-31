@@ -7,9 +7,10 @@ import cats.implicits._
 import es.weso.rdf.nodes.IRI
 import cats.effect.IO
 import es.weso.shex.Schema
+import es.weso.utils.VerboseLevel
 
 sealed abstract class SchemaSpec {
-    def getSchema: IO[Schema]
+    def getSchema(verbose: VerboseLevel): IO[Schema]
     val baseIRI: Option[IRI]
 }
 
@@ -18,7 +19,7 @@ case class SchemaPath(
   schemaFormat: String, 
   baseIRI: Option[IRI],
 ) extends SchemaSpec {
-    override def getSchema: IO[Schema] = 
+    override def getSchema(verbose: VerboseLevel): IO[Schema] = 
         Schema.fromFile(schema.toFile().getAbsolutePath(), schemaFormat, baseIRI, None)
 }
 
@@ -26,7 +27,7 @@ case class SchemaURI(
  uri: URI,
  baseIRI: Option[IRI],
 ) extends SchemaSpec {
-    override def getSchema: IO[Schema] = Schema.fromIRI(IRI(uri), baseIRI)
+    override def getSchema(verbose: VerboseLevel): IO[Schema] = Schema.fromIRI(IRI(uri), baseIRI, verbose)
 }
 
 object SchemaSpec {
