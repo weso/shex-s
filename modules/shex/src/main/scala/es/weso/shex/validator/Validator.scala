@@ -192,12 +192,6 @@ case class Validator(schema: ResolvedSchema,
     } yield newTyping
   }
 
-  private def sh(s: Set[ShapeLabel]): String = 
-    if (s.isEmpty) "{}" 
-    else s.map(_.show).mkString(",") 
-
-  private def showSE(s: ShapeExpr): String = s.id.map(lbl => schema.prefixMap.qualify(lbl.toRDFNode)).getOrElse("?")
-
   private def checkDescendants(
     node: RDFNode,
     s: ShapeExpr, 
@@ -205,10 +199,10 @@ case class Validator(schema: ResolvedSchema,
      descendants <- fromIO(s.id.map(schema.inheritanceGraph.ancestors(_)).getOrElse(IO(Set[ShapeLabel]())))
      visited <- getVisited
      filteredDescendants = descendants.diff(visited)
-     _ <- debug(
-       s"""|checkDescendants(${s.id.map(_.toRDFNode.show).getOrElse("?")})=${sh(descendants)}
+/*     _ <- debug(
+       s"""|checkDescendants(${showSE(s)=${sh(descendants)}
            |visited=${sh(visited)}
-           |descendants filtered=${sh(filteredDescendants)}""".stripMargin)
+           |descendants filtered=${sh(filteredDescendants)}""".stripMargin) */
 
      result <- if (filteredDescendants.isEmpty) for {
          _ <- debug(s"checkDescentants(${node.show}@${showSE(s)}): Empty descendants")
@@ -238,16 +232,16 @@ case class Validator(schema: ResolvedSchema,
      node: RDFNode, 
      s: ShapeExpr): CheckTyping = {
    for {
-     pair <- checkDescendants(node, s, attempt)
-     (t,b) = pair
-     newT <- b match {
+    pair <- checkDescendants(node, s, attempt)
+    (t,b) = pair
+    newT <- b match {
               case Some(label) => infoTyping(t,s"Descendant passed (${label.toRDFNode.show}) with typing ",schema.prefixMap) *>
                ok(t.addEvidence(node,ShapeType(s,s.id,schema),s"Descendant ${label.toRDFNode.show} of shape passed it"))
               case None => {
-               debug(s"All descendants failed") *>
+               infoTyping(t, s"All descendants failed", schema.prefixMap) *>
                runLocalTyping(
                  checkNodeShapeExprNoDescendants(attempt,node,s),
-                 _ => t)
+                 _.combine(t))
              }
             }
     _ <- infoTyping(newT,s"Result of checkNodeShapeExpr($node,${s.id.map(_.toRDFNode.show).getOrElse("?")} = ", schema.prefixMap)             
@@ -281,7 +275,7 @@ case class Validator(schema: ResolvedSchema,
 
   private def checkAnd(attempt: Attempt, node: RDFNode, ses: List[ShapeExpr]): CheckTyping =
     for {
-      _ <- debug(s"And(${ses.map(_.showQualified(schema.prefixMap)).mkString(", ")})")
+      _ <- debug(s"checkAnd($node, ${ses.map(showSE(_)).mkString(",")}")
       ts <- checkAll(ses.map(se => checkNodeShapeExpr(attempt, node, se)))
       t  <- combineTypings(ts)
     } yield t
@@ -292,7 +286,7 @@ case class Validator(schema: ResolvedSchema,
       t1 <- checkSome(
         vs,
         StringError(
-          s"None of the alternatives of OR(${ses.map(_.showQualified(schema.prefixMap)).mkString(",")}) is valid for node ${node.show}"
+          s"None of the alternatives of OR(${ses.map(showSE(_)).mkString(",")}) is valid for node ${node.show}"
         )
       )
       t2 <- addEvidence(attempt.nodeShape, s"${node.show} passes OR")
@@ -308,24 +302,22 @@ case class Validator(schema: ResolvedSchema,
         t1 <- addNotEvidence(
           NodeShape(node, ShapeType(s, None, schema)),
           e,
-          s"${node.show} does not satisfy ${showId(s)}. Negation declared in ${parentShape.show}. Error: $e"
+          s"${node.show} does not satisfy ${showSE(s)}. Negation declared in ${parentShape.show}. Error: $e"
         )
-        t2 <- addEvidence(attempt.nodeShape, s"${node.show} satisfies not(${showId(s)})")
+        t2 <- addEvidence(attempt.nodeShape, s"${node.show} satisfies not(${showSE(s)})")
         t  <- combineTypings(List(t1, t2))
       } yield t
     val handleNotError: ShapeTyping => Check[ShapeTyping] = t =>
-      errStr(s"Failed NOT(${showId(s)}) because node ${node.show} satisfies it")
+      errStr(s"Failed NOT(${showSE(s)}) because node ${node.show} satisfies it")
     cond(check, handleNotError, handleError)
   }
 
-  private def showId(se: ShapeExpr): String = 
-    se.id.map(schema.qualify(_)).getOrElse("_?")
 
   private def checkShapeDecl(attempt: Attempt, node: RDFNode, sd: ShapeDecl): CheckTyping = for {
     t <- checkNodeShapeExpr(attempt,node,sd.shapeExpr)
     _ <- infoTyping(t,"checkShapeDecl. Result of checkNodeShapeExpr: ",schema.prefixMap)
     descendants <- getDescendants(sd)
-    _ <- debug(s"""|checkShapeDecl: Descendants of ${showId(sd)}=${descendants.map(d => schema.prefixMap.qualify(d.toRDFNode)).mkString(",")}
+    _ <- debug(s"""|checkShapeDecl: Descendants of ${showSE(sd)}=${descendants.map(d => schema.prefixMap.qualify(d.toRDFNode)).mkString(",")}
                   |""".stripMargin)
     rdf <- getRDF
     newT <- if (sd._abstract) 
@@ -333,7 +325,7 @@ case class Validator(schema: ResolvedSchema,
                            AbstractShapeErr(node,sd,rdf)),
             (_: Unit) => ok(t),
             _ => {
-              debug(s"No descendants of ${showId(sd)} found that match ${node} removing ${showId(sd)} shape") >>
+              debug(s"No descendants of ${showSE(sd)} found that match ${node} removing ${showSE(sd)} shape") >>
               removeShapeType(node,sd,t)
             }) // orElse (ok(t.addNotEvidence(node,ShapeType(sd,sd.id,schema), AbstractShapeErr(node,sd))))
     else ok(t)
@@ -451,7 +443,7 @@ case class Validator(schema: ResolvedSchema,
     s._extends match {
       case None     => checkShapeRestricts(attempt, node, s)
       case Some(es) => 
-        debug(s"checkShape(${node}@${showSE(s)})") *>
+        debug(s"checkShapeExtendLs(${node}@${showSE(s)})") *>
         checkShapeExtendLs(attempt, node, s, es)
     }
 
@@ -460,10 +452,14 @@ case class Validator(schema: ResolvedSchema,
       node: RDFNode,
       s: Shape,
       es: List[ShapeLabel]
-  ): CheckTyping = {
+  ): CheckTyping = /* {
+    getNeighs(node).flatMap(neighs => 
+      
+    ) */
     es match {
       case Nil      => checkShapeRestricts(attempt, node, s)
       case e :: Nil => for {
+        _ <- info(s"checkShapeExtend with 1 extend ${e.toRDFNode.show}")
         t <- checkShapeExtend(attempt, node, s, e)
         _ <- infoTyping(t,"After checkShapeExtend",schema.prefixMap)
       } yield t 
@@ -471,13 +467,13 @@ case class Validator(schema: ResolvedSchema,
         _ <- debug(s"checkShapeExtendLs(${es.map(_.toRDFNode.show).mkString(",")})")
         t1 <- checkShapeExtend(attempt,node,s,e)
         _ <- infoTyping(t1,s"checkShapeExtendLs(${es.map(_.toRDFNode.show).mkString(",")}): After checkShapeExtend, t1 = ",schema.prefixMap)
-        t2 <- runLocalTyping(checkShapeExtendLs(attempt,node,s,rs), _ => t1)
+        t2 <- runLocalTyping(checkShapeExtendLs(attempt,node,s,rs), _.combine(t1))
         _ <- infoTyping(t2,s"checkShapeExtendLs(${es.map(_.toRDFNode.show).mkString(",")}): After checkShapeExtend, t2 = ",schema.prefixMap)
         // t <- combineTypings(t1,t2)
         // _ <- infoTyping(t,s"checkShapeExtendLs(${es.map(_.toRDFNode.show).mkString(",")}): After checkShapeExtend, t = ",schema.prefixMap)
       } yield t2
-    }
-  }
+    } 
+  
 
   // TODO: Refactor to define this in terms of checkShapeBase...
   private def checkShapeExtend(
@@ -502,7 +498,6 @@ case class Validator(schema: ResolvedSchema,
       _ <- showCurrentTyping("checkShapeExtend: current typing: ", schema.prefixMap)                   
       neighs <- getNeighs(node)
       _ <- { debug(s"Neighs of ${node.show} = ${neighs}") ; ok(()) }
-      // TODO: Move the following code to Neighs.scala
       partitions = SetUtils.pSet(neighs.toList.toSet)
       pair      <- checkSomeFlagValue[(Set[Arc],Set[Arc]),ShapeTyping](
         ls = partitions,
@@ -534,7 +529,7 @@ case class Validator(schema: ResolvedSchema,
                     |checkPartitionPair/start ${node.show}@ extends: ${extendLabel.toRDFNode.show}|
                     |neighs1=$neighs1
                     |neighs2=$neighs2
-                    |Before checkNodeShapeExpr(${node.show},${showId(extended)})
+                    |Before checkNodeShapeExpr(${node.show},${showSE(extended)})
                     |""".stripMargin)
       label = shape.id match {
         case None => attempt.nodeShape.shape.label
@@ -581,9 +576,8 @@ case class Validator(schema: ResolvedSchema,
   ): CheckTyping = {
     for {
       _ <- debug(s"""|checkNeighsShapeWithTable: ${node.show}
-                    |neighs=${neighs}
-                    |shape=${showSE(s)}
-                    |""".stripMargin)
+                     |neighs=${neighs}
+                     |shape=${showSE(s)}""".stripMargin)
       tableRbe <- mkTable(s.expression, s.extra.getOrElse(List()), schema.prefixMap)
       (cTable, rbe) = tableRbe
       // _ <- info(s"cTable: $cTable")
@@ -592,7 +586,7 @@ case class Validator(schema: ResolvedSchema,
       (candidates, rest) = csRest
       _     <- checkRests(rest, s.extraPaths, s.isClosed, ignoredPathsClosed, s, attempt)
       paths <- fromEither(s.paths(schema).leftMap(StringError(_)))
-      _ <- debug(s"Checking closed condition with paths=${paths}, neighs=${neighs}")
+      // _ <- debug(s"Checking closed condition with paths=${paths}, neighs=${neighs}")
       _ <- {
         if (s.isClosed) {
           checkNoStrangeProperties(node, paths.toList, attempt, neighs)
@@ -620,7 +614,7 @@ case class Validator(schema: ResolvedSchema,
       case Nil      => checkShapeBase(attempt, node, s)
       case r :: Nil => for {
         t <- checkShapeRestrict(attempt, node, s, r)
-        _ <- infoTyping(t,"After checkShapeRestrict",schema.prefixMap)
+        // _ <- infoTyping(t,"After checkShapeRestrict",schema.prefixMap)
       } yield t 
       case e :: rs  => err(MultipleRestricts(node,attempt,s,rs))
   }
@@ -820,7 +814,7 @@ case class Validator(schema: ResolvedSchema,
               case (node, pair) => {
                 val (shapeExpr, maybeSemActs) = pair
                 for {
-                  _ <- debug(s"checkCandidateLine|checkNodeShapeExpr(${node.show},${showId(shapeExpr)})")
+                  _ <- debug(s"checkCandidateLine|checkNodeShapeExpr(${node.show},${showSE(shapeExpr)})")
                   t <- checkNodeShapeExpr(attempt, node, shapeExpr)
                   _ <- checkOptSemActs(attempt, node, maybeSemActs)
                 } yield t
@@ -896,7 +890,7 @@ case class Validator(schema: ResolvedSchema,
    Result (
     for {
       shapeTyping <- r.toEither
-      result      <- shapeTyping.toShapeMap(rdfPrefixMap, schema.prefixMap).leftMap(StringError)
+      result      <- shapeTyping.toShapeMap(rdfPrefixMap, schema.prefixMap).leftMap(StringError.apply)
     } yield {
       (r.log, result)
     }

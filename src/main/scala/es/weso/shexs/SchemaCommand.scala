@@ -44,7 +44,7 @@ case class SchemaCommand(
   verbose: VerboseLevel
 ) {
   def run(): IO[ExitCode] = for {
-    schema <- schemaSpec.getSchema
+    schema <- schemaSpec.getSchema(verbose)
     resolved <- ResolvedSchema.resolve(schema, schemaSpec.baseIRI,verbose)
     _ <- if (showInheritance) runShowInheritance(resolved)
          else IO.pure(())

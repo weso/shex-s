@@ -1,8 +1,6 @@
 package es.weso.shex
 
-// import cats._
 import cats.implicits._
-//import es.weso.rdf._
 import es.weso.rdf.nodes._
 import scala.util._
 import cats.effect.IO
@@ -65,19 +63,13 @@ object ResolvedSchema {
   tripleExprMaps: Map[ShapeLabel,ResolvedTripleExpr]
 ) {
  def merge(schema: Schema, iri: IRI): MapsImported = {
+   
    this.copy(
-      shapeExprMaps = cnvMap(schema.shapesMap, (v: ShapeExpr) => ResolvedShapeExpr(v,iri)) ++ shapeExprMaps,
-      tripleExprMaps = cnvMap(schema.tripleExprMap, (v: TripleExpr) => ResolvedTripleExpr(v,iri)) ++ tripleExprMaps
+      shapeExprMaps = schema.shapesMap.mapValues(ResolvedShapeExpr(_,iri)).toMap ++ shapeExprMaps,
+      tripleExprMaps = schema.tripleExprMap.mapValues(ResolvedTripleExpr(_,iri)).toMap ++ tripleExprMaps
      ) 
   } 
  }
-
- // TODO: I think this can be easier with cats instances 
- // but I am not sure now how to invoke it at this moment
- private def cnvMap[A,K,B](
-     m: Map[K,A], 
-     f: A => B
-    ): Map[K,B] = m.map { case(k,a) => (k,f(a)) } 
 
  /**
     * Resolves import declarations in schema
@@ -89,15 +81,16 @@ object ResolvedSchema {
      mapsImported <- closureImports(schema.imports,
       List(schema.id), 
       MapsImported(
-        cnvMap(schema.shapesMap, (v: ShapeExpr) => ResolvedShapeExpr(v)),
-        cnvMap(schema.tripleExprMap, (v: TripleExpr) => ResolvedTripleExpr(v))
+        schema.shapesMap.mapValues(ResolvedShapeExpr(_)).toMap,
+        schema.tripleExprMap.mapValues(ResolvedTripleExpr(_)).toMap
         ),
-      base)
+      base, 
+      verboseLevel)
      inheritanceGraph <- mkInheritanceGraph(mapsImported.shapeExprMaps, verboseLevel)
    } yield ResolvedSchema(
     source = schema, 
-    resolvedMapShapeExprs = mapsImported.shapeExprMaps,
-    resolvedMapTripleExprs = mapsImported.tripleExprMaps,
+    resolvedMapShapeExprs = mapsImported.shapeExprMaps.toMap,
+    resolvedMapTripleExprs = mapsImported.tripleExprMaps.toMap,
     inheritanceGraph,
     labelLocationMap = schema.labelLocationMap
   )
@@ -106,13 +99,14 @@ object ResolvedSchema {
   private def closureImports(imports: List[IRI],
                              visited: List[IRI],
                              current: MapsImported,
-                             base: Option[IRI]
+                             base: Option[IRI],
+                             verbose: VerboseLevel
                             ): IO[MapsImported] = imports match {
     case Nil => IO.pure(current)
-    case (i::is) => if (visited contains i) closureImports(is,visited,current,base)
+    case (i::is) => if (visited contains i) closureImports(is,visited,current,base,verbose)
     else for {
-      schema <- Schema.fromIRI(i,base)
-      sm <- closureImports(is ++ schema.imports, i :: visited, current.merge(schema,i),base)
+      schema <- Schema.fromIRI(i,base, verbose)
+      sm <- closureImports(is ++ schema.imports, i :: visited, current.merge(schema,i),base, verbose)
     } yield sm
   }
 
@@ -147,11 +141,11 @@ object ResolvedSchema {
       case s: Shape => addExtendsRestricts(g,sub, s) 
       case s: ShapeAnd => {
          def f(x: Unit, se: ShapeExpr): IO[Unit] = {
-           verbose.debug(s"Inside and of git${sub.toRDFNode.show}: new shape: ${se.id.map(_.toRDFNode.show).getOrElse("?")}") *>
+           // verbose.debug(s"Inside and ${sub.toRDFNode.show}: new shape: ${se.id.map(_.toRDFNode.show).getOrElse("?")}") *>
            // TODO: Check visited before?
            addShapeExpr(g, sub, se, verbose)
          }
-         verbose.debug(s"ShapeAnd: ${sub.toRDFNode.show}: $s") *>  
+         // verbose.debug(s"ShapeAnd: ${sub.toRDFNode.show}: $s") *>  
          s.shapeExprs.foldM(())(f)
       }
       case ShapeDecl(l,_,se) => se match {

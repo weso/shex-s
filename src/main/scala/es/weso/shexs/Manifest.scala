@@ -28,11 +28,12 @@ case class Manifest(
 
 
   private def printResults(results: List[Result]): IO[Unit] = 
-      if (verbose == VerboseLevel.Nothing) {
-          IO.println(s"Failed/Total: ${results.filter(!_.isOk).length}/${results.length}")
-      } else {
-          results.map(printResult).sequence.map(_ => ())
-      }
+    IO.println(s"Failed/Total: ${results.filter(!_.isOk).length}/${results.length}") *>
+    (if (verbose == VerboseLevel.Nothing) {
+      IO.pure(())
+    } else {
+      results.map(printResult).sequence.map(_ => ())
+    })
 
   private def printResult(result: Result): IO[Unit] =
       if (verbose >= VerboseLevel.All) IO.println(result)

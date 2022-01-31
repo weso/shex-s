@@ -153,7 +153,7 @@ def infoError(err: Throwable): IO[ExitCode] =
   
 
 def doSchemaMapping(smc: SchemaMapping): IO[ExitCode] = for {
-       schema <- smc.schemaSpec.getSchema
+       schema <- smc.schemaSpec.getSchema(smc.verbose)
        mappingStr <- getContents(smc.mapping)
        mapping <- IO.fromEither(SchemaMappings
         .fromString(mappingStr.toString)
@@ -189,7 +189,7 @@ def doValidate(vc: Validate): IO[ExitCode] =
         vv <- (res1,res2).tupled.use { 
       case (rdf,builder) => for {
        nodesPrefixMap <- rdf.getPrefixMap
-       schema <- vc.schemaSpec.getSchema
+       schema <- vc.schemaSpec.getSchema(vc.verbose)
        resolvedSchema <- ResolvedSchema.resolve(schema,None, vc.verbose)
        shapeMap <- getShapeMapFromFile(vc.shapeMapSpec.shapeMap,vc.shapeMapSpec.shapeMapFormat,nodesPrefixMap, schema.prefixMap, vc.schemaSpec.baseIRI)
        fixedMap <- ShapeMap.fixShapeMap(shapeMap, rdf, nodesPrefixMap, resolvedSchema.prefixMap)
@@ -207,7 +207,7 @@ def doWikibaseValidate(wc: WikibaseValidate): IO[ExitCode] =
         vv <- (res1,res2).tupled.use { 
       case (rdf,builder) => for {
        nodesPrefixMap <- rdf.getPrefixMap
-       schema <- wc.schemaSpec.getSchema
+       schema <- wc.schemaSpec.getSchema(wc.verbose)
        resolvedSchema <- ResolvedSchema.resolve(schema,None, wc.verbose)
        shapeMap <- getShapeMapFromFile(wc.shapeMapSpec.shapeMap,wc.shapeMapSpec.shapeMapFormat,nodesPrefixMap, schema.prefixMap, wc.schemaSpec.baseIRI)
        fixedMap <- ShapeMap.fixShapeMap(shapeMap, rdf, nodesPrefixMap, resolvedSchema.prefixMap)
@@ -230,7 +230,7 @@ def getWikibaseRDF(ep: EndpointOpt, pm: PrefixMap): IO[Resource[IO,WikibaseRDF]]
    WikibaseRDF.fromEndpoint(IRI(ep.uri), pm)
 
 def doShapePathEval(spc: ShapePathEval): IO[ExitCode] = for {
-     schema <- spc.schemaSpec.getSchema 
+     schema <- spc.schemaSpec.getSchema(spc.verbose)
      shapePath <- IO.fromEither(ShapePath.fromString(spc.shapePath, "Compact", None, schema.prefixMap).leftMap(err => new RuntimeException(s"Error parsing shapePath: ${err}")))
      result <- { 
        val (ls,v) = ShapePath.eval(shapePath,schema)

@@ -4,6 +4,7 @@ import cats._
 import implicits._
 import es.weso.shex._
 import es.weso.rdf.triples.RDFTriple
+import es.weso.shex.implicits.showShEx._
 
 trait ShowValidator {
   val schema: AbstractSchema
@@ -58,5 +59,23 @@ trait ShowValidator {
       s"Attempt: node: ${a.node.show}, shape: ${a.shape.show}${showPath}"
     }
   }
+
+  def sh(lbls: Set[ShapeLabel]): String = 
+    if (lbls.isEmpty) "{}" 
+    else lbls.map(lbl => schema.prefixMap.qualify(lbl.toRDFNode)).mkString(",")
+
+  def showSE(s: ShapeExpr): String = {
+    s.id.map(lbl => schema.prefixMap.qualify(lbl.toRDFNode)).getOrElse(s match {
+      case sa: ShapeAnd => s"AND(${sa.shapeExprs.map(showSE(_).mkString(","))})"
+      case sa: ShapeOr => s"OR(${sa.shapeExprs.map(showSE(_).mkString(","))})"
+      case sn: ShapeNot => s"NOT(${showSE(sn.shapeExpr)})"
+      case sd: ShapeDecl => s"Decl(${showSE(sd.shapeExpr)})"
+      case sr: ShapeRef => s"@${schema.prefixMap.qualify(sr.reference.toRDFNode)}" 
+      case nc: NodeConstraint => s"${nc.show}"
+      case s: Shape => s"Shape(?)"
+      case se: ShapeExternal => s"External"
+    })
+  }
+
 
 }
