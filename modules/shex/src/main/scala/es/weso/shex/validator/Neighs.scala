@@ -30,8 +30,8 @@ case class Neighs(m: Map[Path,Set[RDFNode]]) {
   } 
 
   // TODO: Finish this method and move code from Validator here
-  def partition: LazyList[(Neighs,Neighs)] = {
-     ??? 
+  def partition(n: Int): LazyList[List[Set[Neighs]]] = {
+     ??? // SetUtils.partition()
      // SetUtils.pSet(this.toList.toSet).map { case (n1,n2) => (Neighs.fromSet(n1),Neighs.fromSet(n2))} 
   }
 

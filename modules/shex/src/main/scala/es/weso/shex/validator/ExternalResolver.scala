@@ -2,6 +2,7 @@ package es.weso.shex.validator
 import es.weso.rdf.nodes.IRI
 import es.weso.shex.{Annotation, Schema, ShapeExpr, ShapeLabel}
 import cats.effect.IO
+import es.weso.utils.VerboseLevel
 
 sealed abstract class ExternalResolver(name: String) {
 
@@ -35,10 +36,10 @@ object ExternalResolver {
    def instance: ExternalResolver = this;  
  }
 
-case class ExternalIRIResolver(iri: IRI) extends ExternalResolver("ExternalIRIResolver") {
+case class ExternalIRIResolver(iri: IRI, verbose: VerboseLevel) extends ExternalResolver("ExternalIRIResolver") {
 
   // TODO: We should cache the schema instead of the IO action!
-  lazy val ioSchema: IO[Schema] = Schema.fromIRI(iri, None)
+  lazy val ioSchema: IO[Schema] = Schema.fromIRI(iri, None, verbose)
 
   override def getShapeExpr(label: ShapeLabel,
                             as: Option[List[Annotation]]
