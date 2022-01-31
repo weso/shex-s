@@ -131,7 +131,7 @@ object Utils {
              // _         <- testInfoValue(s"shapeMap", shapeMap, verbose)
              resolvedSchema <- ResolvedSchema.resolve(schema, Some(fa.schema), verbose)
              // _         <- testInfoValue(s"resolvedSchema", resolvedSchema, verbose)
-             externalResolver: ExternalResolver = fa.shapeExterns.fold[ExternalResolver](ExternalResolver.NoAction)(ExternalResolver.ExternalIRIResolver(_))
+             externalResolver: ExternalResolver = fa.shapeExterns.fold[ExternalResolver](ExternalResolver.NoAction)(ExternalResolver.ExternalIRIResolver(_, verbose))
              validator = Validator(schema = resolvedSchema, 
                 externalResolver = externalResolver,  
                 builder = builder

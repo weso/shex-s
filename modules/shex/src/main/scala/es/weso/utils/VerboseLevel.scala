@@ -4,6 +4,7 @@ import cats.kernel.Order
 import cats.effect._
 import cats.implicits._
 
+
 sealed abstract class VerboseLevel {
   import VerboseLevel._
 
@@ -12,24 +13,24 @@ sealed abstract class VerboseLevel {
   def asBoolean = this > Basic 
 
   def info(msg: String): IO[Unit] = 
-    if (this >= Info) IO.println(msg)
+    if (this >= Info) IO.println(fansi.Color.Blue(msg))
     else IO.pure(())
 
   def basic(msg: String): IO[Unit] = 
-    if (this >= Basic) IO.println(msg)
+    if (this >= Basic) IO.println(fansi.Color.Black(msg))
     else IO.pure(())
 
   def debug(msg: String): IO[Unit] = 
-    if (this >= Debug) IO.println(msg)
+    if (this >= Debug) IO.println(fansi.Color.Red(msg))
     else IO.pure(())
 
   def details(msg: String): IO[Unit] = 
-    if (this >= Details) IO.println(msg)
+    if (this >= Details) IO.println(fansi.Color.DarkGray(msg))
     else IO.pure(())
 
   def step(msg:String): IO[Unit] =
     if (this >= Step) for { 
-      _ <- IO.println(msg)
+      _ <- IO.println(msg + "| <press ENTER to continue> ")
       _ <- IO.readLine
     } yield ()  
     else IO.pure(())
