@@ -156,6 +156,9 @@ trait ShExChecker {
     Foldable[LazyList].foldRight(ls,z)(cmb).value
   }
 
+  /**
+   * Checks some values. Returns the first that passes or None
+   **/ 
   def checkSomeFlagValue[A,B](ls: => LazyList[A],
                                      check: A => Check[B],
                                      last: Check[B]

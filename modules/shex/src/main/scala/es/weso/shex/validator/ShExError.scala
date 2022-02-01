@@ -522,6 +522,33 @@ object ShExError {
 
   }
 
+  case class BaseFails(
+    node: RDFNode, 
+    shape: Shape,
+    attempt: Attempt, 
+    err: ShExError,
+    rdf: RDFReader
+    ) extends ShExError(
+      s"""|BaseFails: ${node.show} doesn't conform to extended shape ${shape} 
+          |Base shape: ${}
+          |  Error obtained: ${err.msg}""".stripMargin) {
+      override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
+        s"""|Node ${nodesPrefixMap.qualify(node)} doesn't conform to extended shape ${shape} 
+            |Attempt: ${attempt.showQualified(nodesPrefixMap,shapesPrefixMap)}
+            |Error: ${err.showQualified(nodesPrefixMap, shapesPrefixMap)}
+            |""".stripMargin
+      }
+
+     override def toJson: Json = Json.obj(
+       ("type", Json.fromString("BaseFails")),
+       ("attempt", attempt.asJson),
+       ("node", ShExError.node2Json(node,rdf)),
+       ("shape", shape.asJson),
+       ("error", err.asJson)
+      ) 
+  }
+
+
   case class ExtendFails(
     node: RDFNode, 
     extended:ShapeLabel, 
@@ -539,7 +566,7 @@ object ShExError {
       }
 
      override def toJson: Json = Json.obj(
-       ("type", Json.fromString("NoDescendantMatches")),
+       ("type", Json.fromString("ExtendFails")),
        ("attempt", attempt.asJson),
        ("node", ShExError.node2Json(node,rdf)),
        ("shape", Json.fromString(extended.toRDFNode.getLexicalForm)),
@@ -551,13 +578,13 @@ object ShExError {
     node: RDFNode,
     attempt: Attempt, 
     s: Shape,
-    extendedLabel: ShapeLabel,
+    extendeds: List[ShapeLabel],
     neighs: Neighs
     ) extends ShExError(s"""|No partition of neighs from node ${node.show} matches shape ${s.id.map(_.toRDFNode.show).getOrElse("")}. 
                             |Neighs = ${neighs} 
-                            |Shape: ${extendedLabel.toRDFNode.show}""".stripMargin) {
+                            |Extemds: ${extendeds.map(_.toRDFNode.show).mkString(",")}""".stripMargin) {
     override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
-      s"""|No partition of neighs from node ${nodesPrefixMap.qualify(node)} matches shape ${shapesPrefixMap.qualify(extendedLabel.toRDFNode)}
+      s"""|No partition of neighs from node ${nodesPrefixMap.qualify(node)} matches shape ${s}
       |Available Neighs: ${neighs.showQualified(nodesPrefixMap)}
       |Shape: ${s.showQualified(shapesPrefixMap)}
       |Attempt: ${attempt.show}
@@ -566,7 +593,7 @@ object ShExError {
 
     override def toJson: Json = Json.obj(
        ("type", Json.fromString("NoPartition")),
-       ("extended", Json.fromString(extendedLabel.toRDFNode.getLexicalForm)),
+       ("extendeds", extendeds.map(e => Json.fromString(e.toRDFNode.getLexicalForm)).asJson),
        ("shape", s.asJson),
 //       ("neighs", neighs.asJson),
        ("attempt", attempt.asJson)
