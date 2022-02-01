@@ -50,14 +50,14 @@ case class ValidateFlatShape(
       }
     }
     for {
-      _ <- info(s"""|checkFlatShape(${node.show}@{${showId(shape)}}""".stripMargin)
+      _ <- debug(s"""|checkFlatShape(${node.show}@{${showId(shape)}}""".stripMargin)
       extra <- extraPreds(node, shape.preds)
       // _ <- debug(s"Extra preds: $extra. Closed? ${shape.closed}")
       typing <- if (shape.closed && extra.nonEmpty) {
         errClosedButExtraPreds(extra)
       } else 
         shape.slots.foldLeft(zero)(cmb)
-      _ <- info(s"FlatShape(${node.show}@${showId(shape)}}) successful")  
+      _ <- debug(s"FlatShape(${node.show}@${showId(shape)}}) successful")  
     } yield typing
   }
 
