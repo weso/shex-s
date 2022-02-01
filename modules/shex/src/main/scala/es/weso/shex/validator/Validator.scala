@@ -522,7 +522,7 @@ case class Validator(schema: ResolvedSchema,
   }
 
 
-  // TODO: Refactor to define this in terms of checkShapeBase...
+/*
   private def checkShapeExtend(
       attempt: Attempt,
       node: RDFNode,
@@ -609,7 +609,7 @@ case class Validator(schema: ResolvedSchema,
       else errPartitionFailed(node,attempt,shape,extendLabel,pair) 
     } yield pair 
   }
-
+*/
   private def checkNeighsShape(attempt: Attempt, node: RDFNode, neighs: Neighs, s: Shape): CheckTyping =
     if (s.hasRepeatedProperties(schema))
       checkNeighsShapeWithTable(attempt, node, neighs, s)
