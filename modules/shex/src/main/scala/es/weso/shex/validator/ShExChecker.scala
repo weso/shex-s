@@ -36,7 +36,7 @@ case class State()
 
 trait ShExChecker {
 
-  val builder: RDFBuilder
+//  val builder: RDFBuilder
 
   type Config = ShExConfig 
   type Env = Context

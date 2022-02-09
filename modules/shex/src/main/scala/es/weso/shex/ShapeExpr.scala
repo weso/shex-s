@@ -20,6 +20,10 @@ sealed abstract trait ShapeExpr extends Product with Serializable {
     showShapeExpr(this, pm)
   }
 
+  def showId(pm: PrefixMap) = {
+    id.map(_.showQualify(pm)).getOrElse("?")
+  }
+
   def paths(schema: AbstractSchema): Either[String, Set[Path]]
   def addAnnotations(as: List[Annotation]): ShapeExpr
   def addSemActs(as: List[SemAct]): ShapeExpr
@@ -126,6 +130,13 @@ sealed abstract trait ShapeExpr extends Product with Serializable {
 
   def children(schema: AbstractSchema): List[Shape] = {
     List()
+  }
+
+  lazy val flattenTCs: Set[TripleConstraint] = this match {
+    case sa: ShapeAnd => { 
+      val ls = sa.shapeExprs.map(_.flattenTCs)
+      ???
+    }
   }
 }
 

@@ -173,8 +173,8 @@ case class Validator(schema: ResolvedSchema,
   private[validator] def checkNodeLabel(node: RDFNode, label: ShapeLabel): CheckTyping = {
     for {
       _ <- debug(s"checkNodeLabel(${node.show},${label.show})")
-      strInheritance <- fromIO(schema.inheritanceGraph.show(label => schema.prefixMap.qualify(label.toRDFNode)))
-      _ <- debug(s"InheritanceGraph\n${strInheritance}\n")
+      // strInheritance <- fromIO(schema.inheritanceGraph.show(label => schema.prefixMap.qualify(label.toRDFNode)))
+      // _ <- debug(s"InheritanceGraph\n${strInheritance}\n")
       typing <- getTyping
       visited <- getVisited
       _ <- debug(s"Visited: ${visited.map(_.show).mkString(",")}")
@@ -209,7 +209,7 @@ case class Validator(schema: ResolvedSchema,
          t <- getTyping
        } yield (t,none[ShapeLabel])
       else 
-       debug(s"checkDescentants(${node.show}@${showSE(s)}): ${sh(filteredDescendants)}") *>
+       debug(s"checkDescentants(${node.show}@${showSE(s)}): ${filteredDescendants.toList.map(_.show).mkString(",")}") *>
        checkSomeFlagValue(filteredDescendants.toLazyList,
          (d: ShapeLabel) => for {
            se <- getShape(d)
@@ -238,13 +238,13 @@ case class Validator(schema: ResolvedSchema,
               case Some(label) => infoTyping(t,s"Descendant passed (${label.toRDFNode.show}) with typing ",schema.prefixMap) *>
                ok(t.addEvidence(node,ShapeType(s,s.id,schema),s"Descendant ${label.toRDFNode.show} of shape passed it"))
               case None => {
-               infoTyping(t, s"All descendants failed", schema.prefixMap) *>
+               infoTyping(t, s"checkNodeShapeExpr(${node.show},${showSE(s)}, no descendants passed. calling checkNodeShapeExprNoDescendants...", schema.prefixMap) *>
                runLocalTyping(
                  checkNodeShapeExprNoDescendants(attempt,node,s),
                  _.combine(t))
              }
             }
-    _ <- infoTyping(newT,s"Result of checkNodeShapeExpr($node,${s.id.map(_.toRDFNode.show).getOrElse("?")} = ", schema.prefixMap)             
+    _ <- infoTyping(newT,s"Result of checkNodeShapeExpr($node,${showSE(s)} = ", schema.prefixMap)             
    } yield newT
   }
 
@@ -255,7 +255,7 @@ case class Validator(schema: ResolvedSchema,
      typing <- s match {
        case so: ShapeOr => checkOr(attempt, node, so.shapeExprs)
        case sa: ShapeAnd => 
-         // info(s"shapeAnd") *>
+         debug(s"shapeAnd") *>
          checkAnd(attempt, node, sa.shapeExprs)
        case sn: ShapeNot => checkNot(attempt, node, sn.shapeExpr)
        case nc: NodeConstraint => checkNodeConstraint(attempt, node, nc)
@@ -412,7 +412,7 @@ case class Validator(schema: ResolvedSchema,
     else
       for {
         rdf <- getRDF
-        t   <- FacetChecker(schema, rdf, builder).checkFacets(attempt, node)(xsFacets)
+        t   <- FacetChecker(schema, rdf).checkFacets(attempt, node)(xsFacets)
       } yield t
   }
 
