@@ -385,7 +385,7 @@ case class Validator(schema: ResolvedSchema,
   }
 
   private def checkValueSetValue(attempt: Attempt, node: RDFNode)(v: ValueSetValue): CheckTyping = {
-   val r: CheckTyping = ValueChecker(schema, builder).checkValue(attempt, node, v)
+   val r: CheckTyping = ValueChecker(schema).checkValue(attempt, node, v)
    r
   }
 

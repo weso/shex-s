@@ -7,7 +7,10 @@ import es.weso.shex._
 import ShExError._
 import es.weso.rdf.RDFBuilder
 
-case class ValueChecker(schema: AbstractSchema, builder: RDFBuilder)
+case class ValueChecker(
+ schema: AbstractSchema
+ // , builder: RDFBuilder
+ )
   extends ShExChecker
   with ShowValidator {
 

@@ -4,6 +4,6 @@ prefix : <http://example.org/>
 :vc2 LITERAL maxlength 5
 :vc3 @:vc1 AND @:vc2 
 
-:S {
+:S extends @:vc3 {
    :p @:vc3
 }

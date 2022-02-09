@@ -20,7 +20,7 @@ case class ResolvedSchema(
   source: Schema,
   resolvedMapShapeExprs: Map[ShapeLabel, ResolvedShapeExpr],
   resolvedMapTripleExprs: Map[ShapeLabel, ResolvedTripleExpr],
-  inheritanceGraph: Inheritance[ShapeLabel],
+  inheritanceGraph: Inheritance[ShapeLabel, ShapesRelation],
   labelLocationMap: Option[Map[ShapeLabel,Location]]
   ) extends AbstractSchema {
   
@@ -86,7 +86,7 @@ object ResolvedSchema {
         ),
       base, 
       verboseLevel)
-     inheritanceGraph <- mkInheritanceGraph(mapsImported.shapeExprMaps, verboseLevel)
+     inheritanceGraph <- InheritanceGraph.mkInheritanceGraph(mapsImported.shapeExprMaps, verboseLevel)
    } yield ResolvedSchema(
     source = schema, 
     resolvedMapShapeExprs = mapsImported.shapeExprMaps.toMap,
@@ -103,95 +103,25 @@ object ResolvedSchema {
                              verbose: VerboseLevel
                             ): IO[MapsImported] = imports match {
     case Nil => IO.pure(current)
-    case (i::is) => if (visited contains i) closureImports(is,visited,current,base,verbose)
-    else for {
-      schema <- Schema.fromIRI(i,base, verbose)
-      sm <- closureImports(is ++ schema.imports, i :: visited, current.merge(schema,i),base, verbose)
-    } yield sm
+    case (i::is) => 
+      if (visited contains i) 
+        closureImports(is,visited,current,base,verbose)
+      else Schema
+         .fromIRI(i,base, verbose)
+         .flatMap(schema => 
+           closureImports(is ++ schema.imports, i :: visited, current.merge(schema,i),base, verbose)
+         )
   }
 
-  private def addLs(g: Inheritance[ShapeLabel],
-                    ls: List[ShapeLabel], 
-                    sub: ShapeLabel) = {
-    def cmb(c: Unit, e: ShapeLabel): IO[Unit] = 
-      g.addInheritance(sub,e)
-    ls.foldM(())(cmb)
-  }
-  
-
-  private def addExtendsRestricts(g: Inheritance[ShapeLabel],
-                         sub: ShapeLabel,
-                         shape: Shape
-                         ): IO[Unit] = {
-    (shape._extends,shape.restricts) match {
-      case (None,None) => ().pure[IO]
-      case (Some(es),None) => addLs(g,es,sub) 
-      case (None,Some(rs)) => addLs(g,rs,sub)
-      case (Some(es),Some(rs)) => addLs(g,es ++ rs, sub)
-   }
-  }
-
-  private def showSE(se: ShapeExpr): String = se match {
-    case and: ShapeAnd => "AND"
-    case s: Shape => "Shape"
-    case sd: ShapeDecl => "ShapeDecl"
-    case sr: ShapeRef => s"ShapeRef(${sr.reference.toRDFNode.show})"
-    case _ => "other"
-  }
-
-  // TODO: Check possible infinite loop when shape exprs contain themselves...
-   private def addShapeExpr(g: Inheritance[ShapeLabel], 
-                sub: ShapeLabel, 
-                se: ShapeExpr,
-                verbose: VerboseLevel
-                ): IO[Unit] = {
-    // verbose.info(s"addShapeExpr(${sub},${showSE(se)}") *>
-    { se match {
-      case s: Shape => addExtendsRestricts(g,sub, s) 
-      case s: ShapeAnd => {
-         def f(x: Unit, se: ShapeExpr): IO[Unit] = {
-           // verbose.debug(s"Inside and ${sub.toRDFNode.show}: new shape: ${se.id.map(_.toRDFNode.show).getOrElse("?")}") *>
-           // TODO: Check visited before?
-           addShapeExpr(g, sub, se, verbose)
-         }
-         // verbose.debug(s"ShapeAnd: ${sub.toRDFNode.show}: $s") *>  
-         s.shapeExprs.foldM(())(f)
-      }
-      case ShapeDecl(l,_,se) => se match {
-        case _ => addShapeExpr(g,sub, se, verbose)  
-      }
-      case sr: ShapeRef => g.addInheritance(sub,sr.reference)
-      case _ => ().pure[IO]
-     }
-   }}
-  
-  private def addPair(
-    g: Inheritance[ShapeLabel], 
-    verboseLevel: VerboseLevel)(
-    u: Unit, 
-    pair: (ShapeLabel,ResolvedShapeExpr)
-    ): IO[Unit] = {
-     val (shapeLabel,resolvedShapeExpr) = pair
-     addShapeExpr(g, shapeLabel, resolvedShapeExpr.se, verboseLevel)
-   }
-
-  private def mkInheritanceGraph(
-    m: Map[ShapeLabel,ResolvedShapeExpr],
-    verboseLevel: VerboseLevel
-  ): IO[Inheritance[ShapeLabel]] = for {
-    g <- InheritanceJGraphT.empty[ShapeLabel]
-    _ <- m.toList.foldM(())(addPair(g, verboseLevel))
-   } yield g
-
-  def empty: IO[ResolvedSchema] = for {
-    ig <- InheritanceJGraphT.empty[ShapeLabel]
-  } yield ResolvedSchema(
-    source = Schema.empty, 
-    resolvedMapShapeExprs = Map(),
-    resolvedMapTripleExprs = Map(),
-    inheritanceGraph = ig,
-    labelLocationMap = None
-  )
+  def empty: IO[ResolvedSchema] = 
+   InheritanceGraph.empty.map(ig => 
+    ResolvedSchema(
+     source = Schema.empty, 
+     resolvedMapShapeExprs = Map(),
+     resolvedMapTripleExprs = Map(),
+     inheritanceGraph = ig,
+     labelLocationMap = None
+    ))
 
 }
 

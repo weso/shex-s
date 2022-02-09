@@ -56,7 +56,8 @@ case class SchemaCommand(
 
 
   private def runShowInheritance(schema: ResolvedSchema): IO[Unit] = for {
-    inheritanceStr <- schema.inheritanceGraph.show(lbl => schema.qualify(lbl.toRDFNode))
+    inheritanceStr <- 
+      schema.inheritanceGraph.show(lbl => schema.qualify(lbl.toRDFNode), r => s" -${r.name}-> ")
     _ <- IO.println(s"""|Inheritance: 
                         |${inheritanceStr}
                         |""".stripMargin)
