@@ -36,7 +36,7 @@ case class State()
 
 trait ShExChecker {
 
-  val builder: RDFBuilder
+//  val builder: RDFBuilder
 
   type Config = ShExConfig 
   type Env = Context
@@ -446,13 +446,13 @@ trait ShExChecker {
     for {
       t <- getTyping
       _ <- addAction2Log(action)
-    } yield t.addEvidence(nodeShape.node, nodeShape.shape, msg)
+    } yield t.addEvidence(nodeShape.node, nodeShape.st, msg)
   }
 
   def addNotEvidence(nodeShape: NodeShape, e: ShExError, msg: String): Check[ShapeTyping] = {
     val action = Action(iriActions,Some(s"Not Evidence: $nodeShape: $msg"))
     val node = nodeShape.node
-    val shape = nodeShape.shape
+    val shape = nodeShape.st
     for {
       t <- getTyping
       _ <- addAction2Log(action)
@@ -488,10 +488,7 @@ trait ShExChecker {
 
   def getRDF: Check[RDFReader] = getConfig.map(_.rdf) 
   def getVerbose: Check[VerboseLevel] = getConfig.map(_.verboseLevel)
-
-  def getTyping: Check[ShapeTyping] = for {
-    env <- getEnv
-  } yield env.typing
+  def getTyping: Check[ShapeTyping] = getEnv.map(_.typing)
 
   def getNeighs(node: RDFNode): Check[Neighs] = for {
     localNeighs <- getLocalNeighs
@@ -510,14 +507,8 @@ trait ShExChecker {
     }
   } yield neighs
 
-  def getVisited: Check[Set[ShapeLabel]] = for {
-    context <- getEnv
-  } yield context.visited
-    
-
-  def getLocalNeighs: Check[LocalNeighs] = for {
-    context <- getEnv
-  } yield context.localNeighs
+  def getVisited: Check[Set[ShapeLabel]] = getEnv.map(_.visited)
+  def getLocalNeighs: Check[LocalNeighs] = getEnv.map(_.localNeighs)
 
   def getNeighPaths(node: RDFNode, paths: List[Path]): Check[Neighs] = 
   {

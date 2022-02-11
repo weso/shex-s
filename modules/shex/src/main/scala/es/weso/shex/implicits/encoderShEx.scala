@@ -114,10 +114,10 @@ object encoderShEx {
           mkObjectTyped("ShapeExternal",
             List(optField("id", id))
           )
-        case ShapeDecl(id,_abstract,se)   => mkObjectTyped("ShapeDecl",
+        case ShapeDecl(id, se)   => mkObjectTyped("ShapeDecl",
           List(
-            optField("id", id),
-            field("abstract", _abstract),
+            field("id", id),
+            field("abstract", true),
             field("shapeExpr", se)
           )
         )

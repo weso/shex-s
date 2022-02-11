@@ -16,8 +16,10 @@ case class NodeConstraintChecker(
   )
   extends ShExChecker with ShowValidator {
 
+  lazy val checker = ValueChecker(schema)
+
   def nodeConstraintChecker(value: RDFNode, nk: NodeConstraint
-                           ): EitherT[IO,String, String] = {
+                           ): EitherT[IO, String, String] = {
    val rs = List(
       optCheck(nk.nodeKind, checkNodeKind(value)),
       optCheck(nk.values, checkValues(value)),
@@ -46,7 +48,6 @@ case class NodeConstraintChecker(
     else EitherT.fromEither(msgFalse.asLeft[String])
 
   private def checkValues(node: RDFNode)(values: List[ValueSetValue]): EitherT[IO,String, String] = {
-    val checker = ValueChecker(schema,builder)
     checkSome(values.map(v => EitherT.fromEither[IO](checker.valueChecker(node,v))),
       s"Node doesn't belong to ${values.mkString(",")}"
     )
@@ -66,7 +67,7 @@ case class NodeConstraintChecker(
   private def checkXsFacets(node: RDFNode)(facets: List[XsFacet]): EitherT[IO,String, String] =
    if (facets.isEmpty) EitherT.fromEither("".asRight[String])
    else {
-    val r = FacetChecker(schema, rdf, builder).facetsChecker(node,facets)
+    val r = FacetChecker(schema, rdf).facetsChecker(node,facets)
     // println(s"Result of facets checker: $r")
     r
   }

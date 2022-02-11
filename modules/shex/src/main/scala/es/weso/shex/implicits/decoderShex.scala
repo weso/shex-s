@@ -83,10 +83,10 @@ object decoderShEx {
   lazy val decoderShapeDecl: Decoder[ShapeExpr] = Decoder.instance { c =>
     c.downField("type").as[String] match {
       case Right("ShapeDecl") => for {
-        id <- optFieldDecode[ShapeLabel](c, "id")
+        id <- fieldDecode[ShapeLabel](c, "id")
         abst <- optFieldDecode[Boolean](c,"abstract")
         se <- fieldDecode[ShapeExpr](c,"shapeExpr")
-      } yield ShapeDecl(id,abst.getOrElse(false),se)
+      } yield ShapeDecl(id,se)
       case other => Either.left(DecodingFailure(s"Decoding ShapeDecl. Unexpected value $other", Nil))
     }
   }

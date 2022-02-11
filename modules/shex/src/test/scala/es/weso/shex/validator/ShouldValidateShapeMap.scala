@@ -51,7 +51,7 @@ trait ShouldValidateShapeMap extends CatsEffectSuite {
           _ <- info(s"ShapeMap: ${shapeMap}") 
           fixedShapeMap <- ShapeMap.fixShapeMap(shapeMap, rdf, rdfPrefixMap, shex.prefixMap)
           _ <- info(s"Fixed shapeMap: ${fixedShapeMap}") 
-          resolved <- ResolvedSchema.resolve(shex,Some(IRI("")))
+          resolved <- ResolvedSchema.resolve(shex,Some(IRI("")), verbose)
           _ <- info(s"ResolvedSchema: ${resolved}") 
           result <- Validator.validate(resolved, fixedShapeMap, rdf, builder,verbose)
           _ <- info(s"Result: ${result}") 
