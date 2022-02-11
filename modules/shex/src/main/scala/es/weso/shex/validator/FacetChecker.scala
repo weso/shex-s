@@ -14,8 +14,11 @@ import es.weso.utils.IOUtils._
 import es.weso.utils.eitherios.EitherIOUtils._
 import es.weso.rdf.RDFBuilder
 
-case class FacetChecker(schema: AbstractSchema, rdf: RDFReader, builder: RDFBuilder) 
-  extends ShExChecker with ShowValidator {
+case class FacetChecker(
+  schema: AbstractSchema, 
+  rdf: RDFReader, 
+//  builder: RDFBuilder
+  ) extends ShExChecker with ShowValidator {
 
   def checkFacets(attempt: Attempt, node: RDFNode)(facets: List[XsFacet]): CheckTyping =
     for {
