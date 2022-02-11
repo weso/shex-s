@@ -43,6 +43,7 @@ lazy val slf4jVersion            = "1.7.3"
 lazy val catsCore          = "org.typelevel"              %% "cats-core"           % catsVersion
 lazy val catsKernel        = "org.typelevel"              %% "cats-kernel"         % catsVersion
 lazy val catsEffect        = "org.typelevel"              %% "cats-effect"         % catsEffectVersion
+lazy val catsAlley         = "org.typelevel"              %% "alleycats-core"      % catsVersion
 lazy val circeCore         = "io.circe"                   %% "circe-core"          % circeVersion
 lazy val circeGeneric      = "io.circe"                   %% "circe-generic"       % circeVersion
 lazy val circeParser       = "io.circe"                   %% "circe-parser"        % circeVersion
@@ -244,6 +245,7 @@ lazy val depGraphs = project
     libraryDependencies ++= Seq(
       catsCore,
       catsKernel,
+      catsAlley,
       jgraphtCore,
       munit,
       munitEffect,

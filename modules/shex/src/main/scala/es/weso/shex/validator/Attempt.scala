@@ -23,7 +23,7 @@ case class Attempt(
   rdf: RDFReader  
 ) {
   def node = nodeShape.node
-  def shape = nodeShape.shape
+  def shape = nodeShape.st
 
   def predicate: Option[IRI] = path
 
@@ -66,7 +66,7 @@ object Attempt {
       Json.fromFields(
         List(
          ("node", attempt.nodeShape.node.getLexicalForm.asJson),
-         ("shape", attempt.nodeShape.shape.asJson)
+         ("shape", attempt.nodeShape.st.asJson)
         ) ++ (if (locations.isEmpty) List()
               else List(("location", locations.toList.asJson)))
       ) 
