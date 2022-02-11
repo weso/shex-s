@@ -7,7 +7,7 @@ case class Evidences(ls: List[(NodeShape, String)]) {
   }
 
   override def toString: String =
-    ls.map { case (ns, msg) => s"${ns.node} - ${ns.shape}: $msg" }.mkString("\n")
+    ls.map { case (ns, msg) => s"${ns.node} - ${ns.st}: $msg" }.mkString("\n")
 }
 
 object Evidences {
