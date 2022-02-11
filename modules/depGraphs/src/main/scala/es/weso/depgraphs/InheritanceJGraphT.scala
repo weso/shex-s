@@ -2,7 +2,8 @@ package es.weso.depgraphs
 
 import org.jgrapht.graph._
 import es.weso.utils.internal.CollectionCompat.CollectionConverters._
-// import cats.implicits._
+import cats.implicits._
+import alleycats.std.set._
 import cats.effect._
 
 case class Edge[Node, EdgeType](sub:Node, sup:Node, etype: EdgeType) {
@@ -53,7 +54,23 @@ case class InheritanceJGraphT[Node,EdgeType](
   } yield if (graph.containsVertex(node)) {
     graph.getDescendants(node).asScala.toSet
   }
-  else Set()   
+  else Set()
+
+  private def collectDescendantsByEdgeType(node: Node, edgeType: EdgeType, visited: Set[Node], graph: DirectedAcyclicGraph[Node,Edge[Node,EdgeType]]): IO[Set[Node]] = {
+    val incomingEdges = graph.incomingEdgesOf(node).asScala.toSet
+    val nodesToCollect = incomingEdges.filter(edge => !visited.contains(edge.sub) && edge.etype == edgeType)
+    val nodes = nodesToCollect.map(edge => edge.sub)
+    nodes.map(node => 
+       collectDescendantsByEdgeType(node, edgeType,visited ++ nodes, graph)
+    )
+    .sequence
+    .map(_.flatten ++ nodes)
+  }
+    
+
+
+  override def descendantsByEdgtype(node: Node, edgeType: EdgeType): IO[Set[Node]] = 
+    getGraph.flatMap(graph => collectDescendantsByEdgeType(node, edgeType, Set(node), graph))
 
   override def ancestors(node: Node): IO[Set[Node]] = for {
     graph <- getGraph

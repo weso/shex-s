@@ -528,16 +528,19 @@ object ShapeExternal {
   def empty: ShapeExternal = ShapeExternal(None, None, None)
 }
 
+/**
+ * Declares an abstract shape expression
+ **/
 case class ShapeDecl(
-    id: Option[ShapeLabel],
-    _abstract: Boolean,
+    lbl: ShapeLabel,
     shapeExpr: ShapeExpr,
 ) extends ShapeExpr {
 
-  override def addId(lbl: ShapeLabel): ShapeDecl = this.copy(id = Some(lbl))
-  override def rmId = this.copy(id = None)
+  override def id = Some(lbl)
+  override def addId(lbl: ShapeLabel): ShapeDecl = this.copy(lbl = lbl)
+  override def rmId = this
 
-  def isVirtual: Boolean = _abstract
+  def isVirtual: Boolean = true
 
   override def paths(schema: AbstractSchema): Either[String, Set[Path]] = {
     shapeExpr.paths(schema)
@@ -554,20 +557,13 @@ case class ShapeDecl(
 
   override def relativize(base: IRI): ShapeDecl =
     this.copy(
-        id = id.map(_.relativize(base)),
+        lbl = lbl.relativize(base),
         shapeExpr = shapeExpr.relativize(base)
     )
 
 }
 
 object ShapeDecl {
-  def empty: ShapeDecl = ShapeDecl(
-    id = None,
-    _abstract = defaultAbstract,
-    shapeExpr = Shape.empty
-  )
-
-  def defaultAbstract: Boolean = false
 }
 
 

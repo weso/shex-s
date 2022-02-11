@@ -15,6 +15,8 @@ import cats.data.Validated._
 import es.weso.shex.implicits.encoderShEx._
 import io.circe._
 import io.circe.syntax._
+import es.weso.shex.Extends
+import es.weso.shex.References
 
 sealed abstract class ShowMethod {
   val name:String
@@ -66,6 +68,10 @@ case class SchemaCommand(
   private def runShowShapeLabel(sl: ShapeLabel, schema: ResolvedSchema, showMethod: ShowMethod): IO[Unit] = for {
     se <- schema.getShape(sl).fold(err => IO.raiseError(new RuntimeException(err)), s => IO.pure(s))
     _ <- IO.println(s"""|Shape: ${shape2String(se,schema.prefixMap, showMethod)}""".stripMargin)
+    extendeds <- schema.inheritanceGraph.descendantsByEdgtype(sl,Extends)
+    references <- schema.inheritanceGraph.descendantsByEdgtype(sl,References)
+    _ <- IO.println(s"Extendeds shapes: ${extendeds.map(sl => schema.qualify(sl)).mkString(",")}")
+    _ <- IO.println(s"References shapes: ${references.map(sl => schema.qualify(sl)).mkString(",")}")
   } yield ()
 
   private def shape2String(se: ShapeExpr, prefixMap: PrefixMap, showMethod: ShowMethod): String = showMethod match {

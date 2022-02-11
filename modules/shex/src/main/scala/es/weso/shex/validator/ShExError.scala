@@ -12,11 +12,13 @@ import es.weso.rbe.BagChecker
 import scala.util.control.NoStackTrace
 import es.weso.rbe.ShowRbe._
 import es.weso.shex.implicits.encoderShEx._
+import es.weso.shex.implicits.showShEx._
 import Attempt._
 import es.weso.rdf.RDFReader
 import es.weso.rdf.locations.Location
 import es.weso.rdf.nodes.Literal
 import es.weso.rdf.nodes.DatatypeLiteral
+import es.weso.shex.Schema
 
 sealed  abstract class ShExError protected (val msg: String) extends Exception(msg) with NoStackTrace with Product with Serializable {
   def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String
@@ -26,6 +28,12 @@ sealed  abstract class ShExError protected (val msg: String) extends Exception(m
 }
 
 object ShExError {
+
+
+  def showSE(se: ShapeExpr, schema: AbstractSchema): String = se.id match {
+    case None => se.show
+    case Some(id) => schema.qualify(id)
+  }
 
   def node2Json(node: RDFNode, rdf: RDFReader): Json = {
     val node2search = node match {
@@ -358,7 +366,7 @@ object ShExError {
        ("type", Json.fromString("ErrorMatchingRegularExpression")),
        ("node", node2Json(node,rdf)),
        ("error", err.toJson),
-       ("shape", Json.fromString(attempt.nodeShape.shape.label.map(_.toRDFNode.getLexicalForm).getOrElse("?"))),
+       ("shape", Json.fromString(attempt.nodeShape.st.label.map(_.toRDFNode.getLexicalForm).getOrElse("?"))),
        ("bag", Json.fromString(bag.toString)),
        ("regularExpression",Json.fromString(Rbe.show(rbe))),
        ("candidateLine",cl.toJson),
@@ -579,15 +587,16 @@ object ShExError {
     attempt: Attempt, 
     s: Shape,
     extendeds: List[ShapeLabel],
-    neighs: Neighs
+    neighs: Neighs,
+    schema: AbstractSchema
     ) extends ShExError(s"""|No partition of neighs from node ${node.show} matches shape ${s.id.map(_.toRDFNode.show).getOrElse("")}. 
                             |Neighs = ${neighs} 
                             |Extemds: ${extendeds.map(_.toRDFNode.show).mkString(",")}""".stripMargin) {
     override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
-      s"""|No partition of neighs from node ${nodesPrefixMap.qualify(node)} matches shape ${s}
+      s"""|No partition of neighs from node ${nodesPrefixMap.qualify(node)} matches shape ${showSE(s,schema)}
       |Available Neighs: ${neighs.showQualified(nodesPrefixMap)}
       |Shape: ${s.showQualified(shapesPrefixMap)}
-      |Attempt: ${attempt.show}
+      |Attempt: ${attempt.showQualified(nodesPrefixMap,shapesPrefixMap)}
       |""".stripMargin
     }
 

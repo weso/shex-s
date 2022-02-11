@@ -96,10 +96,11 @@ trait RDF2ShEx extends RDFParser {
 
   private def shapeDecl: RDFParser[ShapeExpr] = for {
     n <- getNode
+    id <- mkId(n).fold(parseFail[ShapeLabel]("No label for shapeDecl"))(lbl => parseOk(lbl))
     _ <- checkType(sx_ShapeDecl)
     _abstract <- arc(sx_abstract, boolean)
     shapeExpr <- arc(sx_shapeExpr, shapeExpr)
-  } yield ShapeDecl(mkId(n), _abstract, shapeExpr)
+  } yield ShapeDecl(id, shapeExpr)
 
 
   private def nodeConstraint: RDFParser[ShapeExpr] = for {
