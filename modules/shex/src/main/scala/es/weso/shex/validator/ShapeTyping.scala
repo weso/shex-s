@@ -73,7 +73,7 @@ case class ShapeTyping(
   override def toString: String = showShapeTyping
 
   private def cnvShapeType(s: ShapeType): Either[String, ShapeMapLabel] = s.label match {
-    case None => Left(s"Can't create Result shape map for a shape expression without label. ShapeExpr: ${s.shape}")
+    case None => Left(s"Can't create Result shape map for a shape expression without label. ShapeExpr: ${s.se}")
     case Some(lbl) => lbl.toRDFNode match {
       case `sx_start` => Either.right(Start)
       case i: IRI => Either.right(IRIMapLabel(i))
