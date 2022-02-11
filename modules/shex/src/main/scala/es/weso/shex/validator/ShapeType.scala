@@ -5,14 +5,14 @@ import io.circe._
 import io.circe.syntax._
 import es.weso.rdf.locations.Location
 
-case class ShapeType(shape: ShapeExpr,
+case class ShapeType(se: ShapeExpr,
                      label: Option[ShapeLabel],
                      schema: AbstractSchema) {
   def hasLabel(expectedLabel: ShapeLabel): Boolean =
     label.fold(false)(_ == expectedLabel)
 
-  def isAbstract: Boolean = shape match {
-    case ShapeDecl(_,true,_) => true
+  def isAbstract: Boolean = se match {
+    case _: ShapeDecl => true
     case _ => false
   }  
 }

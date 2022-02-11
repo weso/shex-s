@@ -41,11 +41,24 @@ abstract class AbstractSchema {
   lazy val tripleExprMap: Map[ShapeLabel, TripleExpr] =
      optTripleExprMap.getOrElse(Map())
 
-  def qualify(node: RDFNode): String =
-    prefixMap.qualify(node)
+  private def baseQualify(node: RDFNode): Option[String] = 
+   base.flatMap(baseIri => node match {
+    case iri: IRI => if (iri.getLexicalForm.startsWith(baseIri.getLexicalForm))
+      Some(s"<${iri.getLexicalForm.stripPrefix(baseIri.getLexicalForm)}>")
+     else 
+       None  
+    case _ => None
+  })
+
+  def qualify(node: RDFNode): String = {
+    baseQualify(node) match {
+     case None => prefixMap.qualify(node)
+     case Some(s) => s
+    }
+  }
 
   def qualify(label: ShapeLabel): String =
-    prefixMap.qualify(label.toRDFNode)
+    qualify(label.toRDFNode)
 
   def labels: List[ShapeLabel] = shapesMap.keySet.toList
 

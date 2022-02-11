@@ -172,7 +172,7 @@ class SchemaMaker extends ShExDocBaseVisitor[Any] {
       _ <- addLabelLocation(label,location)
       shapeExpr <- obtainShapeExpr(ctx)
       se <- if (isDefined(ctx.KW_ABSTRACT())) 
-        ok(ShapeDecl(Some(label), true, shapeExpr))
+        ok(ShapeDecl(label, shapeExpr))
       else ok(shapeExpr)
       _ <- addShape(label, se)
     } yield (label, se) 

@@ -66,20 +66,15 @@ object ExtendsConverter {
     } yield s.copy(shapeExpr = newS) 
     case sr: ShapeRef => ok(sr)
     case se: ShapeExternal => mkDisj(schema)(se)
-    case ShapeDecl(maybeId,true,_) => for {
-      _ <- info(s"Abstract: ${showId(schema)(maybeId)}")
+    case ShapeDecl(lbl,_) => for {
+      _ <- info(s"Abstract: ${schema.qualify(lbl)}")
       maybeR <- cnvDescendants(schema)(se)
       r <-  maybeR match {
-        case Nil => err[ShapeExpr](s"No descendants for ${showId(schema)(maybeId)}?")
-        case s :: Nil => maybeId match { 
-          case Some(id) => ok(s.addId(id))
-          case None => ok(s) // TODO: Should remove id although I thinks this is an impossible case
-        } 
-        case _ => ok(ShapeOr(id = maybeId, shapeExprs = maybeR.map(_.rmId), None,None))
+        case Nil => err[ShapeExpr](s"No descendants for ${schema.qualify(lbl)}?")
+        case s :: Nil => ok(s.addId(lbl))
+        case _ => ok(ShapeOr(id = Some(lbl), shapeExprs = maybeR.map(_.rmId), None,None))
     }
    } yield r 
-   case ShapeDecl(id,false,_) => 
-    err(s"Non abstract shapeDecl: ${showId(schema)(id)}")
   } 
 
   private def mkDisj(schema: ResolvedSchema)(se: ShapeExpr): Cnv[ShapeExpr] = for {

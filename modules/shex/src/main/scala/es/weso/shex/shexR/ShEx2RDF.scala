@@ -95,7 +95,7 @@ trait ShEx2RDF extends RDFSaver {
     case sd: ShapeDecl => for {
       shapeId <- mkId(sd.id)
       _ <- addTriple(shapeId, `rdf:type`, sx_ShapeDecl)
-      _ <- addContent(sd._abstract, shapeId, sx_abstract, rdfBoolean)
+      _ <- addContent(true, shapeId, sx_abstract, rdfBoolean)
       _ <- addContent(sd.shapeExpr, shapeId, sx_shapeExpr, shapeExpr)
      } yield shapeId
 

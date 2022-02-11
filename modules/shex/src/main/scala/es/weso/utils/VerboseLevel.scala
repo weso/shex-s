@@ -13,7 +13,7 @@ sealed abstract class VerboseLevel {
   def asBoolean = this > Basic 
 
   def info(msg: String): IO[Unit] = 
-    if (this >= Info) IO.println(fansi.Color.Blue(msg))
+    if (this >= Info) IO.println(msg)
     else IO.pure(())
 
   def basic(msg: String): IO[Unit] = 
