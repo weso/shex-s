@@ -7,22 +7,78 @@ import PartitionUtils._
 
 class PartitionUtilsTest extends FunSuite {
 
-  
- test("partsOver") {
+ case class E(key: String, value: Int) extends Entry[String,Int]  
 
-  case class E(key: String, value: Int) extends Entry[String,Int]  
-
-  val ls: List[Available[String]] = List(Available(Set("p","q")), Available(Set()), Available(Set("p")), Available(Set("q")))
-  val ns: List[E] = List(E("p",1),E("p",2),E("q",1))
-  val expected: LazyList[ResultLine[String,Int]] = ???
-      /* LazyList(
-         List(Set(("p",1), ("p",2),("q",1)), Set(), Set(), Set()),
-         List(Set(("p",1), ("p",2)), Set(), Set(), Set(("q",1))),
-         List(Set(("p",1), ("q",1)), Set(), Set(("p",2)), Set()),
-         List(Set(("p",1), ("q",1)), Set(), Set(("p",2)), Set())
-         // ...
-      ) */
-  assertEquals(PartitionUtils.partsOver(ns,ls), expected)
+ {
+  val ns: Set[Entry[String,Int]] = Set(E("p",1),E("p",2))
+  val ls: List[Available[String]] = 
+    List(Available(Set("p")))
+  val expected: LazyList[List[Set[Entry[String,Int]]]] = 
+     LazyList(List(Set(E("p",1), E("p",2))))
+  testPartsOver(ns,ls,expected)  
  }
 
+ {
+  val ns: Set[Entry[String,Int]] = Set(E("p",1),E("p",2))
+  val ls: List[Available[String]] = List(Available(Set("q")))
+  val expected: LazyList[List[Set[Entry[String,Int]]]] = LazyList()
+  testPartsOver(ns,ls,expected)  
+ }
+
+ {
+  val set: Set[Entry[String,Int]] = Set(E("p",1),E("q",1))
+  val ps: List[Available[String]] = List(Available(Set("q")))
+  val expected: LazyList[List[Set[Entry[String,Int]]]] = LazyList()
+  testPartsOver(set,ps,expected)  
+ }
+ 
+
+ {
+  val ns: Set[Entry[String,Int]] = Set(E("p",1),E("q",1))
+  val ls: List[Available[String]] = List(Available(Set("p")), Available(Set("q")))
+  val expected: LazyList[List[Set[Entry[String,Int]]]] = LazyList(
+    List(Set(E("p",1)), Set(E("q",1)))
+  )
+  testPartsOver(ns,ls,expected)  
+ }
+
+ {
+  val ns: Set[Entry[String,Int]] = Set(E("p",1), E("q",1))
+  val ls: List[Available[String]] = List(Available(Set("p")), Available(Set()), Available(Set("q")))
+  val expected: LazyList[List[Set[Entry[String,Int]]]] = LazyList(
+    List(Set(E("p",1)), Set(), Set(E("q",1))), 
+  )
+  testPartsOver(ns,ls,expected)  
+ }  
+
+ {
+  val ns: Set[Entry[String,Int]] = Set(E("p",1), E("p",2))
+  val ls: List[Available[String]] = List(Available(Set("p")), Available(Set()), Available(Set("p")))
+  val expected: LazyList[List[Set[Entry[String,Int]]]] = LazyList(
+    List(Set(E("p",1), E("p",2)), Set(), Set()), 
+    List(Set(E("p",2)), Set(), Set(E("p",1))), 
+    List(Set(E("p",1)), Set(), Set(E("p",2))), 
+    List(Set(), Set(), Set(E("p",1),E("p",2))) 
+  )
+  testPartsOver(ns,ls,expected)  
+ }
+
+ {
+  val ns: Set[Entry[String,Int]] = Set(E("p",1),E("p",2), E("q",1))
+  val ls: List[Available[String]] = List(Available(Set("p", "q")), Available(Set("p")))
+  val expected: LazyList[List[Set[Entry[String,Int]]]] = LazyList(
+    List(Set(E("p",1), E("p",2), E("q",1)), Set()), 
+    List(Set(E("p",2), E("q",1)), Set(E("p",1))), 
+    List(Set(E("p",1), E("q",1)), Set(E("p",2))), 
+    List(Set(E("q",1)), Set(E("p",1), E("p",2))), 
+  )
+  testPartsOver(ns,ls,expected)  
+ }
+
+ def testPartsOver(set: Set[Entry[String,Int]], availables: List[Available[String]], expected: LazyList[List[Set[Entry[String,Int]]]])(implicit loc: munit.Location): Unit = {
+   test(s"Set: ${set}, available: ${availables}") {
+    val result = PartitionUtils.partsOver(set,availables)   
+    assertEquals(result.toList, expected.toList)
+   }
+ }
 }
