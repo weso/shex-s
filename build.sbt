@@ -1,6 +1,6 @@
 lazy val scala212 = "2.12.15"
 lazy val scala213 = "2.13.8"
-lazy val scala3   = "3.1.0"
+lazy val scala3   = "3.1.1"
 lazy val supportedScalaVersions = List(
   scala3,
   scala213,
@@ -17,7 +17,7 @@ lazy val documentVersion         = "0.0.34"
 // Dependency versions
 // lazy val antlrVersion            = "4.9.3"
 lazy val catsVersion             = "2.7.0"
-lazy val catsEffectVersion       = "3.3.4"
+lazy val catsEffectVersion       = "3.3.5"
 lazy val circeVersion            = "0.14.1"
 lazy val commonsTextVersion      = "1.8"
 lazy val declineVersion          = "2.2.0"
@@ -448,7 +448,7 @@ lazy val packagingSettings = Seq(
 )
 
 lazy val compilationSettings = Seq(
-  // scalaVersion := "2.13.1",
+  scalaVersion := supportedScalaVersions.head,
   // format: off
   // javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
   scalacOptions ++= Seq(
@@ -457,7 +457,7 @@ lazy val compilationSettings = Seq(
     "-language:_",
 //    "-target:jvm-1.8",
     "-unchecked",                        // Enable additional warnings where generated code depends on assumptions.
-    "-Ywarn-dead-code",                  // Warn when dead code is identified.
+//    "-Ywarn-dead-code",                  // Warn when dead code is identified.
     // "-Xfatal-warnings",
   ) ++ (if (priorTo2_13(scalaVersion.value))
   Seq(
@@ -466,7 +466,7 @@ lazy val compilationSettings = Seq(
   )
 else
   Seq(
-    "-Ymacro-annotations"
+//    "-Ymacro-annotations"
   ))
 
   // format: on

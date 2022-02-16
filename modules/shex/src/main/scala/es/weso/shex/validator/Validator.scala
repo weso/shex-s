@@ -125,26 +125,17 @@ case class Validator(schema: ResolvedSchema,
 
   private def checkNodeLabelSafe(node: RDFNode, label: ShapeLabel, shape: ShapeExpr): CheckTyping = {
     val shapeType = ShapeType(shape, Some(label), schema)
-    
-    for {
-      rdf <- getRDF
-      attempt = Attempt(NodeShape(node, shapeType), None,rdf)
-      t <- runLocalSafeTyping(
+    getRDF.flatMap(rdf => {
+      val attempt = Attempt(NodeShape(node, shapeType), None, rdf)
+      runLocalSafeTyping(
           bind(
             checkOptSemActs(attempt,node, schema.startActs),
             checkNodeShapeExpr(attempt, node, shape)
           ),
-          t => { 
-            debug(s"checkNodeLabelSafe: adding type ${node.show}@+${shapeType.label.map(_.toRDFNode.show).getOrElse("?")}")
-            t.addType(node, shapeType)
-          },
-          (err, t) => {
-            debug(s"checkNodeLabelSafe: Error, addNotEvidence ${node.show}@-${shapeType.label.map(_.toRDFNode.show).getOrElse("?")}")
-            t.addNotEvidence(node, shapeType, err)
-          }
+          t => t.addType(node, shapeType),
+          (err, t) => t.addNotEvidence(node, shapeType, err)
         )
-      _ <- infoTyping(t, "end of checkNodeLabelSafe:", schema.prefixMap)  
-    } yield t
+    })
   }
 
   private def addNot(node: RDFNode, label: ShapeLabel, typing: ShapeTyping)(err: ShExError): CheckTyping = {
@@ -267,21 +258,22 @@ case class Validator(schema: ResolvedSchema,
        case sd: ShapeDecl => checkShapeDecl(attempt,node, sd)
      }
    ).flatMap(typing => 
-   infoTyping(typing, s"end of checkNodeShapeExpr(${node.show},${showSE(s)})", schema.prefixMap) *>
-   ok(typing)
-   ).orElse(checkDescendants(attempt, node, s))
+    infoTyping(typing, s"end of checkNodeShapeExpr(${node.show},${showSE(s)})", schema.prefixMap) *>
+    ok(typing)
+   ).handleErrorWith(checkDescendants(attempt,node,s)) // orElse(checkDescendants(attempt, node, s))
 
 
-  private def checkDescendants(attempt: Attempt, node: RDFNode, s: ShapeExpr): CheckTyping = 
+  private def checkDescendants(attempt: Attempt, node: RDFNode, s: ShapeExpr)(e: ShExError): CheckTyping = 
     getDescendants(s).flatMap(descendants => {
       val nonAbstractDs = descendants.filter(schema.isNonAbstract(_))
       val cs = nonAbstractDs.toList.map(lbl => checkRef(attempt, node, lbl))
       debug(s"Checking descendants: ${nonAbstractDs.map(schema.qualify(_)).mkString(",")}") *> 
-      checkSome(cs, StringError(
+      (if (cs.isEmpty) err(e)
+      else checkSome(cs, StringError(
           s"None of the descendants (${descendants.map(schema.qualify(_)).mkString(",")}) is valid for node ${node.show}"
         )).flatMap(t1 => 
     addEvidence(attempt.nodeShape, s"${node.show} passes one descendant").flatMap(t2 => 
-    combineTypings(t1, t2)))
+    combineTypings(t1, t2))))
     }
   )
 
@@ -402,12 +394,23 @@ case class Validator(schema: ResolvedSchema,
   }
 
   private def checkShape(attempt: Attempt, node: RDFNode, s: Shape): CheckTyping =
-    s._extends match {
+    getPaths(s,schema).flatMap(paths =>
+    getNeighs(node).flatMap(neighs => {
+     val (neighsInPaths, otherNeighs) = neighs.partitionByPaths(paths)
+     if (s.isClosed && otherNeighs.nonEmpty) {
+       getRDF.flatMap(rdf => 
+       err(ExtraPropertiesClosedShape(node,otherNeighs.getPredicates(), s, rdf)))
+     } else {
+       ???
+     }
+    }))
+
+  /*  s._extends match {
       case None     => checkShapeRestricts(attempt, node, s)
       case Some(es) =>
         debug(s"checkShape(${node.show}@${showSE(s)}) with extends ${es.map(_.show).mkString(",")}") *>
         checkExtendLs(attempt, node, s, es)
-    }
+    } */
 
   private[validator] def checkExtendLs(
       attempt: Attempt,
@@ -604,7 +607,7 @@ case class Validator(schema: ResolvedSchema,
       _ <- debug(s"Checking closed condition with paths=${paths.show}, neighs=${neighs.showQualified(schema.prefixMap)}. Closed: ${s.closed}")
       _ <- {
         if (s.isClosed) {
-          checkNoStrangeProperties(node, paths.toList, attempt, neighs)
+          checkNoStrangeProperties(node, paths.toList, s, attempt, neighs)
         } else ok(())
       }
       // _ <- info(s"Before checkCandidates:\n ${candidates.cs.map(_.show).mkString(",")}\nTable:${cTable.show}\n")
@@ -663,12 +666,13 @@ case class Validator(schema: ResolvedSchema,
     })
 }
 
-  private def checkNoStrangeProperties(node: RDFNode, paths: List[Path], attempt: Attempt, neighs: Neighs): Check[Unit] =
+  private def checkNoStrangeProperties(node: RDFNode, paths: List[Path], shape: Shape, attempt: Attempt, neighs: Neighs): Check[Unit] =
     for {
       s   <- getNotAllowedPredicates(node, paths, neighs)
+      rdf <- getRDF
       //_ <- debug(s"NotAllowedPredicates: ${s}")
       _ <- checkCond(s.isEmpty, attempt, 
-            ExtraPropertiesClosedShape(node,s.toList), "Closed properties with no extra property")
+            ExtraPropertiesClosedShape(node, s, shape, rdf), "Closed properties with no extra property")
     } yield ()
 
   private def checkOptSemActs(attempt: Attempt, node: RDFNode, maybeActs: Option[List[SemAct]]): Check[Unit] =
