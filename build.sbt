@@ -132,6 +132,14 @@ lazy val shexs = project
     fork := true,
     ThisBuild / turbo := true,
     ThisBuild / crossScalaVersions := supportedScalaVersions,
+    // Do not package logback files in .jar, they interfere with other logback
+    // files in classpath
+    Compile / packageBin / mappings ~= { project =>
+      project.filter { case (file, _) =>
+        val fileName = file.getName
+        !(fileName.startsWith("logback") && (fileName.endsWith(".xml") || fileName.endsWith(".groovy")))
+      }
+    },
     Compile / run / mainClass := Some("es.weso.shexs.Main"),
     buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
     buildInfoPackage := "buildinfo"
