@@ -523,8 +523,8 @@ trait ShExChecker {
          outTriples <- fromIO(getTriplesWithSubjectPredicates(rdf,node,outgoingPredicates))
          strRdf <- fromIO(rdf.serialize("TURTLE"))
          outgoing = outTriples.map(t => Arc(Direct(t.pred), t.obj)).toList
-        inTriples <- fromStream(rdf.triplesWithObject(node))
-        incoming = inTriples.map(t => Arc(Inverse(t.pred), t.subj)).toList
+         inTriples <- fromStream(rdf.triplesWithObject(node))
+         incoming = inTriples.map(t => Arc(Inverse(t.pred), t.subj)).toList
         } yield {
          val neighs = outgoing ++ incoming
          Neighs.fromList(neighs)
