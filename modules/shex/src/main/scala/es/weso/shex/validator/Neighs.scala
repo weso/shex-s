@@ -10,7 +10,7 @@ import es.weso.shex.Direct
 import es.weso.rdf.nodes.IRI
 // import es.weso.utils.SetUtils
 
-case class Neighs(m: Map[Path,Set[RDFNode]]) {
+case class Neighs(m: Map[Path,Set[RDFNode]]) extends AnyVal {
 
   def toList: List[Arc] = {
     m.toList.map { case (p,ns) => ns.toList.map(n => (p,n))}.flatten.map{ case (p,n) => Arc(p,n)} 
@@ -22,6 +22,11 @@ case class Neighs(m: Map[Path,Set[RDFNode]]) {
   def filterPaths(paths: List[Path]): Neighs = 
    Neighs(m.filterKeys(paths.contains(_)).toMap)
 
+  def partitionByPaths(paths: List[Path]): (Neighs,Neighs) = {
+    val (m1,m2) = m.partition { case (path,_) => paths.contains(path) }
+    (Neighs(m1), Neighs(m2))
+  }
+
   def filterPathCond(cond: Path => Boolean): Neighs =
    Neighs(m.filterKeys(cond(_)).toMap) 
 
@@ -29,15 +34,10 @@ case class Neighs(m: Map[Path,Set[RDFNode]]) {
     m.toList.map { case (p,vs) => s"${p.showQualified(pm)} ${vs.map(pm.qualify(_)).mkString(", ")}"}.mkString(s";\n")
   } 
 
-  // TODO: Finish this method and move code from Validator here
-  def partition(n: Int): LazyList[List[Set[Neighs]]] = {
-     ??? // SetUtils.partition()
-     // SetUtils.pSet(this.toList.toSet).map { case (n1,n2) => (Neighs.fromSet(n1),Neighs.fromSet(n2))} 
-  }
-
   def getPredicates(): Set[IRI] = 
     m.keySet.collect { case Direct(pred) => pred }
 
+  def nonEmpty: Boolean = m.nonEmpty  
 } 
 
 object Neighs {

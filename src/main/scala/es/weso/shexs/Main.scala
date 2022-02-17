@@ -93,28 +93,28 @@ lazy val dataPath: Opts[DataPath] = (dataOpt,dataFormatOpt).mapN {
   }
 
 
-lazy val endpoint: Opts[EndpointOpt] = UriOpt.uri("endpoint", "endpoint URL").map(EndpointOpt)
+lazy val endpoint: Opts[EndpointOpt] = UriOpt.uri("endpoint", "endpoint URL").map(EndpointOpt.apply)
 
   
 lazy val dataSpec: Opts[DataSpec] = dataPath orElse endpoint
 
-lazy val shapeMapSpec = (shapeMapOpt, shapeMapFormatOpt).mapN(ShapeMapSpec)
+lazy val shapeMapSpec = (shapeMapOpt, shapeMapFormatOpt).mapN(ShapeMapSpec.apply)
   
 lazy val schemaMappingCommand: Opts[SchemaMapping] = 
     Opts.subcommand("mapping", "Convert a schema through a mapping") {
-      (SchemaSpec.schemaSpec, mappingOpt, outputOpt, VerboseLevelOpt.verboseLevel).mapN(SchemaMapping)
+      (SchemaSpec.schemaSpec, mappingOpt, outputOpt, VerboseLevelOpt.verboseLevel).mapN(SchemaMapping.apply)
     }
 
 lazy val validateCommand: Opts[Validate] = 
     Opts.subcommand("validate", "Validate RDF data using a schema and a shape map") {
       (SchemaSpec.schemaSpec, dataSpec, shapeMapSpec, showResultFormatOpt, outputOpt, VerboseLevelOpt.verboseLevel)
-      .mapN(Validate)
+      .mapN(Validate.apply)
     }
 
 lazy val shapePathValidateCommand: Opts[ShapePathEval] =
     Opts.subcommand("shapePath","Validate a shape path") {
       (SchemaSpec.schemaSpec, shapePathOpt, outputOpt, VerboseLevelOpt.verboseLevel)
-      .mapN(ShapePathEval)
+      .mapN(ShapePathEval.apply)
     }
 
 lazy val prefixMapPath: Opts[Option[Path]] = Opts.option[Path]("prefixMapPath","path containing prefix map declarations (Wikidata by default)").orNone
@@ -122,7 +122,7 @@ lazy val prefixMapPath: Opts[Option[Path]] = Opts.option[Path]("prefixMapPath","
 lazy val wikibaseCommand: Opts[WikibaseValidate] = 
     Opts.subcommand("wikibase", "Validate RDF data from wikibase") {
       (SchemaSpec.schemaSpec, endpoint, prefixMapPath, shapeMapSpec, showResultFormatOpt, outputOpt, VerboseLevelOpt.verboseLevel)
-      .mapN(WikibaseValidate)
+      .mapN(WikibaseValidate.apply)
     }
 
 def info(msg: String, verbose: Boolean): IO[Unit] = 

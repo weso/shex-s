@@ -42,10 +42,16 @@ case class ResolvedSchema(
  def imports = source.imports
  
  override def getShape(sl: ShapeLabel): Either[String, ShapeExpr] = {
-   // pprint.log(sl,tag="getShape")
-   // pprint.log(resolvedMapShapeExprs,tag="ResolvedMapShapeExprs")
   resolvedMapShapeExprs.get(sl).toRight(s"Not found $sl").map(_.se) 
  }
+
+ def isNonAbstract(sl: ShapeLabel): Boolean = {
+   getShape(sl).fold(_ => false, se => se match {
+     case _: ShapeDecl => false 
+     case _ => true
+   })
+ }
+
 
  override def getTripleExpr(sl: ShapeLabel): Either[String, TripleExpr] = 
   resolvedMapTripleExprs.get(sl).toRight(s"Not found $sl").map(_.te) 
