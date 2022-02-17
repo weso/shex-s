@@ -16,14 +16,15 @@ import es.weso.rdf.PrefixMap
 import es.weso.rdf.RDFBuilder
 
 /**
-  * ShEx validator
+  * FlatShape validator
   */
-case class ValidateFlatShape(
+case class FlatShapeValidator(
   validator: Validator,
   nodesPrefixMap: PrefixMap,
   shapesPrefixMap: PrefixMap,
-  builder: RDFBuilder
-) extends ShExChecker {
+  builder: RDFBuilder, 
+  schema: ResolvedSchema
+) extends ShExChecker with ShowValidator {
 
   private def showId(s: FlatShape): String = 
     s.id.map(lbl => shapesPrefixMap.qualify(lbl.toRDFNode)).getOrElse(s.show)
@@ -37,7 +38,7 @@ case class ValidateFlatShape(
             slot: (Path, Constraint)
             ): CheckTyping = {
       val (path, constraint) = slot
-      for {
+      /*for {
         /*_ <- { debug(s"""|checkFlatShape in slot
                         |  Slot path=${path.show}, 
                         |  constraint=${constraint.show}
@@ -47,10 +48,11 @@ case class ValidateFlatShape(
         typing  <- combineTypings(typing1, typing2)
       } yield {
         typing
-      }
+      }*/
+      checkConstraint(attempt, node, path, constraint)
     }
     for {
-      _ <- debug(s"""|checkFlatShape(${node.show}@{${showId(shape)}}""".stripMargin)
+      _ <- debug(s"""|checkFlatShape(${node.show}@${showId(shape)}""".stripMargin)
       extra <- extraPreds(node, shape.preds)
       // _ <- debug(s"Extra preds: $extra. Closed? ${shape.closed}")
       typing <- if (shape.closed && extra.nonEmpty) {

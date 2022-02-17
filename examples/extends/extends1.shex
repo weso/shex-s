@@ -1,0 +1,5 @@
+prefix : <http://example/>
+
+:A { :p [ 1 ] } 
+:B extends @:A 
+   CLOSED { :p [ 2 ] }
