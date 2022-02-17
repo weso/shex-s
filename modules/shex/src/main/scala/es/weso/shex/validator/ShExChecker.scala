@@ -28,6 +28,7 @@ import es.weso.rdf.PREFIXES._
 import es.weso.utils.internal.CollectionCompat.LazyList
 import ValidationLog._
 import es.weso.utils.VerboseLevel
+import es.weso.shex.ShapeExpr
 
 case class ConfigEnv(cfg: ShExConfig, env: Context)
 case class State()
@@ -123,9 +124,9 @@ trait ShExChecker {
   }
 
   def checkSomeLazyList[A](cs: LazyList[Check[A]], errIfNone: => Err): Check[A] = {
-    lazy val z: Check[A] = err(errIfNone)
-    def comb(c1: Check[A], c2: Check[A]) = orElse(c1, c2)
-    cs.foldRight(z)(comb)
+    cs.foldRight(err[A](errIfNone)){ 
+     case (c1,c2) => orElse(c1,c2) 
+    } 
   }
 
 
@@ -467,6 +468,16 @@ trait ShExChecker {
     runLocal(c, liftedF)
   }
 
+  def runLocalNeighsVisited[A](c: Check[A],
+                        node: RDFNode,
+                        neighs: Neighs,
+                        visited: Option[ShapeLabel]): Check[A] = {
+    def liftedF(c: Context): Context = 
+       c.addLocalNeighs(node,neighs).addVisited(visited)
+    runLocal(c, liftedF)
+  }
+
+
 
   def runLocalTyping[A](c: Check[A],
                         f: ShapeTyping => ShapeTyping): Check[A] = {
@@ -510,7 +521,7 @@ trait ShExChecker {
   def getVisited: Check[Set[ShapeLabel]] = getEnv.map(_.visited)
   def getLocalNeighs: Check[LocalNeighs] = getEnv.map(_.localNeighs)
 
-  def getNeighPaths(node: RDFNode, paths: List[Path]): Check[Neighs] = 
+  def getNeighPaths(node: RDFNode, paths: Set[Path]): Check[Neighs] = 
   {
     val outgoingPredicates = paths.collect { case Direct(p) => p }
     for {
@@ -520,7 +531,7 @@ trait ShExChecker {
          ok(ns.filterPaths(paths))
         case None =>     for {
          rdf        <- getRDF
-         outTriples <- fromIO(getTriplesWithSubjectPredicates(rdf,node,outgoingPredicates))
+         outTriples <- fromIO(getTriplesWithSubjectPredicates(rdf,node,outgoingPredicates.toList))
          strRdf <- fromIO(rdf.serialize("TURTLE"))
          outgoing = outTriples.map(t => Arc(Direct(t.pred), t.obj)).toList
          inTriples <- fromStream(rdf.triplesWithObject(node))
@@ -596,7 +607,7 @@ trait ShExChecker {
     }
   }
 
- private lazy val `sh:targetNode` = sh + "targetNode"
+  private lazy val `sh:targetNode` = sh + "targetNode"
 
 
   def mkSeq[A,B](vs: List[A], f: A => IO[List[B]]): IO[List[B]] = {
@@ -624,8 +635,8 @@ trait ShExChecker {
   def mkLabel(label: ShapeMapLabel): ShapeLabel =
     ShapeLabel.fromShapeMapLabel(label)
 
-  def getPaths(s: Shape, schema: ResolvedSchema): Check[List[Path]] =
-    fromEitherString(s.paths(schema).map(_.toList))
+  def getPaths(se: ShapeExpr, schema: ResolvedSchema): Check[Set[Path]] =
+    fromEitherString(se.paths(schema))
 
   def showCurrentTyping(msg:String, shapesPrefixMap: PrefixMap): Check[Unit] = for {
     typing <- getTyping
@@ -641,6 +652,5 @@ trait ShExChecker {
     rdf <- getRDF
     pm <- fromIO(rdf.getPrefixMap)
   } yield pm  
-
 
 }

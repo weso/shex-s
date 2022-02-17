@@ -131,7 +131,8 @@ lazy val shexs = project
     cancelable in Global := true,
     fork := true,
     ThisBuild / turbo := true,
-    ThisBuild / crossScalaVersions := supportedScalaVersions,
+    crossScalaVersions := supportedScalaVersions,
+    // ThisBuild / crossScalaVersions := supportedScalaVersions,
     // Do not package logback files in .jar, they interfere with other logback
     // files in classpath
     Compile / packageBin / mappings ~= { project =>
