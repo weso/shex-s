@@ -319,14 +319,22 @@ object ShExError {
 
     }
 
-  case class ExtraPropertiesClosedShape(node: RDFNode, ps: List[IRI]) extends ShExError(s"EXTRA properties on closed shape: ${ps}") {
+ case class ExtraPropertiesClosedShape(
+   node: RDFNode, 
+   ps: Set[IRI], 
+   shape: Shape, 
+   rdf: RDFReader) extends 
+  ShExError(s"EXTRA properties on closed shape ${shape.show}: ${ps}") {
     override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
-      s"""Closed shape with extra properties at node: ${nodesPrefixMap.qualify(node)}) Properties: ${showIris(nodesPrefixMap, ps)}"""
+      s"""|Closed shape ${shape.showQualified(shapesPrefixMap)} with extra properties at node: ${nodesPrefixMap.qualify(node)})
+          |Properties not allowed: ${showIris(nodesPrefixMap, ps.toList)}""".stripMargin
     }
     override def toJson: Json = Json.obj(
        ("type", Json.fromString("ExtraPropertiesClosedShape")),
+       ("shape", shape.asJson),
+       ("node", node2Json(node,rdf)),
+       ("nonAllowedProperties", Json.fromValues(ps.map(iri => node2Json(iri, rdf))))
       ) 
-
   }
 
   case class FailSemanticAction(node: RDFNode, override val msg: String) extends ShExError(s"Failed semantic action on node: $node: $msg") {
