@@ -238,7 +238,7 @@ object showShEx {
   private def optShowExtends(maybeValues: Option[List[ShapeLabel]]): String =
     maybeValues match {
       case None => ""
-      case Some(ls) => " extends " + ls.map(_.show).mkString(",")
+      case Some(ls) => " extends " + ls.map(_.show).mkString(",") + " "
     }
 
   private def optShowRestricts(maybeValues: Option[List[ShapeLabel]]): String =

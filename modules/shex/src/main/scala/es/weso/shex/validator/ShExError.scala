@@ -162,7 +162,7 @@ object ShExError {
   }
 
   case class ErrCardinality(
-     attempt: Attempt, node: RDFNode, path: Path, values: Int, card: Cardinality, rdf: RDFReader) extends ShExError(s"Cardinality error. Node: $node. Cardinality: $card") {
+     attempt: Attempt, node: RDFNode, path: Path, values: Int, card: Cardinality, rdf: RDFReader) extends ShExError(s"Cardinality error. Node: $node. Cardinality: ${card.show}") {
     override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
       s"""${attempt.showQualified(nodesPrefixMap,shapesPrefixMap)}: # of values for ${path.showQualified(shapesPrefixMap)}=$values doesn't match ${card.show}"""
     }
@@ -574,14 +574,14 @@ object ShExError {
     ) extends ShExError(
       s"""|ExtendFails: ${node.show} doesn't conform to extended shape ${extended.toRDFNode.show}
           |  Error obtained: ${err.msg}""".stripMargin) {
-      override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
+    override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
         s"""|Node ${nodesPrefixMap.qualify(node)} doesn't conform to extended shape ${shapesPrefixMap.qualify(extended.toRDFNode)}
             |Attempt: ${attempt.showQualified(nodesPrefixMap,shapesPrefixMap)}
             |Error: ${err.showQualified(nodesPrefixMap, shapesPrefixMap)}
             |""".stripMargin
       }
 
-     override def toJson: Json = Json.obj(
+    override def toJson: Json = Json.obj(
        ("type", Json.fromString("ExtendFails")),
        ("attempt", attempt.asJson),
        ("node", ShExError.node2Json(node,rdf)),
@@ -728,6 +728,32 @@ object ShExError {
        ("node", node2Json(node,rdf)),
        ("label", label.asJson), 
       ) 
+ }
 
+ case class ShapeExprFailedAndNoDescendants(
+  attempt: Attempt, 
+  node: RDFNode, 
+  se: ShapeExpr, 
+  err: ShExError,
+  ds: Set[ShapeLabel],
+  schema: ResolvedSchema) extends ShExError(s"ShapeExpr ${showSE(se,schema)} failed: ${err.msg} and no descendants pass from: ${ds.map(_.toRDFNode.show).mkString(",")}") {
+    
+    override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
+      s"""|ShapeExpr failed: ${showSE(se, schema)}
+          |Node: ${nodesPrefixMap.qualify(node)}
+          |Error: ${err.showQualified(nodesPrefixMap,shapesPrefixMap)}
+          |Descendants that also failed: ${ds.map(_.showQualify(shapesPrefixMap)).mkString(",")}
+          |Attempt: ${attempt} 
+          |""".stripMargin
+    }
+
+    override def toJson: Json = Json.obj(
+       ("type", Json.fromString("ShapeExprFailedAndNoDescendantsPass")),
+       ("message", Json.fromString(err.msg)),
+       ("node", Json.fromString(node.getLexicalForm)),
+       ("shapeExpr", se.asJson),
+       ("descendants", Json.fromValues(ds.map(_.asJson)))
+      )
   }
+
 }
