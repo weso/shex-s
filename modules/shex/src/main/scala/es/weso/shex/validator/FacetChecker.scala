@@ -149,7 +149,7 @@ case class FacetChecker(
               )
         } yield b
       }
-      case _ => EitherT.fromEither[IO](s"Not implemented checkFacet: $facet".asLeft[String])
+      // case _ => EitherT.fromEither[IO](s"Not implemented checkFacet: $facet".asLeft[String])
     }
   }
 

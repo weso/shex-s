@@ -16,6 +16,8 @@ lazy val documentVersion         = "0.0.34"
 
 // Dependency versions
 // lazy val antlrVersion            = "4.9.3"
+lazy val logbackVersion      = "1.2.10"
+lazy val scalaLoggingVersion = "3.9.4"
 lazy val catsVersion             = "2.7.0"
 lazy val catsEffectVersion       = "3.3.5"
 lazy val circeVersion            = "0.14.1"
@@ -74,6 +76,9 @@ lazy val scalacheck        = "org.scalacheck"             %% "scalacheck"       
 lazy val typesafeConfig    = "com.typesafe"               % "config"                % typesafeConfigVersion
 lazy val xercesImpl        = "xerces"                     % "xercesImpl"            % xercesVersion
 
+lazy val logbackClassic = "ch.qos.logback"           % "logback-classic" % logbackVersion
+lazy val scalaLogging =
+  "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingVersion
 
 lazy val MUnitFramework    = new TestFramework("munit.Framework")
 
@@ -129,7 +134,8 @@ lazy val shexs = project
     cancelable in Global := true,
     fork := true,
     ThisBuild / turbo := true,
-    ThisBuild / crossScalaVersions := supportedScalaVersions,
+    crossScalaVersions := supportedScalaVersions,
+    // ThisBuild / crossScalaVersions := supportedScalaVersions,
     // Do not package logback files in .jar, they interfere with other logback
     // files in classpath
     Compile / packageBin / mappings ~= { project =>
@@ -450,8 +456,10 @@ lazy val noDocProjects = Seq[ProjectReference](
 
 lazy val sharedDependencies = Seq(
   libraryDependencies ++= Seq(
-    munit       % Test,
-    munitEffect % Test
+    logbackClassic,
+    scalaLogging,
+   munit % Test,
+   munitEffect % Test
   ),
   testFrameworks += new TestFramework("munit.Framework")
 )

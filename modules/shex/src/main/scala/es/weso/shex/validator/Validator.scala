@@ -17,7 +17,7 @@ import es.weso.shex.validator.ShExError._
 import es.weso.shex.validator.ConstraintRef.{showConstraintRef => _}
 import es.weso.utils.internal.CollectionCompat._
 import es.weso.utils.VerboseLevel
-
+import PartitionUtils._
 /**
   * ShEx validator
   */
@@ -146,10 +146,9 @@ case class Validator(schema: ResolvedSchema,
 
   private[validator] def checkNodeLabel(node: RDFNode, label: ShapeLabel): CheckTyping = {
     for {
-      _ <- debug(s"checkNodeLabel(${node.show},${label.show})")
       typing <- getTyping
       visited <- getVisited
-      _ <- debug(s"Visited: ${visited.map(_.show).mkString(",")}")
+      _ <- debug(s"checkNodeLabel(${node.show},${label.show}). Visited: ${visited.map(_.show).mkString(",")}")
       newTyping <- if (typing.hasInfoAbout(node, label) && !(visited contains label) // visited contains the labels that have been visited by extends and should be ignored
       ) {
         debug(s"checkNodeLabel(${node.show},${label.show}). Typing already contains label ${label.show}. Visited: ${visited}") >>
@@ -263,19 +262,21 @@ case class Validator(schema: ResolvedSchema,
    ).handleErrorWith(checkDescendants(attempt,node,s)) // orElse(checkDescendants(attempt, node, s))
 
 
-  private def checkDescendants(attempt: Attempt, node: RDFNode, s: ShapeExpr)(e: ShExError): CheckTyping = 
-    getDescendants(s).flatMap(descendants => {
-      val nonAbstractDs = descendants.filter(schema.isNonAbstract(_))
+  private def checkDescendants(attempt: Attempt, node: RDFNode, se: ShapeExpr)(e: ShExError): CheckTyping = 
+    getDescendants(se).flatMap(descendants => 
+    getVisited.flatMap(visited =>  
+      {
+     val nonAbstractDs = descendants.filter(d => schema.isNonAbstract(d) && !visited.contains(d))
+     if (nonAbstractDs.isEmpty) err(e)
+     else {
       val cs = nonAbstractDs.toList.map(lbl => checkRef(attempt, node, lbl))
       debug(s"Checking descendants: ${nonAbstractDs.map(schema.qualify(_)).mkString(",")}") *> 
-      (if (cs.isEmpty) err(e)
-      else checkSome(cs, StringError(
-          s"None of the descendants (${descendants.map(schema.qualify(_)).mkString(",")}) is valid for node ${node.show}"
-        )).flatMap(t1 => 
-    addEvidence(attempt.nodeShape, s"${node.show} passes one descendant").flatMap(t2 => 
-    combineTypings(t1, t2))))
+      checkSome(cs, ShapeExprFailedAndNoDescendants(attempt, node, se, e, nonAbstractDs,schema)).flatMap(t1 => 
+       addEvidence(attempt.nodeShape, s"${node.show} passes one descendant").flatMap(t2 => 
+       combineTypings(t1, t2)))
+     }
     }
-  )
+  ))
 
   private def checkAnd(attempt: Attempt, node: RDFNode, ses: List[ShapeExpr]): CheckTyping =
     debug(s"checkAnd($node, ${ses.map(showSE(_)).mkString(",")}") *>
@@ -401,9 +402,64 @@ case class Validator(schema: ResolvedSchema,
        getRDF.flatMap(rdf => 
        err(ExtraPropertiesClosedShape(node,otherNeighs.getPredicates(), s, rdf)))
      } else {
-       ???
+       val entries = getEntries(neighsInPaths)
+       getAvailableShapeExprs(s).flatMap(ses => 
+       getAvailablePaths(ses).flatMap(availablePaths => {
+         val ps = partsOver(entries,availablePaths)
+         val cs: LazyList[CheckTyping] = ps.map(p => { 
+          val neighsShape = entries2Neighs(p.head)
+          val extended = p.zip(ses).tail.map { case (ns,se) => (se, entries2Neighs(ns)) }
+          checkPartitionNeighs(attempt,node,s,neighsShape,extended)
+         })
+         debug(s"Available ShapeExprs: ${ses.map(showSE(_)).mkString(",")}") *>
+         debug(s"Available paths: ${availablePaths.map(_.values.map(_.show).mkString(",")).mkString("|")}") *>
+         checkSomeLazyList(cs, StringError(s"No partition conforms"))
+       }))
      }
     }))
+
+  def checkPartitionNeighs(
+     attempt: Attempt, 
+     node: RDFNode, 
+     s: Shape, 
+     neighsShape: Neighs, 
+     extended: List[(ShapeExpr, Neighs)]): CheckTyping = {
+    getVisited.flatMap(visited =>    
+    debug(s"checkPartitionNeighs(${node.show}@${showSE(s)} with neighs: ${neighsShape.showQualified(schema.prefixMap)}| extended: ${extended.map { case (se,ns) => showSE(se) + "<" + ns.showQualified(schema.prefixMap) + ">" }.mkString("|")} |visited: ${visited.map(_.show).mkString(",")}") *>
+    runLocalNeighsVisited(checkShapeBase(attempt,node,s), node, neighsShape, s.id).flatMap(t => {
+      val cs = extended.map { 
+        case (se,neighs) => 
+          runLocalNeighsVisited(checkNodeShapeExpr(attempt,node,se), node, neighs,s.id) 
+        } 
+      checkAll(cs).flatMap(ts => combineTypings(t :: ts))  
+    }))
+  }
+  
+  private case class E(key: Path, value: RDFNode) extends PartitionUtils.Entry[Path, RDFNode]
+
+  def entries2Neighs(set: Set[Entry[Path,RDFNode]]): Neighs = {
+    val m = set.map(x => (x.key,x.value))
+             .groupBy(_._1).toMap
+    Neighs(mapValues(m)(_.map(_._2)))
+  }
+
+  def getEntries(neighs: Neighs): Set[Entry[Path, RDFNode]] = {
+    neighs.m
+    .map { case (p,ns) => ns.flatMap(n => List((p,n)))}
+    .flatten
+    .map { case (p,n) => E(p,n) }
+    .toSet
+  }
+
+  def getAvailableShapeExprs(s: Shape): Check[List[ShapeExpr]] = 
+    s.getExtend.map(getShape).sequence.map(s :: _ )
+
+  def getAvailablePaths(ses: List[ShapeExpr]): Check[List[Available[Path]]] = {
+    ses.map(se => getPaths(se,schema).map(Available.apply)).sequence
+  }
+    /*     .flatMap(se => 
+         getPaths(se,schema).map(PartitionUtils.Available.apply))
+        ).sequence */
 
   /*  s._extends match {
       case None     => checkShapeRestricts(attempt, node, s)
@@ -648,7 +704,8 @@ case class Validator(schema: ResolvedSchema,
   *  It doesn't check closed or EXTRA
   * */
   private def checkShapeBase(attempt: Attempt, node: RDFNode, s: Shape): CheckTyping = {
-    debug(s"checkShapeBase(${node.show}@{${showSE(s)}}, flatShape? ${s.isFlatShape(schema)}") *> 
+    getVisited.flatMap(visited => 
+    debug(s"checkShapeBase(${node.show}@{${showSE(s)}}, flatShape? ${s.isFlatShape(schema)}, visited: ${visited.map(_.show).mkString(",")}")*> 
     (s match {
       case _ if s.isEmpty => addEvidence(attempt.nodeShape, s"Node ${node.show} conforms empty shape")
       case _ if s.isFlatShape(schema) =>
@@ -663,7 +720,7 @@ case class Validator(schema: ResolvedSchema,
           neighs <- getNeighPaths(node, paths)
           typing <- checkNeighsShape(attempt, node, neighs, s)
         } yield typing
-    })
+    }))
 }
 
   private def checkNoStrangeProperties(node: RDFNode, paths: List[Path], shape: Shape, attempt: Attempt, neighs: Neighs): Check[Unit] =
