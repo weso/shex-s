@@ -34,27 +34,19 @@ case class FlatShapeValidator(
     node: RDFNode, 
     shape: FlatShape): CheckTyping = {
     val zero = getTyping
-    def cmb(checkTyping: CheckTyping, 
-            slot: (Path, Constraint)
-            ): CheckTyping = {
+    def cmb(checkTyping: CheckTyping, slot: (Path, Constraint)): CheckTyping = {
       val (path, constraint) = slot
-      /*for {
-        /*_ <- { debug(s"""|checkFlatShape in slot
-                        |  Slot path=${path.show}, 
-                        |  constraint=${constraint.show}
-                        |""".stripMargin) } */
-        typing1 <- checkTyping
-        typing2 <- checkConstraint(attempt, node, path, constraint)
-        typing  <- combineTypings(typing1, typing2)
-      } yield {
-        typing
-      }*/
-      checkConstraint(attempt, node, path, constraint)
+      debug(s""" checkFlatShapeSlot, node = ${node.show} path: ${path.show}, constraint=${constraint.show}""".stripMargin) *>
+      checkTyping.flatMap(t1 => 
+      checkConstraint(attempt, node, path, constraint).flatMap(t2 => 
+      combineTypings(t1,t2)  
+      ))
     }
     for {
-      _ <- debug(s"""|checkFlatShape(${node.show}@${showId(shape)}""".stripMargin)
+      _ <- debug(s"""|checkFlatShape(${node.show}@${showId(shape)})""".stripMargin)
       extra <- extraPreds(node, shape.preds)
-      // _ <- debug(s"Extra preds: $extra. Closed? ${shape.closed}")
+      _ <- debug(s"Extra preds: $extra. Closed? ${shape.closed}")
+      _ <- debug(s"Slots:\n${shape.slots.map(slot => s"--slot: ${slot.show}").mkString("\n")}")
       typing <- if (shape.closed && extra.nonEmpty) {
         errClosedButExtraPreds(extra)
       } else 
@@ -116,7 +108,7 @@ case class FlatShapeValidator(
                 t <- if (card.contains(passed.size)) {
                   addEvidence(
                     attempt.nodeShape,
-                    s"Number of values for ${showNode(node)} with ${path.showQualified(nodesPrefixMap)} that satisfy ${constraint.shape} = ${passed.size} matches cardinality ${constraint.card}"
+                    s"Number of values for ${showNode(node)} with ${path.showQualified(nodesPrefixMap)} that satisfy ${constraint.shape.map(showSE(_)).getOrElse("<Empty>")} = ${passed.size} matches cardinality ${constraint.card.show}"
                   )
                 } else errCardinalityExtra(attempt,node, path, passed.size, notPassed.size, card, rdf) 
               } yield t
@@ -148,11 +140,11 @@ case class FlatShapeValidator(
   }
 
   private def errCardinality(attempt: Attempt, node: RDFNode, path: Path, size: Int, card: Cardinality, rdf: RDFReader): CheckTyping = 
-    debug(s"Cardinality error: ${size}<>${card}") >>
+    debug(s"Cardinality error on ${node.show} for path ${path.show}: ${size} doesn't match ${card.show}") >>
     err(ErrCardinality(attempt, node, path, size, card,rdf))
 
   private def errCardinalityExtra(attempt: Attempt, node: RDFNode, path: Path, passedSize: Int, notPassedSize: Int, card: Cardinality, rdf: RDFReader): CheckTyping = 
-   debug(s"Cardinality with Extra: ${passedSize} ${card}") >>
+   debug(s"Cardinality error on ${node.show} for path ${path.show} with Extra: ${passedSize} ${card}") >>
    err(ErrCardinalityWithExtra(attempt, node, path, passedSize, notPassedSize, card,rdf))
 
   private def checkNodeShapeExprBasic(node: RDFNode, se: ShapeExpr, rdf: RDFReader): EitherT[IO, String, String] =
