@@ -18,6 +18,8 @@ lazy val documentVersion = "0.0.34"
 
 // Dependency versions
 // lazy val antlrVersion            = "4.9.3"
+lazy val logbackVersion = "1.2.10"
+lazy val scalaLoggingVersion = "3.9.4"
 lazy val catsVersion = "2.7.0"
 lazy val catsEffectVersion = "3.3.2"
 lazy val circeVersion = "0.14.1"
@@ -87,6 +89,11 @@ lazy val scalacheck = "org.scalacheck" %% "scalacheck" % scalacheckVersion
 lazy val pprint = "com.lihaoyi" %% "pprint" % pprintVersion
 lazy val typesafeConfig = "com.typesafe" % "config" % typesafeConfigVersion
 lazy val xercesImpl = "xerces" % "xercesImpl" % xercesVersion
+
+lazy val logbackClassic = "ch.qos.logback" % "logback-classic" % logbackVersion
+lazy val scalaLogging =
+  "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingVersion
+
 
 ThisBuild / githubWorkflowJavaVersions := Seq(Java11)
 
@@ -411,6 +418,8 @@ lazy val noDocProjects = Seq[ProjectReference](
 
 lazy val sharedDependencies = Seq(
   libraryDependencies ++= Seq(
+    logbackClassic,
+    scalaLogging,
     munit % Test,
     munitEffect % Test
   ),
@@ -466,21 +475,6 @@ lazy val wixSettings = Seq(
   // wixProductUpgradeId := "4552fb0e-e257-4dbd-9ecb-dba9dbacf424"
 )
 
-//lazy val ghPagesSettings = Seq(
-//  git.remoteRepo := "git@github.com:labra/shaclex.git"
-//)
-
-/*lazy val commonSettings = compilationSettings ++ sharedDependencies ++ Seq(
-  organization := "es.weso",
-  resolvers ++= Seq(
-    Resolver.githubPackages("weso"),
-    Resolver.sonatypeRepo("snapshots"),
-    Resolver.sonatypeRepo("releases"),
-  ),
-  coverageHighlighting := true,
-  githubOwner := "weso",
-  githubRepository := "shex-s",
-) ++ warnUnusedImport */
 
 def antlrSettings(packageName: String) = Seq(
   antlr4GenListener in Antlr4 := true,
@@ -488,22 +482,6 @@ def antlrSettings(packageName: String) = Seq(
   // antlr4Dependency in Antlr4 := antlr4,
   antlr4PackageName in Antlr4 := Some(packageName)
 )
-
-/*lazy val publishSettings = Seq(
-  homepage := Some(url("https://github.com/labra/shaclex")),
-  licenses := Seq("MIT" -> url("http://opensource.org/licenses/MIT")),
-  scmInfo := Some(ScmInfo(url("https://github.com/labra/shaclex"), "scm:git:git@github.com:labra/shaclex.git")),
-  autoAPIMappings := true,
-  apiURL := Some(url("http://labra.github.io/shaclex/latest/api/")),
-  pomExtra := <developers>
-                       <developer>
-                         <id>labra</id>
-                         <name>Jose Emilio Labra Gayo</name>
-                         <url>https://github.com/labra/</url>
-                       </developer>
-                     </developers>,
-  publishMavenStyle := true,
-)*/
 
 lazy val warnUnusedImport = Seq(
   // scalacOptions ++= (if (isDotty.value) Nil else Seq("-Ywarn-unused:imports")),

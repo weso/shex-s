@@ -31,8 +31,8 @@ sealed abstract class TripleExpr extends Product with Serializable {
   val tripleConstraints: List[TripleConstraintRef] = this match {
     case t: TripleConstraintRef => List(t) 
     case t: TripleConstraintLocal => List()
-    case eo: EachOf => eo.exprs.map(_.tripleConstraints).flatten
-    case oo: OneOf => oo.exprs.map(_.tripleConstraints).flatten
+    case eo: EachOf => eo.exprs.flatMap(_.tripleConstraints)
+    case oo: OneOf => oo.exprs.flatMap(_.tripleConstraints)
     case _ => List()
   }
 
