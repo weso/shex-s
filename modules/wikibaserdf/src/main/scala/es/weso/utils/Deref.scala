@@ -54,9 +54,7 @@ object Deref {
       .uri(iri.uri)
       .timeout(Duration.ofMinutes(4))
       .header("Accept", "text/turtle").GET.build()
-      println(s"Request: ${request}")
       val response = client.send(request, BodyHandlers.ofString) 
-      // println(s"Body: ${response.body()}\nEND BODY (drefJava)")
       response.body() */
       // Java 1.8 code
     val url: URL = iri.uri.toURL

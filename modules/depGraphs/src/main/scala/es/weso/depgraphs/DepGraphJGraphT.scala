@@ -1,14 +1,14 @@
 package es.weso.depgraphs
 
 import cats.implicits._
+import com.typesafe.scalalogging.LazyLogging
+import es.weso.utils.internal.CollectionCompat.CollectionConverters._
 import org.jgrapht.Graph
 import org.jgrapht.alg.connectivity._
 import org.jgrapht.alg.interfaces.StrongConnectivityAlgorithm
 import org.jgrapht.graph._
 
-import es.weso.utils.internal.CollectionCompat.CollectionConverters._
-
-case class DepGraphJGraphT[Node]() extends DepGraph[Node] {
+case class DepGraphJGraphT[Node]() extends DepGraph[Node] with LazyLogging {
 
   case class Edge(source: Node, posNeg: PosNeg, target: Node)
 
@@ -16,9 +16,10 @@ case class DepGraphJGraphT[Node]() extends DepGraph[Node] {
     new DefaultDirectedGraph[Node, Edge](classOf[Edge])
 
   /**
-    * Removes all edges
-    * @return <tt>true</tt> if the graph changed
-    */
+   * Removes all edges
+   *
+   * @return <tt>true</tt> if the graph changed
+   */
   private def removeAllEdges(): Boolean = {
     val edges: java.util.Set[Edge] = graph.edgeSet
     graph.removeAllEdges(edges)
@@ -39,10 +40,11 @@ case class DepGraphJGraphT[Node]() extends DepGraph[Node] {
   }
 
   /**
-    * Checks if a node is in a graph and adds it if it isn't
-    * @param node
-    * @return <tt>true</tt> if it added the node
-    */
+   * Checks if a node is in a graph and adds it if it isn't
+   *
+   * @param node
+   * @return <tt>true</tt> if it added the node
+   */
   private def checkVertex(node: Node): Boolean = {
     // if (!graph.containsVertex(node))
     graph.addVertex(node)
@@ -55,16 +57,16 @@ case class DepGraphJGraphT[Node]() extends DepGraph[Node] {
     this
   }
 
-  private def removeEdge(node1: Node, node2:Node): Unit = {
-    graph.removeEdge(node1,node2)
+  private def removeEdge(node1: Node, node2: Node): Unit = {
+    graph.removeEdge(node1, node2)
   }
 
   override def addEdge(node1: Node, posNeg: PosNeg, node2: Node): DepGraph[Node] = {
     checkVertex(node1)
     checkVertex(node2)
-    this.edgeBetween(node1,node2) match {
+    this.edgeBetween(node1, node2) match {
       case Some(pn) => {
-        removeEdge(node1,node2)
+        removeEdge(node1, node2)
         addEdge(node1, node2, Edge(node1, pn.combine(posNeg), node2))
       }
       case None => addEdge(node1, node2, Edge(node1, posNeg, node2))
@@ -73,7 +75,7 @@ case class DepGraphJGraphT[Node]() extends DepGraph[Node] {
 
   override def edgeBetween(node1: Node, node2: Node): Option[PosNeg] = {
     val outEdges = graph.edgesOf(node1).asScala.toSet
-    outEdges.collect{ case e: Edge if e.target == node2 => e.posNeg }.headOption
+    outEdges.collect { case e: Edge if e.target == node2 => e.posNeg }.headOption
   }
 
   override def outEdges(node: Node): Either[String, Set[(PosNeg, Node)]] = {
@@ -99,25 +101,24 @@ case class DepGraphJGraphT[Node]() extends DepGraph[Node] {
     g.edgeSet.asScala.exists(e => e.posNeg == Neg || e.posNeg == Both)
   }
 
-  override def negCycles: Set[Set[(Node,Node)]] = {
+  override def negCycles: Set[Set[(Node, Node)]] = {
     val scAlg: StrongConnectivityAlgorithm[Node, Edge] =
       new KosarajuStrongConnectivityInspector(graph)
     val sccSubgraphs =
-      scAlg.getStronglyConnectedComponents.asScala.toSet  // stronglyConnectedSubgraphs().asScala.toSet
+      scAlg.getStronglyConnectedComponents.asScala.toSet // stronglyConnectedSubgraphs().asScala.toSet
     sccSubgraphs.filter(containsNegEdge(_)).map(getEdges(_))
   }
 
-  private def getEdges(g: Graph[Node, Edge]): Set[(Node,Node)] = {
+  private def getEdges(g: Graph[Node, Edge]): Set[(Node, Node)] = {
     val es = g.edgeSet.asScala.toSet
-    // println(s"getEdges($g)=$es")
-    es.map(e => (e.source,e.target))
+    logger.trace(s"getEdges($g)=$es")
+    es.map(e => (e.source, e.target))
   }
 
-/*  private def getNodes(g: Graph[Node, Edge]): Set[Node] = {
-    val ns = g.vertexSet.asScala.toSet
-    // println(s"getNodes($g)=$ns")
-    ns
-  } */
+  /*  private def getNodes(g: Graph[Node, Edge]): Set[Node] = {
+      val ns = g.vertexSet.asScala.toSet
+      ns
+    } */
 
   def showPosNeg(pn: PosNeg): String = {
     pn match {
@@ -135,7 +136,7 @@ case class DepGraphJGraphT[Node]() extends DepGraph[Node] {
     str.toString
   }
 
-  type ES[A] = Either[String,A]
+  type ES[A] = Either[String, A]
 
   override def isomorphicWith(other: DepGraph[Node]): Either[String, Unit] = {
     val nodes1 = this.nodes
@@ -152,7 +153,7 @@ case class DepGraphJGraphT[Node]() extends DepGraph[Node] {
           }
         }
       }).toList
-      rs.sequence[ES,Unit].map(_ => ())
+      rs.sequence[ES, Unit].map(_ => ())
     } else
       Left(s"Set of nodes is different. Nodes1 = $nodes1, nodes2 = $nodes2")
   }
