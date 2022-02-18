@@ -1,16 +1,17 @@
 package es.weso.shapemaps
 
-import java.util
+import com.typesafe.scalalogging.LazyLogging
 
+import java.util
 import org.antlr.v4.runtime._
 import org.antlr.v4.runtime.atn.ATNConfigSet
 import org.antlr.v4.runtime.dfa.DFA
 
-class ParserErrorListener extends ANTLRErrorListener {
+class ParserErrorListener extends ANTLRErrorListener with LazyLogging {
 
   private val errors = new scala.collection.mutable.Queue[String]
 
-  def getErrors(): List[String] = errors.toList
+  def getErrors: List[String] = errors.toList
 
   override def reportContextSensitivity(
     recognizer: Parser,
@@ -47,7 +48,7 @@ class ParserErrorListener extends ANTLRErrorListener {
     msg: String,
     e: RecognitionException): Unit = {
     val str = s"Error at $line:$charPositionInLine $msg\n"
-    // if (e.getCtx() != null) println(s"Rule index: ${e.getCtx.getRuleIndex}\nContext text: ${e.getCtx.getText}")
+     if (e.getCtx != null) logger.debug(s"Rule index: ${e.getCtx.getRuleIndex}\nContext text: ${e.getCtx.getText}")
     errors += str
   }
 }
