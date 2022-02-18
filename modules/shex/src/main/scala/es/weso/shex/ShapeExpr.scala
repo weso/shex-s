@@ -132,12 +132,12 @@ sealed abstract trait ShapeExpr extends Product with Serializable {
     List()
   }
 
-  lazy val flattenTCs: Set[TripleConstraint] = this match {
+/*  lazy val flattenTCs: Set[TripleConstraint] = this match {
     case sa: ShapeAnd => { 
       val ls = sa.shapeExprs.map(_.flattenTCs)
       ???
     }
-  }
+  } */
 }
 
 
@@ -325,8 +325,6 @@ case class Shape(
       annotations.map(_.map(_.relativize(base))),
       actions.map(_.map(_.relativize(base)))
     )
-
-   def getExtendsSorted: List[ShapeExpr] = ???
 
 }
 

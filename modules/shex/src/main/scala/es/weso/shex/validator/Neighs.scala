@@ -19,10 +19,10 @@ case class Neighs(m: Map[Path,Set[RDFNode]]) extends AnyVal {
   def values(path: Path): Set[RDFNode] = 
    m.getOrElse(path, Set())
 
-  def filterPaths(paths: List[Path]): Neighs = 
+  def filterPaths(paths: Set[Path]): Neighs = 
    Neighs(m.filterKeys(paths.contains(_)).toMap)
 
-  def partitionByPaths(paths: List[Path]): (Neighs,Neighs) = {
+  def partitionByPaths(paths: Set[Path]): (Neighs,Neighs) = {
     val (m1,m2) = m.partition { case (path,_) => paths.contains(path) }
     (Neighs(m1), Neighs(m2))
   }

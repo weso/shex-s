@@ -2,4 +2,6 @@ prefix : <http://example/>
 
 :A { :p [ 1 ] } 
 :B extends @:A 
-   CLOSED { :p [ 2 ] }
+   { :p [ 2 ] }
+:D IRI
+:C EXTRA :p { :p [ 3 ]; :q . +}   

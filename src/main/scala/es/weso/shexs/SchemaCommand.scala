@@ -70,8 +70,8 @@ case class SchemaCommand(
     _ <- IO.println(s"""|Shape: ${shape2String(se,schema.prefixMap, showMethod)}""".stripMargin)
     extendeds <- schema.inheritanceGraph.descendantsByEdgtype(sl,Extends)
     references <- schema.inheritanceGraph.descendantsByEdgtype(sl,References)
-    _ <- IO.println(s"Extendeds shapes: ${extendeds.map(sl => schema.qualify(sl)).mkString(",")}")
-    _ <- IO.println(s"References shapes: ${references.map(sl => schema.qualify(sl)).mkString(",")}")
+    _ <- IO.println(s"Extended by shapes: ${extendeds.map(sl => schema.qualify(sl)).mkString(",")}")
+    _ <- IO.println(s"Referenced by shapes: ${references.map(sl => schema.qualify(sl)).mkString(",")}")
   } yield ()
 
   private def shape2String(se: ShapeExpr, prefixMap: PrefixMap, showMethod: ShowMethod): String = showMethod match {
