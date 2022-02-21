@@ -15,6 +15,7 @@ import io.circe.syntax._
 import Reason._
 import es.weso.utils._
 import es.weso.utils.VerboseLevel._
+import scala.concurrent.duration.FiniteDuration
 
 trait RunManifest {
 
@@ -29,6 +30,7 @@ trait RunManifest {
       nameIfSingle: TestSelector,
       ignoreList: List[String],
       withEntry: EntryParam => IO[Option[Result]],
+      timeout: FiniteDuration, 
       verbose: VerboseLevel
   ): IO[List[Result]] = {
     val parentFolderURI = Try { Paths.get(parentFolder).normalize.toUri.toString }.getOrElse("")
@@ -37,9 +39,19 @@ trait RunManifest {
     for {
       mf <- RDF2Manifest.read(Paths.get(fileName), "TURTLE", Some(s"$parentFolderURI/$folder/"), true)
       _ <- testInfo(s"Manifest read with ${mf.entries.size} entries", verbose)
-      rs <- processManifest(mf, name, manifestFolder, nameIfSingle, ignoreList, withEntry, verbose)
+      rs <- processManifest(mf, name, manifestFolder, nameIfSingle, ignoreList, withEntry, timeout, verbose)
       _ <-  testInfo(s"Total results: ${rs.size}", verbose)
     } yield rs
+  }
+
+  private def runWithTimeout(name: String, action: IO[Option[Result]], timeout: FiniteDuration): IO[Option[Result]] = {
+    val timeOutResult = Result(s"Timout: ${name}", false, Timeout(name,timeout))
+    action
+    .timeoutTo(timeout, IO(Some(timeOutResult)))
+    .timed
+    .map{ case (time, result) => 
+       result.map(_.withTime(time)) 
+     } 
   }
 
   private def processManifest(
@@ -49,16 +61,19 @@ trait RunManifest {
       nameIfSingle: TestSelector,
       ignoreList: List[String],
       withEntry: EntryParam => IO[Option[Result]], 
+      timeout: FiniteDuration,
       verbose: VerboseLevel
   ): IO[List[Result]] =
     for {
       rs1 <- m.includes.map {
           case (includeNode, manifest) =>
             val folder = Try { Paths.get(includeNode.getLexicalForm).getParent.toString }.getOrElse("")
-            runManifest(includeNode.getLexicalForm, folder, parentFolder, nameIfSingle, ignoreList, withEntry, verbose)
+            runManifest(includeNode.getLexicalForm, folder, parentFolder, nameIfSingle, ignoreList, withEntry, timeout, verbose)
         }.sequence.map(_.flatten)
       _ <- testInfo(s"Results from imports: ${rs1.size}", verbose)
-      maybeResults <- m.entries.map(e => withEntry(EntryParam(e, name, parentFolder, nameIfSingle, ignoreList))).sequence
+      maybeResults <- m.entries.map(e => 
+        runWithTimeout(e.name, withEntry(EntryParam(e, name, parentFolder, nameIfSingle, ignoreList)), timeout)
+      ).sequence
       rs2 = maybeResults.flatten[Result]
       _ <- testInfo(s"Results from entries: ${rs2.size}", verbose)
     } yield (rs1 ++ rs2)
@@ -77,16 +92,17 @@ object ValidateManifest extends RunManifest {
       testsFolder: String,
       testSelector: TestSelector,
       ignoreList: List[String],
+      timeout: FiniteDuration,
       verbose: VerboseLevel
   ): IO[List[Result]] = {
     testInfo(s"Parse manifest: name: ${name}, folder: $folderName, parentFolder: ${testsFolder}", verbose) *>
-    runManifest(name, folderName, testsFolder, testSelector, ignoreList, processEntryValidating(verbose), verbose)
-  }
+    runManifest(name, folderName, testsFolder, testSelector, ignoreList, processEntryValidating(verbose), timeout, verbose)
+  } 
 
   def processEntryValidating(verbose: VerboseLevel)(ep: EntryParam): IO[Option[Result]] = {
     val name = ep.entry.name 
     if (ep.testSelector.matches(name)) {
-      if (ep.ignoreList contains(name)) {
+      if (ep.ignoreList.contains(name)) {
         result(name, true, Ignored(name))        
       } else {
       val folderURI = Paths.get(ep.parentFolder).normalize.toUri

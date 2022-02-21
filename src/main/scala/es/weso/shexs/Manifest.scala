@@ -11,6 +11,7 @@ import es.weso.shextest.manifest.Result
 import VerboseLevelOpt._
 import es.weso.shextest.manifest._
 import es.weso.utils.VerboseLevel
+import scala.concurrent.duration._
 
 
 case class Manifest(
@@ -18,11 +19,12 @@ case class Manifest(
     parentPath: String, 
     testsFolderPath: Path, 
     testName: TestSelector,
+    timeout: FiniteDuration,
     verbose: VerboseLevel
 ) {
 
   def run(): IO[ExitCode] = for {
-    results <- parseManifest(manifestFileName, parentPath, testsFolderPath.toString, testName, List(), verbose)
+    results <- parseManifest(manifestFileName, parentPath, testsFolderPath.toString, testName, List(), timeout, verbose)
     _ <- printResults(results)
   } yield ExitCode.Success
 
@@ -56,9 +58,13 @@ lazy val testsFolder =
 lazy val testName: Opts[TestSelector] = 
   Opts.option[String]("test-selector", short = "n", help = "Test selector (if none provided, it will run all").orNone.map(TestSelector.fromOption(_))
 
+lazy val timeout: Opts[FiniteDuration] = 
+  Opts.option[Long]("timeout", short = "d", help = "Timeout duration (if none provided, 1 second").withDefault(1L).map(d => FiniteDuration(d,SECONDS))
+
+
 lazy val manifestCommand: Opts[Manifest] =
     Opts.subcommand("manifest", "Run manifest file containing tests") {
-      (manifestFileName, parentPath, testsFolder, testName, verboseLevel)
+      (manifestFileName, parentPath, testsFolder, testName, timeout,verboseLevel)
       .mapN(Manifest.apply)
     }
 

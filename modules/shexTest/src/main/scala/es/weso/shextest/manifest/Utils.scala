@@ -286,7 +286,7 @@ object Utils {
     }
  } */
 
- def validateMapResult(
+  def validateMapResult(
       mr: MapResultAction,
       base: URI,
       v: ValidOrFailureTest,
