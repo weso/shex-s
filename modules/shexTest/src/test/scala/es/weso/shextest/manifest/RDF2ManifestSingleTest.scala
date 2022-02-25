@@ -5,6 +5,8 @@ import munit.{Only => _, _}
 import ValidateManifest._
 import TestSelector.Only
 import es.weso.utils.VerboseLevel
+import scala.concurrent.duration._
+
 
 class RDF2ManifestSingleTest extends CatsEffectSuite {
 
@@ -23,6 +25,7 @@ class RDF2ManifestSingleTest extends CatsEffectSuite {
          "vitals-RESTRICTS-pass_lie-BP"
          ),
        List(),
+       1.seconds,
        VerboseLevel.Nothing).map(rs => assertEquals(rs.size > 0, true))
   }
 

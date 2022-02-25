@@ -32,19 +32,20 @@ case class FlatShapeValidator(
   private[validator] def checkFlatShape(
     attempt: Attempt, 
     node: RDFNode, 
-    shape: FlatShape): CheckTyping = {
+    shape: FlatShape, 
+    ext: Option[Neighs]): CheckTyping = {
     val zero = getTyping
     def cmb(checkTyping: CheckTyping, slot: (Path, Constraint)): CheckTyping = {
       val (path, constraint) = slot
       debug(s""" checkFlatShapeSlot, node = ${node.show} path: ${path.show}, constraint=${constraint.show}""".stripMargin) *>
       checkTyping.flatMap(t1 => 
-      checkConstraint(attempt, node, path, constraint).flatMap(t2 => 
+      checkConstraint(attempt, node, path, constraint, ext).flatMap(t2 => 
       combineTypings(t1,t2)  
       ))
     }
     for {
       _ <- debug(s"""|checkFlatShape(${node.show}@${showId(shape)})""".stripMargin)
-      extra <- extraPreds(node, shape.preds)
+      extra <- extraPreds(node, shape.preds, ext)
       _ <- debug(s"Extra preds: $extra. Closed? ${shape.closed}")
       _ <- debug(s"Slots:\n${shape.slots.map(slot => s"--slot: ${slot.show}").mkString("\n")}")
       typing <- if (shape.closed && extra.nonEmpty) {
@@ -58,22 +59,22 @@ case class FlatShapeValidator(
   private def errClosedButExtraPreds(extra: Set[IRI]): CheckTyping = err(ClosedButExtraPreds(extra))
 
   // Returns the list of paths that are different from a given list
-  private def extraPreds(node: RDFNode, preds: Set[IRI]): Check[Set[IRI]] =
+  private def extraPreds(node: RDFNode, preds: Set[IRI], ext: Option[Neighs]): Check[Set[IRI]] =
     for {
-      existingPreds <- getExistingPredicates(node)
+      existingPreds <- getExistingPredicates(node, ext)
     } yield existingPreds -- preds
 
-  private def checkConstraint(attempt: Attempt, node: RDFNode, path: Path, constraint: Constraint): CheckTyping =
+  private def checkConstraint(attempt: Attempt, node: RDFNode, path: Path, constraint: Constraint, ext: Option[Neighs]): CheckTyping =
     for {
       // _ <- debug(s"checkConstraint: ${constraint.show} for ${showNode(node)} with path ${path.show}")
-      values <- getValuesPath(node, path)
+      values <- getValuesPath(node, path, ext)
       // _ <- debug(s"Values of node ${showNode(node)} with path ${path.show} = [${values.map(_.show).mkString(",")}]")
       typing <- checkValuesConstraint(values, constraint, node, path, attempt)
       // _ <- debug(s"After checkConstraint(${node.show}, Constraint: ${constraint.show}): ${typing.show}")
     } yield typing
 
-  private def getExistingPredicates(node: RDFNode): Check[Set[IRI]] =
-    getNeighs(node).map(_.getPredicates())
+  private def getExistingPredicates(node: RDFNode, ext: Option[Neighs]): Check[Set[IRI]] =
+    getNeighs(node, ext).map(_.getPredicates())
 
 
   // We assume that the shape has no reference to other shapes

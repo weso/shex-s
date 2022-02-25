@@ -1,8 +1,10 @@
 package es.weso.shex.validator
 
+import es.weso.utils.VerboseLevel.Info
+
 class ShapeMapValidatorTest extends ShouldValidateShapeMap {
 
-/*  { // shape Map
+  { // shape Map
     val shexStr =
       """
         |prefix : <http://example.org/>
@@ -16,11 +18,11 @@ class ShapeMapValidatorTest extends ShouldValidateShapeMap {
          |:a :p :b .
          |:c :p 1 .""".stripMargin
 
-    shouldValidateWithShapeMap(rdfStr, shexStr, ":a@:S", ":a@:S")
-    shouldValidateWithShapeMap(rdfStr, shexStr, ":a@:S,:b@:S", ":a@:S,:b@!:S")
-    shouldValidateWithShapeMap(rdfStr, shexStr, ":a@:S,:b@:S,:c@:S", ":a@:S,:b@!:S,:c@:S")
-    shouldValidateWithShapeMap(rdfStr, shexStr, ":a@:S,:a@:T", ":a@:S,:a@!:T")
-    shouldValidateWithShapeMap(rdfStr, shexStr, "23@:CanVote", "23@:CanVote")
+    shouldValidateWithShapeMap(rdfStr, shexStr, ":a@:S", ":a@:S", Info)
+    shouldValidateWithShapeMap(rdfStr, shexStr, ":a@:S,:b@:S", ":a@:S,:b@!:S", Info)
+    shouldValidateWithShapeMap(rdfStr, shexStr, ":a@:S,:b@:S,:c@:S", ":a@:S,:b@!:S,:c@:S", Info)
+    shouldValidateWithShapeMap(rdfStr, shexStr, ":a@:S,:a@:T", ":a@:S,:a@!:T", Info)
+    shouldValidateWithShapeMap(rdfStr, shexStr, "23@:CanVote", "23@:CanVote", Info)
   }
 
   { // Recursive shape
@@ -36,10 +38,10 @@ class ShapeMapValidatorTest extends ShouldValidateShapeMap {
          |:c :p :c .
          |:d :p 1 .""".stripMargin
 
-    shouldValidateWithShapeMap(rdfStr, shexStr, ":a@:S", ":a@:S,:b@:S")
-    shouldValidateWithShapeMap(rdfStr, shexStr, ":a@:S,:b@:S,:c@:S", ":a@:S,:b@:S,:c@:S")
-    shouldValidateWithShapeMap(rdfStr, shexStr, ":a@:S,:b@:S,:c@:S,:d@:S", ":a@:S,:b@:S,:c@:S,:d@!:S")
-    shouldValidateWithShapeMap(rdfStr, shexStr, ":d@:S", ":d@!:S")
+    shouldValidateWithShapeMap(rdfStr, shexStr, ":a@:S", ":a@:S,:b@:S", Info)
+    shouldValidateWithShapeMap(rdfStr, shexStr, ":a@:S,:b@:S,:c@:S", ":a@:S,:b@:S,:c@:S", Info)
+    shouldValidateWithShapeMap(rdfStr, shexStr, ":a@:S,:b@:S,:c@:S,:d@:S", ":a@:S,:b@:S,:c@:S,:d@!:S", Info)
+    shouldValidateWithShapeMap(rdfStr, shexStr, ":d@:S", ":d@!:S", Info)
   }
 
   { // Two recursive shapes
@@ -346,8 +348,8 @@ class ShapeMapValidatorTest extends ShouldValidateShapeMap {
          |""".stripMargin
 
     shouldValidateWithShapeMap(rdfStr, shexStr, ":ok1@:S", ":ok1@:S,:x@:T")
-    shouldValidateWithShapeMap(rdfStr, shexStr, ":ok2@:S", ":ok2@:S",true)
+    shouldValidateWithShapeMap(rdfStr, shexStr, ":ok2@:S", ":ok2@:S")
     shouldValidateWithShapeMap(rdfStr, shexStr, ":ko1@:S", ":ko1@!:S")
     shouldValidateWithShapeMap(rdfStr, shexStr, ":ko2@:S", ":ko2@!:S")
-  } */
+  } 
 }

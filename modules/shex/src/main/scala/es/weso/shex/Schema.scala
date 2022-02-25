@@ -160,12 +160,12 @@ case class Schema(id: IRI,
 
 object Schema {
 
-  def rdfDataFormats(rdfReader: RDFReader) = rdfReader.availableParseFormats.map(_.toUpperCase)
+ def rdfDataFormats(rdfReader: RDFReader) = rdfReader.availableParseFormats.map(_.toUpperCase)
 
-  def empty: Schema =
+ def empty: Schema =
     Schema(IRI(""),None, None, None, None, None, None, List(), None)
 
-  def fromIRI(i: IRI, base: Option[IRI], verbose: VerboseLevel): IO[Schema] = {
+ def fromIRI(i: IRI, base: Option[IRI], verbose: VerboseLevel): IO[Schema] = {
     val uri = i.uri
     if (uri.getScheme == "file") {
         if (Files.exists(Paths.get(i.uri))) {
@@ -204,7 +204,7 @@ object Schema {
    val uri = if (ext == "") iri.uri
    else (iri + "." + ext).uri
    for {
-    _ <- verbose.info(s"""|getSchemaExt(iri: $IRI, ext: $ext, format: $format
+    _ <- verbose.info(s"""|getSchemaExt(iri: $iri, ext: $ext, format: $format
                            |Effective uri to deref:$uri""".stripMargin)
     str <- derefUri(uri,verbose)
     _ <- verbose.debug(s"Str obtained\n${str.linesIterator.take(2).mkString("\n")}")
@@ -223,7 +223,7 @@ object Schema {
     * @param maybeRDFBuilder RDFReader value from which to obtain RDF data formats (in case of RDF format)
     * @return either a Schema or a String message error
     */
-  def fromInputStream(
+ def fromInputStream(
     is: InputStream,
     format: String = "ShExC",
     base: Option[IRI] = None,
@@ -259,10 +259,10 @@ object Schema {
     }
   }
 
-  private def err[A](msg:String): IO[A] = IO.raiseError(new RuntimeException(msg))
-  private def ok[A](v:A): IO[A] = IO.pure(v)
+ private def err[A](msg:String): IO[A] = IO.raiseError(new RuntimeException(msg))
+ private def ok[A](v:A): IO[A] = IO.pure(v)
 
-  def serialize(schema: Schema,
+ def serialize(schema: Schema,
                 format: String,
                 base: Option[IRI],
                 rdfBuilder: RDFBuilder): IO[String] = {
@@ -289,7 +289,7 @@ object Schema {
     }
   }
 
-  def fromFile(fileName: String,
+ def fromFile(fileName: String,
                format: String = "ShExC",
                base: Option[IRI] = None,
                maybeRDFBuilder: Option[RDFBuilder] = None
@@ -304,7 +304,7 @@ object Schema {
    * @param base optional IRI that acts as base, default value = None
    * @param maybeRDFBuilder RDFBuilder
    */ 
-  def fromString(str: String,
+ def fromString(str: String,
                  format: String = "ShExC",
                  base: Option[IRI] = None,
                  maybeRDFBuilder: Option[RDFBuilder] = None
@@ -316,9 +316,9 @@ object Schema {
   }
 
 
-  import java.net.URI
+ import java.net.URI
 
-  private def derefUri(uri: URI, verbose: VerboseLevel): IO[String] = {
+ private def derefUri(uri: URI, verbose: VerboseLevel): IO[String] = {
     Try {
         val urlCon = uri.toURL.openConnection()
         urlCon.setConnectTimeout(10000)
@@ -331,7 +331,7 @@ object Schema {
     }, IO(_))
   }
   
-  private def getContents(is: InputStream): IO[String] = 
+ private def getContents(is: InputStream): IO[String] = 
    IO(scala.io.Source.fromInputStream(is).mkString)
 
 }

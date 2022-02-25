@@ -29,6 +29,7 @@ import es.weso.utils.internal.CollectionCompat.LazyList
 import ValidationLog._
 import es.weso.utils.VerboseLevel
 import es.weso.shex.ShapeExpr
+import es.weso.shex.validator.ShExError.AbstractShapeErr
 
 case class ConfigEnv(cfg: ShExConfig, env: Context)
 case class State()
@@ -72,11 +73,6 @@ trait ShExChecker {
     addLog(vl)
   }
 
-
-  /*def modify(f: Env => Env): Check[Unit] = {
-    fromBase(IndexedReaderWriterStateT.modify(f))
-  }*/
-
   def local[A](f: Env => Env)(comp: Check[A]): Check[A] = {
     def ff(ce: ConfigEnv): ConfigEnv = {
       ce.copy(env = f(ce.env))
@@ -84,12 +80,6 @@ trait ShExChecker {
     val r: Base[Either[Err,A]] = comp.value.local(ff)
     EitherT(r)
   }
-  /*for {
-    s <- getEnv
-    _ <- modify(f)
-    v <- comp
-    _ <- modify(_ => s)  // Maintain the previous state (this is probably not necessary)
-  } yield v */
 
   def ok[A](x: A): Check[A] =
     EitherT.pure[Base, Err](x)
@@ -460,7 +450,12 @@ trait ShExChecker {
     } yield t.addNotEvidence(node, shape, e)
   }
 
-  def runLocalNeighs[A](c: Check[A],
+/*  def runLocalVisited[A](c: Check[A],
+                        visited: Option[ShapeLabel]): Check[A] = {
+    runLocal(c, _.addVisited(visited))
+  }  */
+
+/*  def runLocalNeighs[A](c: Check[A],
                         node: RDFNode,
                         neighs: Neighs): Check[A] = {
     def liftedF(c: Context): Context = 
@@ -475,7 +470,7 @@ trait ShExChecker {
     def liftedF(c: Context): Context = 
        c.addLocalNeighs(node,neighs).addVisited(visited)
     runLocal(c, liftedF)
-  }
+  } */
 
 
 
@@ -501,37 +496,62 @@ trait ShExChecker {
   def getVerbose: Check[VerboseLevel] = getConfig.map(_.verboseLevel)
   def getTyping: Check[ShapeTyping] = getEnv.map(_.typing)
 
-  def getNeighs(node: RDFNode): Check[Neighs] = for {
-    localNeighs <- getLocalNeighs
-    neighs <- localNeighs.get(node) match {
+  def getNeighs(node: RDFNode, ext: Option[Neighs]): Check[Neighs] =
+    ext match {
+      case None => 
+        getRDF.flatMap(rdf => 
+        outgoingTriples(node,rdf).flatMap(outgoing => 
+        incomingTriples(node,rdf).flatMap(incoming => 
+        ok(Neighs.fromList(outgoing ++ incoming))  
+        )))  
       case Some(ns) => ok(ns)
-      case None => for {
-      rdf        <- getRDF
-      outTriples <- fromStream(rdf.triplesWithSubject(node))
-      outgoing = outTriples.map(t => Arc(Direct(t.pred), t.obj)).toList
-      inTriples <- fromStream(rdf.triplesWithObject(node))
-      incoming = inTriples.map(t => Arc(Inverse(t.pred), t.subj)).toList
-     } yield {
-      val neighs = outgoing ++ incoming
-      Neighs.fromList(neighs)
-     }
     }
-  } yield neighs
 
-  def getVisited: Check[Set[ShapeLabel]] = getEnv.map(_.visited)
-  def getLocalNeighs: Check[LocalNeighs] = getEnv.map(_.localNeighs)
+//  def getVisited: Check[Set[ShapeLabel]] = getEnv.map(_.visited)
 
-  def getNeighPaths(node: RDFNode, paths: Set[Path]): Check[Neighs] = 
-  {
-    val outgoingPredicates = paths.collect { case Direct(p) => p }
-    for {
-      localNeighs <- getLocalNeighs
-      neighs <- localNeighs.get(node) match {
-        case Some(ns) => 
+  def outgoingTriples(node: RDFNode, rdf: RDFReader): Check[List[Arc]] = 
+    fromStream(rdf.triplesWithSubject(node)).flatMap(ts => 
+    ok(ts.map(t => Arc(Direct(t.pred), t.obj)))
+    ).handleError(_ => List())
+
+  def outgoingTriplesPredicates(node: RDFNode, preds: Set[IRI], rdf: RDFReader): Check[List[Arc]] = 
+    fromIO(getTriplesWithSubjectPredicates(rdf, node, preds.toList)).flatMap(ts => 
+    ok(ts.map(t => Arc(Direct(t.pred), t.obj)))
+    ).handleError(_ => List())
+
+  def incomingTriples(node: RDFNode, rdf: RDFReader): Check[List[Arc]] =
+    fromStream(rdf.triplesWithObject(node)).flatMap(ts => 
+    ok(ts.map(t => Arc(Inverse(t.pred), t.subj)))
+    ).handleError(_ => List())
+
+  def incomingTriplesPredicates(node: RDFNode, preds: Set[IRI], rdf: RDFReader): Check[List[Arc]] =
+    fromStream(rdf.triplesWithObject(node)).flatMap(ts => 
+    ok(ts.filter(t => preds.contains(t.pred))
+         .map(t => Arc(Inverse(t.pred), t.subj)))
+    ).handleError(_ => List())
+
+    
+  def getNeighPaths(node: RDFNode, paths: Set[Path], ext: Option[Neighs]): Check[Neighs] = 
+    ext match {
+      case Some(ns) => 
          ok(ns.filterPaths(paths))
-        case None =>     for {
-         rdf        <- getRDF
-         outTriples <- fromIO(getTriplesWithSubjectPredicates(rdf,node,outgoingPredicates.toList))
+      case None => {
+         val outgoingPreds = paths.collect { case Direct(p) => p }
+         val incomingPreds = paths.collect { case Inverse(p) => p }
+         getRDF.flatMap(rdf => 
+         incomingTriplesPredicates(node,incomingPreds,rdf).flatMap(incoming => 
+         outgoingTriplesPredicates(node, outgoingPreds, rdf).flatMap(outgoing => {
+         ok(Neighs.fromList(outgoing ++ incoming))
+         })))
+      }
+    }
+  
+/*  def removeShapeType(node: RDFNode, s: ShapeExpr, t: ShapeTyping, schema: ResolvedSchema): CheckTyping = 
+   getRDF.flatMap(rdf => 
+   ok(t.addNotEvidence(node,ShapeType(s,s.id,schema), AbstractShapeErr(node,s,rdf)))) */
+
+
+/*         outTriples <- fromIO(getTriplesWithSubjectPredicates(rdf,node,outgoingPredicates.toList))
          strRdf <- fromIO(rdf.serialize("TURTLE"))
          outgoing = outTriples.map(t => Arc(Direct(t.pred), t.obj)).toList
          inTriples <- fromStream(rdf.triplesWithObject(node))
@@ -540,11 +560,17 @@ trait ShExChecker {
          val neighs = outgoing ++ incoming
          Neighs.fromList(neighs)
         }
-      }
-    } yield neighs
-  }
+      } 
+  } */
 
-  def getValuesPath(node: RDFNode, path: Path): Check[Set[RDFNode]] = for {
+  def getValuesPath(node: RDFNode, path: Path, ext: Option[Neighs]): Check[Set[RDFNode]] = 
+    ext match {
+     case Some(ns) => ok(ns.values(path))
+     case None => getRDF.flatMap(rdf => 
+                  fromStream(path.getValues(node, rdf)).map(_.toSet))
+    }
+
+/*  def getValuesPath(node: RDFNode, path: Path, ext: Option[Neighs]): Check[Set[RDFNode]] = for {
     localNeighs <- getLocalNeighs
     vs <- localNeighs.get(node) match {
       case Some(ns) => 
@@ -554,7 +580,7 @@ trait ShExChecker {
        nodes <- fromStream(path.getValues(node, rdf))
       } yield nodes.toSet
     }
-  } yield vs
+  } yield vs */
 
   private def getTriplesWithSubjectPredicates(rdf: RDFReader, node: RDFNode, preds: List[IRI]): IO[List[RDFTriple]] = {
     node match {

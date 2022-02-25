@@ -5,6 +5,7 @@ import munit._
 import ValidateManifest._
 import TestSelector._
 import es.weso.utils.VerboseLevel
+import scala.concurrent.duration._
 
 class RDF2ManifestLocalTest extends FunSuite {
 
@@ -17,6 +18,6 @@ class RDF2ManifestLocalTest extends FunSuite {
 
   test("RDF2Manifest localTests") {
     val validationFolder = conf.getString("localTestsFolder")
-    parseManifest("manifest", "schemas", validationFolder, All, List(), VerboseLevel.Nothing)
+    parseManifest("manifest", "schemas", validationFolder, All, List(), 1.seconds, VerboseLevel.Nothing)
   }
 }

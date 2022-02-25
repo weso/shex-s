@@ -23,10 +23,12 @@ case class Manifest(
     verbose: VerboseLevel
 ) {
 
-  def run(): IO[ExitCode] = for {
-    results <- parseManifest(manifestFileName, parentPath, testsFolderPath.toString, testName, List(), timeout, verbose)
-    _ <- printResults(results)
-  } yield ExitCode.Success
+  def run(): IO[ExitCode] = {
+    val assumeLocal = "https://raw.githubusercontent.com/shexSpec/shexTest/"
+    parseManifest(manifestFileName, parentPath, testsFolderPath.toString, testName, List(), timeout, verbose).flatMap(results => 
+    printResults(results) *>
+    ExitCode.Success.pure)
+  }
 
 
   private def printResults(results: List[Result]): IO[Unit] = 

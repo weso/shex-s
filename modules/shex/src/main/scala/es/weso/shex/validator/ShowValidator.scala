@@ -67,11 +67,11 @@ trait ShowValidator {
   def showSE(s: ShapeExpr): String = {
     s.id.map(lbl => schema.prefixMap.qualify(lbl.toRDFNode)).getOrElse(s match {
       case sa: ShapeAnd => s"AND(${sa.shapeExprs.map(showSE(_).mkString(","))})"
-      case sa: ShapeOr => s"OR(${sa.shapeExprs.map(showSE(_).mkString(","))})"
+      case sa: ShapeOr => s"OR(@@${sa.shapeExprs.map(showSE(_).mkString(","))})"
       case sn: ShapeNot => s"NOT(${showSE(sn.shapeExpr)})"
       case sd: ShapeDecl => s"Decl(${showSE(sd.shapeExpr)})"
       case sr: ShapeRef => s"@${schema.prefixMap.qualify(sr.reference.toRDFNode)}" 
-      case nc: NodeConstraint => s"${nc.show}"
+      case nc: NodeConstraint => s"NodeConstraint:${nc.show}"
       case s: Shape => s"Shape(?)"
       case se: ShapeExternal => s"External"
     })

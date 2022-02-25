@@ -9,6 +9,8 @@ import munit._
 import ValidateManifest._
 import TestSelector._
 import es.weso.utils.VerboseLevel
+import scala.concurrent.duration._
+
 
 class RDF2ManifestTest extends CatsEffectSuite {
 
@@ -18,7 +20,8 @@ class RDF2ManifestTest extends CatsEffectSuite {
   test("RDF2Manifest schemas") {
     checkResults(parseManifest("manifest", "schemas", validationFolder, 
       All, 
-      List("AND3G","Extend3G","ExtendANDExtend3GAND3G"), 
+      List("AND3G","Extend3G","ExtendANDExtend3GAND3G"),
+      1.seconds,
       VerboseLevel.Nothing)
     )
   }
@@ -28,7 +31,8 @@ class RDF2ManifestTest extends CatsEffectSuite {
       parseManifest("manifest", "negativeSyntax", 
         validationFolder, 
         All, 
-        List("1unknowndatatypeMaxInclusive"), 
+        List("1unknowndatatypeMaxInclusive"),
+        1.seconds,
         VerboseLevel.Info)
      )
   }
@@ -50,6 +54,7 @@ class RDF2ManifestTest extends CatsEffectSuite {
         "Cycle2Negation",
         "Cycle2Extra"
       ),
+      1.seconds,
       VerboseLevel.Nothing
     ))
   } 
@@ -93,8 +98,9 @@ class RDF2ManifestTest extends CatsEffectSuite {
 [info]   ExtendANDExtend3GAND3G-t33
          
          */
-       ), 
-       VerboseLevel.Nothing), false)
+       ),
+      1.seconds,
+      VerboseLevel.Nothing), false)
   }
 
   def checkResults(process: IO[List[Result]], verbose: Boolean = false): IO[Unit] = for { 

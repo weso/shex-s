@@ -1,9 +1,9 @@
 package es.weso.shex.validator
+import es.weso.utils.VerboseLevel._
 
 class ExtendsTest extends ShouldValidateShapeMap {
 
-  describe("Simple Extends") {
-    {
+  {
       val rdf =
         """|prefix : <http://e#>
            |:x :p 1, 3 .""".stripMargin
@@ -13,9 +13,10 @@ class ExtendsTest extends ShouldValidateShapeMap {
            |:A extends @:B {
            | :p [ 3 ]
            |}""".stripMargin
-      shouldValidateWithShapeMap(rdf, shex, ":x@:A", ":x@:A,:x@:B")
-    }
-    {
+      shouldValidateWithShapeMap(rdf, shex, ":x@:A", ":x@:A")
+  } 
+  
+  {
       val rdf =
         """|prefix : <http://e#>
            |:x :p "a", "b" .""".stripMargin
@@ -26,9 +27,9 @@ class ExtendsTest extends ShouldValidateShapeMap {
            | :p [ "a" ]
            |}""".stripMargin
       shouldValidateWithShapeMap(rdf, shex, ":x@:A", ":x@!:A")
-    }
+  }
 
-    {
+  {
       val rdf =
         """|prefix : <http://e#>
            |:x :p 1 .""".stripMargin
@@ -37,9 +38,9 @@ class ExtendsTest extends ShouldValidateShapeMap {
            |abstract :A { :p [1 2] }
            |""".stripMargin
       shouldValidateWithShapeMap(rdf, shex, ":x@:A", ":x@!:A")
-    }
+  } 
 
-    {
+  {
       val rdf =
         """|prefix : <http://e#>
            |:x :p 1 .""".stripMargin
@@ -48,10 +49,10 @@ class ExtendsTest extends ShouldValidateShapeMap {
            |abstract :A { :p [1 2] }
            |:B extends @:A {}
            |""".stripMargin
-      shouldValidateWithShapeMap(rdf, shex, ":x@:A", ":x@:A,:x@:B")
-    }
+      shouldValidateWithShapeMap(rdf, shex, ":x@:A", ":x@:A, :x@:B")
+  } 
 
-    {
+  {
       val rdf =
         """|prefix : <http://e#>
            |:x :p 2, 3 .""".stripMargin
@@ -61,9 +62,10 @@ class ExtendsTest extends ShouldValidateShapeMap {
            |:A extends @:B {
            | :p [2 3]
            |}""".stripMargin
-      shouldValidateWithShapeMap(rdf, shex, ":x@:A", ":x@:A,:x@:B")
-    }
-    {
+      shouldValidateWithShapeMap(rdf, shex, ":x@:A", ":x@:A")
+  } 
+  
+  {
       val rdf =
         """|prefix : <http://e#>
            |:x :p 1, 2 .""".stripMargin
@@ -73,9 +75,10 @@ class ExtendsTest extends ShouldValidateShapeMap {
            |:A extends @:B {
            | :p [ 2 ]
            |}""".stripMargin
-      shouldValidateWithShapeMap(rdf, shex, ":x@:A", ":x@:A,:x@:B")
-    }
-    {
+      shouldValidateWithShapeMap(rdf, shex, ":x@:A", ":x@:A")
+  } 
+  
+  {
       val rdf =
         """|prefix : <http://e#>
            |:x :p 1, 2 .""".stripMargin
@@ -86,8 +89,8 @@ class ExtendsTest extends ShouldValidateShapeMap {
            | :p [ 2 ]
            |}""".stripMargin
       shouldValidateWithShapeMap(rdf, shex, ":x@:B", ":x@:B,:x@:A")
-    }
-/*    {
+  }
+  {
       val rdf =
         """|prefix : <http://e#>
            |:x :p 2 .""".stripMargin
@@ -97,8 +100,9 @@ class ExtendsTest extends ShouldValidateShapeMap {
            |:A extends @:B {} AND {
            | :p [ 2 ]
            |}""".stripMargin
-      shouldValidateWithShapeMap(rdf, shex, ":x@:A", ":x@:B,:x@:A")
-    } */
+      shouldValidateWithShapeMap(rdf, shex, ":x@:A", ":x@:A")
+    } 
+
     {
       val rdf =
         """|prefix : <http://e#>
@@ -108,8 +112,9 @@ class ExtendsTest extends ShouldValidateShapeMap {
            |:B { } 
            |:A extends @:B {}
            |""".stripMargin
-      shouldValidateWithShapeMap(rdf, shex, ":x@:A", ":x@:B,:x@:A")
-    }
+      shouldValidateWithShapeMap(rdf, shex, ":x@:A", ":x@:A")
+    } 
+
     {
       val rdf =
         """|prefix : <http://e#>
@@ -121,6 +126,7 @@ class ExtendsTest extends ShouldValidateShapeMap {
            |""".stripMargin
       shouldValidateWithShapeMap(rdf, shex, ":x@:A", ":x@!:A")
     }
+  
     {
       val rdf =
         """|prefix : <http://e#>
@@ -133,6 +139,7 @@ class ExtendsTest extends ShouldValidateShapeMap {
            |""".stripMargin
       shouldValidateWithShapeMap(rdf, shex, ":x@:A1", ":x@:A1")
     }
+  
     {
       val rdf =
         """|prefix : <http://e#>
@@ -145,6 +152,7 @@ class ExtendsTest extends ShouldValidateShapeMap {
            |""".stripMargin
       shouldValidateWithShapeMap(rdf, shex, ":x@:A1", ":x@!:A1")
     }
+  
     {
       val rdf =
         """|prefix : <http://e#>
@@ -157,9 +165,9 @@ class ExtendsTest extends ShouldValidateShapeMap {
            |:RP extends @:RV {}
            |""".stripMargin
       shouldValidateWithShapeMap(rdf, shex, ":x@:R", ":x@!:R")
-    }
+    } 
 
-    { /* This test is different from Eric's implementation
+ /* { /* This test is different from Eric's implementation
          We assume that a node n conforms to an abstract shape S if there is a subshape T such that T extends @S and n conforms to T
          In this example, Eric assumes that :B extends :A
          */
@@ -174,12 +182,10 @@ class ExtendsTest extends ShouldValidateShapeMap {
            |:B @:A AND { :p . }
            |""".stripMargin
       shouldValidateWithShapeMap(rdf, shex, ":x@:B", ":x@!:B")
-    }
-  } // describe
-
-  describe("Closed") {
-   
-    {
+  } */
+  
+/*
+  {
       val rdf =
         """|prefix : <http://e#>
            |:ok1 :p 1; :q 2 .
@@ -195,8 +201,9 @@ class ExtendsTest extends ShouldValidateShapeMap {
       shouldValidateWithShapeMap(rdf, shex, ":ok1@:A", ":ok1@:A,:ok1@:B")
       shouldValidateWithShapeMap(rdf, shex, ":ko1@:A", ":ko1@!:A")
       shouldValidateWithShapeMap(rdf, shex, ":ko2@:A", ":ko2@!:A")
-    }  
-    {
+  }  
+  
+  {
       val rdf =
         """|prefix : <http://e#>
            |:ok1 :p 1 .
@@ -207,9 +214,9 @@ class ExtendsTest extends ShouldValidateShapeMap {
            |:B closed  { :p [ 1 ] }
            |:A extends @:B CLOSED { }
            |""".stripMargin
-      shouldValidateWithShapeMap(rdf, shex, ":ok1@:A", ":ok1@:A,:ok1@:B",true)
+      shouldValidateWithShapeMap(rdf, shex, ":ok1@:A", ":ok1@:A,:ok1@:B")
       shouldValidateWithShapeMap(rdf, shex, ":ko1@:A", ":ko1@!:A")
-    }
+  } */
 /*    {
       /* This behaviour is different in Eric's implementation...
          If try with the different partitions.
@@ -231,11 +238,9 @@ class ExtendsTest extends ShouldValidateShapeMap {
     } */
 
 
-  } 
-
-/*  describe("Open partition") {
    
-    {
+
+  /* {
       val rdf =
         """|prefix : <http://e#>
            |:ok1 :p 1; :q 2 .
@@ -246,9 +251,7 @@ class ExtendsTest extends ShouldValidateShapeMap {
            |:A extends @:B CLOSED {
            |}""".stripMargin
       shouldValidateWithShapeMap(rdf, shex, ":ok1@:A", ":ok1@:A,:ok1@:B")
-    }
-
-  } */
+    } */
 
 
 /*    describe("Open partition") {

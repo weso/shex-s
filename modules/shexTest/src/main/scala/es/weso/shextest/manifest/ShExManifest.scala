@@ -12,7 +12,8 @@ case class ShExManifest(
   label: Option[String],
   comment: Option[String],
   entries: List[Entry],
-  includes: List[(RDFNode, Option[ShExManifest])]) {
+  includes: List[(RDFNode, Option[ShExManifest])]
+  ) {
 
   def toTestSuite(uri: URI, verbose: VerboseLevel): TestSuite = 
    TestSuite(entries.map(_.toTestEntry(uri, verbose)))  

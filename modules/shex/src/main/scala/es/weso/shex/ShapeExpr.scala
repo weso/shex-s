@@ -43,6 +43,7 @@ sealed abstract trait ShapeExpr extends Product with Serializable {
     case _: ShapeAnd       => false
     case _: ShapeNot       => false
     case _: ShapeRef       => false
+    case _: ShapeDecl      => false
   }
 
   /**
@@ -105,7 +106,7 @@ sealed abstract trait ShapeExpr extends Product with Serializable {
         }
         case se: ShapeExternal => ok(empty)
         case sd: ShapeDecl => getShapeExprRefsAux(sd.shapeExpr)
-        case _ => err(s"getShapeExprRefsAux: Unsupported type of shapeExpr: ${se}")
+        // case _ => err(s"getShapeExprRefsAux: Unsupported type of shapeExpr: ${se}")
       }
     }
 
@@ -256,7 +257,7 @@ case class Shape(
 
   // Converts IRIs to direct paths
   def extraPaths: List[Direct] =
-    extra.getOrElse(List()).map(Direct)
+    extra.getOrElse(List()).map(Direct.apply)
 
   def getExtra: List[IRI]              = extra.getOrElse(Shape.emptyExtra)
   def getExtend: List[ShapeLabel]      = _extends.getOrElse(Shape.emptyExtends)
@@ -274,9 +275,13 @@ case class Shape(
     expression.isEmpty
   }
 
-  private def extend(s: ShapeExpr): Option[List[ShapeLabel]] = s match {
-    case s: Shape => s._extends
-    case _        => None
+  private def extend(s: ShapeExpr): Option[List[ShapeLabel]] = {
+    val es = s match {
+      case s: Shape => s._extends
+      case _        => None
+    }
+    // println(s"Resulf of extend(${s} = [${es.map(_.toString).mkString(",")}]")
+    es
   }
 
   private def expr(s: ShapeExpr): Option[TripleExpr] = s match {
@@ -290,13 +295,25 @@ case class Shape(
     * @return Set of paths or error in case the shape is not well defined (may have bad references)
     */
   override def paths(schema: AbstractSchema): Either[String, Set[Path]] = {
-    def getPath(s: ShapeExpr): Option[List[Path]] = s match {
-      case s: Shape => Some(s.expression.map(_.paths(schema).toList).getOrElse(List()))
-      case _        => Some(List())
+    def cnv[A,B](e: Either[B,Set[A]]):Option[List[A]] = e.fold(_ => None, _.toList.some)
+
+    def getPath(s: ShapeExpr): Option[List[Path]] = {
+      val ps = s match {
+        case s: Shape => Some(s.expression.map(_.paths(schema).toList).getOrElse(List()))
+        case sd: ShapeDecl => cnv(sd.paths(schema))
+        case sa: ShapeAnd => cnv(sa.paths(schema))
+        case so: ShapeOr => cnv(so.paths(schema)) 
+        case sn: ShapeNot => cnv(sn.paths(schema)) 
+        case _        => Some(List())
+      }
+      // println(s"Result of getPaths($s)=[${ps.map(_.show).mkString(",")}]")
+      ps
     }
     def combinePaths(p1: List[Path], p2: List[Path]): List[Path] = p1 ++ p2
 
-    extendCheckingVisited(this, schema.getShape(_), extend, combinePaths, getPath).map(_.getOrElse(List())).map(_.toSet)
+    extendCheckingVisited(this, schema.getShape(_), extend, combinePaths, getPath)
+    .map(_.getOrElse(List()))
+    .map(_.toSet)
   }
 
   def extendExpression(schema: Schema): Either[String, Option[TripleExpr]] = {

@@ -16,6 +16,7 @@ import Reason._
 import es.weso.utils._
 import es.weso.utils.VerboseLevel._
 import scala.concurrent.duration.FiniteDuration
+import es.weso.rdf.nodes._
 
 trait RunManifest {
 
@@ -93,7 +94,7 @@ object ValidateManifest extends RunManifest {
       testSelector: TestSelector,
       ignoreList: List[String],
       timeout: FiniteDuration,
-      verbose: VerboseLevel
+      verbose: VerboseLevel,
   ): IO[List[Result]] = {
     testInfo(s"Parse manifest: name: ${name}, folder: $folderName, parentFolder: ${testsFolder}", verbose) *>
     runManifest(name, folderName, testsFolder, testSelector, ignoreList, processEntryValidating(verbose), timeout, verbose)
