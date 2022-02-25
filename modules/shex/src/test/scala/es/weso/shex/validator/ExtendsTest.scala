@@ -167,7 +167,7 @@ class ExtendsTest extends ShouldValidateShapeMap {
       shouldValidateWithShapeMap(rdf, shex, ":x@:R", ":x@!:R")
     } 
 
- /* { /* This test is different from Eric's implementation
+    { /* This test is different from Eric's implementation
          We assume that a node n conforms to an abstract shape S if there is a subshape T such that T extends @S and n conforms to T
          In this example, Eric assumes that :B extends :A
          */
@@ -182,10 +182,10 @@ class ExtendsTest extends ShouldValidateShapeMap {
            |:B @:A AND { :p . }
            |""".stripMargin
       shouldValidateWithShapeMap(rdf, shex, ":x@:B", ":x@!:B")
-  } */
+    } 
   
-/*
-  {
+
+    {
       val rdf =
         """|prefix : <http://e#>
            |:ok1 :p 1; :q 2 .
@@ -198,12 +198,12 @@ class ExtendsTest extends ShouldValidateShapeMap {
            |:A extends @:B {
            | :q [ 2 ]
            |}""".stripMargin
-      shouldValidateWithShapeMap(rdf, shex, ":ok1@:A", ":ok1@:A,:ok1@:B")
+      shouldValidateWithShapeMap(rdf, shex, ":ok1@:A", ":ok1@:A")
       shouldValidateWithShapeMap(rdf, shex, ":ko1@:A", ":ko1@!:A")
       shouldValidateWithShapeMap(rdf, shex, ":ko2@:A", ":ko2@!:A")
-  }  
+    }  
   
-  {
+    {
       val rdf =
         """|prefix : <http://e#>
            |:ok1 :p 1 .
@@ -214,10 +214,11 @@ class ExtendsTest extends ShouldValidateShapeMap {
            |:B closed  { :p [ 1 ] }
            |:A extends @:B CLOSED { }
            |""".stripMargin
-      shouldValidateWithShapeMap(rdf, shex, ":ok1@:A", ":ok1@:A,:ok1@:B")
+      shouldValidateWithShapeMap(rdf, shex, ":ok1@:A", ":ok1@:A")
       shouldValidateWithShapeMap(rdf, shex, ":ko1@:A", ":ko1@!:A")
-  } */
-/*    {
+    }
+
+    {
       /* This behaviour is different in Eric's implementation...
          If try with the different partitions.
           The partition { <p 1>,<q 3> matches @:B and { } matches CLOSED { } */
@@ -232,10 +233,10 @@ class ExtendsTest extends ShouldValidateShapeMap {
            |:B { :p [ 1 ] }
            |:A extends @:B CLOSED { }
            |""".stripMargin
-      shouldValidateWithShapeMap(rdf, shex, ":ok1@:A", ":ok1@:A,:ok1@:B")
+      shouldValidateWithShapeMap(rdf, shex, ":ok1@:A", ":ok1@:A")
       // shouldValidateWithShapeMap(rdf, shex, ":ko1@:A", ":ko1@!:A")
-      shouldValidateWithShapeMap(rdf, shex, ":ko1@:A", ":ko1@:A,:ko1@:B")
-    } */
+      shouldValidateWithShapeMap(rdf, shex, ":ko1@:A", ":ko1@!:A")
+    } 
 
 
    

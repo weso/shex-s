@@ -37,9 +37,10 @@ case class FlatShapeValidator(
     val zero = getTyping
     def cmb(checkTyping: CheckTyping, slot: (Path, Constraint)): CheckTyping = {
       val (path, constraint) = slot
-      debug(s""" checkFlatShapeSlot, node = ${node.show} path: ${path.show}, constraint=${constraint.show}""".stripMargin) *>
+      debug(s""" checkFlatShapeSlot(${node.show}@${shape.id.getOrElse("?")}) path: ${path.show}, constraint=${constraint.show}""".stripMargin) *>
       checkTyping.flatMap(t1 => 
       checkConstraint(attempt, node, path, constraint, ext).flatMap(t2 => 
+      infoTyping(t2, s"Result checkFlatShapeSlot(${node.show}@${shape.id.getOrElse("?")})", schema.prefixMap)  *>
       combineTypings(t1,t2)  
       ))
     }
@@ -66,11 +67,11 @@ case class FlatShapeValidator(
 
   private def checkConstraint(attempt: Attempt, node: RDFNode, path: Path, constraint: Constraint, ext: Option[Neighs]): CheckTyping =
     for {
-      // _ <- debug(s"checkConstraint: ${constraint.show} for ${showNode(node)} with path ${path.show}")
+      _ <- debug(s"checkConstraint: ${constraint.show} for ${showNode(node)} with path ${path.show}")
       values <- getValuesPath(node, path, ext)
-      // _ <- debug(s"Values of node ${showNode(node)} with path ${path.show} = [${values.map(_.show).mkString(",")}]")
+      _ <- debug(s"Values of node ${showNode(node)} with path ${path.show} = [${values.map(_.show).mkString(",")}]")
       typing <- checkValuesConstraint(values, constraint, node, path, attempt)
-      // _ <- debug(s"After checkConstraint(${node.show}, Constraint: ${constraint.show}): ${typing.show}")
+      _ <- debug(s"After checkConstraint(${node.show}, Constraint: ${constraint.show}): ${typing.show}")
     } yield typing
 
   private def getExistingPredicates(node: RDFNode, ext: Option[Neighs]): Check[Set[IRI]] =
@@ -128,7 +129,7 @@ case class FlatShapeValidator(
               val ct: Check[ShapeTyping] = for {
                 partition <- doPartition
                 (notPassed, passed) = partition
-                // _ <- debug(s"Passed: \n${passed.map(_.toString).mkString(s"\n")}\nNo passed\n${notPassed.map(_.toString).mkString(s"\n")}")
+                _ <- debug(s"checkValuesConstraint: Passed: \n${passed.map(_.toString).mkString(s",")}| No passed: ${notPassed.map(_.toString).mkString(s",")}")
                 newt <- if (notPassed.isEmpty) {
                   addEvidence(attempt.nodeShape, s"${showNode(node)} passed ${constraint.showQualified(shapesPrefixMap)} for path ${path.showQualified(nodesPrefixMap)}")
                 } else

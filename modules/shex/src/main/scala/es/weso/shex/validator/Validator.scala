@@ -121,18 +121,28 @@ case class Validator(schema: ResolvedSchema,
     else err(LabelNotFound(label, "", schema.labels))
   }
 
-  private def checkNodeLabelSafe(node: RDFNode, label: ShapeLabel, shape: ShapeExpr, ext: Option[Neighs], visited: Set[ShapeLabel]): CheckTyping = {
-    val shapeType = ShapeType(shape, Some(label), schema)
+  private def checkNodeLabelSafe(node: RDFNode, label: ShapeLabel, se: ShapeExpr, ext: Option[Neighs], visited: Set[ShapeLabel]): CheckTyping = {
+    val shapeType = ShapeType(se, Some(label), schema)
     getRDF.flatMap(rdf => {
       val attempt = Attempt(NodeShape(node, shapeType), None, rdf)
-      runLocalSafeTyping(
+      getTyping.flatMap(t => 
+      runLocalTyping(bind(
+            checkOptSemActs(attempt,node, schema.startActs),
+            satisfies(node, se, ext, Set(), attempt)
+          ),
+          t => t.addType(node, shapeType))
+       .handleErrorWith(checkDescendants(attempt,node, se, ext, visited))
+       .handleErrorWith(err => 
+         ok(t.addNotEvidence(node, shapeType,err)))
+       )
+/*      runLocalSafeTyping(
           bind(
             checkOptSemActs(attempt,node, schema.startActs),
-            satisfies(node, shape, ext, Set(), attempt)
+            satisfies(node, se, ext, Set(), attempt)
           ),
           t => t.addType(node, shapeType),
           (err, t) => t.addNotEvidence(node, shapeType, err)
-        )
+        ) */
     })
   }
 
@@ -177,7 +187,7 @@ case class Validator(schema: ResolvedSchema,
    ).flatMap(typing => 
     infoTyping(typing, s"end of satisfies(${node.show},${showSE(s)})", schema.prefixMap) *>
     ok(typing)
-   ).handleErrorWith(checkDescendants(attempt,node,s, ext, visited)) 
+   )// .handleErrorWith(checkDescendants(attempt,node,s, ext, visited)) 
 
   private def checkDescendants(attempt: Attempt, node: RDFNode, se: ShapeExpr, ext: Option[Neighs], visited: Set[ShapeLabel])(e: ShExError): CheckTyping = 
     getDescendants(se).flatMap(descendants => {
@@ -422,7 +432,7 @@ case class Validator(schema: ResolvedSchema,
         for {
           flatShape <- fromEitherString(s.flattenShape(schema))
           pm <- getNodesPrefixMap
-          typing    <- FlatShapeValidator(this,pm,schema.prefixMap,builder,schema).checkFlatShape(attempt, node, flatShape, ext)
+          typing    <- FlatShapeValidator(this,pm,schema.prefixMap,builder,schema).checkFlatShape(attempt, node, flatShape.withClosed, ext)
         } yield typing
       case _ =>
         for {
