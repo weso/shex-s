@@ -6,15 +6,19 @@ class ExtendsTestSingle extends ShouldValidateShapeMap {
     {
       val rdf =
         """|prefix : <http://e#>
-           |:x :p 2 .""".stripMargin
+           |:ok1 :p 1; :q 2 .
+           |:ko1 :p 1; :q 3 .
+           |:ko2 :p 2; :q 2 .
+           |""".stripMargin
       val shex =
         """|prefix : <http://e#>
-           |:P { }
-           |:R { :p [1] }
-           |:RV extends @:R {}
-           |:RP extends @:RV {}
-           |""".stripMargin
-      shouldValidateWithShapeMap(rdf, shex, ":x@:R", ":x@!:R", Debug)
-    } 
+           |:B CLOSED { :p [ 1 ] }
+           |:A extends @:B {
+           | :q [ 2 ]
+           |}""".stripMargin
+      shouldValidateWithShapeMap(rdf, shex, ":ok1@:A", ":ok1@:A", Debug)
+//      shouldValidateWithShapeMap(rdf, shex, ":ko1@:A", ":ko1@!:A")
+//      shouldValidateWithShapeMap(rdf, shex, ":ko2@:A", ":ko2@!:A")
+    }  
 
 } 

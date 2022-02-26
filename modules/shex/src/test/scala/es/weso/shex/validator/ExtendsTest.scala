@@ -167,11 +167,7 @@ class ExtendsTest extends ShouldValidateShapeMap {
       shouldValidateWithShapeMap(rdf, shex, ":x@:R", ":x@!:R")
     } 
 
-    { /* This test is different from Eric's implementation
-         We assume that a node n conforms to an abstract shape S if there is a subshape T such that T extends @S and n conforms to T
-         In this example, Eric assumes that :B extends :A
-         */
-
+    { 
       val rdf =
         """|prefix : <http://e#>
            |:x :p 0 .""".stripMargin
@@ -181,8 +177,9 @@ class ExtendsTest extends ShouldValidateShapeMap {
            |abstract :A { }
            |:B @:A AND { :p . }
            |""".stripMargin
-      shouldValidateWithShapeMap(rdf, shex, ":x@:B", ":x@!:B")
-    } 
+      shouldValidateWithShapeMap(rdf, shex, ":x@:B", ":x@:B, :x@:A")
+    }
+
   
 
     {
@@ -214,7 +211,7 @@ class ExtendsTest extends ShouldValidateShapeMap {
            |:B closed  { :p [ 1 ] }
            |:A extends @:B CLOSED { }
            |""".stripMargin
-      shouldValidateWithShapeMap(rdf, shex, ":ok1@:A", ":ok1@:A")
+      shouldValidateWithShapeMap(rdf, shex, ":ok1@:A", ":ok1@!:A")
       shouldValidateWithShapeMap(rdf, shex, ":ko1@:A", ":ko1@!:A")
     }
 
@@ -233,9 +230,22 @@ class ExtendsTest extends ShouldValidateShapeMap {
            |:B { :p [ 1 ] }
            |:A extends @:B CLOSED { }
            |""".stripMargin
-      shouldValidateWithShapeMap(rdf, shex, ":ok1@:A", ":ok1@:A")
+      shouldValidateWithShapeMap(rdf, shex, ":ok1@:A", ":ok1@!:A")
       // shouldValidateWithShapeMap(rdf, shex, ":ko1@:A", ":ko1@!:A")
       shouldValidateWithShapeMap(rdf, shex, ":ko1@:A", ":ko1@!:A")
+    } 
+
+    {
+      val rdf =
+        """|prefix : <http://e#>
+           |:x :p 2 .""".stripMargin
+      val shex =
+        """|prefix : <http://e#>
+           |:A [ 1 ]
+           |:B [ 2 ]
+           |:C @:A AND @:B
+           |""".stripMargin
+      shouldValidateWithShapeMap(rdf, shex, "1@:C", "1@!:C", Debug)
     } 
 
 
