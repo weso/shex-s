@@ -30,24 +30,25 @@ sealed abstract trait ShapeExpr extends Product with Serializable {
 
   def relativize(base: IRI): ShapeExpr
 
-  def hasNoReference(schema: AbstractSchema): Boolean = {
+  def hasNoReference(schema: AbstractSchema): Boolean = { 
     getShapeRefs(schema).fold(e => false, _.isEmpty)
   }
 
   def isSimple: Boolean = this match {
     case s: Shape if (s == Shape.empty) => true
-    case _: Shape                       => false
-    case _: NodeConstraint              => true
-    case _: ShapeExternal               => true
-    case _: ShapeOr                     => false
-    case _: ShapeAnd                    => false
-    case _: ShapeNot                    => false
-    case _: ShapeRef                    => false
-    case _: ShapeDecl                   => false
+    case _: Shape          => false
+    case _: NodeConstraint => true
+    case _: ShapeExternal  => true
+    case _: ShapeOr        => false
+    case _: ShapeAnd       => false
+    case _: ShapeNot       => false
+    case _: ShapeRef       => false
+    case _: ShapeDecl      => false
   }
 
-  /** Return the labels that are referenced in a shape expression This method can use useful to detect if a shape
-    * doesn't refer to non-existing labels
+  /**
+    * Return the labels that are referenced in a shape expression
+    * This method can use useful to detect if a shape doesn't refer to non-existing labels
     */
   def getShapeRefs(schema: AbstractSchema): Either[String, List[ShapeLabel]] = {
     type State = List[ShapeExpr]
@@ -65,13 +66,12 @@ sealed abstract trait ShapeExpr extends Product with Serializable {
     def checkShapeExprRefs(se: ShapeExpr): E[List[ShapeLabel]] =
       for {
         s <- getState
-        ps <-
-          if (s contains se) ok(empty)
-          else
-            for {
-              _ <- modify(_ :+ se)
-              v <- getShapeExprRefsAux(se)
-            } yield v
+        ps <- if (s contains se) ok(empty)
+        else
+          for {
+            _ <- modify(_ :+ se)
+            v <- getShapeExprRefsAux(se)
+          } yield v
       } yield ps
 
     def checkLabel(l: ShapeLabel): E[List[ShapeLabel]] =
@@ -85,11 +85,13 @@ sealed abstract trait ShapeExpr extends Product with Serializable {
         case nk: NodeConstraint => ok(empty)
         case s: Shape =>
           for {
-            labelsExpr <- s.expression.fold(ok(empty))(te => {
-              for {
-                ls <- getTripleExprRefs(te)
-              } yield te.id.fold(ls)(_ +: ls)
-            })
+            labelsExpr <- s.expression.fold(ok(empty))(
+              te => {
+                for {
+                  ls <- getTripleExprRefs(te)
+                } yield te.id.fold(ls)(_ +: ls)
+              }
+            )
             labelsExtends <- s._extends.fold(ok(empty))(labels => labels.map(checkLabel(_)).sequence.map(_.flatten))
           } yield labelsExpr ++ labelsExtends
 
@@ -103,7 +105,7 @@ sealed abstract trait ShapeExpr extends Product with Serializable {
           } yield sr.reference +: ps
         }
         case se: ShapeExternal => ok(empty)
-        case sd: ShapeDecl     => getShapeExprRefsAux(sd.shapeExpr)
+        case sd: ShapeDecl => getShapeExprRefsAux(sd.shapeExpr)
         // case _ => err(s"getShapeExprRefsAux: Unsupported type of shapeExpr: ${se}")
       }
     }
@@ -131,13 +133,14 @@ sealed abstract trait ShapeExpr extends Product with Serializable {
     List()
   }
 
-  /*  lazy val flattenTCs: Set[TripleConstraint] = this match {
-    case sa: ShapeAnd => {
+/*  lazy val flattenTCs: Set[TripleConstraint] = this match {
+    case sa: ShapeAnd => { 
       val ls = sa.shapeExprs.map(_.flattenTCs)
       ???
     }
   } */
 }
+
 
 case class ShapeOr(
     id: Option[ShapeLabel],
@@ -146,7 +149,7 @@ case class ShapeOr(
     actions: Option[List[SemAct]]
 ) extends ShapeExpr {
   override def addId(lbl: ShapeLabel) = this.copy(id = Some(lbl))
-  override def rmId                   = this.copy(id = None)
+  override def rmId = this.copy(id = None)
 
   override def paths(schema: AbstractSchema): Either[String, Set[Path]] =
     sequence(shapeExprs.map(_.paths(schema))).map(_.toSet.flatten)
@@ -179,7 +182,7 @@ case class ShapeAnd(
     actions: Option[List[SemAct]]
 ) extends ShapeExpr {
   def addId(lbl: ShapeLabel) = this.copy(id = Some(lbl))
-  override def rmId          = this.copy(id = None)
+  override def rmId = this.copy(id = None)
 
   override def paths(schema: AbstractSchema): Either[String, Set[Path]] =
     sequence(shapeExprs.map(_.paths(schema))).map(_.toSet.flatten)
@@ -204,6 +207,7 @@ object ShapeAnd {
   def fromShapeExprs(ses: List[ShapeExpr]): ShapeAnd =
     ShapeAnd(None, ses, None, None)
 }
+
 
 object ShapeExpr {
   def any: ShapeExpr = Shape.empty
@@ -233,15 +237,17 @@ case class Shape(
   def isFlatShape(schema: AbstractSchema): Boolean =
     FlatShape.fromShape(this, schema).isRight
 
-  /** If the shape can be flatten, returns a FlatShape
-    */
+  /**
+   * If the shape can be flatten, returns a FlatShape
+   * 
+   * */  
   def flattenShape(schema: AbstractSchema): Either[String, FlatShape] =
     FlatShape.fromShape(this, schema)
 
   def hasRepeatedProperties(schema: AbstractSchema): Boolean = !isNormalized(schema)
 
   override def addId(lbl: ShapeLabel): Shape = this.copy(id = Some(lbl))
-  override def rmId                          = this.copy(id = None)
+  override def rmId = this.copy(id = None)
 
   def isVirtual: Boolean =
     virtual.getOrElse(Shape.defaultVirtual)
@@ -283,23 +289,22 @@ case class Shape(
     case _        => None
   }
 
-  /** Return the paths that are mentioned in a shape
-    * @param schema
-    *   Schema to which the shape belongs, it is needed to resolve references to other shapes
-    * @return
-    *   Set of paths or error in case the shape is not well defined (may have bad references)
+  /**
+    * Return the paths that are mentioned in a shape
+    * @param schema Schema to which the shape belongs, it is needed to resolve references to other shapes
+    * @return Set of paths or error in case the shape is not well defined (may have bad references)
     */
   override def paths(schema: AbstractSchema): Either[String, Set[Path]] = {
-    def cnv[A, B](e: Either[B, Set[A]]): Option[List[A]] = e.fold(_ => None, _.toList.some)
+    def cnv[A,B](e: Either[B,Set[A]]):Option[List[A]] = e.fold(_ => None, _.toList.some)
 
     def getPath(s: ShapeExpr): Option[List[Path]] = {
       val ps = s match {
-        case s: Shape      => Some(s.expression.map(_.paths(schema).toList).getOrElse(List()))
+        case s: Shape => Some(s.expression.map(_.paths(schema).toList).getOrElse(List()))
         case sd: ShapeDecl => cnv(sd.paths(schema))
-        case sa: ShapeAnd  => cnv(sa.paths(schema))
-        case so: ShapeOr   => cnv(so.paths(schema))
-        case sn: ShapeNot  => cnv(sn.paths(schema))
-        case _             => Some(List())
+        case sa: ShapeAnd => cnv(sa.paths(schema))
+        case so: ShapeOr => cnv(so.paths(schema)) 
+        case sn: ShapeNot => cnv(sn.paths(schema)) 
+        case _        => Some(List())
       }
       // println(s"Result of getPaths($s)=[${ps.map(_.show).mkString(",")}]")
       ps
@@ -307,8 +312,8 @@ case class Shape(
     def combinePaths(p1: List[Path], p2: List[Path]): List[Path] = p1 ++ p2
 
     extendCheckingVisited(this, schema.getShape(_), extend, combinePaths, getPath)
-      .map(_.getOrElse(List()))
-      .map(_.toSet)
+    .map(_.getOrElse(List()))
+    .map(_.toSet)
   }
 
   def extendExpression(schema: Schema): Either[String, Option[TripleExpr]] = {
@@ -450,7 +455,7 @@ case class ShapeNot(
     actions: Option[List[SemAct]]
 ) extends ShapeExpr {
   override def addId(lbl: ShapeLabel) = this.copy(id = Some(lbl))
-  override def rmId                   = this.copy(id = None)
+  override def rmId = this.copy(id = None)
 
   override def paths(schema: AbstractSchema): Either[String, Set[Path]] =
     shapeExpr.paths(schema)
@@ -477,13 +482,13 @@ object ShapeNot {
 }
 
 case class ShapeRef(
-    reference: ShapeLabel,
-    annotations: Option[List[Annotation]],
-    actions: Option[List[SemAct]]
+  reference: ShapeLabel, 
+  annotations: Option[List[Annotation]], 
+  actions: Option[List[SemAct]]
 ) extends ShapeExpr {
-  def id                              = None
+  def id                     = None
   override def addId(lbl: ShapeLabel) = this
-  override def rmId                   = this
+  override def rmId = this
 
   override def paths(schema: AbstractSchema): Either[String, Set[Path]] =
     for {
@@ -514,7 +519,7 @@ object ShapeRef {
 case class ShapeExternal(id: Option[ShapeLabel], annotations: Option[List[Annotation]], actions: Option[List[SemAct]])
     extends ShapeExpr {
   override def addId(lbl: ShapeLabel) = this.copy(id = Some(lbl))
-  override def rmId                   = this.copy(id = None)
+  override def rmId = this.copy(id = None)
 
   override def paths(schema: AbstractSchema): Either[String, Set[Path]] = Right(Set())
 
@@ -538,16 +543,17 @@ object ShapeExternal {
   def empty: ShapeExternal = ShapeExternal(None, None, None)
 }
 
-/** Declares an abstract shape expression
-  */
+/**
+ * Declares an abstract shape expression
+ **/
 case class ShapeDecl(
     lbl: ShapeLabel,
-    shapeExpr: ShapeExpr
+    shapeExpr: ShapeExpr,
 ) extends ShapeExpr {
 
-  override def id                                = Some(lbl)
+  override def id = Some(lbl)
   override def addId(lbl: ShapeLabel): ShapeDecl = this.copy(lbl = lbl)
-  override def rmId                              = this
+  override def rmId = this
 
   def isVirtual: Boolean = true
 
@@ -555,20 +561,24 @@ case class ShapeDecl(
     shapeExpr.paths(schema)
   }
 
+
   override def addAnnotations(as: List[Annotation]): ShapeExpr = {
     this.copy(shapeExpr = shapeExpr.addAnnotations(as))
   }
-
+  
   override def addSemActs(as: List[SemAct]): ShapeExpr = {
     this.copy(shapeExpr = shapeExpr.addSemActs(as))
   }
 
   override def relativize(base: IRI): ShapeDecl =
     this.copy(
-      lbl = lbl.relativize(base),
-      shapeExpr = shapeExpr.relativize(base)
+        lbl = lbl.relativize(base),
+        shapeExpr = shapeExpr.relativize(base)
     )
 
 }
 
-object ShapeDecl {}
+object ShapeDecl {
+}
+
+

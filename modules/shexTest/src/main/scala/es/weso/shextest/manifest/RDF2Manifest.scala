@@ -20,30 +20,31 @@ case class ManifestContext(base: Option[IRI], derefIncludes: Boolean, visited: L
 
 class RDF2Manifest extends RDFParser {
 
-  type ManifestParser[A] = ReaderT[RDFParser, ManifestContext, A]
+  type ManifestParser[A] = ReaderT[RDFParser,ManifestContext,A]
   def liftParser[A](parser: RDFParser[A]): ManifestParser[A] = ReaderT.liftF(parser)
-  def getContext[A]: ManifestParser[ManifestContext] =
-    ReaderT.ask[RDFParser, ManifestContext]
+  def getContext[A]: ManifestParser[ManifestContext] = 
+     ReaderT.ask[RDFParser,ManifestContext]
   def local[A](fn: ManifestContext => ManifestContext, parser: ManifestParser[A]): ManifestParser[A] = {
-    Kleisli.local(fn)(parser)
+     Kleisli.local(fn)(parser)
   }
 
-  def getConfig[A]: ManifestParser[Config] = liftParser(lift(ReaderT.ask[IO, Config]))
+  def getConfig[A]: ManifestParser[Config] = liftParser(lift(ReaderT.ask[IO,Config]))
 
-  /*  private def getSubjectsWithType(rdf: RDFReader, t: IRI): ManifestParser[List[RDFTriple]] =
+/*  private def getSubjectsWithType(rdf: RDFReader, t: IRI): ManifestParser[List[RDFTriple]] = 
     liftIO */
 
-  private def rdf2Manifest: ManifestParser[List[ShExManifest]] =
+  private def rdf2Manifest: ManifestParser[List[ShExManifest]] = 
     for {
-      ctx        <- getContext
-      rdf        <- liftParser(getRDF)
+      ctx <- getContext
+      rdf <- liftParser(getRDF)
       candidates <- liftParser(liftIO(rdf.subjectsWithType(mf_Manifest).compile.toList))
       // candidates <- liftParser(fromEitherT(triples))
       // _ <- liftParser(info(s"rdf2Manifest: candidates=${candidates.mkString(",")}"))
-      nodes <- {
+      nodes <- { 
         liftParser(parseNodes(candidates.toList, manifest.run(ctx)))
       }
     } yield nodes
+
 
   private def manifest: ManifestParser[ShExManifest] =
     for {
@@ -213,11 +214,10 @@ class RDF2Manifest extends RDFParser {
         case iri: IRI =>
           for {
             b <- noType
-            v <-
-              if (b) {
-                val r: RDFParser[ResultExpected] = ok(IRIResult(iri))
-                r
-              } else compoundResult
+            v <- if (b) {
+              val r: RDFParser[ResultExpected] = ok(IRIResult(iri))
+              r
+            } else compoundResult
           } yield v
         case bNode: BNode => compoundResult
         case _            => parseFail[ResultExpected]("Unexpected type of result " + n)
@@ -244,47 +244,40 @@ class RDF2Manifest extends RDFParser {
     } yield types.isEmpty
 
   private def includes: ManifestParser[List[(IRI, Option[ShExManifest])]] = for {
-    ctx <- getContext
-    v <-
-      if (ctx.derefIncludes) {
-        for {
-          is <- liftParser(irisFromPredicate(mf_include))
-          result <- {
-            def parseIri(iri: IRI): ManifestParser[(IRI, Option[ShExManifest])] =
-              if (ctx.visited contains iri)
+    ctx <- getContext 
+    v <- if (ctx.derefIncludes) {
+      for {
+        is <- liftParser(irisFromPredicate(mf_include))
+        result <- {
+          def parseIri(iri: IRI): ManifestParser[(IRI,Option[ShExManifest])] = 
+              if (ctx.visited contains iri) 
                 liftParser(parseFail(s"Iri $iri alread visited. Visited=${ctx.visited.map(_.toString).mkString(",")}"))
-              else
-                local(ctx => ctx.copy(visited = iri +: ctx.visited), derefInclude(iri))
-
-            val ds: List[ManifestParser[(IRI, Option[ShExManifest])]] =
-              is.toList.map(parseIri(_))
-            ds.sequence
-          }
-        } yield result
-      } else liftParser(parseOk(List()))
+              else 
+                local(ctx => ctx.copy(visited = iri +: ctx.visited), derefInclude(iri)) 
+                
+          val ds: List[ManifestParser[(IRI, Option[ShExManifest])]] =
+            is.toList.map(parseIri(_))
+          ds.sequence
+        }
+      } yield result
+    } else liftParser(parseOk(List()))
   } yield v
 
-  private def parseShExManifest(
-      iri: IRI,
-      ctx: ManifestContext,
-      config: Config
-  ): ManifestParser[(IRI, Option[ShExManifest])] = {
-    val io: IO[(IRI, Option[ShExManifest])] = derefRDF(iri).flatMap(
-      _.use(rdf =>
-        for {
-          eitherMfs <- parseManifest(iri, rdf).run(ctx).value.run(config)
-          mf <- eitherMfs.fold(
-            e => IO.raiseError(new RuntimeException(s"Error parsing $iri:${e}")),
-            mfs =>
-              if (mfs.size == 1) IO(mfs.head)
-              else IO.raiseError(new RuntimeException(s"More than one manifest ${mfs.size}"))
-          )
-        } yield (iri, Some(mf))
-      )
-    )
+  private def parseShExManifest(iri: IRI,
+                                ctx: ManifestContext,
+                                config: Config
+                               ): ManifestParser[(IRI,Option[ShExManifest])] = {
+    val io: IO[(IRI,Option[ShExManifest])] = derefRDF(iri).flatMap(_.use(rdf => for {
+     eitherMfs <- parseManifest(iri,rdf).run(ctx).value.run(config)
+     mf <- eitherMfs.fold(
+       e => IO.raiseError(new RuntimeException(s"Error parsing $iri:${e}")),
+       mfs => if (mfs.size == 1) IO(mfs.head)
+       else IO.raiseError(new RuntimeException(s"More than one manifest ${mfs.size}"))
+     )
+    } yield (iri,Some(mf))))
     val xs: RDFParser[(IRI, Option[ShExManifest])] = liftIO(io)
     liftParser(xs)
-    /*    resource.use(rdf =>
+/*    resource.use(rdf =>
     for {
       // liftedParser <- liftParser(rdf)
       mfs <- parseManifest(iri, rdf)
@@ -293,16 +286,15 @@ class RDF2Manifest extends RDFParser {
   }
 
   private def derefInclude(node: IRI): ManifestParser[(IRI, Option[ShExManifest])] = for {
-    ctx    <- getContext
+    ctx <- getContext
     config <- getConfig
     pair <- node match {
-      case iri: IRI =>
-        if (ctx.derefIncludes) {
-          val iriResolved                                    = ctx.base.fold(iri)(base => base.resolve(iri))
-          val r: ManifestParser[(IRI, Option[ShExManifest])] = parseShExManifest(iriResolved, ctx, config)
-          r
+      case iri: IRI => if (ctx.derefIncludes) {
+         val iriResolved = ctx.base.fold(iri)(base => base.resolve(iri))
+         val r: ManifestParser[(IRI,Option[ShExManifest])] = parseShExManifest(iriResolved,ctx,config)
+         r
         } else liftParser(ok((iri, None)))
-      /*      case _ =>
+/*      case _ =>
         liftParser(parseFail[(IRI, Option[ShExManifest])](s"Trying to deref an include from node $node which is not an IRI")) */
     }
   } yield pair
@@ -312,16 +304,16 @@ class RDF2Manifest extends RDFParser {
     mfs <- liftParser(withRdf(rdf, rdf2Manifest.run(ctx)))
   } yield mfs
 
-  /* private def checkListManifests(mfs: List[ShExManifest]): RDFParser[ShExManifest] =
+  /* private def checkListManifests(mfs: List[ShExManifest]): RDFParser[ShExManifest] = 
     if (mfs.size == 1) ok(mfs.head)
     else parseFail(s"More than one manifests found: ${mfs} at iri $iri") */
 
-  /*  private def derefRDF(iri: IRI): Resource[ManifestParser,RDFReader] =
+/*  private def derefRDF(iri: IRI): Resource[ManifestParser,RDFReader] =
     liftResource(RDFAsJenaModel.fromURI(iri.getLexicalForm, "TURTLE", Some(iri))) */
-  private def derefRDF(iri: IRI): IO[Resource[IO, RDFReader]] =
+  private def derefRDF(iri: IRI): IO[Resource[IO,RDFReader]] =
     RDFAsJenaModel.fromURI(iri.getLexicalForm, "TURTLE", Some(iri))
 
-  val io2parser = new FunctionK[IO, ManifestParser] {
+  val io2parser = new FunctionK[IO,ManifestParser] {
     override def apply[A](ioa: IO[A]): ManifestParser[A] =
       liftParser(liftIO(ioa))
   }
@@ -345,14 +337,15 @@ class RDF2Manifest extends RDFParser {
         fromEither(fn(x).leftMap(errStr(_)).map(_.some))
       }
     }
-  }
+  } 
 
   def oneOfPredicates(predicates: Seq[IRI]): RDFParser[IRI] = {
     val ps = predicates.map(iriFromPredicate(_))
     oneOf(ps)
   }
 
-  /** Override this method to provide more info
+  /**
+    * Override this method to provide more info
     */
   /* override def objectFromPredicate(p: IRI): RDFParser[RDFNode] =
     for {
@@ -368,20 +361,20 @@ class RDF2Manifest extends RDFParser {
         case _ => parseFail("objectFromPredicate: More than one value from predicate " + p + " on node " + n)
       }
     } yield r
-   */
+ */
 }
 
 object RDF2Manifest {
 
   private def getIriBase(base: Option[String]): IO[Option[IRI]] =
     base match {
-      case None => None.pure[IO]
+      case None      => None.pure[IO]
       case Some(str) => {
-        val s: Either[String, Option[IRI]] = IRI.fromString(str).map(Some(_))
-        val r: IO[Option[IRI]]             = fromES(s)
+        val s: Either[String,Option[IRI]] = IRI.fromString(str).map(Some(_))
+        val r: IO[Option[IRI]] = fromES(s)
         r
       }
-    }
+  }
 
   def read(
       path: Path,
@@ -391,38 +384,32 @@ object RDF2Manifest {
   ): IO[ShExManifest] = {
     // val noIri : Option[IRI] = None
 
-    val n: RDFNode = IRI("http://internal.base/")
+    val n : RDFNode = IRI("http://internal.base/")
 
     val r: IO[ShExManifest] = for {
       cs <- getContents(path)
-      sm <- getRDF(cs.toString, format, base).flatMap(
-        _.use(rdf =>
-          for {
-            iriBase <- getIriBase(base)
-            mfs <- {
-              val ctx                        = ManifestContext(iriBase, derefIncludes, List())
-              val cfg                        = Config(n, rdf)
-              val mm: IO[List[ShExManifest]] = mkShExManifest(cfg, ctx)
-              mm
-            }
-            manifest <-
-              if (mfs.size == 1) mfs.head.pure[IO]
-              else IO.raiseError(new RuntimeException(s"Number of manifests != 1: ${mfs}"))
-          } yield manifest
-        )
-      )
+      sm <- getRDF(cs.toString, format, base).flatMap(_.use(rdf => for {
+        iriBase <- getIriBase(base)
+        mfs <- {
+          val ctx = ManifestContext(iriBase, derefIncludes, List())
+          val cfg = Config(n, rdf)
+          val mm: IO[List[ShExManifest]] = mkShExManifest(cfg, ctx)
+          mm
+        }
+        manifest <-
+          if (mfs.size == 1) mfs.head.pure[IO]
+          else IO.raiseError(new RuntimeException(s"Number of manifests != 1: ${mfs}"))
+      } yield manifest))
     } yield sm
     r
   }
 
   private def mkShExManifest(cfg: Config, ctx: ManifestContext): IO[List[ShExManifest]] = {
-    val mm: IO[Either[Throwable, List[ShExManifest]]] = (new RDF2Manifest).rdf2Manifest.run(ctx).value.run(cfg)
-    mm.flatMap(
-      _.fold(
-        e => IO.raiseError(new RuntimeException(s"mkShExManifest: Error: ${e.getMessage}")),
-        IO(_)
-      )
-    )
+    val mm: IO[Either[Throwable,List[ShExManifest]]] = (new RDF2Manifest).rdf2Manifest.run(ctx).value.run(cfg)
+    mm.flatMap(_.fold(
+      e => IO.raiseError(new RuntimeException(s"mkShExManifest: Error: ${e.getMessage}")),
+      IO(_)
+    ))
   }
 
   private def getRDF(cs: String, format: String, base: Option[String]): IO[Resource[IO, RDFReader]] = {

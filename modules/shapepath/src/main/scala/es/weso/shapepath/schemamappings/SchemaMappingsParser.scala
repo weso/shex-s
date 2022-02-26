@@ -21,28 +21,28 @@ import es.weso.shapepath.parser.SchemaMappingsDocLexer
 
 object SchemaMappingsParser {
 
-  type S[A]       = State[BuilderState, A]
+  type S[A] = State[BuilderState, A]
   type Builder[A] = EitherT[S, String, A]
 
   // type PrefixMap = Map[Prefix,IRI]
-  type Start         = Option[ShapeExpr]
-  type ShapesMap     = ListMap[ShapeLabel, ShapeExpr]
+  type Start = Option[ShapeExpr]
+  type ShapesMap = ListMap[ShapeLabel, ShapeExpr]
   type TripleExprMap = Map[ShapeLabel, TripleExpr]
 
   def ok[A](x: A): Builder[A] =
     EitherT.pure(x)
 
   def err[A](msg: String): Builder[A] = {
-    val r: S[String]  = StateT.pure(msg)
+    val r: S[String] = StateT.pure(msg)
     val v: Builder[A] = EitherT.left[A](r)
     v
   }
 
-  def fromEither[A](e: Either[String, A]): Builder[A] =
+  def fromEither[A](e: Either[String,A]): Builder[A] =
     e.fold(str => err(str), ok(_))
 
   def sequence[A](bs: List[Builder[A]]): Builder[List[A]] =
-    bs.sequence[Builder, A]
+    bs.sequence[Builder,A]
 
   def getPrefixMap: Builder[PrefixMap] =
     getState.map(_.prefixMap)
@@ -90,7 +90,7 @@ object SchemaMappingsParser {
   def addTripleExprLabel(label: ShapeLabel, te: TripleExpr): Builder[TripleExpr] = for {
     s <- getState
     _ <- s.tripleExprMap.get(label) match {
-      case None          => ok(())
+      case None => ok(())
       case Some(otherTe) => err(s"Label $label has been assigned to ${otherTe} and can't be assigned to $te")
     }
     _ <- updateState(s => s.copy(tripleExprMap = s.tripleExprMap + (label -> te)))
@@ -109,24 +109,26 @@ object SchemaMappingsParser {
     parseReader(reader, base)
   }
 
-  /*  def parseShapePathFromFile(fileName: String, base: Option[IRI]): Either[String, ShapePath] = for {
+/*  def parseShapePathFromFile(fileName: String, base: Option[IRI]): Either[String, ShapePath] = for {
     reader <- FileUtils.getStream(fileName)
     schema <- parseReader(reader, base)
   } yield schema */
 
-  def parseReader(reader: JavaReader, base: Option[IRI]): Either[String, SchemaMappings] = {
-    val input: CharStream               = CharStreams.fromReader(reader)
-    val lexer: SchemaMappingsDocLexer   = new SchemaMappingsDocLexer(input)
-    val tokens: CommonTokenStream       = new CommonTokenStream(lexer)
+  def parseReader(reader: JavaReader,
+                  base: Option[IRI]
+                 ): Either[String, SchemaMappings] = {
+    val input: CharStream = CharStreams.fromReader(reader)
+    val lexer: SchemaMappingsDocLexer = new SchemaMappingsDocLexer(input)
+    val tokens: CommonTokenStream = new CommonTokenStream(lexer)
     val parser: SchemaMappingsDocParser = new SchemaMappingsDocParser(tokens)
 
     val errorListener = new ParserErrorListener
     lexer.addErrorListener(errorListener)
     parser.addErrorListener(errorListener)
 
-    val maker                            = new SchemaMappingsMaker()
+    val maker = new SchemaMappingsMaker()
     val builder: Builder[SchemaMappings] = maker.visit(parser.schemaMappingsDoc()).asInstanceOf[Builder[SchemaMappings]]
-    val errors                           = errorListener.getErrors()
+    val errors = errorListener.getErrors()
     if (errors.length > 0) {
       Left(errors.mkString("\n"))
     } else {
@@ -134,18 +136,23 @@ object SchemaMappingsParser {
     }
   }
 
-  def run[A](c: Builder[A], base: Option[IRI]): (BuilderState, Either[String, A]) =
-    c.value.run(initialState(base)).value
+  def run[A](c: Builder[A],
+             base: Option[IRI]
+            ): (BuilderState, Either[String, A]) = c.value.run(initialState(base)).value
 
   def initialState(base: Option[IRI]) =
-    BuilderState(PrefixMap.empty, base, None, ListMap(), Map())
+    BuilderState(
+      PrefixMap.empty,
+      base,
+      None,
+      ListMap(),
+      Map())
 
-  case class BuilderState(
-      prefixMap: PrefixMap,
-      base: Option[IRI],
-      start: Option[ShapeExpr],
-      shapesMap: ShapesMap,
-      tripleExprMap: TripleExprMap
-  )
+  case class BuilderState(prefixMap: PrefixMap,
+                          base: Option[IRI],
+                          start: Option[ShapeExpr],
+                          shapesMap: ShapesMap,
+                          tripleExprMap: TripleExprMap
+                         )
 
 }
