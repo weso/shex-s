@@ -290,14 +290,15 @@ case class Shape(
   }
 
   /**
-    * Return the paths that are mentioned in a shape
+    * Return the all paths that are mentioned in a shape
+    * It includes also the paths in extends
     * @param schema Schema to which the shape belongs, it is needed to resolve references to other shapes
     * @return Set of paths or error in case the shape is not well defined (may have bad references)
     */
-  override def paths(schema: AbstractSchema): Either[String, Set[Path]] = {
-    def cnv[A,B](e: Either[B,Set[A]]):Option[List[A]] = e.fold(_ => None, _.toList.some)
+  def allPaths(schema: AbstractSchema): Either[String, Set[Path]] = {
 
     def getPath(s: ShapeExpr): Option[List[Path]] = {
+      def cnv[A,B](e: Either[B,Set[A]]):Option[List[A]] = e.fold(_ => None, _.toList.some)
       val ps = s match {
         case s: Shape => Some(s.expression.map(_.paths(schema).toList).getOrElse(List()))
         case sd: ShapeDecl => cnv(sd.paths(schema))
@@ -314,6 +315,10 @@ case class Shape(
     extendCheckingVisited(this, schema.getShape(_), extend, combinePaths, getPath)
     .map(_.getOrElse(List()))
     .map(_.toSet)
+  }
+
+  override def paths(schema: AbstractSchema): Either[String, Set[Path]] = {
+    expression.map(_.paths(schema)).getOrElse(Set()).asRight[String]
   }
 
   def extendExpression(schema: Schema): Either[String, Option[TripleExpr]] = {
