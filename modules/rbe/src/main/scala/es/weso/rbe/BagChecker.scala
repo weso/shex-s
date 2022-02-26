@@ -12,7 +12,7 @@ trait BagChecker[A] {
 }
 
 object BagChecker {
-  implicit def showBagChecker[A:Show]: Show[BagChecker[A]] =
+  implicit def showBagChecker[A: Show]: Show[BagChecker[A]] =
     new Show[BagChecker[A]] {
       def show(fa: BagChecker[A]): String =
         Rbe.show(fa.rbe)

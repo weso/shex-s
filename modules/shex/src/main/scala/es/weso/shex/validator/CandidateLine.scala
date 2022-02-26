@@ -13,16 +13,15 @@ case class CandidateLine(values: List[ArcConstraintRef]) {
   def mkBag: Bag[ConstraintRef] = Bag.toBag(values.map(_.cRef))
 
   def nodeConstraints(table: CTable): List[(RDFNode, (ShapeExpr, Option[List[SemAct]]))] =
-    filterOptions(values.map { 
-      ac => (ac.arc.node, table.getConstraint(ac.cRef))
+    filterOptions(values.map { ac =>
+      (ac.arc.node, table.getConstraint(ac.cRef))
     })
 
 //  override def toString: String = CandidateLine.showCandidateLine.show(this)
 
-def toJson: Json = 
-  Json.fromValues(values.map(_.toJson))
+  def toJson: Json =
+    Json.fromValues(values.map(_.toJson))
 
 }
 
-object CandidateLine {
-}
+object CandidateLine {}

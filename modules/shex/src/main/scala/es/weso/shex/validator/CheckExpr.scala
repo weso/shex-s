@@ -18,17 +18,15 @@ private[validator] object CheckExpr {
   implicit lazy val showCheckExpr: Show[CheckExpr] = new Show[CheckExpr] {
     override def show(ce: CheckExpr): String = {
       ce match {
-        case Pos(se,semActs) => se.show
-        case Neg(se,semActs) => "!" + se.show
+        case Pos(se, semActs) => se.show
+        case Neg(se, semActs) => "!" + se.show
       }
     }
   }
 
-   implicit val checkExprEncoder: Encoder[CheckExpr] = new Encoder[CheckExpr] {
-    final def apply(v: CheckExpr): Json = 
+  implicit val checkExprEncoder: Encoder[CheckExpr] = new Encoder[CheckExpr] {
+    final def apply(v: CheckExpr): Json =
       v.show.asJson
   }
 
-
 }
-

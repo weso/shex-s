@@ -16,7 +16,7 @@ case class BagSortedMap[A: Ordering](smap: SortedMap[A, Int]) extends Bag[A] {
     if (smap.contains(elem)) {
       val n = smap(elem)
       if (n == 1)
-        BagSortedMap(smap.filter{case (key, _) => key != elem})
+        BagSortedMap(smap.filter { case (key, _) => key != elem })
       else
         BagSortedMap(smap ++ List(elem -> (n - 1)))
     } else // TODO: Consider returning some kind of error
@@ -29,9 +29,8 @@ case class BagSortedMap[A: Ordering](smap: SortedMap[A, Int]) extends Bag[A] {
       0
   }
 
-  /**
-   * A more efficient version of add
-   */
+  /** A more efficient version of add
+    */
   override def add(elem: A, n: Int): BagSortedMap[A] =
     if (smap.contains(elem))
       BagSortedMap(smap ++ List(elem -> (smap(elem) + n)))
@@ -50,5 +49,4 @@ case class BagSortedMap[A: Ordering](smap: SortedMap[A, Int]) extends Bag[A] {
 
 }
 
-object BagSortedMap {
-}
+object BagSortedMap {}
