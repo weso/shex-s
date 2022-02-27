@@ -211,15 +211,11 @@ class ExtendsTest extends ShouldValidateShapeMap {
            |:B closed  { :p [ 1 ] }
            |:A extends @:B CLOSED { }
            |""".stripMargin
-      shouldValidateWithShapeMap(rdf, shex, ":ok1@:A", ":ok1@!:A")
+      shouldValidateWithShapeMap(rdf, shex, ":ok1@:A", ":ok1@:A")
       shouldValidateWithShapeMap(rdf, shex, ":ko1@:A", ":ko1@!:A")
     }
 
     {
-      /* This behaviour is different in Eric's implementation...
-         If try with the different partitions.
-          The partition { <p 1>,<q 3> matches @:B and { } matches CLOSED { } */
-
       val rdf =
         """|prefix : <http://e#>
            |:ok1 :p 1 .
@@ -230,8 +226,7 @@ class ExtendsTest extends ShouldValidateShapeMap {
            |:B { :p [ 1 ] }
            |:A extends @:B CLOSED { }
            |""".stripMargin
-      shouldValidateWithShapeMap(rdf, shex, ":ok1@:A", ":ok1@!:A")
-      // shouldValidateWithShapeMap(rdf, shex, ":ko1@:A", ":ko1@!:A")
+      shouldValidateWithShapeMap(rdf, shex, ":ok1@:A", ":ok1@:A")
       shouldValidateWithShapeMap(rdf, shex, ":ko1@:A", ":ko1@!:A")
     } 
 
@@ -245,8 +240,25 @@ class ExtendsTest extends ShouldValidateShapeMap {
            |:B [ 2 ]
            |:C @:A AND @:B
            |""".stripMargin
-      shouldValidateWithShapeMap(rdf, shex, "1@:C", "1@!:C", Debug)
+      shouldValidateWithShapeMap(rdf, shex, "1@:C", "1@!:C")
     } 
+
+    {
+      val rdf =
+        """|prefix : <http://e#>
+           |:ok1 :q 3 .
+           |:ko1 :q 99 .
+           |""".stripMargin
+      val shex =
+        """|prefix : <http://e#>
+           |:A { :q [ 3] }
+           |:B { :q . }
+           |:C @:A AND @:B
+           |:D extends @:C { }
+           |""".stripMargin
+      shouldValidateWithShapeMap(rdf, shex, ":ok1@:A", ":ok1@:A")
+      shouldValidateWithShapeMap(rdf, shex, ":ko1@:A", ":ko1@!:A")
+    }
 
 
    
@@ -264,15 +276,25 @@ class ExtendsTest extends ShouldValidateShapeMap {
       shouldValidateWithShapeMap(rdf, shex, ":ok1@:A", ":ok1@:A,:ok1@:B")
     } */
 
+    {
+      val rdf =
+        """|prefix : <http://e#>
+           |:ok1 :p :ok1 .
+           |""".stripMargin
+      val shex =
+        """|prefix : <http://e#>
+           |:A { :p @:A }
+           |""".stripMargin
+      shouldValidateWithShapeMap(rdf, shex, ":ok1@:A", ":ok1@:A", Debug)
+    }
 
-/*    describe("Open partition") {
-   
+
     {
       val rdf =
         """|prefix foaf: <http://xmlns.com/foaf/0.1/>
            |prefix : <http://example.org/>
            |
-           |:alice :code 8, 2, 3, 6 .
+           |:alice :code 8, 9, 2, 3, 6 .
            |
            |""".stripMargin
       val shex =
@@ -292,15 +314,12 @@ class ExtendsTest extends ShouldValidateShapeMap {
                    |}
                    |
                    |# contrived example, sorry!
-                   |:Alice extends @:User extends @:Employee AND {
+                   |:Alice extends @:User extends @:Employee {
                    |  :code [ 6 ]
                    |}
                    |""".stripMargin
       shouldValidateWithShapeMap(rdf, shex, ":alice@:Alice",":alice@:Alice")
     }
-
-  } */
-
 
   /*
 
