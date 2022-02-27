@@ -129,10 +129,11 @@ case class FlatShapeValidator(
               val ct: Check[ShapeTyping] = for {
                 partition <- doPartition
                 (notPassed, passed) = partition
-                _ <- debug(s"checkValuesConstraint: Passed: \n${passed.map(_.toString).mkString(s",")}| No passed: ${notPassed.map(_.toString).mkString(s",")}")
+                // _ <- debug(s"checkValuesConstraint: Passed: ${passed.map(_.toString).mkString(s",")}| No passed: ${notPassed.map(_.toString).mkString(s",")}")
                 newt <- if (notPassed.isEmpty) {
                   addEvidence(attempt.nodeShape, s"${showNode(node)} passed ${constraint.showQualified(shapesPrefixMap)} for path ${path.showQualified(nodesPrefixMap)}")
                 } else
+                  debug(s"checkValuesConstraint($node) failed: Passed: ${passed.map(_.toString).mkString(s",")}| No passed: ${notPassed.map(_.toString).mkString(s",")}")
                   err[ShapeTyping](ValuesNotPassed(attempt, node, path, passed.size, notPassed.toSet,rdf))
               } yield newt
               ct
