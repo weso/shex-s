@@ -35,37 +35,37 @@ object CompareSchemas {
 
   def compareShapeExprs(se1: ShapeExpr, se2: ShapeExpr): Boolean = {
     (se1, se2) match {
-      case (ShapeOr(id1, ss1,_,_), ShapeOr(id2, ss2,_,_))   => id1 == id2 && compareShapeExprLists(ss1, ss2)
-      case (ShapeAnd(id1, ss1,_,_), ShapeAnd(id2, ss2,_,_)) => id1 == id2 && compareShapeExprLists(ss1, ss2)
-      case (ShapeNot(id1, s1,_,_), ShapeNot(id2, s2,_,_))   => id1 == id2 && compareShapeExprs(s1, s2)
-      case (n1: NodeConstraint, n2: NodeConstraint) => Eq[NodeConstraint].eqv(n1,n2)
-      case (s1: Shape, s2: Shape)                   => compareShapes(s1, s2)
-      case (ShapeRef(i1,_,_), ShapeRef(i2,_,_))             => Eq[ShapeLabel].eqv(i1,i2)
-      case (ShapeExternal(id1,_,_), ShapeExternal(id2,_,_)) => id1 == id2
-      case (ShapeDecl(id1,se1), ShapeDecl(id2,se2)) => 
-        id1 == id2 && compareShapeExprs(se1,se2)
-      case (_, _)                                   => {
-        pprint.log(se1,"compareShapeExprs")
-        pprint.log(se2,"compareShapeExprs")
+      case (ShapeOr(id1, ss1, _, _), ShapeOr(id2, ss2, _, _))   => id1 == id2 && compareShapeExprLists(ss1, ss2)
+      case (ShapeAnd(id1, ss1, _, _), ShapeAnd(id2, ss2, _, _)) => id1 == id2 && compareShapeExprLists(ss1, ss2)
+      case (ShapeNot(id1, s1, _, _), ShapeNot(id2, s2, _, _))   => id1 == id2 && compareShapeExprs(s1, s2)
+      case (n1: NodeConstraint, n2: NodeConstraint)             => Eq[NodeConstraint].eqv(n1, n2)
+      case (s1: Shape, s2: Shape)                               => compareShapes(s1, s2)
+      case (ShapeRef(i1, _, _), ShapeRef(i2, _, _))             => Eq[ShapeLabel].eqv(i1, i2)
+      case (ShapeExternal(id1, _, _), ShapeExternal(id2, _, _)) => id1 == id2
+      case (ShapeDecl(id1, se1), ShapeDecl(id2, se2)) =>
+        id1 == id2 && compareShapeExprs(se1, se2)
+      case (_, _) => {
+        pprint.log(se1, "compareShapeExprs")
+        pprint.log(se2, "compareShapeExprs")
         false
       }
     }
   }
 
   def compareShapes(s1: Shape, s2: Shape): Boolean = {
-    if (Eq[Shape].eqv(s1,s2)) true
+    if (Eq[Shape].eqv(s1, s2)) true
     else {
       println(s"shapes are different: \n${s1}\n---\n${s2}")
-      eqPrint(s1.isVirtual,s2.isVirtual) &&
-        eqPrint(s1.isClosed,s2.isClosed) &&
-        eqPrint(s1.expression, s2.expression) &&
-        eqPrint(s1._extends, s2._extends) &&
-        eqPrint(s1.actions, s2.actions)
+      eqPrint(s1.isVirtual, s2.isVirtual) &&
+      eqPrint(s1.isClosed, s2.isClosed) &&
+      eqPrint(s1.expression, s2.expression) &&
+      eqPrint(s1._extends, s2._extends) &&
+      eqPrint(s1.actions, s2.actions)
     }
   }
 
-  def eqPrint[A: Eq](x: A, y:A): Boolean = {
-    if (Eq[A].eqv(x,y)) true
+  def eqPrint[A: Eq](x: A, y: A): Boolean = {
+    if (Eq[A].eqv(x, y)) true
     else {
       println(s"Different:\n$x\n---\n$y")
       false
@@ -74,20 +74,23 @@ object CompareSchemas {
 
   def compareOptionBool(b1: Option[Boolean], b2: Option[Boolean]): Boolean = {
     b1 match {
-      case None => b2 match {
-        case None => true
-        case Some(false) => true
-        case Some(true) => false
-      }
-      case Some(false) => b2 match {
-        case None => true
-        case Some(false) => true
-        case Some(true) => false
-      }
-      case Some(true) => b2 match {
-        case Some(true) => true
-        case _ => false
-      }
+      case None =>
+        b2 match {
+          case None        => true
+          case Some(false) => true
+          case Some(true)  => false
+        }
+      case Some(false) =>
+        b2 match {
+          case None        => true
+          case Some(false) => true
+          case Some(true)  => false
+        }
+      case Some(true) =>
+        b2 match {
+          case Some(true) => true
+          case _          => false
+        }
     }
   }
 }

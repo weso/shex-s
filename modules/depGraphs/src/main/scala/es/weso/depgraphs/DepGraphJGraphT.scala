@@ -15,11 +15,11 @@ case class DepGraphJGraphT[Node]() extends DepGraph[Node] with LazyLogging {
   val graph: Graph[Node, Edge] =
     new DefaultDirectedGraph[Node, Edge](classOf[Edge])
 
-  /**
-   * Removes all edges
-   *
-   * @return <tt>true</tt> if the graph changed
-   */
+  /** Removes all edges
+    *
+    * @return
+    *   <tt>true</tt> if the graph changed
+    */
   private def removeAllEdges(): Boolean = {
     val edges: java.util.Set[Edge] = graph.edgeSet
     graph.removeAllEdges(edges)
@@ -39,12 +39,12 @@ case class DepGraphJGraphT[Node]() extends DepGraph[Node] with LazyLogging {
     graph.vertexSet.asScala.toSet
   }
 
-  /**
-   * Checks if a node is in a graph and adds it if it isn't
-   *
-   * @param node
-   * @return <tt>true</tt> if it added the node
-   */
+  /** Checks if a node is in a graph and adds it if it isn't
+    *
+    * @param node
+    * @return
+    *   <tt>true</tt> if it added the node
+    */
   private def checkVertex(node: Node): Boolean = {
     // if (!graph.containsVertex(node))
     graph.addVertex(node)
@@ -96,7 +96,6 @@ case class DepGraphJGraphT[Node]() extends DepGraph[Node] with LazyLogging {
     }
   }
 
-
   private def containsNegEdge(g: Graph[Node, Edge]): Boolean = {
     g.edgeSet.asScala.exists(e => e.posNeg == Neg || e.posNeg == Both)
   }
@@ -122,8 +121,8 @@ case class DepGraphJGraphT[Node]() extends DepGraph[Node] with LazyLogging {
 
   def showPosNeg(pn: PosNeg): String = {
     pn match {
-      case Pos => "-(+)->"
-      case Neg => "-(-)->"
+      case Pos  => "-(+)->"
+      case Neg  => "-(-)->"
       case Both => "-(-/+)->"
     }
   }
@@ -142,20 +141,24 @@ case class DepGraphJGraphT[Node]() extends DepGraph[Node] with LazyLogging {
     val nodes1 = this.nodes
     val nodes2 = other.nodes
     if (nodes1 == nodes2) {
-      val rs: List[Either[String, Unit]] = nodes1.map(n => outEdges(n) match {
-        case Left(msg) => Left(s"Cannot find outEdges of $n in graph1: $msg")
-        case Right(es1) => other.outEdges(n) match {
-          case Left(msg) => Left(s"Cannot find outEdges of $n in graph2. Error: $msg")
-          case Right(es2) => if (es1 == es2) {
-            Right(())
-          } else {
-            Left(s"Outedges of $n are different. Graph1 = $es1, Graph2 = $es2")
+      val rs: List[Either[String, Unit]] = nodes1
+        .map(n =>
+          outEdges(n) match {
+            case Left(msg) => Left(s"Cannot find outEdges of $n in graph1: $msg")
+            case Right(es1) =>
+              other.outEdges(n) match {
+                case Left(msg) => Left(s"Cannot find outEdges of $n in graph2. Error: $msg")
+                case Right(es2) =>
+                  if (es1 == es2) {
+                    Right(())
+                  } else {
+                    Left(s"Outedges of $n are different. Graph1 = $es1, Graph2 = $es2")
+                  }
+              }
           }
-        }
-      }).toList
+        )
+        .toList
       rs.sequence[ES, Unit].map(_ => ())
-    } else
-      Left(s"Set of nodes is different. Nodes1 = $nodes1, nodes2 = $nodes2")
+    } else Left(s"Set of nodes is different. Nodes1 = $nodes1, nodes2 = $nodes2")
   }
 }
-
