@@ -18,9 +18,9 @@ trait ShowValidator {
   implicit lazy val showRDFNode: Show[RDFNode] = new Show[RDFNode] {
     override def show(n: RDFNode): String = {
       n match {
-        case i: IRI     => i.show
+        case i: IRI => i.show
         case l: Literal => l.getLexicalForm
-        case b: BNode   => "_:" + b.getLexicalForm
+        case b: BNode => "_:" + b.getLexicalForm
       }
     }
   }
@@ -34,9 +34,9 @@ trait ShowValidator {
   implicit lazy val showShapeLabel: Show[ShapeLabel] = new Show[ShapeLabel] {
     override def show(lbl: ShapeLabel): String = {
       lbl match {
-        case l: IRILabel   => Show[RDFNode].show(l.iri)
+        case l: IRILabel => Show[RDFNode].show(l.iri)
         case l: BNodeLabel => Show[RDFNode].show(l.bnode)
-        case Start         => "Start"
+        case Start => "Start"
       }
     }
   }
@@ -44,7 +44,7 @@ trait ShowValidator {
   implicit lazy val showPath: Show[Path] = new Show[Path] {
     override def show(p: Path): String = {
       p match {
-        case Direct(iri)  => schema.qualify(iri)
+        case Direct(iri) => schema.qualify(iri)
         case Inverse(iri) => "^" + schema.qualify(iri)
       }
     }
@@ -53,30 +53,29 @@ trait ShowValidator {
   implicit lazy val showAttempt: Show[Attempt] = new Show[Attempt] {
     override def show(a: Attempt): String = {
       val showPath: String = a.path match {
-        case None    => ""
+        case None => ""
         case Some(p) => ", path: " + p.show
       }
       s"Attempt: node: ${a.node.show}, shape: ${a.shape.show}${showPath}"
     }
   }
 
-  def sh(lbls: Set[ShapeLabel]): String =
-    if (lbls.isEmpty) "{}"
+  def sh(lbls: Set[ShapeLabel]): String = 
+    if (lbls.isEmpty) "{}" 
     else lbls.map(lbl => schema.prefixMap.qualify(lbl.toRDFNode)).mkString(",")
 
   def showSE(s: ShapeExpr): String = {
-    s.id
-      .map(lbl => schema.prefixMap.qualify(lbl.toRDFNode))
-      .getOrElse(s match {
-        case sa: ShapeAnd       => s"AND(${sa.shapeExprs.map(showSE(_).mkString(","))})"
-        case sa: ShapeOr        => s"OR(@@${sa.shapeExprs.map(showSE(_).mkString(","))})"
-        case sn: ShapeNot       => s"NOT(${showSE(sn.shapeExpr)})"
-        case sd: ShapeDecl      => s"Decl(${showSE(sd.shapeExpr)})"
-        case sr: ShapeRef       => s"@${schema.prefixMap.qualify(sr.reference.toRDFNode)}"
-        case nc: NodeConstraint => s"NodeConstraint:${nc.show}"
-        case s: Shape           => s"Shape(?)"
-        case se: ShapeExternal  => s"External"
-      })
+    s.id.map(lbl => schema.prefixMap.qualify(lbl.toRDFNode)).getOrElse(s match {
+      case sa: ShapeAnd => s"AND(${sa.shapeExprs.map(showSE(_).mkString(","))})"
+      case sa: ShapeOr => s"OR(@@${sa.shapeExprs.map(showSE(_).mkString(","))})"
+      case sn: ShapeNot => s"NOT(${showSE(sn.shapeExpr)})"
+      case sd: ShapeDecl => s"Decl(${showSE(sd.shapeExpr)})"
+      case sr: ShapeRef => s"@${schema.prefixMap.qualify(sr.reference.toRDFNode)}" 
+      case nc: NodeConstraint => s"NodeConstraint:${nc.show}"
+      case s: Shape => s"Shape(?)"
+      case se: ShapeExternal => s"External"
+    })
   }
+
 
 }
