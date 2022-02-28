@@ -7,9 +7,10 @@ import io.circe._
 import io.circe.syntax._
 
 case class FixedShapeMap(
-  shapeMap: Map[RDFNode, Map[ShapeMapLabel, Info]],
-  nodesPrefixMap: PrefixMap,
-  shapesPrefixMap: PrefixMap) extends ShapeMap {
+    shapeMap: Map[RDFNode, Map[ShapeMapLabel, Info]],
+    nodesPrefixMap: PrefixMap,
+    shapesPrefixMap: PrefixMap
+) extends ShapeMap {
 
   lazy val flatten: List[(RDFNode, ShapeMapLabel, Status)] =
     shapeMap.toList.map(p => p._2.toList.map(q => (p._1, q._1, q._2.status))).flatten
@@ -34,7 +35,8 @@ case class FixedShapeMap(
               case None => Right(this.copy(shapeMap = shapeMap.updated(node, labelsMap.updated(a.shape, a.info))))
               case Some(info) =>
                 if (info.status == a.info.status) Right(this)
-                else Left(s"Cannot add association with contradictory status: Association: ${a}, Labels map: ${labelsMap}")
+                else
+                  Left(s"Cannot add association with contradictory status: Association: ${a}, Labels map: ${labelsMap}")
             }
           }
         }
@@ -49,9 +51,7 @@ case class FixedShapeMap(
   def addShapesPrefixMap(pm: PrefixMap): FixedShapeMap =
     this.copy(shapesPrefixMap = pm)
 
-  private def cnvFixedShapeMap(cnvNode: RDFNode => RDFNode,
-                           cnvLabel: ShapeMapLabel => ShapeMapLabel
-                          ): FixedShapeMap =
+  private def cnvFixedShapeMap(cnvNode: RDFNode => RDFNode, cnvLabel: ShapeMapLabel => ShapeMapLabel): FixedShapeMap =
     FixedShapeMap(
       cnvMapMap(shapeMap, cnvNode, cnvLabel, identity[Info]),
       nodesPrefixMap,
@@ -59,7 +59,7 @@ case class FixedShapeMap(
     )
 
   override def relativize(maybeBase: Option[IRI]): FixedShapeMap = maybeBase match {
-    case None => this
+    case None       => this
     case Some(base) => cnvFixedShapeMap(_.relativize(base), _.relativize(base))
   }
 

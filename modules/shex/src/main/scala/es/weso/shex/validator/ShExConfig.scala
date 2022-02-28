@@ -3,6 +3,6 @@ import es.weso.rdf.RDFReader
 import es.weso.utils.VerboseLevel
 
 case class ShExConfig(
-  rdf: RDFReader,
-  verboseLevel: VerboseLevel
+    rdf: RDFReader,
+    verboseLevel: VerboseLevel
 )
