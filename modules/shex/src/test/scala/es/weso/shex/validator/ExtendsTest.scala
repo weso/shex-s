@@ -321,6 +321,80 @@ class ExtendsTest extends ShouldValidateShapeMap {
       shouldValidateWithShapeMap(rdf, shex, ":alice@:Alice",":alice@:Alice")
     }
 
+    {
+      val rdf =
+        """|prefix : <http://e#>
+           |prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+           |
+           |:x :p :l . 
+           |:l  rdf:first :v1; rdf:rest :v2 .
+           |:v2 rdf:first "X"; rdf:rest rdf:nil . 
+           |""".stripMargin
+      val shex =
+        """|prefix :    <http://e#>
+           |prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+           |
+           |:S { :p @:Ls }
+           |:Ls [ rdf:nil ] OR CLOSED { 
+           | rdf:first IRI ;
+           | rdf:rest @:Ls 
+           |}
+           |""".stripMargin
+      shouldValidateWithShapeMap(rdf, shex, ":l@:Ls", ":l@!:Ls")
+    }
+
+  {
+      val rdf =
+        """|prefix : <http:e/>
+           |PREFIX foaf: <http://xmlns.com/foaf/>
+           |PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+           |
+           |:issue1 :reportedBy     :bob .
+           |
+           |:bob foaf:name  "Bob" ;
+           |     :representative :joe
+           |.
+           |
+           |:joe foaf:name  "Joe" ;
+           |     foaf:phone      <tel:+456> ;
+           |.
+           |""".stripMargin
+      val shex =
+        """|prefix : <http:e/>
+           |PREFIX foaf: <http://xmlns.com/foaf/>
+           |PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+           |PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+           |
+           |:IssueShape CLOSED {
+           |  :reportedBy   @:PersonShape;
+           |#  :reproducedBy @:EmployeeShape ?
+           |}
+           |
+           |ABSTRACT :PersonShape {
+           |  foaf:name xsd:string ;
+           |}
+           |
+           |:UserShape EXTENDS @:PersonShape CLOSED {
+           |  :representative @:EmployeeShape
+           |}
+           |
+           |ABSTRACT :RepShape {
+           |  foaf:phone IRI+
+           |}
+           |
+           |:EmployeeShape
+           |    EXTENDS @:PersonShape
+           |    EXTENDS @:RepShape CLOSED {
+           |}
+           |""".stripMargin
+      shouldValidateWithShapeMap(rdf, shex, 
+      ":bob@:PersonShape", 
+      ":bob@:PersonShape, :bob@:UserShape, :joe@:EmployeeShape", Debug) 
+      shouldValidateWithShapeMap(rdf, shex, 
+      ":issue1@:IssueShape", 
+      ":issue1@:IssueShape, :bob@:PersonShape, :bob@:UserShape, :joe@:EmployeeShape", Debug)
+    }
+
   /*
 
   describe(s"Users example") {

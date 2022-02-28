@@ -392,7 +392,7 @@ trait ShExChecker {
     Applicative[F].pure(e)
 
   def errStr[A](msg: String): Check[A] =
-    info(s"errorStr($msg)") >> 
+    info(s"errStr($msg)") *> 
     err[A](ShExError.msgErr(msg))
 
     // TODO: Capture errors in EitherT
