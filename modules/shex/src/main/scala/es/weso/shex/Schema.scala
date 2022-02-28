@@ -17,6 +17,7 @@ import compact.Parser._
 import java.io.InputStream
 import java.io.InputStreamReader
 import java.io.ByteArrayInputStream
+import java.nio.file.{Path => FilePath}
 import es.weso.utils.VerboseLevel
 
 case class Schema(id: IRI,
@@ -165,8 +166,9 @@ object Schema {
  def empty: Schema =
     Schema(IRI(""),None, None, None, None, None, None, List(), None)
 
- def fromIRI(i: IRI, base: Option[IRI], verbose: VerboseLevel): IO[Schema] = {
+ def fromIRI(i: IRI, base: Option[IRI], verbose: VerboseLevel, assumeLocal: Option[(IRI, FilePath)] = None): IO[Schema] = {
     val uri = i.uri
+    println(s"Schema.fromIRI. $assumeLocal")
     if (uri.getScheme == "file") {
         if (Files.exists(Paths.get(i.uri))) {
             val str = Source.fromURI(uri).mkString
@@ -212,7 +214,6 @@ object Schema {
     _ <- verbose.details(s"Obtained schema at $uri\n${schema}")
    } yield schema
   }
-
 
 
   /**

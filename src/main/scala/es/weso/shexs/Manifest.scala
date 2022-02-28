@@ -12,6 +12,8 @@ import VerboseLevelOpt._
 import es.weso.shextest.manifest._
 import es.weso.utils.VerboseLevel
 import scala.concurrent.duration._
+import es.weso.rdf.nodes.IRI
+import java.nio.file.Paths
 
 
 case class Manifest(
@@ -24,8 +26,8 @@ case class Manifest(
 ) {
 
   def run(): IO[ExitCode] = {
-    val assumeLocal = "https://raw.githubusercontent.com/shexSpec/shexTest/"
-    parseManifest(manifestFileName, parentPath, testsFolderPath.toString, testName, List(), timeout, verbose).flatMap(results => 
+    val assumeLocal: Option[(IRI,Path)] = Some((IRI("https://raw.githubusercontent.com/shexSpec/shexTest/master/"), Paths.get("src/test/resources/shexTest")))
+    parseManifest(manifestFileName, parentPath, testsFolderPath.toString, testName, List(), timeout, assumeLocal, verbose).flatMap(results => 
     printResults(results) *>
     ExitCode.Success.pure)
   }

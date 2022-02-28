@@ -99,6 +99,7 @@ object Utils {
       shouldValidate: Boolean,
       name: String,
       folderURI: URI,
+      assumeLocal: Option[(IRI,Path)],
       verbose: VerboseLevel,
   ): IO[Option[Result]] = {
     val focus     = fa.focus
@@ -132,7 +133,6 @@ object Utils {
            result(name, true, Ignored("Ignored sht:Greedy"))
          } else {
            val shapeMap = FixedShapeMap(Map(focus -> Map(lbl -> Info())), dataPrefixMap, schema.prefixMap)
-           val assumeLocal: Option[(IRI,Path)] = Some((IRI(schemasBase),Paths.get(folderURI)))
            for {
              // _         <- testInfoValue(s"shapeMap", shapeMap, verbose)
              resolvedSchema <- ResolvedSchema.resolve(schema, Some(fa.schema), verbose, assumeLocal)

@@ -103,8 +103,6 @@ object ResolvedSchema {
     labelLocationMap = schema.labelLocationMap
   )
 
-  
-
   private def getEffectiveIRI(iri: IRI, assumeLocal: Option[(IRI,Path)]): IRI = 
     assumeLocal match {
       case Some((prefix,path)) if (iri.str.startsWith(prefix.str)) => {
@@ -130,8 +128,11 @@ object ResolvedSchema {
         closureImports(is, visited, current, base, verbose, assumeLocal)
       else {
        val effectiveIRI = getEffectiveIRI(i, assumeLocal)
+       verbose.debug(s"Resolving schema import: i=${i}") *>
+       verbose.debug(s"Resolving schema import: assumeLocal=${assumeLocal}") *>
+       verbose.debug(s"Resolving schema import: effectiveIRI=${effectiveIRI}") *>
        Schema
-         .fromIRI(effectiveIRI, base, verbose)
+         .fromIRI(effectiveIRI, base, verbose, assumeLocal)
          .flatMap(schema => 
            closureImports(is ++ schema.imports, i :: visited, current.merge(schema,i), base, verbose, assumeLocal)
          )

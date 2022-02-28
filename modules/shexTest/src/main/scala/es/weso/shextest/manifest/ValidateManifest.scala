@@ -1,7 +1,7 @@
 package es.weso.shextest.manifest
 
 import java.net.URI
-import java.nio.file.Paths
+import java.nio.file.{Path => FilePath, Paths}
 import scala.util.{Either, Left, Right, Try}
 import cats.data.EitherT
 import cats.effect.IO
@@ -94,13 +94,14 @@ object ValidateManifest extends RunManifest {
       testSelector: TestSelector,
       ignoreList: List[String],
       timeout: FiniteDuration,
+      assumeLocal: Option[(IRI, FilePath)],
       verbose: VerboseLevel,
   ): IO[List[Result]] = {
     testInfo(s"Parse manifest: name: ${name}, folder: $folderName, parentFolder: ${testsFolder}", verbose) *>
-    runManifest(name, folderName, testsFolder, testSelector, ignoreList, processEntryValidating(verbose), timeout, verbose)
+    runManifest(name, folderName, testsFolder, testSelector, ignoreList, processEntryValidating(assumeLocal, verbose), timeout, verbose)
   } 
 
-  def processEntryValidating(verbose: VerboseLevel)(ep: EntryParam): IO[Option[Result]] = {
+  def processEntryValidating(assumeLocal: Option[(IRI,FilePath)], verbose: VerboseLevel)(ep: EntryParam): IO[Option[Result]] = {
     val name = ep.entry.name 
     if (ep.testSelector.matches(name)) {
       if (ep.ignoreList.contains(name)) {
@@ -113,21 +114,16 @@ object ValidateManifest extends RunManifest {
 
         case v: ValidationTest => {
           v.action match {
-            case focusAction: FocusAction => 
-             validateFocusAction(focusAction, base, v, true, v.name, folderURI, verbose)
-            case mr: MapResultAction      => 
-             validateMapResult(mr, base, v, v.name, folderURI, verbose)
-            case ma: ManifestAction       =>
-              result(v.name, false, NotImplemented("validate ManifestAction"))
+            case focusAction: FocusAction => validateFocusAction(focusAction, base, v, true, v.name, folderURI, assumeLocal, verbose)
+            case mr: MapResultAction      => validateMapResult(mr, base, v, v.name, folderURI, verbose)
+            case ma: ManifestAction       => result(v.name, false, NotImplemented("validate ManifestAction"))
           }
         }
        
         case v: ValidationFailure => {
           v.action match {
-            case focusAction: FocusAction => 
-             validateFocusAction(focusAction, base, v, false, v.name, folderURI, verbose)
-            case mr: MapResultAction      => 
-             validateMapResult(mr, base, v, v.name, folderURI, verbose)
+            case focusAction: FocusAction => validateFocusAction(focusAction, base, v, false, v.name, folderURI, assumeLocal, verbose)
+            case mr: MapResultAction      => validateMapResult(mr, base, v, v.name, folderURI, verbose)
             case ma: ManifestAction       => result(v.name, false, NotImplemented("ValidationFailure ManifestAction"))
           }
         }
