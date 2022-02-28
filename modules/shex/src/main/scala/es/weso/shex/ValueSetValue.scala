@@ -14,25 +14,25 @@ sealed trait ObjectValue extends ValueSetValue {
 
 case class IRIValue(i: IRI) extends ObjectValue {
   override def relativize(base: IRI): IRIValue = IRIValue(i.relativizeIRI(base))
-  override def getNode                         = i
+  override def getNode = i
 }
 
 sealed trait ObjectLiteral extends ObjectValue {
-  override def relativize(base: IRI): ObjectLiteral = this
+  override def relativize(base:IRI): ObjectLiteral = this
 }
 
 case class StringValue(s: String) extends ObjectLiteral {
   override def getNode = StringLiteral(s)
 }
 case class DatatypeString(s: String, iri: IRI) extends ObjectLiteral {
-  override def getNode = DatatypeLiteral(s, iri)
+  override def getNode = DatatypeLiteral(s,iri)
 }
 case class LangString(s: String, lang: Lang) extends ObjectLiteral {
-  override def getNode = LangLiteral(s, lang)
+  override def getNode = LangLiteral(s,lang)
 }
 
 object ObjectValue {
-  def trueValue: ObjectValue  = DatatypeString("true", `xsd:boolean`)
+  def trueValue: ObjectValue = DatatypeString("true", `xsd:boolean`)
   def falseValue: ObjectValue = DatatypeString("false", `xsd:boolean`)
   def intValue(n: Int, repr: String): ObjectValue =
     DatatypeString(repr, `xsd:integer`)
@@ -47,19 +47,20 @@ object ObjectValue {
       case DatatypeLiteral(lex, dt) =>
         if (dt == `xsd:string`) StringValue(lex)
         else DatatypeString(lex, dt)
-      case IntegerLiteral(n, repr) => intValue(n, repr)
-      case DecimalLiteral(d, repr) => decimalValue(d, repr)
-      case DoubleLiteral(d, repr)  => doubleValue(d, repr)
-      case StringLiteral(s)        => StringValue(s) // DatatypeString(s, xsd_string)
-      case BooleanLiteral(b)       => if (b) trueValue else falseValue
-      case LangLiteral(lex, lang)  => LangString(lex, lang)
+      case IntegerLiteral(n, repr) => intValue(n,repr)
+      case DecimalLiteral(d, repr) => decimalValue(d,repr)
+      case DoubleLiteral(d, repr) => doubleValue(d,repr)
+      case StringLiteral(s) => StringValue(s) // DatatypeString(s, xsd_string)
+      case BooleanLiteral(b) => if (b) trueValue else falseValue
+      case LangLiteral(lex, lang) => LangString(lex, lang)
     }
 }
 
 case class IRIStem(stem: IRI) extends ValueSetValue {
   override def relativize(base: IRI) = IRIStem(stem.relativizeIRI(base))
 }
-case class IRIStemRange(stem: IRIStemRangeValue, exclusions: Option[List[IRIExclusion]]) extends ValueSetValue {
+case class IRIStemRange(stem: IRIStemRangeValue,
+                        exclusions: Option[List[IRIExclusion]]) extends ValueSetValue {
   override def relativize(base: IRI) =
     IRIStemRange(stem.relativize(base), exclusions.map(_.map(_.relativize(base))))
 }
@@ -90,33 +91,35 @@ case class IRIStemExclusion(iriStem: IRIStem) extends IRIExclusion {
 case class LanguageStem(stem: Lang) extends ValueSetValue {
   override def relativize(base: IRI) = this
 }
-case class LanguageStemRange(stem: LanguageStemRangeValue, exclusions: Option[List[LanguageExclusion]])
-    extends ValueSetValue {
+case class LanguageStemRange(stem: LanguageStemRangeValue,
+                             exclusions: Option[List[LanguageExclusion]]) extends ValueSetValue {
   override def relativize(base: IRI) = this
 }
 
+
 sealed trait LanguageStemRangeValue
 case class LanguageStemRangeLang(stem: Lang) extends LanguageStemRangeValue
-case class LanguageStemRangeWildcard()       extends LanguageStemRangeValue
+case class LanguageStemRangeWildcard() extends LanguageStemRangeValue
 
 sealed trait LanguageExclusion
-case class LanguageTagExclusion(lang: Lang)                  extends LanguageExclusion
+case class LanguageTagExclusion(lang: Lang) extends LanguageExclusion
 case class LanguageStemExclusion(languageStem: LanguageStem) extends LanguageExclusion
 
 case class LiteralStem(stem: String) extends ValueSetValue {
   override def relativize(base: IRI) = this
 }
-case class LiteralStemRange(stem: LiteralStemRangeValue, exclusions: Option[List[LiteralExclusion]])
-    extends ValueSetValue {
+case class LiteralStemRange(stem: LiteralStemRangeValue,
+                            exclusions: Option[List[LiteralExclusion]]) extends ValueSetValue {
   override def relativize(base: IRI) = this
 }
 
+
 sealed trait LiteralStemRangeValue
 case class LiteralStemRangeString(str: String) extends LiteralStemRangeValue
-case class LiteralStemRangeWildcard()          extends LiteralStemRangeValue
+case class LiteralStemRangeWildcard() extends LiteralStemRangeValue
 
 sealed trait LiteralExclusion
-case class LiteralStringExclusion(str: String)            extends LiteralExclusion
+case class LiteralStringExclusion(str: String) extends LiteralExclusion
 case class LiteralStemExclusion(literalStem: LiteralStem) extends LiteralExclusion
 
 case class Language(languageTag: Lang) extends ValueSetValue {
