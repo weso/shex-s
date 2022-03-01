@@ -285,7 +285,7 @@ class ExtendsTest extends ShouldValidateShapeMap {
         """|prefix : <http://e#>
            |:A { :p @:A }
            |""".stripMargin
-      shouldValidateWithShapeMap(rdf, shex, ":ok1@:A", ":ok1@:A", Debug)
+      shouldValidateWithShapeMap(rdf, shex, ":ok1@:A", ":ok1@:A")
     }
 
 
@@ -389,11 +389,94 @@ class ExtendsTest extends ShouldValidateShapeMap {
            |""".stripMargin
       shouldValidateWithShapeMap(rdf, shex, 
       ":bob@:PersonShape", 
-      ":bob@:PersonShape, :bob@:UserShape, :joe@:EmployeeShape", Debug) 
+      ":bob@:PersonShape, :bob@:UserShape, :joe@:EmployeeShape") 
+
       shouldValidateWithShapeMap(rdf, shex, 
       ":issue1@:IssueShape", 
-      ":issue1@:IssueShape, :bob@:PersonShape, :bob@:UserShape, :joe@:EmployeeShape", Debug)
+      ":issue1@:IssueShape, :bob@:PersonShape")
     }
+
+  {
+      val rdf =
+        """|prefix : <http:e/>
+           |
+           |:issue1 :reportedBy     :bob .
+           |:bob :name  "Bob" ;
+           |     :repr :joe .
+           |:joe :name  "Joe" ;
+           |     :phone <tel:+456> .
+           |""".stripMargin
+      val shex =
+        """|prefix : <http:e/>
+           |
+           |:IssueShape CLOSED {
+           |  :reportedBy   @:UserShape;
+           |}
+           |
+           |ABSTRACT :PersonShape {
+           |  :name . ;
+           |}
+           |
+           |:UserShape EXTENDS @:PersonShape CLOSED {
+           |  :repr @:EmployeeShape
+           |}
+           |
+           |ABSTRACT :RepShape { :phone . }
+           |
+           |:EmployeeShape EXTENDS @:PersonShape
+           |    EXTENDS @:RepShape CLOSED {
+           |}
+           |""".stripMargin
+      shouldValidateWithShapeMap(rdf, shex, 
+      ":bob@:PersonShape", 
+      ":bob@:PersonShape, :bob@:UserShape, :joe@:EmployeeShape") 
+
+      shouldValidateWithShapeMap(rdf, shex, 
+      ":issue1@:IssueShape", 
+      ":issue1@:IssueShape, :bob@:UserShape, :joe@:EmployeeShape") 
+    }
+
+  {
+    val rdf =
+        """|prefix : <http:e/>
+           |
+           |:issue1 :reportedBy     :bob .
+           |:bob :name  "Bob" ;
+           |     :repr :joe ;
+           |     :p 1 .
+           |:joe :name  "Joe" ;
+           |     :phone <tel:+456> .
+           |""".stripMargin
+    val shex =
+        """|prefix : <http:e/>
+           |
+           |:IssueShape CLOSED {
+           |  :reportedBy   @:PersonShape;
+           |}
+           |
+           |ABSTRACT :PersonShape {
+           |  :name . ;
+           |}
+           |
+           |:UserShape EXTENDS @:PersonShape CLOSED {
+           |  :repr @:EmployeeShape
+           |}
+           |
+           |ABSTRACT :RepShape { :phone . }
+           |
+           |:EmployeeShape EXTENDS @:PersonShape
+           |    EXTENDS @:RepShape CLOSED {
+           |}
+           |""".stripMargin
+ 
+    shouldValidateWithShapeMap(rdf, shex, 
+       ":issue1@:IssueShape", 
+       ":issue1@!:IssueShape", Debug) 
+      
+  /*  shouldValidateWithShapeMap(rdf, shex, 
+        ":bob@:PersonShape", 
+        ":bob@!:PersonShape", Debug)  */
+  }
 
   /*
 

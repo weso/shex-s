@@ -17,14 +17,17 @@ case class ShapeTyping(
    
   def showShort(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
     def showPos(ls: Set[ShapeType]): String = 
-      ls.map(st => st.label.map(sl => "+" + shapesPrefixMap.qualify(sl.toRDFNode)).getOrElse("")).mkString(",")
+      if (ls.nonEmpty) ls.map(st => st.label.map(sl => "+" + shapesPrefixMap.qualify(sl.toRDFNode)).getOrElse("")).mkString(",")
+      else " "
+
     def showNeg(ls: Set[ShapeType]): String = 
-      ls.map(st => st.label.map(sl => "-" + shapesPrefixMap.qualify(sl.toRDFNode)).getOrElse("")).mkString(",")
+      if (ls.nonEmpty) " " + ls.map(st => st.label.map(sl => "-" + shapesPrefixMap.qualify(sl.toRDFNode)).getOrElse("")).mkString(",")
+      else ""
     val vs = t.getKeys.map(k => 
        (nodesPrefixMap.qualify(k), 
-        s"${showPos(t.getOkValues(k).toSet)} | ${showNeg(t.getFailedValues(k).toSet)}"
+        s"${showPos(t.getOkValues(k).toSet)}${showNeg(t.getFailedValues(k).toSet)}"
        )
-      ).map{ case (v1,v2) => v1 + ": " + v2 }.mkString("\n")
+      ).map{ case (v1,v2) => v1 + "@" + v2 }.mkString("| ")
     vs
   }
 
