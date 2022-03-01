@@ -8,15 +8,15 @@ import IntOrUnbounded.int2LimitInt
 trait GenRbe extends GenBag {
 
   // Generates a controlled set of cardinalities
-  val genCard: Gen[(Int, Int)] =
-    Gen.oneOf((0, 0), (0, 1), (1, 1), (0, 2), (1, 2), (2, 2), (3, 2), (20, 20), (1, 20), (2, 20), (3, 20))
+  val genCard: Gen[(Int, Int)] = Gen.oneOf(
+    (0, 0), (0, 1), (1, 1), (0, 2), (1, 2), (2, 2), (3, 2), (20, 20), (1, 20), (2, 20), (3, 20))
 
   def genEmpty: Gen[Rbe[Char]] =
     Gen.const(Empty)
 
   def genSymbol: Gen[Rbe[Char]] = for {
     (m, n) <- genCard
-    a      <- letter
+    a <- letter
   } yield Symbol(a, m, n)
 
   def genAnd(level: Int): Gen[Rbe[Char]] = for {
@@ -41,7 +41,13 @@ trait GenRbe extends GenBag {
     if (level >= 5) Gen.oneOf(genEmpty, genSymbol)
     else {
       val newLevel = level + 1
-      Gen.oneOf(genEmpty, genSymbol, genAnd(newLevel), genOr(newLevel), genPlus(newLevel), genStar(newLevel))
+      Gen.oneOf(
+        genEmpty,
+        genSymbol,
+        genAnd(newLevel),
+        genOr(newLevel),
+        genPlus(newLevel),
+        genStar(newLevel))
     }
 
   def rbe: Gen[Rbe[Char]] = genRbe(0)
@@ -74,5 +80,5 @@ trait GenRbe extends GenBag {
   }
 
 }
- */
+*/
 //object IntervalSpec extends IntervalSpec

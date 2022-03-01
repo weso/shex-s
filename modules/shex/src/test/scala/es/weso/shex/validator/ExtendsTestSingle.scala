@@ -3,50 +3,52 @@ import es.weso.utils.VerboseLevel._
 
 class ExtendsTestSingle extends ShouldValidateShapeMap {
 
-  {
-    val rdf =
-      """|prefix : <http://e#>
+    { 
+      val rdf =
+        """|prefix : <http://e#>
            |:x :p 0 .""".stripMargin
-    val shex =
-      """|prefix : <http://e#>
+      val shex =
+        """|prefix : <http://e#>
            |
            |abstract :A { }
            |:B @:A AND { :p . }
            |""".stripMargin
-    shouldValidateWithShapeMap(rdf, shex, ":x@:B", ":x@:B, :x@:A", Debug)
-  }
+      shouldValidateWithShapeMap(rdf, shex, 
+        ":x@:B", 
+        ":x@:B, :x@:A", Debug)
+    } 
 
-  {
-    val rdf =
-      """|prefix : <http://e#>
+    {
+      val rdf =
+        """|prefix : <http://e#>
            |:x :p 2 .""".stripMargin
-    val shex =
-      """|prefix : <http://e#>
+      val shex =
+        """|prefix : <http://e#>
            |:A [ 1 ]
            |:B [ 2 ]
            |:C @:A AND @:B
            |""".stripMargin
-    shouldValidateWithShapeMap(rdf, shex, "1@:C", "1@!:C", Debug)
-  }
+      shouldValidateWithShapeMap(rdf, shex, "1@:C", "1@!:C", Debug)
+    }  
 
-  {
-    val rdf =
-      """|prefix : <http://e#>
+    {
+      val rdf =
+        """|prefix : <http://e#>
            |:ok1 :q 3 .
            |:ko1 :q 99 .
            |""".stripMargin
-    val shex =
-      """|prefix : <http://e#>
+      val shex =
+        """|prefix : <http://e#>
            |:A { :q [ 3] }
            |:B { :q . }
            |:C @:A AND @:B
            |:D extends @:C { }
            |""".stripMargin
 //      shouldValidateWithShapeMap(rdf, shex, ":ok1@:A", ":ok1@:A")
-    shouldValidateWithShapeMap(rdf, shex, ":ko1@:A", ":ko1@!:A", Debug)
-  }
+      shouldValidateWithShapeMap(rdf, shex, ":ko1@:A", ":ko1@!:A", Debug)
+    } 
 
-  /*    {
+/*    {
       val rdf =
         """|prefix : <http:e/>
            |PREFIX foaf: <http://xmlns.com/foaf/>
@@ -98,9 +100,9 @@ class ExtendsTestSingle extends ShouldValidateShapeMap {
            |    EXTENDS @:RepShape CLOSED {
            |}
            |""".stripMargin
-      shouldValidateWithShapeMap(rdf, shex,
-      ":issue1@:IssueShape",
+      shouldValidateWithShapeMap(rdf, shex, 
+      ":issue1@:IssueShape", 
       ":issue1@:IssueShape", Debug)
     }
-   */
-}
+*/
+} 

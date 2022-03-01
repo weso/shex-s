@@ -4,259 +4,264 @@ import es.weso.utils.VerboseLevel._
 class ExtendsTest extends ShouldValidateShapeMap {
 
   {
-    val rdf =
-      """|prefix : <http://e#>
+      val rdf =
+        """|prefix : <http://e#>
            |:x :p 1, 3 .""".stripMargin
-    val shex =
-      """|prefix : <http://e#>
+      val shex =
+        """|prefix : <http://e#>
            |:B { :p [ 1 ] }
            |:A extends @:B {
            | :p [ 3 ]
            |}""".stripMargin
-    shouldValidateWithShapeMap(rdf, shex, ":x@:A", ":x@:A")
-  }
-
+      shouldValidateWithShapeMap(rdf, shex, ":x@:A", ":x@:A")
+  } 
+  
   {
-    val rdf =
-      """|prefix : <http://e#>
+      val rdf =
+        """|prefix : <http://e#>
            |:x :p "a", "b" .""".stripMargin
-    val shex =
-      """|prefix : <http://e#>
+      val shex =
+        """|prefix : <http://e#>
            |:B { :p [ "b"] } AND { :p [ 1 ] }  # impossible
            |:A extends @:B {
            | :p [ "a" ]
            |}""".stripMargin
-    shouldValidateWithShapeMap(rdf, shex, ":x@:A", ":x@!:A")
+      shouldValidateWithShapeMap(rdf, shex, ":x@:A", ":x@!:A")
   }
 
   {
-    val rdf =
-      """|prefix : <http://e#>
+      val rdf =
+        """|prefix : <http://e#>
            |:x :p 1 .""".stripMargin
-    val shex =
-      """|prefix : <http://e#>
+      val shex =
+        """|prefix : <http://e#>
            |abstract :A { :p [1 2] }
            |""".stripMargin
-    shouldValidateWithShapeMap(rdf, shex, ":x@:A", ":x@!:A")
-  }
+      shouldValidateWithShapeMap(rdf, shex, ":x@:A", ":x@!:A")
+  } 
 
   {
-    val rdf =
-      """|prefix : <http://e#>
+      val rdf =
+        """|prefix : <http://e#>
            |:x :p 1 .""".stripMargin
-    val shex =
-      """|prefix : <http://e#>
+      val shex =
+        """|prefix : <http://e#>
            |abstract :A { :p [1 2] }
            |:B extends @:A {}
            |""".stripMargin
-    shouldValidateWithShapeMap(rdf, shex, ":x@:A", ":x@:A, :x@:B")
-  }
+      shouldValidateWithShapeMap(rdf, shex, ":x@:A", ":x@:A, :x@:B")
+  } 
 
   {
-    val rdf =
-      """|prefix : <http://e#>
+      val rdf =
+        """|prefix : <http://e#>
            |:x :p 2, 3 .""".stripMargin
-    val shex =
-      """|prefix : <http://e#>
+      val shex =
+        """|prefix : <http://e#>
            |:B { :p [1 2] } AND { :p [2 3] }
            |:A extends @:B {
            | :p [2 3]
            |}""".stripMargin
-    shouldValidateWithShapeMap(rdf, shex, ":x@:A", ":x@:A")
-  }
-
+      shouldValidateWithShapeMap(rdf, shex, ":x@:A", ":x@:A")
+  } 
+  
   {
-    val rdf =
-      """|prefix : <http://e#>
+      val rdf =
+        """|prefix : <http://e#>
            |:x :p 1, 2 .""".stripMargin
-    val shex =
-      """|prefix : <http://e#>
+      val shex =
+        """|prefix : <http://e#>
            |:B { :p [ 1 ] } 
            |:A extends @:B {
            | :p [ 2 ]
            |}""".stripMargin
-    shouldValidateWithShapeMap(rdf, shex, ":x@:A", ":x@:A")
-  }
-
+      shouldValidateWithShapeMap(rdf, shex, ":x@:A", ":x@:A")
+  } 
+  
   {
-    val rdf =
-      """|prefix : <http://e#>
+      val rdf =
+        """|prefix : <http://e#>
            |:x :p 1, 2 .""".stripMargin
-    val shex =
-      """|prefix : <http://e#>
+      val shex =
+        """|prefix : <http://e#>
            |:B { :p [ 1 ] } 
            |:A extends @:B {
            | :p [ 2 ]
            |}""".stripMargin
-    shouldValidateWithShapeMap(rdf, shex, ":x@:B", ":x@:B,:x@:A")
+      shouldValidateWithShapeMap(rdf, shex, ":x@:B", ":x@:B,:x@:A")
   }
   {
-    val rdf =
-      """|prefix : <http://e#>
+      val rdf =
+        """|prefix : <http://e#>
            |:x :p 2 .""".stripMargin
-    val shex =
-      """|prefix : <http://e#>
+      val shex =
+        """|prefix : <http://e#>
            |ABSTRACT :B { } 
            |:A extends @:B {} AND {
            | :p [ 2 ]
            |}""".stripMargin
-    shouldValidateWithShapeMap(rdf, shex, ":x@:A", ":x@:A")
-  }
+      shouldValidateWithShapeMap(rdf, shex, ":x@:A", ":x@:A")
+    } 
 
-  {
-    val rdf =
-      """|prefix : <http://e#>
+    {
+      val rdf =
+        """|prefix : <http://e#>
            |:x :p 2 .""".stripMargin
-    val shex =
-      """|prefix : <http://e#>
+      val shex =
+        """|prefix : <http://e#>
            |:B { } 
            |:A extends @:B {}
            |""".stripMargin
-    shouldValidateWithShapeMap(rdf, shex, ":x@:A", ":x@:A")
-  }
+      shouldValidateWithShapeMap(rdf, shex, ":x@:A", ":x@:A")
+    } 
 
-  {
-    val rdf =
-      """|prefix : <http://e#>
+    {
+      val rdf =
+        """|prefix : <http://e#>
            |:x :p 2 .""".stripMargin
-    val shex =
-      """|prefix : <http://e#>
+      val shex =
+        """|prefix : <http://e#>
            |:A { :p [1] }
            |:B extends @:A { }
            |""".stripMargin
-    shouldValidateWithShapeMap(rdf, shex, ":x@:A", ":x@!:A")
-  }
-
-  {
-    val rdf =
-      """|prefix : <http://e#>
+      shouldValidateWithShapeMap(rdf, shex, ":x@:A", ":x@!:A")
+    }
+  
+    {
+      val rdf =
+        """|prefix : <http://e#>
            |:x :p 0 .""".stripMargin
-    val shex =
-      """|prefix : <http://e#>
+      val shex =
+        """|prefix : <http://e#>
            |:A1 { :p . }
            |:A2 extends @:A1 { :p . }
            |:A3 extends @:A2 { :p . }
            |""".stripMargin
-    shouldValidateWithShapeMap(rdf, shex, ":x@:A1", ":x@:A1")
-  }
-
-  {
-    val rdf =
-      """|prefix : <http://e#>
+      shouldValidateWithShapeMap(rdf, shex, ":x@:A1", ":x@:A1")
+    }
+  
+    {
+      val rdf =
+        """|prefix : <http://e#>
            |:x :p 0 .""".stripMargin
-    val shex =
-      """|prefix : <http://e#>
+      val shex =
+        """|prefix : <http://e#>
            |:A1 { :p [ 1 ] }
            |:A2 extends @:A1 { :p . }
            |:A3 extends @:A2 { :p . }
            |""".stripMargin
-    shouldValidateWithShapeMap(rdf, shex, ":x@:A1", ":x@!:A1")
-  }
-
-  {
-    val rdf =
-      """|prefix : <http://e#>
+      shouldValidateWithShapeMap(rdf, shex, ":x@:A1", ":x@!:A1")
+    }
+  
+    {
+      val rdf =
+        """|prefix : <http://e#>
            |:x :p 2 .""".stripMargin
-    val shex =
-      """|prefix : <http://e#>
+      val shex =
+        """|prefix : <http://e#>
            |:P { }
            |:R { :p [1] }
            |:RV extends @:R {}
            |:RP extends @:RV {}
            |""".stripMargin
-    shouldValidateWithShapeMap(rdf, shex, ":x@:R", ":x@!:R")
-  }
+      shouldValidateWithShapeMap(rdf, shex, ":x@:R", ":x@!:R")
+    } 
 
-  {
-    val rdf =
-      """|prefix : <http://e#>
+    { 
+      val rdf =
+        """|prefix : <http://e#>
            |:x :p 0 .""".stripMargin
-    val shex =
-      """|prefix : <http://e#>
+      val shex =
+        """|prefix : <http://e#>
            |
            |abstract :A { }
            |:B @:A AND { :p . }
            |""".stripMargin
-    shouldValidateWithShapeMap(rdf, shex, ":x@:B", ":x@:B, :x@:A")
-  }
+      shouldValidateWithShapeMap(rdf, shex, ":x@:B", ":x@:B, :x@:A")
+    }
 
-  {
-    val rdf =
-      """|prefix : <http://e#>
+  
+
+    {
+      val rdf =
+        """|prefix : <http://e#>
            |:ok1 :p 1; :q 2 .
            |:ko1 :p 1; :q 3 .
            |:ko2 :p 2; :q 2 .
            |""".stripMargin
-    val shex =
-      """|prefix : <http://e#>
+      val shex =
+        """|prefix : <http://e#>
            |:B CLOSED { :p [ 1 ] }
            |:A extends @:B {
            | :q [ 2 ]
            |}""".stripMargin
-    shouldValidateWithShapeMap(rdf, shex, ":ok1@:A", ":ok1@:A")
-    shouldValidateWithShapeMap(rdf, shex, ":ko1@:A", ":ko1@!:A")
-    shouldValidateWithShapeMap(rdf, shex, ":ko2@:A", ":ko2@!:A")
-  }
-
-  {
-    val rdf =
-      """|prefix : <http://e#>
+      shouldValidateWithShapeMap(rdf, shex, ":ok1@:A", ":ok1@:A")
+      shouldValidateWithShapeMap(rdf, shex, ":ko1@:A", ":ko1@!:A")
+      shouldValidateWithShapeMap(rdf, shex, ":ko2@:A", ":ko2@!:A")
+    }  
+  
+    {
+      val rdf =
+        """|prefix : <http://e#>
            |:ok1 :p 1 .
            |:ko1 :p 1; :q 3 .
            |""".stripMargin
-    val shex =
-      """|prefix : <http://e#>
+      val shex =
+        """|prefix : <http://e#>
            |:B closed  { :p [ 1 ] }
            |:A extends @:B CLOSED { }
            |""".stripMargin
-    shouldValidateWithShapeMap(rdf, shex, ":ok1@:A", ":ok1@:A")
-    shouldValidateWithShapeMap(rdf, shex, ":ko1@:A", ":ko1@!:A")
-  }
+      shouldValidateWithShapeMap(rdf, shex, ":ok1@:A", ":ok1@:A")
+      shouldValidateWithShapeMap(rdf, shex, ":ko1@:A", ":ko1@!:A")
+    }
 
-  {
-    val rdf =
-      """|prefix : <http://e#>
+    {
+      val rdf =
+        """|prefix : <http://e#>
            |:ok1 :p 1 .
            |:ko1 :p 1; :q 3 .
            |""".stripMargin
-    val shex =
-      """|prefix : <http://e#>
+      val shex =
+        """|prefix : <http://e#>
            |:B { :p [ 1 ] }
            |:A extends @:B CLOSED { }
            |""".stripMargin
-    shouldValidateWithShapeMap(rdf, shex, ":ok1@:A", ":ok1@:A")
-    shouldValidateWithShapeMap(rdf, shex, ":ko1@:A", ":ko1@!:A")
-  }
+      shouldValidateWithShapeMap(rdf, shex, ":ok1@:A", ":ok1@:A")
+      shouldValidateWithShapeMap(rdf, shex, ":ko1@:A", ":ko1@!:A")
+    } 
 
-  {
-    val rdf =
-      """|prefix : <http://e#>
+    {
+      val rdf =
+        """|prefix : <http://e#>
            |:x :p 2 .""".stripMargin
-    val shex =
-      """|prefix : <http://e#>
+      val shex =
+        """|prefix : <http://e#>
            |:A [ 1 ]
            |:B [ 2 ]
            |:C @:A AND @:B
            |""".stripMargin
-    shouldValidateWithShapeMap(rdf, shex, "1@:C", "1@!:C")
-  }
+      shouldValidateWithShapeMap(rdf, shex, "1@:C", "1@!:C")
+    } 
 
-  {
-    val rdf =
-      """|prefix : <http://e#>
+    {
+      val rdf =
+        """|prefix : <http://e#>
            |:ok1 :q 3 .
            |:ko1 :q 99 .
            |""".stripMargin
-    val shex =
-      """|prefix : <http://e#>
+      val shex =
+        """|prefix : <http://e#>
            |:A { :q [ 3] }
            |:B { :q . }
            |:C @:A AND @:B
            |:D extends @:C { }
            |""".stripMargin
-    shouldValidateWithShapeMap(rdf, shex, ":ok1@:A", ":ok1@:A")
-    shouldValidateWithShapeMap(rdf, shex, ":ko1@:A", ":ko1@!:A")
-  }
+      shouldValidateWithShapeMap(rdf, shex, ":ok1@:A", ":ok1@:A")
+      shouldValidateWithShapeMap(rdf, shex, ":ko1@:A", ":ko1@!:A")
+    }
+
+
+   
 
   /* {
       val rdf =
@@ -271,28 +276,29 @@ class ExtendsTest extends ShouldValidateShapeMap {
       shouldValidateWithShapeMap(rdf, shex, ":ok1@:A", ":ok1@:A,:ok1@:B")
     } */
 
-  {
-    val rdf =
-      """|prefix : <http://e#>
+    {
+      val rdf =
+        """|prefix : <http://e#>
            |:ok1 :p :ok1 .
            |""".stripMargin
-    val shex =
-      """|prefix : <http://e#>
+      val shex =
+        """|prefix : <http://e#>
            |:A { :p @:A }
            |""".stripMargin
-    shouldValidateWithShapeMap(rdf, shex, ":ok1@:A", ":ok1@:A")
-  }
+      shouldValidateWithShapeMap(rdf, shex, ":ok1@:A", ":ok1@:A")
+    }
 
-  {
-    val rdf =
-      """|prefix foaf: <http://xmlns.com/foaf/0.1/>
+
+    {
+      val rdf =
+        """|prefix foaf: <http://xmlns.com/foaf/0.1/>
            |prefix : <http://example.org/>
            |
            |:alice :code 8, 9, 2, 3, 6 .
            |
            |""".stripMargin
-    val shex =
-      """|prefix foaf: <http://xmlns.com/foaf/0.1/>
+      val shex =
+                """|prefix foaf: <http://xmlns.com/foaf/0.1/>
                    |prefix : <http://example.org/>
                    |
                    |:InternalRep {
@@ -312,20 +318,20 @@ class ExtendsTest extends ShouldValidateShapeMap {
                    |  :code [ 6 ]
                    |}
                    |""".stripMargin
-    shouldValidateWithShapeMap(rdf, shex, ":alice@:Alice", ":alice@:Alice")
-  }
+      shouldValidateWithShapeMap(rdf, shex, ":alice@:Alice",":alice@:Alice")
+    }
 
-  {
-    val rdf =
-      """|prefix : <http://e#>
+    {
+      val rdf =
+        """|prefix : <http://e#>
            |prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
            |
            |:x :p :l . 
            |:l  rdf:first :v1; rdf:rest :v2 .
            |:v2 rdf:first "X"; rdf:rest rdf:nil . 
            |""".stripMargin
-    val shex =
-      """|prefix :    <http://e#>
+      val shex =
+        """|prefix :    <http://e#>
            |prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
            |
            |:S { :p @:Ls }
@@ -334,12 +340,12 @@ class ExtendsTest extends ShouldValidateShapeMap {
            | rdf:rest @:Ls 
            |}
            |""".stripMargin
-    shouldValidateWithShapeMap(rdf, shex, ":l@:Ls", ":l@!:Ls")
-  }
+      shouldValidateWithShapeMap(rdf, shex, ":l@:Ls", ":l@!:Ls")
+    }
 
   {
-    val rdf =
-      """|prefix : <http:e/>
+      val rdf =
+        """|prefix : <http:e/>
            |PREFIX foaf: <http://xmlns.com/foaf/>
            |PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
            |
@@ -353,8 +359,8 @@ class ExtendsTest extends ShouldValidateShapeMap {
            |     foaf:phone      <tel:+456> ;
            |.
            |""".stripMargin
-    val shex =
-      """|prefix : <http:e/>
+      val shex =
+        """|prefix : <http:e/>
            |PREFIX foaf: <http://xmlns.com/foaf/>
            |PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
            |PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -381,19 +387,18 @@ class ExtendsTest extends ShouldValidateShapeMap {
            |    EXTENDS @:RepShape CLOSED {
            |}
            |""".stripMargin
-    shouldValidateWithShapeMap(
-      rdf,
-      shex,
-      ":bob@:PersonShape",
-      ":bob@:PersonShape, :bob@:UserShape, :joe@:EmployeeShape"
-    )
+      shouldValidateWithShapeMap(rdf, shex, 
+      ":bob@:PersonShape", 
+      ":bob@:PersonShape, :bob@:UserShape, :joe@:EmployeeShape") 
 
-    shouldValidateWithShapeMap(rdf, shex, ":issue1@:IssueShape", ":issue1@:IssueShape, :bob@:PersonShape")
-  }
+      shouldValidateWithShapeMap(rdf, shex, 
+      ":issue1@:IssueShape", 
+      ":issue1@:IssueShape, :bob@:PersonShape")
+    }
 
   {
-    val rdf =
-      """|prefix : <http:e/>
+      val rdf =
+        """|prefix : <http:e/>
            |
            |:issue1 :reportedBy     :bob .
            |:bob :name  "Bob" ;
@@ -401,8 +406,8 @@ class ExtendsTest extends ShouldValidateShapeMap {
            |:joe :name  "Joe" ;
            |     :phone <tel:+456> .
            |""".stripMargin
-    val shex =
-      """|prefix : <http:e/>
+      val shex =
+        """|prefix : <http:e/>
            |
            |:IssueShape CLOSED {
            |  :reportedBy   @:UserShape;
@@ -422,24 +427,18 @@ class ExtendsTest extends ShouldValidateShapeMap {
            |    EXTENDS @:RepShape CLOSED {
            |}
            |""".stripMargin
-    shouldValidateWithShapeMap(
-      rdf,
-      shex,
-      ":bob@:PersonShape",
-      ":bob@:PersonShape, :bob@:UserShape, :joe@:EmployeeShape"
-    )
+      shouldValidateWithShapeMap(rdf, shex, 
+      ":bob@:PersonShape", 
+      ":bob@:PersonShape, :bob@:UserShape, :joe@:EmployeeShape") 
 
-    shouldValidateWithShapeMap(
-      rdf,
-      shex,
-      ":issue1@:IssueShape",
-      ":issue1@:IssueShape, :bob@:UserShape, :joe@:EmployeeShape"
-    )
-  }
+      shouldValidateWithShapeMap(rdf, shex, 
+      ":issue1@:IssueShape", 
+      ":issue1@:IssueShape, :bob@:UserShape, :joe@:EmployeeShape") 
+    }
 
   {
     val rdf =
-      """|prefix : <http:e/>
+        """|prefix : <http:e/>
            |
            |:issue1 :reportedBy     :bob .
            |:bob :name  "Bob" ;
@@ -449,7 +448,7 @@ class ExtendsTest extends ShouldValidateShapeMap {
            |     :phone <tel:+456> .
            |""".stripMargin
     val shex =
-      """|prefix : <http:e/>
+        """|prefix : <http:e/>
            |
            |:IssueShape CLOSED {
            |  :reportedBy   @:PersonShape;
@@ -469,11 +468,13 @@ class ExtendsTest extends ShouldValidateShapeMap {
            |    EXTENDS @:RepShape CLOSED {
            |}
            |""".stripMargin
-
-    shouldValidateWithShapeMap(rdf, shex, ":issue1@:IssueShape", ":issue1@!:IssueShape", Debug)
-
-    /*  shouldValidateWithShapeMap(rdf, shex,
-        ":bob@:PersonShape",
+ 
+    shouldValidateWithShapeMap(rdf, shex, 
+       ":issue1@:IssueShape", 
+       ":issue1@!:IssueShape", Debug) 
+      
+  /*  shouldValidateWithShapeMap(rdf, shex, 
+        ":bob@:PersonShape", 
         ":bob@!:PersonShape", Debug)  */
   }
 
@@ -496,13 +497,13 @@ class ExtendsTest extends ShouldValidateShapeMap {
     val shex="""|prefix : <http://e/>
                 |
                 |abstract :Person { :name . }
-                |:User extends @:Person closed { :rep @:Employee }
+                |:User extends @:Person closed { :rep @:Employee } 
                 |
                 |abstract :Rep { :code . }
                 |:Employee extends @:Person extends @:Rep closed { }
                 |""".stripMargin
-    shouldValidateWithShapeMap(rdf, shex, ":alice@:User", ":alice@:User, :alice@:Person, :bob@:Employee, :bob@:Rep, :bob@:Person")
-    shouldValidateWithShapeMap(rdf, shex, ":dave@:Employee", ":dave@!:Employee")
+    shouldValidateWithShapeMap(rdf, shex, ":alice@:User", ":alice@:User, :alice@:Person, :bob@:Employee, :bob@:Rep, :bob@:Person") 
+    shouldValidateWithShapeMap(rdf, shex, ":dave@:Employee", ":dave@!:Employee") 
   }
 
   describe("People") {
@@ -562,11 +563,11 @@ class ExtendsTest extends ShouldValidateShapeMap {
                  |    ex:p 1 .
                  |""".stripMargin
 
-    shouldValidateWithShapeMap(rdf, shex, "<http://a.example/Thompson.J>@<http://a.example/EmployeeShape>", "<http://a.example/Thompson.J>@!<http://a.example/EmployeeShape>")
+    shouldValidateWithShapeMap(rdf, shex, "<http://a.example/Thompson.J>@<http://a.example/EmployeeShape>", "<http://a.example/Thompson.J>@!<http://a.example/EmployeeShape>") 
 
   }
-   */
-  /*
+  */
+/*
   describe(s"Vitals example") {
     val rdf = """|PREFIX : <http://a.example/#>
                  |PREFIX fhir: <http://hl7.org/ns/fhir#>
@@ -647,7 +648,7 @@ class ExtendsTest extends ShouldValidateShapeMap {
        """|:sit@!<#Reclined>""".stripMargin
    )
 
- }  // describe
-   */
-
+ }  // describe 
+ */
+ 
 } // class
