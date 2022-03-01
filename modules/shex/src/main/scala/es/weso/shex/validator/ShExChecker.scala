@@ -32,9 +32,7 @@ import es.weso.shex.ShapeExpr
 import es.weso.shex.validator.ShExError.AbstractShapeErr
 
 case class ConfigEnv(cfg: ShExConfig, env: Context)
-case class State()
-
-
+case class State(typing: ShapeTyping)
 
 trait ShExChecker {
 
@@ -382,7 +380,7 @@ trait ShExChecker {
   }
 
   def run[A](c: Check[A])(config: Config)(env: Env): IO[(Log, Either[Err, A])] = {
-    c.value.run(ConfigEnv(config,env), State()).map(vs => {
+    c.value.run(ConfigEnv(config,env), State(ShapeTyping.emptyShapeTyping)).map(vs => {
       val (log,env,c) = vs
       (log,c)
     })
