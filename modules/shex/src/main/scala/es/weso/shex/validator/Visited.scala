@@ -5,14 +5,12 @@ import cats.implicits._
 import es.weso.shex.AbstractSchema
 import es.weso.rdf.nodes.RDFNode
 
-case class Visited(m: Map[RDFNode, Set[ShapeLabel]]) extends AnyVal {
+case class Visited(m: Map[RDFNode,Set[ShapeLabel]]) extends AnyVal {
   def contains(node: RDFNode, lbl: ShapeLabel): Boolean = m.get(node).map(_.contains(lbl)).getOrElse(false)
 
-  def add(node: RDFNode, lbl: ShapeLabel): Visited =
-    this.copy(m = m.updated(node, m.get(node).map(vs => vs + lbl).getOrElse(Set(lbl))))
+  def add(node: RDFNode, lbl: ShapeLabel): Visited = this.copy(m = m.updated(node, m.get(node).map(vs => vs + lbl).getOrElse(Set(lbl))))
 
-  def show(schema: AbstractSchema): String =
-    s"Visited: ${m.map { case (n, vs) => s"${n.show}->${vs.map(lbl => schema.qualify(lbl)).mkString(",")}" }.mkString(" | ")}"
+  def show(schema: AbstractSchema): String = s"Visited: ${m.map{ case (n,vs) => s"${n.show}->${vs.map(lbl => schema.qualify(lbl)).mkString(",")}" }.mkString(" | ")}"
 }
 
 object Visited {

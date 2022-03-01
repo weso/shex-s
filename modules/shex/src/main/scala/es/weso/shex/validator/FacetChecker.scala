@@ -15,11 +15,10 @@ import es.weso.utils.eitherios.EitherIOUtils._
 import es.weso.rdf.RDFBuilder
 
 case class FacetChecker(
-    schema: AbstractSchema,
-    rdf: RDFReader
+  schema: AbstractSchema, 
+  rdf: RDFReader, 
 //  builder: RDFBuilder
-) extends ShExChecker
-    with ShowValidator {
+  ) extends ShExChecker with ShowValidator {
 
   def checkFacets(attempt: Attempt, node: RDFNode)(facets: List[XsFacet]): CheckTyping =
     for {
@@ -27,13 +26,15 @@ case class FacetChecker(
       t  <- combineTypings(ts)
     } yield t
 
+    
   private def checkFacet(attempt: Attempt, node: RDFNode)(facet: XsFacet): CheckTyping = for {
     s <- fromEitherIOS(facetChecker(node, facet))
     t <- addEvidence(attempt.nodeShape, s)
   } yield t
 
-  def facetsChecker(node: RDFNode, facets: List[XsFacet]): EitherT[IO, String, String] = {
-    def cnv(pairs: (List[String], List[String])): Either[String, String] = {
+  
+  def facetsChecker(node: RDFNode, facets: List[XsFacet]): EitherT[IO,String, String] = { 
+    def cnv(pairs: (List[String], List[String])): Either[String,String] = {
       val (failed, passed) = pairs
       if (failed.isEmpty) {
         Right(s"$node passed facets: ${passed.map(_.show).mkString(",")}")
@@ -44,9 +45,9 @@ case class FacetChecker(
                 |""".stripMargin)
       }
     }
-    val ps: IO[(List[String], List[String])] =
-      partitionEitherIOS(facets.map(facetChecker(node, _)))
-    val v: IO[Either[String, String]] = ps.map(cnv(_))
+    val ps: IO[(List[String], List[String])] = 
+      partitionEitherIOS(facets.map(facetChecker(node, _))) 
+    val v : IO[Either[String,String]] = ps.map(cnv(_))
     EitherT.apply(v)
   }
 
@@ -96,8 +97,7 @@ case class FacetChecker(
       case MinInclusive(m) =>
         for {
           d <- EitherT.fromEither[IO](minInclusive(m, node))
-          r <- checkCond(
-            d,
+          r <- checkCond(d,
             s"${node.show} does not match MinInclusive($m) with $node",
             s"${node.show} satisfies MinInclusive($m)"
           )
@@ -133,20 +133,20 @@ case class FacetChecker(
         for {
           fd <- io2es(NodeInfo.fractionDigits(node, rdf))
           b <- checkCond(
-            fd <= m,
-            s"${node.show} does not match FractionDigits($m) with $node and fraction digits = $fd",
-            s"${node.show} satisfies FractionDigits($m) with fraction digits = $fd"
-          )
+                fd <= m,
+                s"${node.show} does not match FractionDigits($m) with $node and fraction digits = $fd",
+                s"${node.show} satisfies FractionDigits($m) with fraction digits = $fd"
+              )
         } yield b
       }
       case TotalDigits(m) => {
         for {
           td <- io2es(NodeInfo.totalDigits(node, rdf))
           b <- checkCond(
-            td <= m,
-            s"${node.show} does not match TotalDigits($m) with $node and totalDigits = $td",
-            s"${node.show} satisfies TotalDigits($m) with total digits = $td"
-          )
+                td <= m,
+                s"${node.show} does not match TotalDigits($m) with $node and totalDigits = $td",
+                s"${node.show} satisfies TotalDigits($m) with total digits = $td"
+              )
         } yield b
       }
       // case _ => EitherT.fromEither[IO](s"Not implemented checkFacet: $facet".asLeft[String])
@@ -181,9 +181,9 @@ case class FacetChecker(
         nl2 <- numericValue(node)
       } yield lessThan(nl2, nl)
 
-  private def checkCond(cond: Boolean, msgFalse: => String, msgTrue: => String): EitherT[IO, String, String] = {
-    if (cond) EitherT.fromEither[IO](msgTrue.asRight[String])
-    else EitherT.fromEither[IO](msgFalse.asLeft[String])
+  private def checkCond(cond: Boolean, msgFalse: => String, msgTrue: => String): EitherT[IO,String, String] = {
+     if (cond) EitherT.fromEither[IO](msgTrue.asRight[String])
+     else EitherT.fromEither[IO](msgFalse.asLeft[String])
   }
 
 }

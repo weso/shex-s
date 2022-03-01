@@ -7,10 +7,11 @@ import cats._
 import cats.implicits._
 import es.weso.shex.implicits.showShEx._
 
-/** A flat shape consists of a list of slots where each slot is formed by a path and a constraint. It has no repeated
-  * properties It can be represented as a map from a path to a constraint.
-  * @param slots
-  *   a vector of pairs (Path, Constraint)
+/**
+  * A flat shape consists of a list of slots where each slot is formed by a path and a constraint.
+  * It has no repeated properties
+  * It can be represented as a map from a path to a constraint.
+  * @param slots a vector of pairs (Path, Constraint)
   */
 case class FlatShape(id: Option[ShapeLabel], slots: Map[Path, Constraint], closed: Boolean) {
   lazy val paths: Set[Path]               = slots.keySet
@@ -37,10 +38,10 @@ object FlatShape {
       extraPaths: List[Path],
       schema: AbstractSchema
   ): Either[String, Map[Path, Constraint]] = te match {
-    case _: Expr                                              => Left(s"Contains an expr")
-    case _: Inclusion                                         => Left(s"Contains an inclusion")
-    case eo: EachOf if !Cardinality.isDefault(eo.min, eo.max) => Left(s"Each of contains groupings")
-    case _ if te.hasSemActs                                   => Left(s"TripleExpr contains semantic actions")
+    case _: Expr      => Left(s"Contains an expr")
+    case _: Inclusion => Left(s"Contains an inclusion")
+    case eo: EachOf if !Cardinality.isDefault(eo.min,eo.max) => Left(s"Each of contains groupings")
+    case _ if te.hasSemActs => Left(s"TripleExpr contains semantic actions")
     case eo: EachOf => {
       val zero = cs.asRight[String]
       def cmb(current: Either[String, Map[Path, Constraint]], te: TripleExpr): Either[String, Map[Path, Constraint]] =
@@ -57,24 +58,26 @@ object FlatShape {
         tc.valueExpr match {
           case None =>
             cs.updated(
-              tc.path,
-              Constraint(tc.valueExpr, extraPaths contains tc.path, Cardinality(tc.min, tc.max), tc.annotations, tc)
-            ).asRight[String]
+                tc.path,
+                Constraint(tc.valueExpr, extraPaths contains tc.path, Cardinality(tc.min, tc.max), tc.annotations, tc)
+              )
+              .asRight[String]
           case Some(se) =>
             se match {
               case _ if (!se.hasNoReference(schema)) => s"${se.show} contains a reference".asLeft
-              case _ if (!se.isSimple)               => s"${se.show} is not simple".asLeft
+              case _ if (!se.isSimple)       => s"${se.show} is not simple".asLeft
               case _ =>
                 cs.updated(
-                  tc.path,
-                  Constraint(
-                    tc.valueExpr,
-                    extraPaths contains tc.path,
-                    Cardinality(tc.min, tc.max),
-                    tc.annotations,
-                    tc
+                    tc.path,
+                    Constraint(
+                      tc.valueExpr,
+                      extraPaths contains tc.path,
+                      Cardinality(tc.min, tc.max),
+                      tc.annotations,
+                      tc
+                    )
                   )
-                ).asRight[String]
+                  .asRight[String]
             }
         }
   }
