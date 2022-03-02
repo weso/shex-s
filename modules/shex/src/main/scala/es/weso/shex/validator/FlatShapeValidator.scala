@@ -19,7 +19,6 @@ import es.weso.rdf.RDFBuilder
   * FlatShape validator
   */
 case class FlatShapeValidator(
-  validator: Validator,
   nodesPrefixMap: PrefixMap,
   shapesPrefixMap: PrefixMap,
   builder: RDFBuilder, 
@@ -32,19 +31,21 @@ case class FlatShapeValidator(
   private[validator] def checkFlatShape(
     attempt: Attempt, 
     node: RDFNode, 
-    shape: FlatShape): CheckTyping = {
+    shape: FlatShape, 
+    ext: Option[Neighs]): CheckTyping = {
     val zero = getTyping
     def cmb(checkTyping: CheckTyping, slot: (Path, Constraint)): CheckTyping = {
       val (path, constraint) = slot
-      debug(s""" checkFlatShapeSlot, node = ${node.show} path: ${path.show}, constraint=${constraint.show}""".stripMargin) *>
+      debug(s""" checkFlatShapeSlot(${node.show}@${shape.id.getOrElse("?")}) path: ${path.show}, constraint=${constraint.show}""".stripMargin) *>
       checkTyping.flatMap(t1 => 
-      checkConstraint(attempt, node, path, constraint).flatMap(t2 => 
+      checkConstraint(attempt, node, path, constraint, ext).flatMap(t2 => 
+      infoTyping(t2, s"Result checkFlatShapeSlot(${node.show}@${shape.id.getOrElse("?")})", schema.prefixMap)  *>
       combineTypings(t1,t2)  
       ))
     }
     for {
       _ <- debug(s"""|checkFlatShape(${node.show}@${showId(shape)})""".stripMargin)
-      extra <- extraPreds(node, shape.preds)
+      extra <- extraPreds(node, shape.preds, ext)
       _ <- debug(s"Extra preds: $extra. Closed? ${shape.closed}")
       _ <- debug(s"Slots:\n${shape.slots.map(slot => s"--slot: ${slot.show}").mkString("\n")}")
       typing <- if (shape.closed && extra.nonEmpty) {
@@ -58,22 +59,22 @@ case class FlatShapeValidator(
   private def errClosedButExtraPreds(extra: Set[IRI]): CheckTyping = err(ClosedButExtraPreds(extra))
 
   // Returns the list of paths that are different from a given list
-  private def extraPreds(node: RDFNode, preds: Set[IRI]): Check[Set[IRI]] =
+  private def extraPreds(node: RDFNode, preds: Set[IRI], ext: Option[Neighs]): Check[Set[IRI]] =
     for {
-      existingPreds <- getExistingPredicates(node)
+      existingPreds <- getExistingPredicates(node, ext)
     } yield existingPreds -- preds
 
-  private def checkConstraint(attempt: Attempt, node: RDFNode, path: Path, constraint: Constraint): CheckTyping =
+  private def checkConstraint(attempt: Attempt, node: RDFNode, path: Path, constraint: Constraint, ext: Option[Neighs]): CheckTyping =
     for {
-      // _ <- debug(s"checkConstraint: ${constraint.show} for ${showNode(node)} with path ${path.show}")
-      values <- getValuesPath(node, path)
-      // _ <- debug(s"Values of node ${showNode(node)} with path ${path.show} = [${values.map(_.show).mkString(",")}]")
+      _ <- debug(s"checkConstraint: ${constraint.show} for ${showNode(node)} with path ${path.show}")
+      values <- getValuesPath(node, path, ext)
+      _ <- debug(s"Values of node ${showNode(node)} with path ${path.show} = [${values.map(_.show).mkString(",")}]")
       typing <- checkValuesConstraint(values, constraint, node, path, attempt)
-      // _ <- debug(s"After checkConstraint(${node.show}, Constraint: ${constraint.show}): ${typing.show}")
+      _ <- debug(s"After checkConstraint(${node.show}, Constraint: ${constraint.show}): ${typing.show}")
     } yield typing
 
-  private def getExistingPredicates(node: RDFNode): Check[Set[IRI]] =
-    getNeighs(node).map(_.getPredicates())
+  private def getExistingPredicates(node: RDFNode, ext: Option[Neighs]): Check[Set[IRI]] =
+    getNeighs(node, ext).map(_.getPredicates())
 
 
   // We assume that the shape has no reference to other shapes
@@ -127,10 +128,11 @@ case class FlatShapeValidator(
               val ct: Check[ShapeTyping] = for {
                 partition <- doPartition
                 (notPassed, passed) = partition
-                // _ <- debug(s"Passed: \n${passed.map(_.toString).mkString(s"\n")}\nNo passed\n${notPassed.map(_.toString).mkString(s"\n")}")
+                // _ <- debug(s"checkValuesConstraint: Passed: ${passed.map(_.toString).mkString(s",")}| No passed: ${notPassed.map(_.toString).mkString(s",")}")
                 newt <- if (notPassed.isEmpty) {
                   addEvidence(attempt.nodeShape, s"${showNode(node)} passed ${constraint.showQualified(shapesPrefixMap)} for path ${path.showQualified(nodesPrefixMap)}")
                 } else
+                  debug(s"checkValuesConstraint($node) failed: Passed: ${passed.map(_.toString).mkString(s",")}| No passed: ${notPassed.map(_.toString).mkString(s",")}")
                   err[ShapeTyping](ValuesNotPassed(attempt, node, path, passed.size, notPassed.toSet,rdf))
               } yield newt
               ct
@@ -163,7 +165,7 @@ case class FlatShapeValidator(
         // checkShapeBase(Attempt(NodeShape(node, ShapeType(s,s.id, schema)),None), node, s)
         mkErr(s"checkNodeShapeExprBasic: Not implemented yet Shape ")
       case _: ShapeExternal   => mkErr(s"Still don't know what to do with external shapes")
-      case nk: NodeConstraint => NodeConstraintChecker(validator.schema, rdf, builder).nodeConstraintChecker(node, nk)
+      case nk: NodeConstraint => NodeConstraintChecker(schema, rdf, builder).nodeConstraintChecker(node, nk)
       case sd: ShapeDecl => mkErr(s"checkNodeShapeExprBasic: Not implemented yet ShapeDecl($sd)")
       // case _ => mkErr(s"checkNodeShapeExprBasic: Not implemented yet ShapeDecl($se)")
     }

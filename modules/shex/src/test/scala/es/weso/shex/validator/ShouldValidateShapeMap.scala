@@ -25,7 +25,7 @@ trait ShouldValidateShapeMap extends CatsEffectSuite {
                                  shexStr: String,
                                  shapeMapStr: String,
                                  expected: String,
-                                 verbose: VerboseLevel)
+                                 verbose: VerboseLevel = VerboseLevel.Info)
                                  (implicit loc: munit.Location): Unit = {
     test(s"Should validate shapeMap: ${shapeMapStr} and return: $expected\nUsing RDF: \n ${rdfStr}\nand schema:\n${shexStr}") {
 
@@ -36,25 +36,16 @@ trait ShouldValidateShapeMap extends CatsEffectSuite {
       val validate: IO[Boolean] = for {
         _ <- info(s"Before all validate...")  
         res1 <- RDFAsJenaModel.fromString(rdfStr, "Turtle",None)
-        _ <- info(s"Res 1: ${res1}")
         res2 <- RDFAsJenaModel.empty
-        _ <- info(s"Res 2: ${res2}")
         vv <- (res1,res2).tupled.use{ 
         case (rdf,builder) =>
          for {
-          _ <- info("Before validating...") 
-          _ <- info(s"RDF: ${rdf}")
           shex <- Schema.fromString(shexStr, "ShExC", Some(IRI("")))
-          _ <- info(s"Schema: ${shex.asJson}")
           rdfPrefixMap <- rdf.getPrefixMap
           shapeMap <- fromES(ShapeMap.fromCompact(shapeMapStr, shex.base, rdfPrefixMap, shex.prefixMap).leftMap(_.toList.mkString("\n")))
-          _ <- info(s"ShapeMap: ${shapeMap}") 
           fixedShapeMap <- ShapeMap.fixShapeMap(shapeMap, rdf, rdfPrefixMap, shex.prefixMap)
-          _ <- info(s"Fixed shapeMap: ${fixedShapeMap}") 
           resolved <- ResolvedSchema.resolve(shex,Some(IRI("")), verbose)
-          _ <- info(s"ResolvedSchema: ${resolved}") 
           result <- Validator.validate(resolved, fixedShapeMap, rdf, builder,verbose)
-          _ <- info(s"Result: ${result}") 
           resultShapeMap <- result.toResultShapeMap
           _ <- info(s"Result shapeMap: ${resultShapeMap}") 
           expectedShapeMap <- ShapeMap.parseResultMap(expected, shex.base, rdf, shex.prefixMap)
