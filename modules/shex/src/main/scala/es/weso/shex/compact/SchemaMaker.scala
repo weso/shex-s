@@ -407,7 +407,7 @@ class SchemaMaker extends ShExDocBaseVisitor[Any] {
       case _: InlineShapeAtomAnyContext =>
         ok(ShapeExpr.any)
       case _ => {
-        println(s"Unknown value for ctx: $ctx")
+        // println(s"Unknown value for ctx: $ctx")
         err(s"Unknown value for inlineShapeAtom ctx: $ctx")
       }
     }

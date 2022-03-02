@@ -44,9 +44,8 @@ case class ManifestEntry(
           pair = ShapePath.eval(shapePath, schema)
           expectedValues <- either2io(parse(expectStr), cnvFailure)
           (es, v) = pair
-          _ <- if (!es.isEmpty) IO {
-            println(s"Processing errors: ${es.map(_.toString + "\n").mkString}")
-          } else IO.pure(())
+          _ <- if (!es.isEmpty) IO.println(s"Processing errors: ${es.map(_.toString + "\n").mkString}")
+               else IO.pure(())
         } yield 
         if (v.asJson === expectedValues) 
           PassedResult(id,msg = Some(s"JSon equals expected"))

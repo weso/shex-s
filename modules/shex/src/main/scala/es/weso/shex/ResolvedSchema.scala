@@ -8,7 +8,7 @@ import es.weso.depgraphs.Inheritance
 import es.weso.depgraphs.InheritanceJGraphT
 import es.weso.rdf.locations.Location
 import es.weso.utils.VerboseLevel
-import java.nio.file.Path
+import java.nio.file.{Path => FilePath}
 
 /**
   * Represents a schema with all the imports resolved
@@ -59,7 +59,8 @@ case class ResolvedSchema(
 
  // override def addShape(se: ShapeExpr): es.weso.shex.Schema = ???
  // override def labels: List[ShapeLabel] = ???
- lazy val optTripleExprMap: Option[Map[ShapeLabel,TripleExpr]] = Some(resolvedMapTripleExprs.mapValues(_.te).toMap)
+ lazy val optTripleExprMap: Option[Map[ShapeLabel,TripleExpr]] = 
+   Some(resolvedMapTripleExprs.mapValues(_.te).toMap)
 
 }
 
@@ -83,7 +84,7 @@ object ResolvedSchema {
     * @param schema
     * @return a resolved schema
     */
-  def resolve(schema: Schema, base: Option[IRI], verboseLevel: VerboseLevel, assumeLocal: Option[(IRI,Path)] = None): IO[ResolvedSchema] =
+  def resolve(schema: Schema, base: Option[IRI], verboseLevel: VerboseLevel, assumeLocal: Option[(IRI,FilePath)] = None): IO[ResolvedSchema] =
    for {
      mapsImported <- closureImports(schema.imports,
       List(schema.id), 
@@ -103,12 +104,12 @@ object ResolvedSchema {
     labelLocationMap = schema.labelLocationMap
   )
 
-  private def getEffectiveIRI(iri: IRI, assumeLocal: Option[(IRI,Path)]): IRI = 
+  private def getEffectiveIRI(iri: IRI, assumeLocal: Option[(IRI,FilePath)]): IRI = 
     assumeLocal match {
       case Some((prefix,path)) if (iri.str.startsWith(prefix.str)) => {
         val local = iri.str.stripPrefix(prefix.str)
         val newIri = IRI(path.resolve(local).toUri)
-        println(s"getEffectiveIRI($iri, $assumeLocal), local=$local, newIri=$newIri")
+        // println(s"getEffectiveIRI($iri, $assumeLocal), local=$local, newIri=$newIri")
         newIri
       } 
       case _ => iri
@@ -120,7 +121,7 @@ object ResolvedSchema {
                              current: MapsImported,
                              base: Option[IRI],
                              verbose: VerboseLevel,
-                             assumeLocal: Option[(IRI,Path)]
+                             assumeLocal: Option[(IRI,FilePath)]
                             ): IO[MapsImported] = imports match {
     case Nil => IO.pure(current)
     case (i::is) => 

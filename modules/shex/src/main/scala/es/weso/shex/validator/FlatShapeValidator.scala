@@ -116,8 +116,30 @@ case class FlatShapeValidator(
               p
             }
           } yield t
-        } else
-          for {
+        } else {
+          debug(s"checkValuesConstraint...else") *>
+          getRDF.flatMap(rdf =>
+          if (constraint.card.contains(values.size)) {
+              val rs: List[EitherT[IO, (RDFNode, String), (RDFNode, String)]] =
+               injectPairLs(values.toList.map(v => (v, checkNodeShapeExprBasic(v, se, rdf))))
+              /*val doPartition: Check[(List[(RDFNode, String)], List[(RDFNode, String)])] =
+                fromIO(partitionEitherIOS(rs)) */
+              debug(s"before doPartition") *>  
+              fromIO(partitionEitherIOS(rs)).flatMap(partition => {
+                val (notPassed, passed) = partition
+                if (notPassed.isEmpty) {
+                  debug(s"notPassed is empty => all passed :)") *>
+                  addEvidence(attempt.nodeShape, s"${showNode(node)} passed ${constraint.showQualified(shapesPrefixMap)} for path ${path.showQualified(nodesPrefixMap)}")
+                } else {
+                  debug(s"checkValuesConstraint($node) failed: Passed: ${passed.map(_.toString).mkString(s",")}| No passed: ${notPassed.map(_.toString).mkString(s",")}") *>
+                  err[ShapeTyping](ValuesNotPassed(attempt, node, path, passed.size, notPassed.toSet,rdf))
+                }
+              })  
+            } 
+          else errCardinality(attempt,node,path,values.size, card, rdf)             
+        )
+      }  
+/*          for {
             // _ <- debug(s"Constraint has no EXTRA")
             rdf <- getRDF
             t <- if (constraint.card.contains(values.size)) {
@@ -125,7 +147,7 @@ case class FlatShapeValidator(
                injectPairLs(values.toList.map(v => (v, checkNodeShapeExprBasic(v, se, rdf))))
               val doPartition: Check[(List[(RDFNode, String)], List[(RDFNode, String)])] =
                 fromIO(partitionEitherIOS(rs))
-              val ct: Check[ShapeTyping] = for {
+              for {
                 partition <- doPartition
                 (notPassed, passed) = partition
                 // _ <- debug(s"checkValuesConstraint: Passed: ${passed.map(_.toString).mkString(s",")}| No passed: ${notPassed.map(_.toString).mkString(s",")}")
@@ -135,9 +157,9 @@ case class FlatShapeValidator(
                   debug(s"checkValuesConstraint($node) failed: Passed: ${passed.map(_.toString).mkString(s",")}| No passed: ${notPassed.map(_.toString).mkString(s",")}")
                   err[ShapeTyping](ValuesNotPassed(attempt, node, path, passed.size, notPassed.toSet,rdf))
               } yield newt
-              ct
-            } else errCardinality(attempt,node,path,values.size, card, rdf)
-          } yield t
+             } 
+             else errCardinality(attempt,node,path,values.size, card, rdf)
+          } yield t */
     }
   }
 
@@ -149,7 +171,7 @@ case class FlatShapeValidator(
    debug(s"Cardinality error on ${node.show} for path ${path.show} with Extra: ${passedSize} ${card}") >>
    err(ErrCardinalityWithExtra(attempt, node, path, passedSize, notPassedSize, card,rdf))
 
-  private def checkNodeShapeExprBasic(node: RDFNode, se: ShapeExpr, rdf: RDFReader): EitherT[IO, String, String] =
+  private def checkNodeShapeExprBasic(node: RDFNode, se: ShapeExpr, rdf: RDFReader): EitherT[IO, String, String] = {
     se match {
       case sa: ShapeAnd => cmb(sa.shapeExprs.map(checkNodeShapeExprBasic(node, _, rdf)))
       case so: ShapeOr  => cmb(so.shapeExprs.map(checkNodeShapeExprBasic(node, _, rdf)))
@@ -169,6 +191,7 @@ case class FlatShapeValidator(
       case sd: ShapeDecl => mkErr(s"checkNodeShapeExprBasic: Not implemented yet ShapeDecl($sd)")
       // case _ => mkErr(s"checkNodeShapeExprBasic: Not implemented yet ShapeDecl($se)")
     }
+  }
 
   private def mkErr(s: String): EitherT[IO, String, String] =
     EitherT.fromEither(s.asLeft[String])
