@@ -67,7 +67,7 @@ class PathsTest extends CatsEffectSuite {
     val q = Direct(ex + "q")
     val r = Direct(ex + "r")
     val b = ex + "B"
-    shouldMatchPaths(shexStr,b,Set(p,q,r))
+    shouldMatchPaths(shexStr,b,Set(r))
   }
 
   {
@@ -85,7 +85,7 @@ class PathsTest extends CatsEffectSuite {
     val r = Direct(ex + "r")
     val s = Direct(ex + "s")
     val c = ex + "C"
-    shouldMatchPaths(shexStr,c,Set(p,q,r,s))
+    shouldMatchPaths(shexStr,c,Set(s))
   }
 
   def shouldMatchPaths(strSchema: String, shapeLabel: IRI, paths: Set[Path])(implicit loc: munit.Location): Unit = {

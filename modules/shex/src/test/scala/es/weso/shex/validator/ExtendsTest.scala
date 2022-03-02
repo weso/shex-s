@@ -177,7 +177,7 @@ class ExtendsTest extends ShouldValidateShapeMap {
            |abstract :A { }
            |:B @:A AND { :p . }
            |""".stripMargin
-      shouldValidateWithShapeMap(rdf, shex, ":x@:B", ":x@:B, :x@:A")
+      shouldValidateWithShapeMap(rdf, shex, ":x@:B", ":x@!:B")
     }
 
   
