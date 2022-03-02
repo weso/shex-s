@@ -10,7 +10,7 @@ import org.antlr.v4.runtime._
 import cats.data._
 import cats.implicits._
 
-object Parser  {
+object Parser {
 
   type Builder[A] = Either[String, A]
 
@@ -29,10 +29,11 @@ object Parser  {
   }
 
   def parse(
-    str: String,
-    base: Option[IRI],
-    nodesPrefixMap: PrefixMap,
-    shapesPrefixMap: PrefixMap): Either[NonEmptyList[String], QueryShapeMap] = {
+      str: String,
+      base: Option[IRI],
+      nodesPrefixMap: PrefixMap,
+      shapesPrefixMap: PrefixMap
+  ): Either[NonEmptyList[String], QueryShapeMap] = {
     val s = removeBOM(str)
     val reader: JavaReader =
       new InputStreamReader(new ByteArrayInputStream(s.getBytes(StandardCharsets.UTF_8)))
@@ -40,26 +41,28 @@ object Parser  {
   }
 
   def parseReader(
-    reader: JavaReader,
-    base: Option[IRI],
-    nodesPrefixMap: PrefixMap,
-    shapesPrefixMap: PrefixMap): Either[NonEmptyList[String], QueryShapeMap] = {
-    val input: CharStream = CharStreams.fromReader(reader)
-    val lexer: ShapeMapLexer = new ShapeMapLexer(input)
+      reader: JavaReader,
+      base: Option[IRI],
+      nodesPrefixMap: PrefixMap,
+      shapesPrefixMap: PrefixMap
+  ): Either[NonEmptyList[String], QueryShapeMap] = {
+    val input: CharStream         = CharStreams.fromReader(reader)
+    val lexer: ShapeMapLexer      = new ShapeMapLexer(input)
     val tokens: CommonTokenStream = new CommonTokenStream(lexer)
-    val parser: ShapeMapParser = new ShapeMapParser(tokens)
+    val parser: ShapeMapParser    = new ShapeMapParser(tokens)
 
     val errorListener = new ParserErrorListener
     lexer.addErrorListener(errorListener)
     parser.addErrorListener(errorListener)
 
-    val maker = new ShapeMapsMaker(base,nodesPrefixMap,shapesPrefixMap)
+    val maker   = new ShapeMapsMaker(base, nodesPrefixMap, shapesPrefixMap)
     val builder = maker.visit(parser.shapeMap()).asInstanceOf[Builder[QueryShapeMap]]
-    val errors = errorListener.getErrors
-    NonEmptyList.fromList(errors).fold(
-      builder.leftMap(NonEmptyList.one(_)))(
-      _.asLeft
-    )
+    val errors  = errorListener.getErrors
+    NonEmptyList
+      .fromList(errors)
+      .fold(builder.leftMap(NonEmptyList.one(_)))(
+        _.asLeft
+      )
   }
 
 }
