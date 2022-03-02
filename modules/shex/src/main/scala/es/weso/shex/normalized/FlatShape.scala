@@ -17,6 +17,8 @@ case class FlatShape(id: Option[ShapeLabel], slots: Map[Path, Constraint], close
   lazy val paths: Set[Path]               = slots.keySet
   lazy val preds: Set[IRI]                = paths.collect { case Direct(p) => p }
   lazy val hasRepeatedProperties: Boolean = false
+
+  def withClosed: FlatShape = this.copy(closed = true)
 }
 
 object FlatShape {

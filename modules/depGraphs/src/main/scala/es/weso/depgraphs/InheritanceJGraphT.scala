@@ -56,21 +56,23 @@ case class InheritanceJGraphT[Node,EdgeType](
   }
   else Set()
 
-  private def collectDescendantsByEdgeType(node: Node, edgeType: EdgeType, visited: Set[Node], graph: DirectedAcyclicGraph[Node,Edge[Node,EdgeType]]): IO[Set[Node]] = {
-    val incomingEdges = graph.incomingEdgesOf(node).asScala.toSet
-    val nodesToCollect = incomingEdges.filter(edge => !visited.contains(edge.sub) && edge.etype == edgeType)
-    val nodes = nodesToCollect.map(edge => edge.sub)
-    nodes.map(node => 
-       collectDescendantsByEdgeType(node, edgeType,visited ++ nodes, graph)
-    )
-    .sequence
-    .map(_.flatten ++ nodes)
-  }
-    
+  private def incomingEdges(node: Node, graph: DirectedAcyclicGraph[Node,Edge[Node,EdgeType]]): IO[Set[Edge[Node,EdgeType]]] = 
+    IO(graph.incomingEdgesOf(node).asScala.toSet).handleError(_ => Set())
 
+  private def collectDescendantsByEdgeTypes(node: Node, edgeTypes: Set[EdgeType], visited: Set[Node], graph: DirectedAcyclicGraph[Node,Edge[Node,EdgeType]]): IO[Set[Node]] = 
+    incomingEdges(node, graph).flatMap(incomingEs => {
+     val nodes = 
+       incomingEs.filter(edge => !visited.contains(edge.sub) && edgeTypes.contains(edge.etype)).map(_.sub)
+     nodes.map(node => 
+       collectDescendantsByEdgeTypes(node, edgeTypes,visited ++ nodes, graph)
+     ).sequence.map(_.flatten ++ nodes)
+     })
 
   override def descendantsByEdgtype(node: Node, edgeType: EdgeType): IO[Set[Node]] = 
-    getGraph.flatMap(graph => collectDescendantsByEdgeType(node, edgeType, Set(node), graph))
+    getGraph.flatMap(graph => collectDescendantsByEdgeTypes(node, Set(edgeType), Set(node), graph))
+
+  override def descendantsByEdgtypes(node: Node, edgeTypes: Set[EdgeType]): IO[Set[Node]] = 
+    getGraph.flatMap(graph => collectDescendantsByEdgeTypes(node, edgeTypes, Set(node), graph))
 
   override def ancestors(node: Node): IO[Set[Node]] = for {
     graph <- getGraph

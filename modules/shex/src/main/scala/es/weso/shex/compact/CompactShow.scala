@@ -319,14 +319,14 @@ object CompactShow {
     }
     else {
     optDocConst(s.virtual, keyword("VIRTUAL")) ::
-    optDoc(s._extends,extends2doc(pm)) ::
+    optDoc(s._extends,extends2doc(pm)) :: space ::
     maybeClosed(s.isClosed) ::
-    optDoc(s.extra, extraDoc(pm)) ::
-    optDoc(
-        s.expression,
-        (te: TripleExpr) =>
-          text("{") :: newline :: tripleExprDoc(pm)(te) :: newline :: text("}") :: newline) ::
-        optDoc(s.actions, semActsDoc(pm))
+    optDoc(s.extra, extraDoc(pm)) :: 
+    (s.expression match {
+      case None => text("{ }")
+      case Some(te) => text("{") :: newline :: tripleExprDoc(pm)(te) :: newline :: text("}") 
+     }) ::
+    optDoc(s.actions, as => newline :: semActsDoc(pm)(as))
   }
 
   private def extends2doc(pm: PrefixMap)(ls: List[ShapeLabel]): Doc = 

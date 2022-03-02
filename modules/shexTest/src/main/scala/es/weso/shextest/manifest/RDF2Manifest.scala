@@ -1,7 +1,5 @@
 package es.weso.shextest.manifest
-// import java.io.FileNotFoundException
 import java.nio.file._
-// import java.util.concurrent.Executors
 
 import cats.effect._
 import es.weso.rdf._
@@ -9,17 +7,12 @@ import es.weso.rdf.jena.RDFAsJenaModel
 import es.weso.rdf.nodes._
 import es.weso.rdf.parser.RDFParser
 import ManifestPrefixes._
-// import fs2._
-// import es.weso.utils.FileUtilsIO._
-// import scala.concurrent.ExecutionContext
-// import cats._
 import cats.arrow.FunctionK
 import cats.data._
 import cats.implicits._
 
 import scala.util._
 import es.weso.rdf.parser._
-// import es.weso.utils.IOException
 import es.weso.utils.IOUtils.fromES
 import es.weso.utils.FileUtils._
 
@@ -58,7 +51,7 @@ class RDF2Manifest extends RDFParser {
       maybeLabel   <- liftParser(stringFromPredicateOptional(rdfs_label))
       maybeComment <- liftParser(stringFromPredicateOptional(rdfs_comment))
       entries      <- liftParser(entries)
-      is     <- includes
+      is           <- includes
     } yield {
       ShExManifest(label = maybeLabel, comment = maybeComment, entries = entries.toList, includes = is)
     }
@@ -301,8 +294,8 @@ class RDF2Manifest extends RDFParser {
          val r: ManifestParser[(IRI,Option[ShExManifest])] = parseShExManifest(iriResolved,ctx,config)
          r
         } else liftParser(ok((iri, None)))
-      case _ =>
-        liftParser(parseFail[(IRI, Option[ShExManifest])](s"Trying to deref an include from node $node which is not an IRI"))
+/*      case _ =>
+        liftParser(parseFail[(IRI, Option[ShExManifest])](s"Trying to deref an include from node $node which is not an IRI")) */
     }
   } yield pair
 

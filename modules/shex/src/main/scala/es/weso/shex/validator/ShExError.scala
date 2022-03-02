@@ -99,7 +99,9 @@ object ShExError {
       s"Exception: ${t.getMessage}\nStack: \n${t.getStackTrace().map(_.toString()).mkString("\n")}"
 
     override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
-      s"ExceptionError: ${t.getMessage()}"
+      s"""|ExceptionError: ${t.getMessage()}
+          |Cause: ${t.getCause}
+          |Stack trace: ${t.getStackTrace.map(_.toString).mkString("\n")}""".stripMargin
     }
 
     override def toJson: Json = Json.obj(
@@ -470,10 +472,9 @@ object ShExError {
       )
   }
 
-
-  case class AbstractShapeErr(node: RDFNode, shape: ShapeExpr, rdf: RDFReader) extends ShExError(s"Node ${node.show} cannot conform to abstract shape ${shape}") {
-      override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
-        s"""AbstractShapeError ${nodesPrefixMap.qualify(node)} cannot conform to abstract shape ${shape.showQualified(shapesPrefixMap)}"""
+  case class AbstractShapeErr(node: RDFNode, shape: ShapeLabel, rdf: RDFReader) extends ShExError(s"Node ${node.show} cannot conform to abstract shape ${shape}") {
+     override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
+        s"""AbstractShapeError ${nodesPrefixMap.qualify(node)} cannot conform to abstract shape ${shapesPrefixMap.qualify(shape.toRDFNode)}"""
       }
 
      override def toJson: Json = Json.obj(

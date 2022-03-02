@@ -1,0 +1,13 @@
+prefix : <http://example.org/>
+
+:n1 :p "X" ;
+    :q :n2 .
+:n2 :r :n3 .
+:n3 :s :n1 .
+       
+:x :p :x .
+
+:l1 :first :x   ;
+    :rest  :l2  .
+:l2 :first "X"  ;
+    :rest  :nil .
