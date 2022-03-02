@@ -22,6 +22,9 @@ case class Neighs(m: Map[Path,Set[RDFNode]]) extends AnyVal {
   def filterPaths(paths: Set[Path]): Neighs = 
    Neighs(m.filterKeys(paths.contains(_)).toMap)
 
+  def filterDirect: Neighs = 
+   Neighs(m.filterKeys(_.isDirect).toMap)
+
   def partitionByPaths(paths: Set[Path]): (Neighs,Neighs) = {
     val (m1,m2) = m.partition { case (path,_) => paths.contains(path) }
     (Neighs(m1), Neighs(m2))
@@ -31,7 +34,7 @@ case class Neighs(m: Map[Path,Set[RDFNode]]) extends AnyVal {
    Neighs(m.filterKeys(cond(_)).toMap) 
 
   def showQualified(pm: PrefixMap): String = {
-    m.toList.map { case (p,vs) => s"${p.showQualified(pm)} ${vs.map(pm.qualify(_)).mkString(", ")}"}.mkString(s";\n")
+    m.toList.map { case (p,vs) => s"${p.showQualified(pm)} ${vs.map(pm.qualify(_)).mkString(", ")}"}.mkString(s"| ")
   } 
 
   def getPredicates(): Set[IRI] = 
@@ -57,7 +60,7 @@ object Neighs {
       Neighs(ls.foldLeft(zero)(cmb))
   }
 
- implicit val neighsMonoid: Monoid[Neighs] = new Monoid[Neighs] {
+  implicit val neighsMonoid: Monoid[Neighs] = new Monoid[Neighs] {
     def combine(n1: Neighs, n2: Neighs): Neighs = 
      Neighs(n1.m |+| n2.m)
 

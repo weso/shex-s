@@ -1,0 +1,15 @@
+prefix : <http://example.org/>
+
+:S { :p . ;
+     :q @:T ?
+}
+:T { :r @:U }
+:U { :s @:S }
+
+:W { :p @:W }
+
+:Ls CLOSED {
+  :first IRI ;
+  :rest  [:nil] OR @:Ls
+}
+

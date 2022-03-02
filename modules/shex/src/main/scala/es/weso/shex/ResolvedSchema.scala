@@ -8,6 +8,7 @@ import es.weso.depgraphs.Inheritance
 import es.weso.depgraphs.InheritanceJGraphT
 import es.weso.rdf.locations.Location
 import es.weso.utils.VerboseLevel
+import java.nio.file.Path
 
 /**
   * Represents a schema with all the imports resolved
@@ -82,7 +83,7 @@ object ResolvedSchema {
     * @param schema
     * @return a resolved schema
     */
-  def resolve(schema: Schema, base: Option[IRI], verboseLevel: VerboseLevel): IO[ResolvedSchema] =
+  def resolve(schema: Schema, base: Option[IRI], verboseLevel: VerboseLevel, assumeLocal: Option[(IRI,Path)] = None): IO[ResolvedSchema] =
    for {
      mapsImported <- closureImports(schema.imports,
       List(schema.id), 
@@ -91,7 +92,8 @@ object ResolvedSchema {
         schema.tripleExprMap.mapValues(ResolvedTripleExpr(_)).toMap
         ),
       base, 
-      verboseLevel)
+      verboseLevel, 
+      assumeLocal)
      inheritanceGraph <- InheritanceGraph.mkInheritanceGraph(mapsImported.shapeExprMaps, verboseLevel)
    } yield ResolvedSchema(
     source = schema, 
@@ -101,22 +103,40 @@ object ResolvedSchema {
     labelLocationMap = schema.labelLocationMap
   )
 
+  private def getEffectiveIRI(iri: IRI, assumeLocal: Option[(IRI,Path)]): IRI = 
+    assumeLocal match {
+      case Some((prefix,path)) if (iri.str.startsWith(prefix.str)) => {
+        val local = iri.str.stripPrefix(prefix.str)
+        val newIri = IRI(path.resolve(local).toUri)
+        println(s"getEffectiveIRI($iri, $assumeLocal), local=$local, newIri=$newIri")
+        newIri
+      } 
+      case _ => iri
+    }
+
   // TODO: make the following method tailrecursive
   private def closureImports(imports: List[IRI],
                              visited: List[IRI],
                              current: MapsImported,
                              base: Option[IRI],
-                             verbose: VerboseLevel
+                             verbose: VerboseLevel,
+                             assumeLocal: Option[(IRI,Path)]
                             ): IO[MapsImported] = imports match {
     case Nil => IO.pure(current)
     case (i::is) => 
       if (visited contains i) 
-        closureImports(is,visited,current,base,verbose)
-      else Schema
-         .fromIRI(i,base, verbose)
+        closureImports(is, visited, current, base, verbose, assumeLocal)
+      else {
+       val effectiveIRI = getEffectiveIRI(i, assumeLocal)
+       verbose.debug(s"Resolving schema import: i=${i}") *>
+       verbose.debug(s"Resolving schema import: assumeLocal=${assumeLocal}") *>
+       verbose.debug(s"Resolving schema import: effectiveIRI=${effectiveIRI}") *>
+       Schema
+         .fromIRI(effectiveIRI, base, verbose, assumeLocal)
          .flatMap(schema => 
-           closureImports(is ++ schema.imports, i :: visited, current.merge(schema,i),base, verbose)
+           closureImports(is ++ schema.imports, i :: visited, current.merge(schema,i), base, verbose, assumeLocal)
          )
+      }
   }
 
   def empty: IO[ResolvedSchema] = 

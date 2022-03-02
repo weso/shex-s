@@ -25,7 +25,6 @@ object ShowMethod {
   case object ShowQualified extends ShowMethod { val name = "qualified"  }
   case object ShowFlat extends ShowMethod { val name = "flat" }
   case object ShowPPrint extends ShowMethod { val name = "pprint" }  
-
   case object ShowJSON extends ShowMethod { val name = "json" }  
 
   val showMethods = List(ShowQualified, ShowFlat, ShowPPrint, ShowJSON)
@@ -48,6 +47,7 @@ case class SchemaCommand(
   def run(): IO[ExitCode] = for {
     schema <- schemaSpec.getSchema(verbose)
     resolved <- ResolvedSchema.resolve(schema, schemaSpec.baseIRI,verbose)
+    _ <- showShapeLabels(resolved)
     _ <- if (showInheritance) runShowInheritance(resolved)
          else IO.pure(())
     _ <- showShape match {
@@ -56,6 +56,10 @@ case class SchemaCommand(
          } 
   } yield ExitCode.Success
 
+  private def showShapeLabels(schema: ResolvedSchema): IO[Unit] = {
+    val labels = schema.resolvedMapShapeExprs.keySet
+    IO.println(s"shape labels: ${if (labels.isEmpty) "[]" else labels.map(schema.qualify(_)).mkString(", ")}")
+  }
 
   private def runShowInheritance(schema: ResolvedSchema): IO[Unit] = for {
     inheritanceStr <- 
@@ -72,6 +76,7 @@ case class SchemaCommand(
     references <- schema.inheritanceGraph.descendantsByEdgtype(sl,References)
     _ <- IO.println(s"Extended by shapes: ${extendeds.map(sl => schema.qualify(sl)).mkString(",")}")
     _ <- IO.println(s"Referenced by shapes: ${references.map(sl => schema.qualify(sl)).mkString(",")}")
+    _ <- IO.println(s"Paths: ${se.paths(schema).fold(e => s"Error: $e", ps => ps.map(_.show).mkString("|"))}")
   } yield ()
 
   private def shape2String(se: ShapeExpr, prefixMap: PrefixMap, showMethod: ShowMethod): String = showMethod match {
