@@ -24,7 +24,7 @@ import es.weso.utils.VerboseLevel
 case class NodeConstraintValidator(schema: ResolvedSchema) extends ShExChecker {
 
   def checkNodeConstraint(attempt: Attempt, node: RDFNode, s: NodeConstraint): CheckTyping =
-   for {
+   (for {
     t1 <- optCheck(s.nodeKind, checkNodeKind(attempt, node), getTyping)
     t2 <- optCheck(s.values, checkValues(attempt, node), getTyping)
     t3 <- optCheck(s.datatype, checkDatatype(attempt, node), getTyping)
@@ -32,7 +32,10 @@ case class NodeConstraintValidator(schema: ResolvedSchema) extends ShExChecker {
     t  <- combineTypings(List(t1, t2, t3, t4))
    } yield {
     t
-  }
+  }).handleErrorWith(e => 
+    debug(s"Error on checkNodeConstraint(${node.show}@${s.show} failed: ${e.msg}") *> 
+    err(e)
+  )
 
   private def checkNodeKind(attempt: Attempt, node: RDFNode)(nk: NodeKind): CheckTyping = {
     nk match {

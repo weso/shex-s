@@ -15,6 +15,8 @@ trait Inheritance[Node, EdgeType] {
 
   def descendantsByEdgtype(node: Node, edgtype: EdgeType): IO[Set[Node]]
 
+  def descendantsByEdgtypes(node: Node, edgtypes: Set[EdgeType]): IO[Set[Node]]
+
   def ancestors(node: Node): IO[Set[Node]]
 
   def show(showNode: Node => String, showEdge: EdgeType => String): IO[String]

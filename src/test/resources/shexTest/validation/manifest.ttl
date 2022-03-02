@@ -16863,7 +16863,7 @@
     ] ;
     .
 
-<#ExtendANDExtend3GAND3G-t23> a sht:ValidationFailure ;
+<#ExtendANDExtend3GAND3G-t23> a sht:ValidationTest ;
     mf:name "ExtendANDExtend3GAND3G-t23" ;
     sht:trait sht:Extends ;
     rdfs:comment "@@ExtendANDExtend3GAND3G-23" ;

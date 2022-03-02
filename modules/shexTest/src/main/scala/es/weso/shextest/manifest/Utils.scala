@@ -26,6 +26,8 @@ import es.weso.shex.validator.ExternalResolver
 import Reason._
 import es.weso.utils._
 import es.weso.utils.VerboseLevel.{Info => InfoLevel, _}
+import java.nio.file.Path
+import java.nio.file.Paths
 
 
 object Utils {
@@ -97,17 +99,21 @@ object Utils {
       shouldValidate: Boolean,
       name: String,
       folderURI: URI,
-      verbose: VerboseLevel
+      assumeLocal: Option[(IRI,Path)],
+      verbose: VerboseLevel,
   ): IO[Option[Result]] = {
     val focus     = fa.focus
     val schemaUri = mkLocal(fa.schema, schemasBase, folderURI)
     val dataUri   = mkLocal(fa.data, schemasBase, folderURI)
     for {
-      _         <- testInfo(s"Validating focusAction: $name",verbose)
-      _         <- testInfo(s"Schema uri: $schemaUri", verbose)
-      _         <- testInfo(s"Data uri: $dataUri", verbose)
+      _         <- testInfo(s"focusAction:  $name",verbose)
+      _         <- testInfo(s"SchemasBase:  $schemasBase", verbose)
+      _         <- testInfo(s"folderURI:    $folderURI", verbose)
+      _         <- testInfo(s"Schema uri:   $schemaUri", verbose)
+      _         <- testInfo(s"Data uri:     $dataUri", verbose)
       _         <- testInfo(s"FOCUS: ${fa.focus}", verbose)
       _         <- testInfo(s"Shape: ${fa.shape.getOrElse("<>")}", verbose)
+      _         <- testInfo(s"ShouldValidate: ${shouldValidate}",verbose)
       schemaStr <- derefUriIO(schemaUri)
 //      _         <- testInfo(s"schemaStr:\n$schemaStr\n-----end schemaStr\nNest step: deref: $dataUri", verbose)
       dataStr   <- derefUriIO(dataUri)
@@ -129,7 +135,7 @@ object Utils {
            val shapeMap = FixedShapeMap(Map(focus -> Map(lbl -> Info())), dataPrefixMap, schema.prefixMap)
            for {
              // _         <- testInfoValue(s"shapeMap", shapeMap, verbose)
-             resolvedSchema <- ResolvedSchema.resolve(schema, Some(fa.schema), verbose)
+             resolvedSchema <- ResolvedSchema.resolve(schema, Some(fa.schema), verbose, assumeLocal)
              // _         <- testInfoValue(s"resolvedSchema", resolvedSchema, verbose)
              externalResolver: ExternalResolver = fa.shapeExterns.fold[ExternalResolver](ExternalResolver.NoAction)(ExternalResolver.ExternalIRIResolver(_, verbose))
              validator = Validator(schema = resolvedSchema, 
@@ -286,7 +292,7 @@ object Utils {
     }
  } */
 
- def validateMapResult(
+  def validateMapResult(
       mr: MapResultAction,
       base: URI,
       v: ValidOrFailureTest,

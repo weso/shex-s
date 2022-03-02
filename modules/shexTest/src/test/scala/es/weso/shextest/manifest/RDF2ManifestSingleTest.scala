@@ -5,13 +5,18 @@ import munit.{Only => _, _}
 import ValidateManifest._
 import TestSelector.Only
 import es.weso.utils.VerboseLevel
+import scala.concurrent.duration._
+import es.weso.rdf.nodes.IRI
+import java.nio.file._
+
 
 class RDF2ManifestSingleTest extends CatsEffectSuite {
 
   val conf: Config = ConfigFactory.load()
   val validationFolder = conf.getString("testsFolder")
   val shexFolderURI = Paths.get(validationFolder).normalize.toUri.toString
-
+  val assumeLocal: Option[(IRI,Path)] = Some((IRI("https://raw.githubusercontent.com/shexSpec/shexTest/master/"), Paths.get("src/test/resources/shexTest")))
+  
   test("RDF2Manifest") {
      parseManifest(
        "manifest", 
@@ -23,6 +28,8 @@ class RDF2ManifestSingleTest extends CatsEffectSuite {
          "vitals-RESTRICTS-pass_lie-BP"
          ),
        List(),
+       1.seconds,
+       assumeLocal,
        VerboseLevel.Nothing).map(rs => assertEquals(rs.size > 0, true))
   }
 

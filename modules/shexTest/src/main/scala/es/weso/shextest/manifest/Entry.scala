@@ -37,7 +37,6 @@ case class RepresentationTest(
       action = {
         val resolvedJson = mkLocal(json,schemasBase,shexFolderURI)
         val resolvedShEx = mkLocal(shex,schemasBase,shexFolderURI)
-                  // info(s"Entry: $r with json: ${resolvedJsonIri}")
         val res: IO[TestResult] = for {
           jsonStr <- derefUriIO(resolvedJson)
           schemaStr <- derefUriIO(resolvedShEx)
@@ -108,7 +107,7 @@ case class Validate(override val node: RDFNode,
           val base = Paths.get(".").toUri
           action match {
             case focusAction: FocusAction => 
-              validateFocusAction(focusAction, base, this, true, name, uri, verbose).map(
+              validateFocusAction(focusAction, base, this, true, name, uri, None, verbose).map(
                 maybeR => maybeR match {
                  case None => FailedResult(id,Some("No result"),None,None)
                  case Some(res) => if (res.isOk == shouldPass) {
