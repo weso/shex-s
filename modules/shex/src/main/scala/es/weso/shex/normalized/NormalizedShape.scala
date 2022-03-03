@@ -5,12 +5,11 @@ import cats.implicits._
 import es.weso.shex._
 // import es.weso.shex.implicits.showShEx._
 
-/** A normalized shape consists of a list of slots where each slot is formed by a path and a list of constraints. It can
-  * be represented as a map from a path to a list of constraints
-  * @param slots
-  *   a vector of pairs (Path, Vector[Constraint])
-  * @param closed
-  *   indicates if the shape is closed
+/**
+  * A normalized shape consists of a list of slots where each slot is formed by a path and a list of constraints.
+  * It can be represented as a map from a path to a list of constraints
+  * @param slots a vector of pairs (Path, Vector[Constraint])
+  * @param closed indicates if the shape is closed
   */
 case class NormalizedShape(slots: Map[Path, Vector[Constraint]], closed: Boolean) {
   lazy val paths: Set[Path]               = slots.keySet
@@ -83,10 +82,11 @@ object NormalizedShape {
       s"NormalizedShape, closed: ${c.closed}\n${c.slots.map(showSlot).mkString("\n")}"
     }
 
-    private def showSlot(pair: (Path, Vector[Constraint])): String = {
-      val (path, cs) = pair
+    private def showSlot(pair:(Path, Vector[Constraint])): String = {
+      val (path,cs) = pair
       s"${path.show} -> ${cs.map(_.show).mkString(",")}"
     }
   }
+
 
 }

@@ -7,17 +7,15 @@ import munit._
 class ShapeMapJsonTest extends FunSuite {
 
   test("can parse Json example") {
-    val str =
-      """
+      val str =
+        """
           |[
           |  {"node":"http://inst.example/Issue1", "shape":"http://schema.example/IssueShape"},
           |  {"node":"http://inst.example/Issue2", "shape":"http://schema.example/IssueShape"},
           |  {"node":"http://inst.example/Issue3", "shape":"http://schema.example/IssueShape"}
           |]
         """.stripMargin
-    ShapeMap
-      .fromJson(str)
-      .fold(
+      ShapeMap.fromJson(str).fold(
         e => fail(s"Error parsing: $e"),
         sm => { () }
       )
@@ -44,7 +42,7 @@ class ShapeMapJsonTest extends FunSuite {
       result match {
         case Left(str) => fail(s"Error encoding/decoding Json: $str")
         case Right((json1, json2)) =>
-          assertEquals(json1.spaces2, json2.spaces2)
+          assertEquals(json1.spaces2,json2.spaces2)
       }
     }
 

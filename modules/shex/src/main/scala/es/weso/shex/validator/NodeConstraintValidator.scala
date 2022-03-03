@@ -18,23 +18,24 @@ import es.weso.shex.validator.ConstraintRef.{showConstraintRef => _}
 import es.weso.utils.internal.CollectionCompat._
 import es.weso.utils.VerboseLevel
 
-/** Node Constraint validator
+/**
+  * Node Constraint validator
   */
 case class NodeConstraintValidator(schema: ResolvedSchema) extends ShExChecker {
 
   def checkNodeConstraint(attempt: Attempt, node: RDFNode, s: NodeConstraint): CheckTyping =
-    (for {
-      t1 <- optCheck(s.nodeKind, checkNodeKind(attempt, node), getTyping)
-      t2 <- optCheck(s.values, checkValues(attempt, node), getTyping)
-      t3 <- optCheck(s.datatype, checkDatatype(attempt, node), getTyping)
-      t4 <- checkXsFacets(attempt, node)(s.xsFacets)
-      t  <- combineTypings(List(t1, t2, t3, t4))
-    } yield {
-      t
-    }).handleErrorWith(e =>
-      debug(s"Error on checkNodeConstraint(${node.show}@${s.show} failed: ${e.msg}") *>
-        err(e)
-    )
+   (for {
+    t1 <- optCheck(s.nodeKind, checkNodeKind(attempt, node), getTyping)
+    t2 <- optCheck(s.values, checkValues(attempt, node), getTyping)
+    t3 <- optCheck(s.datatype, checkDatatype(attempt, node), getTyping)
+    t4 <- checkXsFacets(attempt, node)(s.xsFacets)
+    t  <- combineTypings(List(t1, t2, t3, t4))
+   } yield {
+    t
+  }).handleErrorWith(e => 
+    debug(s"Error on checkNodeConstraint(${node.show}@${s.show} failed: ${e.msg}") *> 
+    err(e)
+  )
 
   private def checkNodeKind(attempt: Attempt, node: RDFNode)(nk: NodeKind): CheckTyping = {
     nk match {
@@ -59,28 +60,30 @@ case class NodeConstraintValidator(schema: ResolvedSchema) extends ShExChecker {
     }
   }
 
-  private def checkXsFacets(attempt: Attempt, node: RDFNode)(xsFacets: List[XsFacet]): CheckTyping =
+  private def checkXsFacets(attempt: Attempt, node: RDFNode)(xsFacets: List[XsFacet]): CheckTyping = 
     if (xsFacets.isEmpty) getTyping
-    else getRDF.flatMap(rdf => FacetChecker(schema, rdf).checkFacets(attempt, node)(xsFacets))
+    else getRDF.flatMap(rdf => 
+         FacetChecker(schema, rdf).checkFacets(attempt, node)(xsFacets))
 
-  private def checkValueSetValue(attempt: Attempt, node: RDFNode)(v: ValueSetValue): CheckTyping =
-    ValueChecker(schema).checkValue(attempt, node, v)
 
-  private def checkValues(attempt: Attempt, node: RDFNode)(values: List[ValueSetValue]): CheckTyping = {
-    val cs: List[CheckTyping] = values.map(checkValueSetValue(attempt, node))
+  private def checkValueSetValue(attempt: Attempt, node: RDFNode)(v: ValueSetValue): CheckTyping = 
+   ValueChecker(schema).checkValue(attempt, node, v)
+
+  private def checkValues(attempt: Attempt,
+                          node: RDFNode)
+                         (values: List[ValueSetValue]): CheckTyping = {
+    val cs: List[CheckTyping] = values.map(checkValueSetValue(attempt,node))
     checkSome(cs, StringError(s"${node.show} does not belong to [${values.map(_.show).mkString(",")}]"))
   }
 
   private def checkDatatype(attempt: Attempt, node: RDFNode)(datatype: IRI): CheckTyping =
-    getRDF.flatMap(rdf =>
-      fromIO(rdf.checkDatatype(node, datatype)).flatMap(hasDatatype =>
-        checkCond(
-          hasDatatype,
-          attempt,
-          CheckDatatypeError(node, datatype, rdf),
-          s"${node.show} has datatype ${datatype.show}"
-        )
-      )
-    )
+    getRDF.flatMap(rdf => 
+    fromIO(rdf.checkDatatype(node, datatype)).flatMap(hasDatatype =>
+    checkCond(
+        hasDatatype,
+        attempt,
+        CheckDatatypeError(node, datatype,rdf),
+        s"${node.show} has datatype ${datatype.show}")
+    ))
 
 }
