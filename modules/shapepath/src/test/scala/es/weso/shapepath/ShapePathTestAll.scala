@@ -15,30 +15,32 @@ class ShapePathTestAll extends CatsEffectSuite {
   val manifestPath = "modules/shapepath/src/test/resources/test-suite/"
 
   test(s"Should encode value with triple expr") {
-      val v: Value = Value(List(
+    val v: Value = Value(
+      List(
         TripleExprItem(TripleConstraint.emptyPred(IRI("http://a.example/a")))
-      ))
-      val strJson = """|[
+      )
+    )
+    val strJson = """|[
                        |      {
                        |        "type": "TripleConstraint",
                        |        "predicate": "http://a.example/a"
                        |      }
                        |]""".stripMargin
-      parse(strJson).fold(
-        err => fail(s"Error parsing json: $err"),
-        jsonExpected => assertEquals(v.asJson, jsonExpected)
-      )
+    parse(strJson).fold(
+      err => fail(s"Error parsing json: $err"),
+      jsonExpected => assertEquals(v.asJson, jsonExpected)
+    )
   }
 
   test(s"Evaluates a shapePath") {
-      // /@<#IssueShape>/2
-      // val two: TripleExprIndex = IntTripleExprIndex(2)
-      // val sTwo: Step = ExprStep(None, two, List())
-      val issueShape: Step = ExprStep(None, ShapeLabelIndex(IRILabel(IRI("#IssueShape"))), List())
-      val path: ShapePath = ShapePath(true, List(issueShape))
+    // /@<#IssueShape>/2
+    // val two: TripleExprIndex = IntTripleExprIndex(2)
+    // val sTwo: Step = ExprStep(None, two, List())
+    val issueShape: Step = ExprStep(None, ShapeLabelIndex(IRILabel(IRI("#IssueShape"))), List())
+    val path: ShapePath  = ShapePath(true, List(issueShape))
 
-      val schemaStr =
-        s"""|prefix : <http://example.org/>
+    val schemaStr =
+      s"""|prefix : <http://example.org/>
             |prefix foaf: <http://xmlns.com/foaf/0.1/>
             |prefix xsd: <http://www.w3.org/2001/XMLSchema#>
             |
@@ -60,62 +62,62 @@ class ShapePathTestAll extends CatsEffectSuite {
             |}
             |""".stripMargin
 
-      val cmp: IO[Schema] = for {
-        schema <- Schema.fromString(schemaStr)
-      } yield (schema)
+    val cmp: IO[Schema] = for {
+      schema <- Schema.fromString(schemaStr)
+    } yield (schema)
 
-      cmp.map(s => {
-          val (es, v) = ShapePath.eval(path, s)
-          assertEquals(es.size,0)
-          // info(s"Schema parsed:\n$s\nValue: $v")
-        }
-      )
+    cmp.map(s => {
+      val (es, v) = ShapePath.eval(path, s)
+      assertEquals(es.size, 0)
+      // info(s"Schema parsed:\n$s\nValue: $v")
+    })
   }
 
-  val except = List("2Eachdot_S_b",
-  "nested_S0_2_1_valueExpr",
-  "nested_baseS0_EachOf 2",
-  "nested_baseS0_p2_valueExpr_TC",
-  "nested_S0_p2_valueExpr",
-  "nested_baseS0_p2_valueExpr",
-  "nested_baseS0_EachOf_1",
-  "nested_baseS0_1_valueExpr",
-  "nested_baseS0_p2_EachOf 2_TripleConstraint",
-  "nested_baseS0_1",
-  "1dotRefOR3_S1",
-  "1dotRefOR3_S4",
-  "1dotRefOR3_p1",
-  "1dotRefOR3_p1_valueExpr",
-  "nested_baseS0_EachOf_2_valueExpr",
-  "1dotRefOR3_p1_valueExpr_type",
-  "nested_baseS0_EachOf_1_valueExpr",
-  "1dotRefOR3_S1_p1_valueExpr_3",
-  "1dotRefOR3_S1_p1_at3",
-  "1dotRefOR3_S1_p1_at_3",
-  "1dotRefOR3_S1_p1_valueExpr_at_ShapeAnd3",
-  "1dotRefOR3_S1_p1_valueExpr_ShapeOr3",
-  "2Eachdot_S_a",
-  "1dotRefOR3_1",
-  "1dotRefOR3_1_1",
-  "1dotRefOR3_4",
-  "1dotRefOR3_1_1_valueExpr",
-  "1dotRefOR3_S1_p1_at_ShapeOr3",
-  "1dotRefOR3_1_1_valueExpr_at3",
-  "1dotRefOR3_S1_p1_at_ShapeAnd3"
+  val except = List(
+    "2Eachdot_S_b",
+    "nested_S0_2_1_valueExpr",
+    "nested_baseS0_EachOf 2",
+    "nested_baseS0_p2_valueExpr_TC",
+    "nested_S0_p2_valueExpr",
+    "nested_baseS0_p2_valueExpr",
+    "nested_baseS0_EachOf_1",
+    "nested_baseS0_1_valueExpr",
+    "nested_baseS0_p2_EachOf 2_TripleConstraint",
+    "nested_baseS0_1",
+    "1dotRefOR3_S1",
+    "1dotRefOR3_S4",
+    "1dotRefOR3_p1",
+    "1dotRefOR3_p1_valueExpr",
+    "nested_baseS0_EachOf_2_valueExpr",
+    "1dotRefOR3_p1_valueExpr_type",
+    "nested_baseS0_EachOf_1_valueExpr",
+    "1dotRefOR3_S1_p1_valueExpr_3",
+    "1dotRefOR3_S1_p1_at3",
+    "1dotRefOR3_S1_p1_at_3",
+    "1dotRefOR3_S1_p1_valueExpr_at_ShapeAnd3",
+    "1dotRefOR3_S1_p1_valueExpr_ShapeOr3",
+    "2Eachdot_S_a",
+    "1dotRefOR3_1",
+    "1dotRefOR3_1_1",
+    "1dotRefOR3_4",
+    "1dotRefOR3_1_1_valueExpr",
+    "1dotRefOR3_S1_p1_at_ShapeOr3",
+    "1dotRefOR3_1_1_valueExpr_at3",
+    "1dotRefOR3_S1_p1_at_ShapeAnd3"
   ).map(TestId(_))
 
   test(s"ShapePath from Manifest") {
-      val cmp = for { 
-        manifest <- Manifest.fromPath(Paths.get(manifestPath + "Manifest.json")) 
-        testSuite = manifest.toTestSuite(manifestPath)
-        res <- testSuite.runAll(TestConfig.initial, except)
-      } yield res
-      cmp.map { case res => assertEquals(res.failed.map(_.entry.id), Vector[String]()) }
-  } 
+    val cmp = for {
+      manifest <- Manifest.fromPath(Paths.get(manifestPath + "Manifest.json"))
+      testSuite = manifest.toTestSuite(manifestPath)
+      res <- testSuite.runAll(TestConfig.initial, except)
+    } yield res
+    cmp.map { case res => assertEquals(res.failed.map(_.entry.id), Vector[String]()) }
+  }
 
   test(s"Embedded manifest") {
     val str =
-        """|{
+      """|{
            |  "description": "collection of partition tests",
            |  "tests": [
            |    {
@@ -134,15 +136,14 @@ class ShapePathTestAll extends CatsEffectSuite {
            | ]
            |}""".stripMargin
 
-      val except = List("2Eachdot_S_a").map(TestId(_))
+    val except = List("2Eachdot_S_a").map(TestId(_))
 
-
-      val cmp = for {
-        manifest <- Manifest.fromString(str)
-        testSuite = manifest.toTestSuite(manifestPath)
-        res <- testSuite.runAll(TestConfig.initial, except)
-      } yield res
-      cmp.map { case res => assertEquals(res.failed.map(_.entry.id), Vector[String]()) }
-    } 
+    val cmp = for {
+      manifest <- Manifest.fromString(str)
+      testSuite = manifest.toTestSuite(manifestPath)
+      res <- testSuite.runAll(TestConfig.initial, except)
+    } yield res
+    cmp.map { case res => assertEquals(res.failed.map(_.entry.id), Vector[String]()) }
+  }
 
 }
