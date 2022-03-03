@@ -11,11 +11,12 @@ This project contains an implementation of [Shape Expressions (ShEx)](http://www
 
 ## Introduction
 
-This project contains a Scala implementation of [ShEx](http://shex.io/). The library handles RDF using a 
-[simple RDF library](https://github.com/weso/srdf), which has 2 implementations,
+This project contains a Scala implementation of [ShEx](http://shex.io/). 
+The library handles RDF using a 
+[simple RDF library](https://github.com/weso/srdf), which at this moment has 2 implementations,
 one using [Apache Jena](https://jena.apache.org/)
-and another one using [RDF4j](http://rdf4j.org/),
-this means that it is possible to use this library to validate RDF models from any of those RDF libraries,
+and another one using [RDF4j](http://rdf4j.org/).
+This means that it is possible to use this library to validate RDF models from either Jena or RDF4J models,
 as well as from external SPARQL endpoints.
 
 ## Installation and compilation
@@ -31,6 +32,7 @@ The project uses [sbt](http://www.scala-sbt.org/) for compilation as well as Jav
   is implemented using the following [Antlr grammar](https://github.com/shexSpec/grammar/blob/master/ShExDoc.g4) (previous versions used Scala Parser Combinators)
   which is based on this [grammar](https://github.com/shexSpec/shex.js/blob/master/doc/bnf)
 * JSON encoding and decoding uses the Json structure [defined here](https://shexspec.github.io/spec/) and is implemented using [Circe](https://github.com/travisbrown/circe)
+* It supports ShEx + extends
 
 ## Compatibility tests
 
