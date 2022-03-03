@@ -15,29 +15,28 @@ class ShapeMapStreamTest extends CatsEffectSuite {
   val base = IRI("http://example.org/")
 
   val chars = List('a')
-  def iris  = Stream.emits(chars).map(c => base + c.toString)
+  def iris = Stream.emits(chars).map(c => base + c.toString)
 
-  def nodes: Stream[IO, RDFNodeSelector] =
+  def nodes: Stream[IO,RDFNodeSelector] = 
     iris.map(iri => RDFNodeSelector(iri))
-  def shapeLabels: Stream[IO, ShapeMapLabel] =
+  def shapeLabels: Stream[IO,ShapeMapLabel] = 
     iris.map(IRILabel(_))
-  def associations: Stream[IO, Association] =
-    (nodes zip shapeLabels).map { case (n, lbl) =>
-      Association(n, lbl)
+  def associations: Stream[IO,Association] = 
+    (nodes zip shapeLabels).map { 
+      case (n,lbl) => Association(n,lbl)
     }
 
-  def validateStream(inputStream: Stream[IO, Association]): Stream[IO, Association] = ???
+  def validateStream(inputStream:Stream[IO,Association]): Stream[IO,Association] = ???
 
   test("First test") {
 
-    associations.compile.toList.map(ls =>
-      assertEquals(
-        ls,
-        List(Association(RDFNodeSelector(base + "a"), IRILabel(base + "a"))),
-        Association(RDFNodeSelector(base + "b"), IRILabel(base + "b"))
-      )
+  associations.compile.toList.map(ls => 
+   assertEquals(ls, 
+    List(
+      Association(RDFNodeSelector(base + "a"), IRILabel(base + "a"))), 
+      Association(RDFNodeSelector(base + "b"), IRILabel(base + "b")))
     )
-
+      
   }
 
 }

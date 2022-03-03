@@ -16,9 +16,10 @@ import es.weso.shex.{BNodeLabel, IRILabel, ShapeLabel}
 
 import scala.jdk.CollectionConverters._
 
-/** Visits the AST and builds the corresponding abstract syntax
-  */
-class ShapePathMaker extends ShapePathDocBaseVisitor[Any] {
+/**
+ * Visits the AST and builds the corresponding abstract syntax
+ */
+class ShapePathMaker extends ShapePathDocBaseVisitor[Any]  {
 
   override def visitShapePathDoc(ctx: ShapePathDocContext): Builder[ShapePath] = {
     visitExpr(ctx.expr())
@@ -32,42 +33,38 @@ class ShapePathMaker extends ShapePathDocBaseVisitor[Any] {
   override def visitUnionExpr(ctx: UnionExprContext): Builder[ShapePath] = for {
     ls <- visitList(visitIntersectionExpr, ctx.intersectionExpr())
   } yield ls.head
-
+  
   override def visitIntersectionExpr(ctx: IntersectionExprContext): Builder[ShapePath] = for {
     ls <- visitList(visitPathExpr, ctx.pathExpr())
   } yield ls.head
-
+  
   override def visitPathExpr(ctx: PathExprContext): Builder[ShapePath] = for {
-    path  <- visitFirstStepExpr(ctx.firstStepExpr())
+    path <- visitFirstStepExpr(ctx.firstStepExpr())
     steps <- visitList(visitStepExpr, ctx.stepExpr())
   } yield path.addSteps(steps)
 
-  override def visitFirstStepExpr(ctx: FirstStepExprContext): Builder[ShapePath] =
+  override def visitFirstStepExpr(ctx: FirstStepExprContext): Builder[ShapePath] = 
     ctx match {
-      case _ if isDefined(ctx.stepExpr()) =>
-        for {
-          step <- visitStepExpr(ctx.stepExpr())
-        } yield ShapePath(true, List(step))
-      case _ if isDefined(ctx.nodeTest()) =>
-        for {
-          maybeAxis <- visitOpt(visitForwardAxis, ctx.forwardAxis())
-          nodeTest  <- visitNodeTest(ctx.nodeTest())
-        } yield ShapePath(false, List(Step.mkStep(maybeAxis, nodeTest)))
-      case _ if isDefined(ctx.predicateList()) =>
-        for {
-          shapeType  <- visitShapeType(ctx.shapeType())
-          predicates <- visitPredicateList(ctx.predicateList())
-        } yield ShapePath.fromTypePredicates(shapeType, predicates)
-      case _ if isDefined(ctx.predicateList()) =>
-        for {
-          predicates <- visitList(visitPredicate, ctx.predicate())
-        } yield ShapePath.fromPredicates(predicates)
-      case _ => err(s"visitShapePathExpr: unknown ctx: ${ctx.getClass().getCanonicalName()}")
+     case _ if isDefined(ctx.stepExpr()) => for {
+        step <- visitStepExpr(ctx.stepExpr())
+      } yield ShapePath(true, List(step))
+     case _ if isDefined(ctx.nodeTest()) => for {
+       maybeAxis <- visitOpt(visitForwardAxis, ctx.forwardAxis())
+       nodeTest <- visitNodeTest(ctx.nodeTest())
+     } yield ShapePath(false, List(Step.mkStep(maybeAxis, nodeTest)))
+     case _ if isDefined(ctx.predicateList()) => for {
+       shapeType <- visitShapeType(ctx.shapeType())
+       predicates <- visitPredicateList(ctx.predicateList())
+     } yield ShapePath.fromTypePredicates(shapeType, predicates)
+     case _ if isDefined(ctx.predicateList()) => for {
+       predicates <- visitList(visitPredicate, ctx.predicate())
+     } yield ShapePath.fromPredicates(predicates)
+     case _ => err(s"visitShapePathExpr: unknown ctx: ${ctx.getClass().getCanonicalName()}")
     }
 
   override def visitShapeType(ctx: ShapeTypeContext): Builder[ShapeNodeType] = ???
-  override def visitPredicate(ctx: PredicateContext): Builder[Predicate]     = ???
-
+  override def visitPredicate(ctx: PredicateContext): Builder[Predicate] = ???
+  
   /*{
     ctx match {
       case _ if isDefined(ctx.stepExpr()) => for {
@@ -79,7 +76,7 @@ class ShapePathMaker extends ShapePathDocBaseVisitor[Any] {
         } yield ShapePath(false,steps) */
       case _ => err(s"visitShapePathExpr: unknown ctx: $ctx")
     }
-  }
+  } 
 
   override def visitAbsolutePathExpr(ctx: AbsolutePathExprContext): Builder[List[Step]] =
     visitRelativePathExpr(ctx.relativePathExpr())
@@ -91,77 +88,77 @@ class ShapePathMaker extends ShapePathDocBaseVisitor[Any] {
   } */
 
   override def visitStepExpr(ctx: StepExprContext): Builder[Step] = ctx match {
-    case _ if isDefined(ctx.axisStep())    => visitAxisStep(ctx.axisStep())
+    case _ if isDefined(ctx.axisStep()) => visitAxisStep(ctx.axisStep())
     case _ if isDefined(ctx.postfixExpr()) => err(s"visitStepExpr: TODO postfixExpr: $ctx / ${ctx.getClass.getName}")
-    case _                                 => err(s"visitStepExpr: unknown context: $ctx / ${ctx.getClass.getName}")
+    case _ => err(s"visitStepExpr: unknown context: $ctx / ${ctx.getClass.getName}")
   }
 
   override def visitAxisStep(ctx: AxisStepContext): Builder[Step] = for {
-    step       <- visitForwardStep(ctx.forwardStep())
+    step <- visitForwardStep(ctx.forwardStep())
     predicates <- visitPredicateList(ctx.predicateList())
   } yield step.addPredicates(predicates)
-
+  
   override def visitForwardStep(ctx: ForwardStepContext): Builder[Step] = ctx match {
-    case _ if isDefined(ctx.KW_SLASH()) =>
-      for {
-        axis     <- visitOpt(visitForwardAxis, ctx.forwardAxis())
-        nodeTest <- visitNodeTest(ctx.nodeTest())
-      } yield Step.mkStep(axis, nodeTest)
-    case _ if isDefined(ctx.KW_AT()) =>
-      for {
-        nodeTest <- visitNodeTest(ctx.nodeTest())
-      } yield Step.mkStep(Some(NestedShapeExpr), nodeTest)
-
+    case _ if isDefined(ctx.KW_SLASH()) => for {
+      axis <- visitOpt(visitForwardAxis,ctx.forwardAxis())
+      nodeTest <- visitNodeTest(ctx.nodeTest())
+    } yield Step.mkStep(axis,nodeTest)
+    case _ if isDefined(ctx.KW_AT()) => for {
+      nodeTest <- visitNodeTest(ctx.nodeTest())
+    } yield Step.mkStep(Some(NestedShapeExpr),nodeTest)
+    
   }
 
   // TODO
-  override def visitPredicateList(ctx: PredicateListContext): Builder[List[Predicate]] =
-    ok(List())
+  override def visitPredicateList(ctx: PredicateListContext): Builder[List[Predicate]] = 
+   ok(List())
 
-  def visitForwardAxis(ctx: ForwardAxisContext): Builder[Axis] =
+  def visitForwardAxis(ctx: ForwardAxisContext): Builder[Axis] = 
     ctx match {
-      case _: ChildContext            => ok(Child)
-      case _: DescendantContext       => ok(Descendant)
-      case _: NestedShapeExprContext  => ok(NestedShapeExpr)
+      case _: ChildContext => ok(Child)
+      case _: DescendantContext => ok(Descendant)
+      case _: NestedShapeExprContext => ok(NestedShapeExpr)
       case _: NestedTripleExprContext => ok(NestedTripleExpr)
     }
 
-  override def visitNodeTest(ctx: NodeTestContext): Builder[NodeTest] =
+  override def visitNodeTest(ctx: NodeTestContext): Builder[NodeTest] = 
     ctx match {
       case _ if isDefined(ctx.kindTest()) => visitKindTest(ctx.kindTest())
       case _ if isDefined(ctx.nameTest()) => visitNameTest(ctx.nameTest())
-      case _                              => err(s"visitNodeTest: Unsupported ${ctx.getClass.getName}")
-    }
+      case _ => err(s"visitNodeTest: Unsupported ${ctx.getClass.getName}")
+    }  
 
-  override def visitNameTest(ctx: NameTestContext): Builder[NodeTest] =
+  
+  override def visitNameTest(ctx: NameTestContext): Builder[NodeTest] = 
     ctx match {
-      case _ if isDefined(ctx.eqName())   => visitEqName(ctx.eqName())
+      case _ if isDefined(ctx.eqName()) => visitEqName(ctx.eqName())
       case _ if isDefined(ctx.wildCard()) => visitWildCard(ctx.wildCard())
-      case _                              => err(s"visitKindTest: Unsupported ${ctx.getClass.getName}")
-    }
+      case _ => err(s"visitKindTest: Unsupported ${ctx.getClass.getName}")
+    }  
+    
 
-  override def visitKindTest(ctx: KindTestContext): Builder[NodeTest] =
+  override def visitKindTest(ctx: KindTestContext): Builder[NodeTest] = 
     ctx match {
-      case _ if isDefined(ctx.regExpTest())  => visitRegExpTest(ctx.regExpTest())
+      case _ if isDefined(ctx.regExpTest()) => visitRegExpTest(ctx.regExpTest())
       case _ if isDefined(ctx.anyKindTest()) => visitAnyKindTest(ctx.anyKindTest())
-      case _                                 => err(s"visitKindTest: Unsupported ${ctx.getClass.getName}")
-    }
+      case _ => err(s"visitKindTest: Unsupported ${ctx.getClass.getName}")
+    }  
 
   override def visitEqName(ctx: EqNameContext): Builder[NodeTest] = for {
     iri <- visitIri(ctx.iri())
   } yield EqName(iri)
 
-  override def visitWildCard(ctx: WildCardContext): Builder[NodeTest] =
-    ok(WildcardTest)
+  override def visitWildCard(ctx: WildCardContext): Builder[NodeTest] = 
+   ok(WildcardTest)
 
-  private def okStringLiteral(str: String): Builder[String] =
+  private def okStringLiteral(str:String): Builder[String] =
     ok(unescapeStringLiteral(str))
 
   private def stripStringLiteral1(s: String): String = {
     val regexStr = "\'(.*)\'".r
     s match {
       case regexStr(s) => s
-      case _           => throw new Exception(s"stripStringLiteral2 $s doesn't match regex")
+      case _ => throw new Exception(s"stripStringLiteral2 $s doesn't match regex")
     }
   }
 
@@ -169,9 +166,10 @@ class ShapePathMaker extends ShapePathDocBaseVisitor[Any] {
     val regexStr = "\"(.*)\"".r
     s match {
       case regexStr(s) => s
-      case _           => throw new Exception(s"stripStringLiteral2 $s doesn't match regex")
+      case _ => throw new Exception(s"stripStringLiteral2 $s doesn't match regex")
     }
   }
+
 
   override def visitRegExpTest(ctx: RegExpTestContext): Builder[NodeTest] = for {
     str <- visitStringLiteral(ctx.stringLiteral())
@@ -179,13 +177,13 @@ class ShapePathMaker extends ShapePathDocBaseVisitor[Any] {
 
   override def visitStringLiteral(ctx: StringLiteralContext): Builder[String] = ctx match {
     case _ if isDefined(ctx.STRING_LITERAL1()) => okStringLiteral(stripStringLiteral1(ctx.STRING_LITERAL1().getText()))
-    case _ if (isDefined(ctx.STRING_LITERAL2())) =>
-      okStringLiteral(stripStringLiteral2(ctx.STRING_LITERAL2().getText()))
+    case _ if (isDefined(ctx.STRING_LITERAL2())) => okStringLiteral(stripStringLiteral2(ctx.STRING_LITERAL2().getText()))
   }
 
-  override def visitAnyKindTest(ctx: AnyKindTestContext): Builder[NodeTest] =
+  override def visitAnyKindTest(ctx: AnyKindTestContext): Builder[NodeTest] = 
     ok(AnyKindTest)
-
+   
+  
   /*for {
    maybeCtx <- visitContextTest(ctx.contextTest())
    exprIndex <- visitExprIndex(ctx.exprIndex())
@@ -261,16 +259,15 @@ class ShapePathMaker extends ShapePathDocBaseVisitor[Any] {
   } */
 
   override def visitShapeExprLabel(ctx: ShapeExprLabelContext): Builder[ShapeLabel] = ctx match {
-    case _ if isDefined(ctx.iri()) =>
-      for {
-        iri <- visitIri(ctx.iri())
-      } yield {
-        IRILabel(iri)
-      }
-    case _ if isDefined(ctx.blankNodeLabel()) =>
-      for {
-        lbl <- visitBlankNodeLabel(ctx.blankNodeLabel())
-      } yield lbl
+    case _ if isDefined(ctx.iri()) => for {
+      iri <- visitIri(ctx.iri())
+    } yield {
+      IRILabel(iri)
+    }
+    case _ if isDefined(ctx.blankNodeLabel()) => for {
+      lbl <- visitBlankNodeLabel(ctx.blankNodeLabel())
+    } yield
+     lbl
     case _ => err(s"visitShapeExprLabel: unknown ctx $ctx")
   }
 
@@ -286,66 +283,59 @@ class ShapePathMaker extends ShapePathDocBaseVisitor[Any] {
     str.drop(2)
 
   def extractIRIfromIRIREF(d: String, base: Option[IRI]): Builder[IRI] = {
-    val str    = unescapeIRI(d)
+    val str = unescapeIRI(d)
     val iriRef = "^<(.*)>$".r
     str match {
-      case iriRef(i) =>
-        IRI
-          .fromString(i, base)
-          .fold(
-            str => err(str),
-            i => {
-              base match {
-                case None => ok(i)
-                case Some(b) => {
-                  if (b.uri.toASCIIString.startsWith("file:///")) {
-                    // For some reason, when resolving a file:///foo iri, the system returns file:/foo
-                    // The following code keeps the file:/// part
-                    ok(IRI(b.uri.resolve(i.uri).toASCIIString.replaceFirst("file:/", "file:///")))
-                  } else {
-                    ok(IRI(b.uri.resolve(i.uri)))
-                  }
-                }
+      case iriRef(i) => IRI.fromString(i,base).fold(
+        str => err(str),
+        i => {
+          base match {
+            case None => ok(i)
+            case Some(b) => {
+              if (b.uri.toASCIIString.startsWith("file:///")) {
+                // For some reason, when resolving a file:///foo iri, the system returns file:/foo
+                // The following code keeps the file:/// part
+                ok(IRI(b.uri.resolve(i.uri).toASCIIString.replaceFirst("file:/","file:///")))
+              } else {
+                ok(IRI(b.uri.resolve(i.uri)))
               }
             }
-          )
+          }
+        })
       case s => err(s"IRIREF: $s does not match <...>")
     }
   }
 
   override def visitTripleExprLabel(ctx: TripleExprLabelContext): Builder[(ShapeLabel, Option[Int])] = for {
-    maybeInt <-
-      if (isDefined(ctx.INTEGER())) {
-        for {
-          n <- getInteger(ctx.INTEGER().getText())
-        } yield Some(n)
-      } else ok(none[Int])
-    lbl <- ctx match {
-      case _ if isDefined(ctx.iri()) =>
-        for {
-          iri <- visitIri(ctx.iri())
-        } yield {
-          IRILabel(iri)
-        }
+   maybeInt <- if (isDefined(ctx.INTEGER())) {
+     for {
+       n <- getInteger(ctx.INTEGER().getText())
+     } yield Some(n)
+   } else ok(none[Int])
+   lbl <- ctx match {
+     case _ if isDefined(ctx.iri()) => for {
+       iri <- visitIri(ctx.iri())
+     } yield {
+       IRILabel(iri)
+     }
 
-      case _ if isDefined(ctx.blankNodeLabel()) =>
-        for {
-          lbl <- visitBlankNodeLabel(ctx.blankNodeLabel())
-        } yield lbl
-      case _ => err[ShapeLabel](s"visitTripleExprLabel: unknown ctx: $ctx")
-    }
+     case _ if isDefined(ctx.blankNodeLabel()) => for {
+       lbl <- visitBlankNodeLabel(ctx.blankNodeLabel())
+     } yield
+       lbl
+     case _ => err[ShapeLabel](s"visitTripleExprLabel: unknown ctx: $ctx")
+   }
   } yield (lbl, maybeInt)
 
   override def visitIri(ctx: IriContext): Builder[IRI] =
     if (isDefined(ctx.IRIREF())) for {
       base <- getBase
-      iri  <- extractIRIfromIRIREF(ctx.IRIREF().getText, base)
+      iri <- extractIRIfromIRIREF(ctx.IRIREF().getText, base)
     } yield iri
-    else
-      for {
-        prefixedName <- visitPrefixedName(ctx.prefixedName())
-        iri          <- resolve(prefixedName)
-      } yield iri
+    else for {
+      prefixedName <- visitPrefixedName(ctx.prefixedName())
+      iri <- resolve(prefixedName)
+    } yield iri
 
   def resolve(prefixedName: String): Builder[IRI] = {
     val (prefix, local) = splitPrefix(prefixedName)
@@ -355,8 +345,7 @@ class ShapePathMaker extends ShapePathDocBaseVisitor[Any] {
           err(s"Prefix $prefix not found in current prefix map $prefixMap")
         case Some(iri) =>
           ok(iri + local)
-      }
-    )
+      })
   }
 
   def splitPrefix(str: String): (String, String) = {
@@ -372,6 +361,7 @@ class ShapePathMaker extends ShapePathDocBaseVisitor[Any] {
     ok(ctx.getText())
   }
 
+
   // Some generic utils
 
   def getInteger(str: String): Builder[Int] = {
@@ -385,12 +375,16 @@ class ShapePathMaker extends ShapePathDocBaseVisitor[Any] {
 
   def isDefined[A](x: A): Boolean = x != null
 
-  def visitList[A, B](visitFn: A => Builder[B], ls: java.util.List[A]): Builder[List[B]] = {
+  def visitList[A, B](visitFn: A => Builder[B],
+                      ls: java.util.List[A]
+                     ): Builder[List[B]] = {
     val bs: List[Builder[B]] = ls.asScala.toList.map(visitFn(_))
     sequence(bs)
   }
 
-  def visitOpt[A, B](visitFn: A => Builder[B], v: A): Builder[Option[B]] =
+  def visitOpt[A, B](
+    visitFn: A => Builder[B],
+    v: A): Builder[Option[B]] =
     if (isDefined(v)) visitFn(v).map(Some(_))
     else ok(None)
 

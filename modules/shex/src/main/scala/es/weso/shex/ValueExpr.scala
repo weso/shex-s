@@ -42,7 +42,9 @@ object values {
   abstract sealed trait ValueExpr
 
   case class BinExpr(e1: ValueExpr, op: BinOp, e2: ValueExpr) extends ValueExpr
-  case class Var(name: VarName)                               extends ValueExpr
-  case class Const(node: RDFNode)                             extends ValueExpr
+  case class Var(name: VarName) extends ValueExpr
+  case class Const(node: RDFNode) extends ValueExpr
+
 
 }
+
