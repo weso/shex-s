@@ -7,7 +7,7 @@ package es.weso.utils
 // import scala.concurrent.ExecutionContext
 
 object FileUtilsIO {
-/*  def getContents(fileName: String): IO[CharSequence] = {
+  /*  def getContents(fileName: String): IO[CharSequence] = {
     val path = Paths.get(fileName)
     implicit val cs = IO.contextShift(ExecutionContext.global)
     val decoder: Pipe[IO,Byte,String] = fs2.text.utf8Decode
