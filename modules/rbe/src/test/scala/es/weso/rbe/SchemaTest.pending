@@ -25,7 +25,7 @@ class SchemaTest extends AnyFunSpec with Matchers with TryValues {
     val shape : SingleShape[DirectedEdge[String], String,String] =
       Shape.singleShape(rbe = Symbol((DirectEdge("a"),integer),1,1))
 
-    println(s"Shape = $shape")
+    // println(s"Shape = $shape")
     // S { :a int }
     val schema: Schema_ =
         Schema(

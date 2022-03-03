@@ -326,7 +326,7 @@ object CompactShow {
       case None => text("{ }")
       case Some(te) => text("{") :: newline :: tripleExprDoc(pm)(te) :: newline :: text("}") 
      }) ::
-    optDoc(s.actions, as => newline :: semActsDoc(pm)(as))
+    optDoc(s.actions, (as: List[SemAct]) => newline :: semActsDoc(pm)(as))
   }
 
   private def extends2doc(pm: PrefixMap)(ls: List[ShapeLabel]): Doc = 

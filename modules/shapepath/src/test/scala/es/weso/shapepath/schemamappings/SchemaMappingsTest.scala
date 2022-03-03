@@ -44,11 +44,11 @@ class SchemaMappingsTest extends CatsEffectSuite {
   val cmp: IO[(Schema,Schema)] = for {
     schema <- Schema.fromString(schemaStr)
     expected <- Schema.fromString(expectedStr)
-    _ <- IO { println(s"Schemas read...")}
+    // _ <- IO { println(s"Schemas read...")}
     mappings <- IO.fromEither(SchemaMappings.fromString(mappingsStr).leftMap(err => new RuntimeException(err.msg)))
-    _ <- IO { println(s"Mappings: ${mappings.toString}")}
+    // _ <- IO { println(s"Mappings: ${mappings.toString}")}
     converted <- IO.fromEither(mappings.convert(schema).leftMap(err => new RuntimeException(err.toString)).toEither)
-    _ <- IO { println(s"Converted: \n${converted}\n")}
+    // _ <- IO { println(s"Converted: \n${converted}\n")}
   } yield (converted,expected)
 
   cmp.attempt.unsafeRunSync().fold(

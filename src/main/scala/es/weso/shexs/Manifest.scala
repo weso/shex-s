@@ -29,7 +29,7 @@ case class Manifest(
     val assumeLocal: Option[(IRI,Path)] = Some((IRI("https://raw.githubusercontent.com/shexSpec/shexTest/master/"), Paths.get("src/test/resources/shexTest")))
     parseManifest(manifestFileName, parentPath, testsFolderPath.toString, testName, List(), timeout, assumeLocal, verbose).flatMap(results => 
     printResults(results) *>
-    ExitCode.Success.pure)
+    ExitCode.Success.pure[IO])
   }
 
 

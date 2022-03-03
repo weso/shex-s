@@ -35,10 +35,10 @@ lazy val pprintVersion           = "0.7.1"
 lazy val rdf4jVersion            = "3.4.2"
 lazy val scalaCollCompatVersion  = "2.6.0"
 lazy val scalacheckVersion       = "1.15.4"
-lazy val typesafeConfigVersion   = "1.4.1"
+lazy val typesafeConfigVersion   = "1.4.2"
 lazy val wikidataToolkitVersion  = "0.12.1"
 lazy val xercesVersion           = "2.12.1"
-lazy val slf4jVersion            = "1.7.3"
+lazy val slf4jVersion            = "1.7.36"
 
 // Dependency modules
 // lazy val antlr4            = "org.antlr"                  % "antlr4"               % antlrVersion
