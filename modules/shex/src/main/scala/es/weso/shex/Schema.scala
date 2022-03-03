@@ -168,7 +168,7 @@ object Schema {
 
  def fromIRI(i: IRI, base: Option[IRI], verbose: VerboseLevel, assumeLocal: Option[(IRI, FilePath)] = None): IO[Schema] = {
     val uri = i.uri
-    println(s"Schema.fromIRI. $assumeLocal")
+    // println(s"Schema.fromIRI. $assumeLocal")
     if (uri.getScheme == "file") {
         if (Files.exists(Paths.get(i.uri))) {
             val str = Source.fromURI(uri).mkString

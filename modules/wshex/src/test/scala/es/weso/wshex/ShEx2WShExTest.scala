@@ -1,5 +1,5 @@
 package es.weso.wshex
-import munit.*
+import munit._
 import io.circe.Json
 import es.weso.rdf.nodes.IRI
 import es.weso.rdf.PrefixMap

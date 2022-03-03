@@ -19,9 +19,7 @@ class ShapePathTestAccepted extends  AnyFunSpec with ShapePathTest with Matchers
     } yield ()
 
     val cmp = readJsonContents(manifestPath + "Manifest.json").use(either =>
-      either.fold(err => IO {
-        println(s"Error parsing manifest: \n$err")
-      }, json => runManifest(json))
+      either.fold(err => IO.println(s"Error parsing manifest: \n$err"), json => runManifest(json))
     )
     cmp.unsafeRunSync()
   }

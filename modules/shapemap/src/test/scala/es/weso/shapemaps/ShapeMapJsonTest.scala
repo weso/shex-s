@@ -31,11 +31,11 @@ class ShapeMapJsonTest extends FunSuite {
       val result = for {
         shapeMap <- ShapeMap.fromCompact(str, None, nodesPrefixMap, shapesPrefixMap)
         json = {
-          println(s"ShapeMap: $shapeMap")
+          // println(s"ShapeMap: $shapeMap")
           shapeMap.toJson
         }
         shapeMapFromJson <- {
-          println(s"Json: ${json.spaces2}")
+          // println(s"Json: ${json.spaces2}")
           ShapeMap.fromJson(json.spaces2)
         }
       } yield (json, shapeMapFromJson.toJson)
