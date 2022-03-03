@@ -135,8 +135,8 @@ class ShapeMapTest extends CatsEffectSuite {
         Parser.parse(str, Some(IRI("")), nodesPrefixMap, shapesPrefixMap) match {
           case Left(msg) => fail(s"Failed to parse $str: $msg")
           case Right(shapeMap) => {
-            println(s"$str parsed!!")
-            println(shapeMap)
+            // println(s"$str parsed!!")
+            // println(shapeMap)
             // info(s"Parsed $shapeMap")
             val sm: ShapeMap = shapeMap
             assertEquals(sm, expected)

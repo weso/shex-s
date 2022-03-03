@@ -431,11 +431,13 @@ trait ShExChecker {
   val iriActions = IRI("http://shex.io/actions/log")
 
   def addEvidence(nodeShape: NodeShape, msg: String): Check[ShapeTyping] = {
+    // println(s"adding evidence...$msg")
     val action = Action(iriActions,Some(s"Evidence added: $nodeShape: $msg"))
-    for {
-      t <- getTyping
-      _ <- addAction2Log(action)
-    } yield t.addEvidence(nodeShape.node, nodeShape.st, msg)
+    getTyping.flatMap(t => 
+    addAction2Log(action) *>
+    debug(s"Adding evidence ${nodeShape}: $msg") *>
+    ok(t.addEvidence(nodeShape.node, nodeShape.st, msg))
+    )
   }
 
   def addNotEvidence(nodeShape: NodeShape, e: ShExError, msg: String): Check[ShapeTyping] = {

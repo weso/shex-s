@@ -96,7 +96,7 @@ object ShapePath {
 
 
   private def debug(msg: String): Comp[Unit] = {
-    println(s"DEBUG: $msg")
+    // println(s"DEBUG: $msg")
     ().pure[Comp]
   }
 
@@ -311,7 +311,7 @@ object ShapePath {
                 current
     }
     case es: ExprStep => {
-      println(s"ExprStep: ${step.show}")
+      //println(s"ExprStep: ${step.show}")
       es.maybeType match {
         case None => for {
           currentValue <- current
@@ -340,7 +340,7 @@ object ShapePath {
   private def evaluateShapePath(p: ShapePath, s: Schema, v: Value): Comp[Value] = {
     val zero: Comp[Value] = if (p.startsWithRoot) {
       val v = Value(s.localShapes.map(ShapeExprItem(_)))
-      println(s"Starts with root\nValue = ${v.show}")
+      // println(s"Starts with root\nValue = ${v.show}")
       v.pure[Comp]
     } else v.pure[Comp]
 
@@ -375,7 +375,7 @@ object ShapePath {
     } yield oo.copy(expressions = os)
     case tc: TripleConstraint => newItem match {
       case IRIItem(iri) => {
-       println(s"replaceTripleExprLabel=${iri}, tc.predicate = ${tc.predicate}, newItem=${iri}") 
+       //println(s"replaceTripleExprLabel=${iri}, tc.predicate = ${tc.predicate}, newItem=${iri}") 
        if (tc.predicate == sourceIri) okr(tc.copy(predicate = iri))
        else okr(tc)
       }
@@ -419,7 +419,7 @@ object ShapePath {
          _ <- info(s"newShapeExpr: ${newShapeExpr}")
          newSchema <- updateLabel(s, newShapeExpr)
         } yield { 
-         println(s"ExprStep: ${lbl}...newSchema: ${newSchema}")
+         //println(s"ExprStep: ${lbl}...newSchema: ${newSchema}")
          newSchema 
         }
       }
