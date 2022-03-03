@@ -16,9 +16,9 @@ object ValueWriter {
     //    val jsonSerializer = new JsonSerializer(os)
     //    jsonSerializer.open()
     val str = entity2entityDocument(v) match {
-      case (id: ItemDocument,okShapes) => JsonSerializer.getJsonString(id) ++ printShapes(showShapes, okShapes)
+      case (id: ItemDocument, okShapes)     => JsonSerializer.getJsonString(id) ++ printShapes(showShapes, okShapes)
       case (pd: PropertyDocument, okShapes) => JsonSerializer.getJsonString(pd) ++ printShapes(showShapes, okShapes)
-      case _ => ""
+      case _                                => ""
     }
     str
     //    jsonSerializer.close()
@@ -41,7 +41,7 @@ object ValueWriter {
         cnvSiteLinks(i.siteLinks).asJava,
         0L
       )
-      (ed,i.okShapes)
+      (ed, i.okShapes)
     }
     case p: Property => {
       val pd = new PropertyDocumentImpl(
@@ -53,18 +53,17 @@ object ValueWriter {
         cnvDatatype(p.datatype),
         0L
       )
-      (pd,p.okShapes)
+      (pd, p.okShapes)
     }
   }
 
-  def cnvMultilingual(m: Map[Lang,String]): List[MonolingualTextValue] =
-    m.toList.map {
-      case (lang,text) =>
-        new MonolingualTextValueImpl(text, lang.code)
+  def cnvMultilingual(m: Map[Lang, String]): List[MonolingualTextValue] =
+    m.toList.map { case (lang, text) =>
+      new MonolingualTextValueImpl(text, lang.code)
     }
 
   def cnvItemId(id: ItemId): ItemIdValue =
-    new ItemIdValueImpl(id.id,id.iri.getLexicalForm)
+    new ItemIdValueImpl(id.id, id.iri.getLexicalForm)
 
   def cnvPropertyId(pd: PropertyId): PropertyIdValue =
     new PropertyIdValueImpl(pd.id, pd.iri.getLexicalForm)
