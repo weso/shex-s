@@ -25,56 +25,73 @@ class ValidationManifestTest extends CatsEffectSuite {
     None
 
   val conf: Config = ConfigFactory.load()
-  val shexFolder = conf.getString("validationFolder")
+  val shexFolder   = conf.getString("validationFolder")
 //  val shexFolder = conf.getString("shexLocalFolder")
   val shexFolderURI = Paths.get(shexFolder).normalize.toUri
 
   test("run all") {
 
-   val except: List[TestId] = 
-     List().map(TestId(_))
+    val except: List[TestId] =
+      List().map(TestId(_))
 
-   val cmp: IO[TestResults] = for {
-      manifest <- RDF2Manifest.read(Paths.get(shexFolder + "/" + "manifest.ttl"), "Turtle", Some(shexFolderURI.toString), false)
+    val cmp: IO[TestResults] = for {
+      manifest <- RDF2Manifest.read(
+        Paths.get(shexFolder + "/" + "manifest.ttl"),
+        "Turtle",
+        Some(shexFolderURI.toString),
+        false
+      )
       testSuite = manifest.toTestSuite(shexFolderURI, VerboseLevel.Nothing)
-      ioresults <- testSuite.runAll(
-        TestConfig.initial.copy(maxTimePerTest = 3.seconds), 
-        except
-      ).background.use(res => res.flatMap(_.fold(
-       IO.raiseError(new RuntimeException(s"Cancelled")),
-       IO.raiseError(_),
-       IO(_) 
-      )))
+      ioresults <- testSuite
+        .runAll(
+          TestConfig.initial.copy(maxTimePerTest = 3.seconds),
+          except
+        )
+        .background
+        .use(res =>
+          res.flatMap(
+            _.fold(
+              IO.raiseError(new RuntimeException(s"Cancelled")),
+              IO.raiseError(_),
+              IO(_)
+            )
+          )
+        )
       results <- ioresults
-      msg = s"""|After run all. ${testSuite.tests.length} total tests = ${results.passed.length} passed + ${results.failed.length} failed + ${results.skipped.length} skipped.
+      msg =
+        s"""|After run all. ${testSuite.tests.length} total tests = ${results.passed.length} passed + ${results.failed.length} failed + ${results.skipped.length} skipped.
                 |Failed:${results.failed.length}\n${showFailedResults(results)}
                 |Not Found in Except: ${results.notFound.map(_.id).mkString(",")}
                 |""".stripMargin
       _ <- writeFile("target/testResults.txt", msg)
       _ <- IO.println(s"After run all: ${results.passed.length}/${testSuite.tests.length}")
       _ <- IO.println(s"Failed: ${results.failed.length}\n${results.failed.map(_.show).mkString("\n")}")
-     } yield results
+    } yield results
 
     cmp.map(vs => {
       assertEquals(vs.failed, Vector[FailedResult]())
-     })
+    })
   }
 
-  def showFailedResults(results: TestResults): String = 
-   results.failed.map(_.entry.id.show).mkString(",\n")
+  def showFailedResults(results: TestResults): String =
+    results.failed.map(_.entry.id.show).mkString(",\n")
 
   test("single".only) {
     val cmp: IO[TestResult] = for {
-      manifest <- RDF2Manifest.read(Paths.get(shexFolder + "/" + "manifest.ttl"), "Turtle", Some(shexFolderURI.toString), false)
+      manifest <- RDF2Manifest.read(
+        Paths.get(shexFolder + "/" + "manifest.ttl"),
+        "Turtle",
+        Some(shexFolderURI.toString),
+        false
+      )
       testSuite = manifest.toTestSuite(shexFolderURI, VerboseLevel.Nothing)
-      _ <- IO.println(s"Tests: ${testSuite.tests.map(_.id).mkString("\n")}")
-      result <- testSuite.runSingle(TestId("node_kind_example"),TestConfig.initial)
-      _ <- IO.println(s"Result: ${result}")
+      _      <- IO.println(s"Tests: ${testSuite.tests.map(_.id).mkString("\n")}")
+      result <- testSuite.runSingle(TestId("node_kind_example"), TestConfig.initial)
+      _      <- IO.println(s"Result: ${result}")
     } yield result
     cmp.map(res => {
       assertEquals(res.passed, true)
-     }
-    )
+    })
   }
-  
+
 }

@@ -9,17 +9,17 @@ import es.weso.rdf._
 object eqShEx {
 
   implicit lazy val eqIRI: Eq[IRI] = new Eq[IRI] {
-    final def eqv(n1: IRI, n2: IRI): Boolean = 
-     n1.uri == n2.uri
+    final def eqv(n1: IRI, n2: IRI): Boolean =
+      n1.uri == n2.uri
   }
 
   implicit lazy val eqSchema: Eq[Schema] = new Eq[Schema] {
     final def eqv(s1: Schema, s2: Schema): Boolean = {
       s1.prefixes === s2.prefixes &&
-        s1.base === s2.base &&
-        s1.startActs === s2.startActs &&
-        s1.start === s2.start &&
-        s1.shapes === s2.shapes
+      s1.base === s2.base &&
+      s1.startActs === s2.startActs &&
+      s1.start === s2.start &&
+      s1.shapes === s2.shapes
     }
   }
 
@@ -31,19 +31,19 @@ object eqShEx {
 
   implicit lazy val eqMax: Eq[Max] = new Eq[Max] {
     final def eqv(a1: Max, a2: Max): Boolean = (a1, a2) match {
-      case (Star, Star) => true
+      case (Star, Star)           => true
       case (IntMax(m), IntMax(n)) => m === n
-      case (_, _) => false
+      case (_, _)                 => false
     }
   }
 
   // Equals comparison ignores locations
   implicit lazy val eqShapeLabel: Eq[ShapeLabel] = new Eq[ShapeLabel] {
     final def eqv(a1: ShapeLabel, a2: ShapeLabel): Boolean = (a1, a2) match {
-      case (IRILabel(b1), IRILabel(b2)) => b1 === b2  
+      case (IRILabel(b1), IRILabel(b2))     => b1 === b2
       case (BNodeLabel(b1), BNodeLabel(b2)) => b1 == b2
-      case (Start, Start) => true
-      case (_, _) => false
+      case (Start, Start)                   => true
+      case (_, _)                           => false
     }
   }
 
@@ -53,15 +53,15 @@ object eqShEx {
 
   implicit lazy val eqShapeExpr: Eq[ShapeExpr] = new Eq[ShapeExpr] {
     final def eqv(a1: ShapeExpr, a2: ShapeExpr): Boolean = (a1, a2) match {
-      case (ShapeOr(id1, ss1,_,_), ShapeOr(id2, ss2,_,_)) => id1 == id2 && ss1 === ss2
-      case (ShapeAnd(id1, ss1,_,_), ShapeAnd(id2, ss2,_,_)) => id1 == id2 && ss1 === ss2
-      case (ShapeNot(id1, s1,_,_), ShapeNot(id2, s2,_,_)) => id1 == id2 && s1 === s2
-      case (n1: NodeConstraint, n2: NodeConstraint) => n1 === n2
-      case (s1: Shape, s2: Shape) => s1 === s2
-      case (ShapeRef(i1,_,_), ShapeRef(i2,_,_)) => i1 === i2
-      case (ShapeExternal(id1,_,_), ShapeExternal(id2,_,_)) => id1 == id2
-      case (ShapeDecl(id1,se1), ShapeDecl(id2,se2)) => id1 == id2 && se1 == se2
-      case (_, _) => false
+      case (ShapeOr(id1, ss1, _, _), ShapeOr(id2, ss2, _, _))   => id1 == id2 && ss1 === ss2
+      case (ShapeAnd(id1, ss1, _, _), ShapeAnd(id2, ss2, _, _)) => id1 == id2 && ss1 === ss2
+      case (ShapeNot(id1, s1, _, _), ShapeNot(id2, s2, _, _))   => id1 == id2 && s1 === s2
+      case (n1: NodeConstraint, n2: NodeConstraint)             => n1 === n2
+      case (s1: Shape, s2: Shape)                               => s1 === s2
+      case (ShapeRef(i1, _, _), ShapeRef(i2, _, _))             => i1 === i2
+      case (ShapeExternal(id1, _, _), ShapeExternal(id2, _, _)) => id1 == id2
+      case (ShapeDecl(id1, se1), ShapeDecl(id2, se2))           => id1 == id2 && se1 == se2
+      case (_, _)                                               => false
     }
   }
 
@@ -81,11 +81,11 @@ object eqShEx {
 
   implicit lazy val eqTripleExpr: Eq[TripleExpr] = new Eq[TripleExpr] {
     final def eqv(s1: TripleExpr, s2: TripleExpr): Boolean = (s1, s2) match {
-      case (e1: EachOf, e2: EachOf) => e1 === e2
-      case (e1: OneOf, e2: OneOf) => e1 === e2
-      case (Inclusion(l1), Inclusion(l2)) => l1 === l2
+      case (e1: EachOf, e2: EachOf)                     => e1 === e2
+      case (e1: OneOf, e2: OneOf)                       => e1 === e2
+      case (Inclusion(l1), Inclusion(l2))               => l1 === l2
       case (t1: TripleConstraint, t2: TripleConstraint) => t1 === t2
-      case (_, _) => false
+      case (_, _)                                       => false
     }
   }
 
@@ -111,13 +111,13 @@ object eqShEx {
     final def eqv(s1: TripleConstraint, s2: TripleConstraint): Boolean = {
       // println(s"Comparing triple constraints $s1 and $s2")
       // println(s"Min/max (${s1.min}/${s1.max}) and (${s2.min}/${s2.max})")
-     s1.inverse === s2.inverse &&
-     s1.negated === s2.negated &&
-     s1.predicate === s2.predicate &&
-     s1.min === s2.min &&
-     s1.max === s2.max &&
-     s1.semActs === s2.semActs &&
-     s1.annotations === s2.annotations
+      s1.inverse === s2.inverse &&
+      s1.negated === s2.negated &&
+      s1.predicate === s2.predicate &&
+      s1.min === s2.min &&
+      s1.max === s2.max &&
+      s1.semActs === s2.semActs &&
+      s1.annotations === s2.annotations
     }
   }
 
@@ -129,11 +129,11 @@ object eqShEx {
 
   implicit lazy val eqNodeKind: Eq[NodeKind] = new Eq[NodeKind] {
     final def eqv(n1: NodeKind, n2: NodeKind): Boolean = (n1, n2) match {
-      case (IRIKind, IRIKind) => true
-      case (BNodeKind, BNodeKind) => true
+      case (IRIKind, IRIKind)               => true
+      case (BNodeKind, BNodeKind)           => true
       case (NonLiteralKind, NonLiteralKind) => true
-      case (LiteralKind, LiteralKind) => true
-      case (_, _) => false
+      case (LiteralKind, LiteralKind)       => true
+      case (_, _)                           => false
     }
   }
 
@@ -141,20 +141,20 @@ object eqShEx {
     final def eqv(n1: NodeConstraint, n2: NodeConstraint): Boolean = {
       // logger.info(s"Testing eq on nodeConstraints\n$n1\n$n2")
       n1.nodeKind === n2.nodeKind &&
-        n1.datatype === n2.datatype &&
-        n1.xsFacets.toSet === n2.xsFacets.toSet &&
-        n1.values.getOrElse(List()).toSet ===
+      n1.datatype === n2.datatype &&
+      n1.xsFacets.toSet === n2.xsFacets.toSet &&
+      n1.values.getOrElse(List()).toSet ===
         n2.values.getOrElse(List()).toSet
     }
   }
 
   implicit lazy val eqObjectLiteral: Eq[ObjectLiteral] = new Eq[ObjectLiteral] {
     final def eqv(n1: ObjectLiteral, n2: ObjectLiteral): Boolean = {
-      (n1,n2) match {
-        case (StringValue(s1),StringValue(s2)) => s1 === s2
-        case (DatatypeString(s1,i1),DatatypeString(s2,i2)) => s1 === s2 && i1 === i2
-        case (LangString(s1,l1),LangString(s2,l2)) => s1 == s2 && l1 == l2
-        case (_,_) => false
+      (n1, n2) match {
+        case (StringValue(s1), StringValue(s2))               => s1 === s2
+        case (DatatypeString(s1, i1), DatatypeString(s2, i2)) => s1 === s2 && i1 === i2
+        case (LangString(s1, l1), LangString(s2, l2))         => s1 == s2 && l1 == l2
+        case (_, _)                                           => false
       }
     }
   }
