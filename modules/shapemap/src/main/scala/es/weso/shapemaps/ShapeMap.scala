@@ -197,18 +197,15 @@ object ShapeMap {
     base: Option[IRI],
     rdf: RDFReader,
     shapesPrefixMap: PrefixMap = PrefixMap.empty): IO[ResultShapeMap] =
-     for {
-      rdfPrefixMap <- rdf.getPrefixMap
-      queryMap <- IO {
-       Parser.parse(str, base, rdfPrefixMap, shapesPrefixMap).fold(e =>
+    rdf.getPrefixMap.flatMap(rdfPrefixMap => 
+    IO(Parser.parse(str, base, rdfPrefixMap, shapesPrefixMap).fold(e =>
         throw new RuntimeException(s"Error parsing as ShapeMap str:$str\nError: $e"),
         identity
-       )
-     }
-    fixMap <- fixShapeMap(queryMap, rdf, rdfPrefixMap, shapesPrefixMap)
-  } yield {
-    ResultShapeMap(fixMap.shapeMap, rdfPrefixMap, shapesPrefixMap)
-  }
+       )).flatMap(queryMap => 
+    fixShapeMap(queryMap, rdf, rdfPrefixMap, shapesPrefixMap).map(fixedMap => 
+    ResultShapeMap(fixedMap.shapeMap, rdfPrefixMap, shapesPrefixMap)
+    )))
+
   /**
    * Resolve triple patterns according to an RDF
    */

@@ -757,4 +757,25 @@ object ShExError {
       )
   }
 
+case class NotImplemented(
+  node: RDFNode, 
+  message: String,
+  attempt: Attempt
+) extends ShExError(s"Checking node ${node.show}. Not implemented: $message") {
+    
+    override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
+      s"""|Not implemented: ${message}
+          |Node: ${nodesPrefixMap.qualify(node)}
+          |Attempt: ${attempt} 
+          |""".stripMargin
+    }
+
+    override def toJson: Json = Json.obj(
+       ("type", Json.fromString("NotImplemented")),
+       ("message", Json.fromString(msg)),
+       ("node", Json.fromString(node.getLexicalForm)),
+       ("attempt", attempt.asJson)
+      )
+  }
+
 }
