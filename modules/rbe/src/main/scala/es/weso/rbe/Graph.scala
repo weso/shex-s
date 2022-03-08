@@ -1,45 +1,38 @@
 package es.weso.rbe
 
-/**
- * Generic representation of graphs
- */
+/** Generic representation of graphs
+  */
 trait Graph[Edge, Node] {
 
   type Neighs_ = Seq[Neigh[Edge, Node]]
 
-  /**
-   * List of nodes
-   */
+  /** List of nodes
+    */
   def nodes: Seq[Node]
 
-  /**
-   * output edges and referenced nodes from a node
-   */
+  /** output edges and referenced nodes from a node
+    */
   def out: Node => Seq[(Edge, Node)]
 
-  /**
-   * input edges and referenced nodes from a node
-   */
+  /** input edges and referenced nodes from a node
+    */
   def in: Node => Seq[(Edge, Node)]
 
-  /**
-   * sequence of triples in a graph
-   */
+  /** sequence of triples in a graph
+    */
   def triples: Seq[(Node, Edge, Node)]
 
   def neighbours(node: Node): Neighs_ = {
     val outs: Neighs_ = out(node).map { case (edge, node) => Direct(edge, node) }
-    val ins: Neighs_ = in(node).map { case (edge, node) => Inverse(edge, node) }
+    val ins: Neighs_  = in(node).map { case (edge, node) => Inverse(edge, node) }
     outs ++ ins
   }
 
 }
 
-/**
- * Implementation of graph as a map
- */
-case class GraphMap[Edge, Node](
-  m: Map[Node, Seq[(Edge, Node)]]) extends Graph[Edge, Node] {
+/** Implementation of graph as a map
+  */
+case class GraphMap[Edge, Node](m: Map[Node, Seq[(Edge, Node)]]) extends Graph[Edge, Node] {
   def nodes = m.keys.toSeq
   def triples = {
     m.map { case (x, out) => out.map { case (e, o) => (x, e, o) } }.flatten.toSeq
@@ -67,6 +60,4 @@ case class GraphMap[Edge, Node](
   }
 }
 
-object Graph {
-
-}
+object Graph {}

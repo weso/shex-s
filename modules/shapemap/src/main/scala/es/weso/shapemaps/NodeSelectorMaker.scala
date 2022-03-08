@@ -10,32 +10,32 @@ import es.weso.shapemaps.parser.NodeSelectorParser.{StringContext => ShapeMapStr
 import es.weso.utils.FileUtils
 import scala.jdk.CollectionConverters._
 
-/**
- * Visits the AST and builds the corresponding ShapeMaps classes
- */
-class NodeSelectorMaker(
-  base: Option[String],
-  nodesPrefixMap: PrefixMap) extends NodeSelectorBaseVisitor[Any] {
+/** Visits the AST and builds the corresponding ShapeMaps classes
+  */
+class NodeSelectorMaker(base: Option[String], nodesPrefixMap: PrefixMap) extends NodeSelectorBaseVisitor[Any] {
 
   val baseIRI = IRI(base.getOrElse(FileUtils.currentFolderURL))
 
   override def visitNodeSelector(ctx: NodeSelectorContext): Builder[NodeSelector] = ctx match {
-    case _ if isDefined(ctx.objectTerm()) => for {
-      node <- visitObjectTerm(ctx.objectTerm())
-    } yield RDFNodeSelector(node)
+    case _ if isDefined(ctx.objectTerm()) =>
+      for {
+        node <- visitObjectTerm(ctx.objectTerm())
+      } yield RDFNodeSelector(node)
     case _ if isDefined(ctx.triplePattern()) => visitTriplePattern(ctx.triplePattern())
-    case _ if isDefined(ctx.extended()) => visitExtended(ctx.extended())
-    case _ => err(s"Internal error visitNodeSelector: unknown ctx $ctx")
+    case _ if isDefined(ctx.extended())      => visitExtended(ctx.extended())
+    case _                                   => err(s"Internal error visitNodeSelector: unknown ctx $ctx")
   }
 
   override def visitExtended(ctx: ExtendedContext): Builder[NodeSelector] = ctx match {
-    case _ if isDefined(ctx.KW_SPARQL) => for {
-      str <- visitString(ctx.string)
-    } yield SparqlSelector(str)
-    case _ if isDefined(ctx.nodeIri) => for {
-      iri <- visitNodeIri(ctx.nodeIri, nodesPrefixMap)
-      str <- visitString(ctx.string)
-    } yield GenericSelector(iri,str)
+    case _ if isDefined(ctx.KW_SPARQL) =>
+      for {
+        str <- visitString(ctx.string)
+      } yield SparqlSelector(str)
+    case _ if isDefined(ctx.nodeIri) =>
+      for {
+        iri <- visitNodeIri(ctx.nodeIri, nodesPrefixMap)
+        str <- visitString(ctx.string)
+      } yield GenericSelector(iri, str)
     case _ => err(s"Internal error visitExtended: unknoen ctx $ctx")
   }
 
@@ -44,34 +44,40 @@ class NodeSelectorMaker(
     str.substring(1,str.length - 1) */
 
   override def visitSubjectTerm(ctx: SubjectTermContext): Builder[RDFNode] = ctx match {
-    case _ if isDefined(ctx.nodeIri()) => for {
-      iri <- visitNodeIri(ctx.nodeIri(), nodesPrefixMap)
-    } yield iri
+    case _ if isDefined(ctx.nodeIri()) =>
+      for {
+        iri <- visitNodeIri(ctx.nodeIri(), nodesPrefixMap)
+      } yield iri
     case _ if isDefined(ctx.rdfType()) => ok(`rdf:type`)
   }
 
   override def visitObjectTerm(ctx: ObjectTermContext): Builder[RDFNode] = ctx match {
     case _ if isDefined(ctx.subjectTerm()) => visitSubjectTerm(ctx.subjectTerm())
-    case _ if isDefined(ctx.literal()) => for {
-      literal <- visitLiteral(ctx.literal())
-    } yield literal
+    case _ if isDefined(ctx.literal()) =>
+      for {
+        literal <- visitLiteral(ctx.literal())
+      } yield literal
   }
 
   def visitTriplePattern(ctx: TriplePatternContext): Builder[TriplePattern] = ctx match {
-    case s: FocusSubjectContext => for {
-      path <- visitPath(s.path())
-      objectPattern <- if (isDefined(s.objectTerm())) for {
-        obj <- visitObjectTerm(s.objectTerm())
-      } yield NodePattern(obj)
-      else ok(WildCard)
-    } yield TriplePattern(Focus, path, objectPattern)
-    case s: FocusObjectContext => for {
-      path <- visitPath(s.path())
-      subjectPattern <- if (isDefined(s.subjectTerm())) for {
-        subj <- visitSubjectTerm(s.subjectTerm())
-      } yield NodePattern(subj)
-      else ok(WildCard)
-    } yield TriplePattern(subjectPattern, path, Focus)
+    case s: FocusSubjectContext =>
+      for {
+        path <- visitPath(s.path())
+        objectPattern <-
+          if (isDefined(s.objectTerm())) for {
+            obj <- visitObjectTerm(s.objectTerm())
+          } yield NodePattern(obj)
+          else ok(WildCard)
+      } yield TriplePattern(Focus, path, objectPattern)
+    case s: FocusObjectContext =>
+      for {
+        path <- visitPath(s.path())
+        subjectPattern <-
+          if (isDefined(s.subjectTerm())) for {
+            subj <- visitSubjectTerm(s.subjectTerm())
+          } yield NodePattern(subj)
+          else ok(WildCard)
+      } yield TriplePattern(subjectPattern, path, Focus)
   }
 
   override def visitPath(ctx: PathContext): Builder[SHACLPath] =
@@ -81,19 +87,21 @@ class NodeSelectorMaker(
     for {
       alts <- {
         val r: List[Builder[SHACLPath]] = ctx.pathSequence().asScala.map(visitPathSequence(_)).toList
-        r.sequence[Builder,SHACLPath]
+        r.sequence[Builder, SHACLPath]
       }
-    } yield if (alts.length == 1) alts.head
-    else AlternativePath(alts)
+    } yield
+      if (alts.length == 1) alts.head
+      else AlternativePath(alts)
 
   override def visitPathSequence(ctx: PathSequenceContext): Builder[SHACLPath] =
     for {
       seqs <- {
         val r: List[Builder[SHACLPath]] = ctx.pathEltOrInverse().asScala.map(visitPathEltOrInverse(_)).toList
-        r.sequence[Builder,SHACLPath]
+        r.sequence[Builder, SHACLPath]
       }
-    } yield if (seqs.length == 1) seqs.head
-    else SequencePath(seqs)
+    } yield
+      if (seqs.length == 1) seqs.head
+      else SequencePath(seqs)
 
   override def visitPathEltOrInverse(ctx: PathEltOrInverseContext): Builder[SHACLPath] = for {
     pathElt <- visitPathElt(ctx.pathElt())
@@ -108,9 +116,9 @@ class NodeSelectorMaker(
   } yield {
     if (isDefined(ctx.pathMod())) {
       ctx.pathMod() match {
-        case _: StarContext => ZeroOrMorePath(pathPrimary)
+        case _: StarContext     => ZeroOrMorePath(pathPrimary)
         case _: OptionalContext => ZeroOrOnePath(pathPrimary)
-        case _: PlusContext => OneOrMorePath(pathPrimary)
+        case _: PlusContext     => OneOrMorePath(pathPrimary)
       }
     } else pathPrimary
   }
@@ -122,10 +130,10 @@ class NodeSelectorMaker(
 
   override def visitLiteral(ctx: LiteralContext): Builder[Literal] = {
     ctx match {
-      case _ if (isDefined(ctx.rdfLiteral)) => visitRdfLiteral(ctx.rdfLiteral())
+      case _ if (isDefined(ctx.rdfLiteral))     => visitRdfLiteral(ctx.rdfLiteral())
       case _ if (isDefined(ctx.numericLiteral)) => visitNumericLiteral(ctx.numericLiteral())
       case _ if (isDefined(ctx.booleanLiteral)) => visitBooleanLiteral(ctx.booleanLiteral())
-      case _ => err(s"Internal error visitLiteral: unknown ctx $ctx")
+      case _                                    => err(s"Internal error visitLiteral: unknown ctx $ctx")
     }
   }
   override def visitRdfLiteral(ctx: RdfLiteralContext): Builder[Literal] = {
@@ -135,7 +143,8 @@ class NodeSelectorMaker(
       // We get the langTag and remove the first character (@)
       val lang = Lang(ctx.LANGTAG().getText().substring(1))
       str.map(s => LangLiteral(s, lang))
-    } else */ if (isDefined(ctx.datatype)) {
+    } else */
+    if (isDefined(ctx.datatype)) {
       for {
         s <- str
         d <- visitDatatype(ctx.datatype(), nodesPrefixMap)
@@ -173,11 +182,11 @@ class NodeSelectorMaker(
   }
 
   def stripStringLiteral1(s: String): String = {
-    s.substring(1,s.length - 1)
+    s.substring(1, s.length - 1)
   }
 
   def stripStringLiteral2(s: String): String = {
-    s.substring(1,s.length - 1)
+    s.substring(1, s.length - 1)
   }
 
   def stripStringLiteralLong1(s: String): String = {
@@ -185,7 +194,7 @@ class NodeSelectorMaker(
   }
 
   def stripStringLiteralLong2(s: String): String = {
-    s.substring(3,s.length - 3)
+    s.substring(3, s.length - 3)
   }
 
   def visitDatatype(ctx: DatatypeContext, prefixMap: PrefixMap): Builder[IRI] = {
@@ -197,12 +206,13 @@ class NodeSelectorMaker(
   private def visitNodeIri(ctx: NodeIriContext, prefixMap: PrefixMap): Builder[IRI] =
     if (isDefined(ctx.IRIREF())) for {
       base <- getBase
-      iri <- extractIRIfromIRIREF(ctx.IRIREF().getText, base)
+      iri  <- extractIRIfromIRIREF(ctx.IRIREF().getText, base)
     } yield iri
-    else for {
-      prefixedName <- visitPrefixedName(ctx.prefixedName())
-      iri <- resolve(prefixedName, prefixMap)
-    } yield iri
+    else
+      for {
+        prefixedName <- visitPrefixedName(ctx.prefixedName())
+        iri          <- resolve(prefixedName, prefixMap)
+      } yield iri
 
   def resolve(prefixedName: String, prefixMap: PrefixMap): Builder[IRI] = {
     val (prefix, local) = splitPrefix(prefixedName)
@@ -242,7 +252,7 @@ class NodeSelectorMaker(
     val iriRef = "^<(.*)>$".r
     d match {
       case iriRef(i) => {
-        IRI.fromString(i,base)
+        IRI.fromString(i, base)
       }
       case s => err(s"IRIREF $s does not match <...>")
     }
@@ -284,15 +294,11 @@ class NodeSelectorMaker(
 
   def isDefined[A](x: A): Boolean = x != null
 
-  def visitList[A, B](
-    visitFn: A => Builder[B],
-    ls: java.util.List[A]): Builder[List[B]] = {
-    ls.asScala.toList.map(visitFn(_)).sequence[Builder,B]
+  def visitList[A, B](visitFn: A => Builder[B], ls: java.util.List[A]): Builder[List[B]] = {
+    ls.asScala.toList.map(visitFn(_)).sequence[Builder, B]
   }
 
-  def visitOpt[A, B](
-    visitFn: A => Builder[B],
-    v: A): Builder[Option[B]] =
+  def visitOpt[A, B](visitFn: A => Builder[B], v: A): Builder[Option[B]] =
     if (isDefined(v)) visitFn(v).map(Some(_))
     else ok(None)
 
