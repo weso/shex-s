@@ -187,111 +187,6 @@ object Utils {
    if (verboseLevel > InfoLevel) IO { pprint.log(value, tag = msg); () }
    else IO(())
 
-
-/* def validateFocusAction(fa: FocusAction,
-                          base: URI,
-                          v: ValidOrFailureTest,
-                          shouldValidate: Boolean,
-                          shexFolderURI: URI
-                         ): IO[Boolean] = {
-    val focus = fa.focus
-    val schemaUri = mkLocal(fa.schema,schemasBase,shexFolderURI)
-    val dataUri = mkLocal(fa.data,schemasBase,shexFolderURI)
-    for {
-      schemaStr <- derefUriIO(schemaUri)
-      dataStr <- derefUriIO(dataUri)
-      schema <- Schema.fromString(schemaStr, "SHEXC", Some(fa.schema))
-      ss   <- for {
-        res1 <- RDFAsJenaModel.fromChars(dataStr, "TURTLE", Some(fa.data))
-        res2 <- RDFAsJenaModel.empty  
-        vv <- (res1,res2).tupled.use{case (data,builder) =>
-        for {
-          dataPrefixMap <- data.getPrefixMap
-          resolvedSchema <- ResolvedSchema.resolve(schema, Some(fa.schema))
-          lbl = iriLabel(fa)
-          rr <- if (v.traits contains sht_Greedy) {
-            IO.println(s"Greedy") *> IO(true)
-          } else {
-            val shapeMap = FixedShapeMap(Map(focus -> Map(lbl -> Info())), dataPrefixMap, schema.prefixMap)
-            for {
-              result <- Validator(resolvedSchema, ExternalIRIResolver(fa.shapeExterns), builder)
-                .validateShapeMap(data, shapeMap)
-              resultShapeMap <- result.toResultShapeMap
-              r <- if (resultShapeMap.getConformantShapes(focus) contains lbl)
-                if (shouldValidate) 
-                 IO.println(s"Focus $focus conforms to $lbl as expected") *> IO(true)
-                else 
-                 IO.println(s"Focus $focus conforms to $lbl but should not" ++
-                  s"\nData: \n${dataStr}\nSchema: ${schemaStr}\n" ++
-                  s"${resultShapeMap.getInfo(focus, lbl)}\n" ++
-                  s"Schema: ${schema}\n" ++
-                  s"Data: ${data}") *>
-                 IO(false) 
-              else {
-                if (!shouldValidate) 
-                 IO.println(s"Focus $focus does not conform to $lbl as expected") *>
-                 IO(false)
-                else 
-                 IO.println(s"Focus $focus does not conform to $lbl but should" ++
-                  s"\nData: \n${dataStr}\nSchema: ${schemaStr}\n" ++
-                  s"${resultShapeMap.getInfo(focus, lbl)}\n" ++
-                  s"Schema: ${schema}\n" ++
-                  s"Data: ${data}") *>
-                 IO(false) 
-              }
-            } yield r
-           }
-          } yield rr}
-      } yield vv 
-    } yield ss
-  }
-
-  def validateMapResult(mr: MapResultAction,
-                        base: URI,
-                        v: ValidOrFailureTest,
-                        shexFolderURI: URI
-                       ): IO[Boolean] = {
-    v.maybeResult match {
-      case None => IO.println(s"No result specified") *> IO(false)
-      case Some(resultIRI) => {
-        val schemaUri         = mkLocal(mr.schema, validationBase, shexFolderURI)
-        val shapeMapUri       = mkLocal(mr.shapeMap, validationBase, shexFolderURI)
-        val resultMapUri      = mkLocal(resultIRI, validationBase, shexFolderURI)
-        val r: IO[Boolean] = for {
-          schemaStr      <- derefUriIO(schemaUri)
-          resultMapStr  <- derefUriIO(resultMapUri)
-          smapStr       <- derefUriIO(shapeMapUri)
-          sm            <- fromES(ShapeMap.fromJson(smapStr).leftMap(_.toList.mkString("\n")))
-          schema        <- Schema.fromString(schemaStr, "SHEXC", None)
-          fixedShapeMap <- RDFAsJenaModel.empty.flatMap(_.use(emptyRdf =>
-            ShapeMap.fixShapeMap(sm, emptyRdf, PrefixMap.empty, PrefixMap.empty)
-          ))
-          dataUri = mkLocal(mr.data,schemasBase,shexFolderURI)
-          strData        <- derefUriIO(dataUri)
-          r           <- for {
-            res1 <- RDFAsJenaModel.fromChars(strData, "TURTLE", None)
-            res2 <- RDFAsJenaModel.empty
-            vv <- (res1, res2).tupled.use{ case (data,builder) =>
-           for {
-             resolvedSchema <- ResolvedSchema.resolve(schema, None)
-             resultVal <- Validator(schema = resolvedSchema, builder = builder).validateShapeMap(data, fixedShapeMap)
-             resultShapeMap <- resultVal.toResultShapeMap
-             jsonResult     <- fromES(JsonResult.fromJsonString(resultMapStr))
-             result <- if (jsonResult.compare(resultShapeMap))
-               IO.println(s"Json results match resultShapeMap") *>
-               IO(true)
-             else
-               IO.println(s"Json results are different. Expected: ${jsonResult.asJson.spaces2}\nObtained: ${resultShapeMap.toString}") *>
-               IO(false)
-           } yield result
-        }
-          } yield vv 
-        } yield r
-        r
-      }
-    }
- } */
-
   def validateMapResult(
       mr: MapResultAction,
       base: URI,
@@ -301,13 +196,12 @@ object Utils {
       verbose: VerboseLevel
   ): IO[Option[Result]] = {
     v.maybeResult match {
-      case None => IO(None) // fail(s"No result specified")
+      case None => IO(None) 
       case Some(resultIRI) => {
         val schemaUri    = mkLocal(mr.schema, validationBase, folderURI)
         val shapeMapUri  = mkLocal(mr.shapeMap, validationBase, folderURI)
         val resultMapUri = mkLocal(resultIRI, validationBase, folderURI)
         val r: IO[Option[Result]] = RDFAsJenaModel.empty.flatMap(_.use(emptyRdf =>
-
         for {
           _             <- testInfo(s"Validating mapResult: $name", verbose)
           schemaStr     <- derefUriIO(schemaUri)
@@ -332,14 +226,19 @@ object Utils {
            for {
              resultVal <- Validator(schema = resolvedSchema, builder = builder).validateShapeMap(data, fixedShapeMap, verbose)
              resultShapeMap <- resultVal.toResultShapeMap
-
-             _             <- testInfo(s"ResultShapeMap:\n$resultShapeMap", verbose)
+            _             <- testInfo(s"ResultShapeMap obtained:$resultShapeMap", verbose)
              _             <- testInfo(s"Expected:\n$resultMapStr", verbose)
-
              jsonResult     <- fromES(JsonResult.fromJsonString(resultMapStr))
+             _             <- testInfo(s"jsonResult expected:\n$jsonResult", verbose)
+             _             <- testInfo(s"@@@Before comparison!!!!!", verbose)
              r <- if (jsonResult.compare(resultShapeMap))
-                    result(name, true, JsonResultsMatch(jsonResult))
+                    testInfo(s"Shape maps are equivalent...", verbose) *> (
+                    result(name, true, JsonResultsMatch(jsonResult)).flatMap(v => 
+                    testInfo(s"Value converted: $v", verbose) *>  
+                    ok(v))
+                    )
                   else
+                    testInfo(s"Shape maps are different...", verbose) *>
                     result(name,false, JsonResultsDifferent(resultShapeMap, jsonResult))
            } yield r }
           } yield vv 

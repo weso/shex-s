@@ -12,9 +12,7 @@ import es.weso.utils.VerboseLevel
 
 class ValidationManifestTest extends CatsEffectSuite {
 
-  test("tests can return IO[Unit] with assertions expressed via a map") {
-    IO(42).map(it => assertEquals(it, 42))
-  }
+  val timeoutByTest = 10.seconds
 
   override def munitTimeout: Duration = 5.minutes
 
@@ -38,7 +36,7 @@ class ValidationManifestTest extends CatsEffectSuite {
       manifest <- RDF2Manifest.read(Paths.get(shexFolder + "/" + "manifest.ttl"), "Turtle", Some(shexFolderURI.toString), false)
       testSuite = manifest.toTestSuite(shexFolderURI, VerboseLevel.Nothing)
       ioresults <- testSuite.runAll(
-        TestConfig.initial.copy(maxTimePerTest = 3.seconds), 
+        TestConfig.initial.copy(maxTimePerTest = timeoutByTest), 
         except
       ).background.use(res => res.flatMap(_.fold(
        IO.raiseError(new RuntimeException(s"Cancelled")),
@@ -63,13 +61,11 @@ class ValidationManifestTest extends CatsEffectSuite {
   def showFailedResults(results: TestResults): String = 
    results.failed.map(_.entry.id.show).mkString(",\n")
 
-  test("single".only) {
+  test("single") {
     val cmp: IO[TestResult] = for {
       manifest <- RDF2Manifest.read(Paths.get(shexFolder + "/" + "manifest.ttl"), "Turtle", Some(shexFolderURI.toString), false)
-      testSuite = manifest.toTestSuite(shexFolderURI, VerboseLevel.Nothing)
-      _ <- IO.println(s"Tests: ${testSuite.tests.map(_.id).mkString("\n")}")
-      result <- testSuite.runSingle(TestId("node_kind_example"),TestConfig.initial)
-      _ <- IO.println(s"Result: ${result}")
+      testSuite = manifest.toTestSuite(shexFolderURI, VerboseLevel.Debug)
+      result <- testSuite.runSingle(TestId("vitals-RESTRICTS-fail_sit-ReclinedVital"), TestConfig(timeoutByTest, true))
     } yield result
     cmp.map(res => {
       assertEquals(res.passed, true)
