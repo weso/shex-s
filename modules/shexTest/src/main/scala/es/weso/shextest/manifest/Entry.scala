@@ -120,7 +120,8 @@ case class Validate(override val node: RDFNode,
               validateMapResult(mr,base,this,name,uri, verbose).map(
                maybeR => maybeR match {
                  case None => FailedResult(id,Some("No result"),None,None)
-                 case Some(res) => if (res.isOk == shouldPass) {
+                 case Some(res) => if (res.isOk) {
+                  // TODO: We are ignoring shouldPass value because it doesn't take into account the result maps 
                   PassedResult(id,msg = Some(res.reason.toString)) 
                  } else {
                   FailedResult(id, msg = Some(res.reason.toString))
