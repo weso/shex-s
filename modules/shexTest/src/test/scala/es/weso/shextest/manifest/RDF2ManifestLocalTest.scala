@@ -12,7 +12,9 @@ import java.nio.file._
 class RDF2ManifestLocalTest extends FunSuite {
 
   val conf: Config = ConfigFactory.load()
-  val assumeLocal: Option[(IRI,Path)] = Some((IRI("https://raw.githubusercontent.com/shexSpec/shexTest/master/"), Paths.get("src/test/resources/shexTest")))
+  val assumeLocal: Option[(IRI, Path)] = Some(
+    (IRI("https://raw.githubusercontent.com/shexSpec/shexTest/master/"), Paths.get("src/test/resources/shexTest"))
+  )
 
   /*  describe("RDF2Manifest inheritance") {
     val localFolder = conf.getString("localTestsFolder")
