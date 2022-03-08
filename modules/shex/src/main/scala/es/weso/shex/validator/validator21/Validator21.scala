@@ -181,7 +181,7 @@ case class Validator21(schema: ResolvedSchema,
        case s: Shape => checkShape(node, s, ext, visited, attempt)
        case sr: ShapeRef => checkRef(node, sr.reference, ext, visited, withDescendants, attempt)
        case se: ShapeExternal => checkExternal(node, se, ext, visited, withDescendants, attempt)
-       case sd: ShapeDecl => err(NotImplemented(node, s"Not implemented abstract shapes in ShEx 2.1. ${showSE(sd)}", attempt))
+       case sd: ShapeDecl => err[ShapeTyping](NotImplemented(node, s"Not implemented abstract shapes in ShEx 2.1. ${showSE(sd)}", attempt))
      }
    ).flatMap(typing => 
     infoTyping(typing, s"end of satisfies(${node.show},${showSE(s)})", schema.prefixMap) *>
