@@ -3,10 +3,10 @@ import es.weso.shapepath._
 
 sealed abstract class ProcessingError
 case class UnmatchItemContextLabel(
-    item: ShapeNode,
-    step: Step,
-    typeLabel: ContextType
-) extends ProcessingError {
+  item: ShapeNode, 
+  step: Step, 
+  typeLabel: ContextType
+  ) extends ProcessingError {
   override def toString = s"""|Processing error: 
                               |Item: ${item.toString}
                               |Step: ${step.toString}

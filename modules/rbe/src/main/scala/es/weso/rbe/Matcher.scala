@@ -4,26 +4,27 @@ import es.weso.checking._
 import cats._
 import implicits._
 
-case class MatcherLog[Edge, Node, Label, Evidence](messages: List[(Attempt[Node, Label], String)])
+case class MatcherLog[Edge, Node, Label, Evidence](
+  messages: List[(Attempt[Node, Label], String)])
 
 case class Attempt[Node, Label](node: Node, label: Label)
 
 trait Matcher[Edge, Node, Label, Evidence] extends CheckerCats {
-  type Log         = MatcherLog[Edge, Node, Label, Evidence]
-  type Attempt_    = Attempt[Node, Label]
-  type LogMessage  = (Attempt_, String)
-  type Schema_     = Schema[Edge, Node, Label, Err, Evidence]
-  type Graph_      = Graph[Edge, Node]
-  type Config      = (Schema_, Graph_)
-  type Typing_     = Typing[Node, Label, Err, Evidence]
-  type Env         = Typing_
+  type Log = MatcherLog[Edge, Node, Label, Evidence]
+  type Attempt_ = Attempt[Node, Label]
+  type LogMessage = (Attempt_, String)
+  type Schema_ = Schema[Edge, Node, Label, Err, Evidence]
+  type Graph_ = Graph[Edge, Node]
+  type Config = (Schema_, Graph_)
+  type Typing_ = Typing[Node, Label, Err, Evidence]
+  type Env = Typing_
   type CheckTyping = Check[Typing_]
-  type Triples_    = Set[(Node, Edge, Node)]
-  type CheckInfo   = Triples_
+  type Triples_ = Set[(Node, Edge, Node)]
+  type CheckInfo = Triples_
 
   implicit val envMonoid: Monoid[Env] = new Monoid[Env] {
     def combine(e1: Env, e2: Env): Env = e1.combineTyping(e2)
-    def empty: Env                     = Typing.empty
+    def empty: Env = Typing.empty
   }
 
   implicit val logMonoid: Monoid[Log] = new Monoid[Log] {
@@ -41,7 +42,9 @@ trait Matcher[Edge, Node, Label, Evidence] extends CheckerCats {
     def show(t: Env): String = t.toString
   }
 
-  def matchNodeLabel(node: Node, label: Label): Check[Typing[Node, Label, Err, Evidence]]
+  def matchNodeLabel(
+    node: Node,
+    label: Label): Check[Typing[Node, Label, Err, Evidence]]
 
   def getTyping: Check[Typing[Node, Label, Err, Evidence]] = getEnv
 

@@ -8,43 +8,41 @@ import es.weso.shex.{Shape, ShapeExpr, ShapeLabel, TripleExpr}
 import es.weso.rdf.nodes.IRI
 
 sealed abstract class ShapeNodeType extends Product with Serializable
-case object TripleExprType          extends ShapeNodeType
-case object ShapeExprType           extends ShapeNodeType
-case object IRIType                 extends ShapeNodeType
+case object TripleExprType extends ShapeNodeType
+case object ShapeExprType extends ShapeNodeType
+case object IRIType extends ShapeNodeType
 
 sealed abstract class ShapeNode {
-  def hasLabel(lbl: ShapeLabel): Boolean
+  def hasLabel(lbl: ShapeLabel):Boolean
   def getTripleExprByLabel(lbl: ShapeLabel, n: Option[Int]): Option[TripleExpr]
   def _type: ShapeNodeType
 
   def evalChild(nt: NodeTest): Option[ShapeNode] = nt match {
     case EqName(iri) => throw new RuntimeException(s"evalChild($nt) for ${this}: not implemented")
-    case _           => throw new RuntimeException(s"evalChild($nt) for ${this}: not implemented")
+    case _ => throw new RuntimeException(s"evalChild($nt) for ${this}: not implemented")
   }
 
   def evalNestedShapeExpr(nt: NodeTest): Option[ShapeNode] = nt match {
     case EqName(iri) => throw new RuntimeException(s"evalNestedShapeExpr($nt) for ${this}: not implemented")
-    case _           => throw new RuntimeException(s"evalNestedShapeExpr($nt) for ${this}: not implemented")
+    case _ => throw new RuntimeException(s"evalNestedShapeExpr($nt) for ${this}: not implemented")
   }
 
 }
 // case class SchemaItem(s: Schema) extends Item
 case class ShapeExprItem(se: ShapeExpr) extends ShapeNode {
   override def hasLabel(otherLabel: ShapeLabel): Boolean = se.id match {
-    case None      => false
+    case None => false
     case Some(lbl) => lbl == otherLabel
   }
 
   override def getTripleExprByLabel(lbl: ShapeLabel, n: Option[Int]): Option[TripleExpr] = se match {
-    case s: Shape =>
-      s.expression match {
-        case Some(te) =>
-          te.id match {
-            case Some(teLbl) if te == teLbl => Some(te)
-            case _                          => None
-          }
-        case None => None
+    case s: Shape => s.expression match {
+      case Some(te) => te.id match {
+        case Some(teLbl) if te == teLbl => Some(te)
+        case _ => None
       }
+      case None => None
+    }
     case _ => None
   }
 
@@ -54,7 +52,7 @@ case class ShapeExprItem(se: ShapeExpr) extends ShapeNode {
 
 case class TripleExprItem(te: TripleExpr) extends ShapeNode {
   override def hasLabel(otherLabel: ShapeLabel): Boolean = te.id match {
-    case None      => false
+    case None => false
     case Some(lbl) => lbl == otherLabel
   }
 
@@ -77,9 +75,9 @@ object ShapeNode {
 
   implicit lazy val itemShow: Show[ShapeNode] = new Show[ShapeNode] {
     final def show(s: ShapeNode): String = s match {
-      case ShapeExprItem(se)  => se.show
+      case ShapeExprItem(se) => se.show
       case TripleExprItem(te) => te.show
-      case IRIItem(iri)       => iri.show
+      case IRIItem(iri) => iri.show
     }
   }
 
