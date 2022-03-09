@@ -226,19 +226,13 @@ object Utils {
            for {
              resultVal <- Validator(schema = resolvedSchema, builder = builder).validateShapeMap(data, fixedShapeMap, verbose)
              resultShapeMap <- resultVal.toResultShapeMap
-            _             <- testInfo(s"ResultShapeMap obtained:$resultShapeMap", verbose)
+             _             <- testInfo(s"ResultShapeMap obtained:$resultShapeMap", verbose)
              _             <- testInfo(s"Expected:\n$resultMapStr", verbose)
              jsonResult     <- fromES(JsonResult.fromJsonString(resultMapStr))
              _             <- testInfo(s"jsonResult expected:\n$jsonResult", verbose)
-             _             <- testInfo(s"@@@Before comparison!!!!!", verbose)
              r <- if (jsonResult.compare(resultShapeMap))
-                    testInfo(s"Shape maps are equivalent...", verbose) *> (
-                    result(name, true, JsonResultsMatch(jsonResult)).flatMap(v => 
-                    testInfo(s"Value converted: $v", verbose) *>  
-                    ok(v))
-                    )
+                    result(name, true, JsonResultsMatch(jsonResult))
                   else
-                    testInfo(s"Shape maps are different...", verbose) *>
                     result(name,false, JsonResultsDifferent(resultShapeMap, jsonResult))
            } yield r }
           } yield vv 
