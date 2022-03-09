@@ -2,27 +2,21 @@ package es.weso.rbe.interval
 
 import cats._
 // import org.scalactic._
-import scala.math.{ max => intMax }
-import scala.math.{ min => intMin }
+import scala.math.{max => intMax}
+import scala.math.{min => intMin}
 import io.circe._
 import io.circe.syntax._
 
-
-/**
- * Represents a limit of an [[Interval interval]].
- * It can be either an Int or an Unbounded value
- */
+/** Represents a limit of an [[Interval interval]]. It can be either an Int or an Unbounded value
+  */
 sealed abstract trait IntOrUnbounded extends Product with Serializable {
 
-  /**
-   * `true` if this value is Unbounded
-   */
+  /** `true` if this value is Unbounded
+    */
   def isUnbounded: Boolean
 
-  /**
-   * Add another IntOrUnbounded to this value
-   *
-   */
+  /** Add another IntOrUnbounded to this value
+    */
   def +(other: => IntOrUnbounded): IntOrUnbounded
 
   def minusOne: IntOrUnbounded
@@ -34,26 +28,28 @@ sealed abstract trait IntOrUnbounded extends Product with Serializable {
   def max(other: => IntOrUnbounded): IntOrUnbounded = {
     this match {
       case Unbounded => Unbounded
-      case IntLimit(v1) => other match {
-        case Unbounded => Unbounded
-        case IntLimit(v2) => IntLimit(intMax(v1, v2))
-      }
+      case IntLimit(v1) =>
+        other match {
+          case Unbounded    => Unbounded
+          case IntLimit(v2) => IntLimit(intMax(v1, v2))
+        }
     }
   }
 
   def min(other: => IntOrUnbounded): IntOrUnbounded = {
     this match {
       case Unbounded => other
-      case IntLimit(v1) => other match {
-        case Unbounded => this
-        case IntLimit(v2) => IntLimit(intMin(v1, v2))
-      }
+      case IntLimit(v1) =>
+        other match {
+          case Unbounded    => this
+          case IntLimit(v2) => IntLimit(intMin(v1, v2))
+        }
     }
   }
 
   def show: String = {
     this match {
-      case Unbounded => "-"
+      case Unbounded   => "-"
       case IntLimit(v) => v.toString
     }
   }
@@ -66,27 +62,26 @@ sealed abstract trait IntOrUnbounded extends Product with Serializable {
 
   def >(other: IntOrUnbounded): Boolean = {
     (this, other) match {
-      case (Unbounded, Unbounded) => false
-      case (Unbounded, IntLimit(_)) => true
-      case (IntLimit(_), Unbounded) => false
+      case (Unbounded, Unbounded)     => false
+      case (Unbounded, IntLimit(_))   => true
+      case (IntLimit(_), Unbounded)   => false
       case (IntLimit(n), IntLimit(m)) => n > m
     }
   }
 
   def >=(x: Int): Boolean = {
     this match {
-      case Unbounded => true
+      case Unbounded   => true
       case IntLimit(m) => m >= x
     }
   }
 
   def <=(x: Int): Boolean = {
     this match {
-      case Unbounded => false
+      case Unbounded   => false
       case IntLimit(m) => m <= x
     }
   }
-
 
 }
 
@@ -103,20 +98,19 @@ case object Unbounded extends IntOrUnbounded {
 
 }
 
-/**
- * Positive integers
- */
-case class IntLimit(m: Int) extends IntOrUnbounded  {
+/** Positive integers
+  */
+case class IntLimit(m: Int) extends IntOrUnbounded {
 
   // Commented because it raises null pointer exception when testing
   // require(m >= 0)
-  // 
+  //
 
   def isUnbounded = false
 
   def +(other: => IntOrUnbounded): IntOrUnbounded =
     other.getLimit match {
-      case None => Unbounded
+      case None    => Unbounded
       case Some(n) => IntLimit(m + n)
     }
 
@@ -132,7 +126,7 @@ object IntOrUnbounded {
 
   def apply(o: Option[Int]): IntOrUnbounded = {
     o match {
-      case None => Unbounded
+      case None    => Unbounded
       case Some(n) => IntLimit(n)
     }
   }
@@ -150,8 +144,8 @@ object IntOrUnbounded {
   def divIntLimitDown(x: Int, y: IntOrUnbounded): IntOrUnbounded = {
     (x, y) match {
       case (0, IntLimit(0)) => Unbounded // This is to include 0-up cardinalities. Verify if this right
-      case (0, _) => _0
-      case (_, Unbounded) => _1
+      case (0, _)           => _0
+      case (_, Unbounded)   => _1
       case (_, IntLimit(0)) => Unbounded
       case (_, IntLimit(m)) => divIntDown(x, m)
     }
@@ -159,8 +153,8 @@ object IntOrUnbounded {
 
   def divIntLimitUp(x: Int, y: IntOrUnbounded): IntOrUnbounded = {
     (x, y) match {
-      case (0, _) => _0
-      case (_, Unbounded) => _1
+      case (0, _)           => _0
+      case (_, Unbounded)   => _1
       case (_, IntLimit(0)) => Unbounded
       case (_, IntLimit(m)) => divIntUp(x, m)
     }
@@ -172,9 +166,8 @@ object IntOrUnbounded {
   implicit val encodeIntOrUnbounded: Encoder[IntOrUnbounded] = new Encoder[IntOrUnbounded] {
     final def apply(v: IntOrUnbounded): Json = v match {
       case IntLimit(m) => m.asJson
-      case Unbounded => "*".asJson
+      case Unbounded   => "*".asJson
     }
   }
 
 }
-

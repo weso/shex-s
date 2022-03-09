@@ -7,7 +7,7 @@ import munit.CatsEffectSuite
 
 class ResultShapeMapTest extends CatsEffectSuite {
 
-/*  describe("ResultShapeMaps") {
+  /*  describe("ResultShapeMaps") {
     val rdfStr =
       """prefix : <http://example.org/>
         |:a :b :c .
@@ -42,29 +42,34 @@ class ResultShapeMapTest extends CatsEffectSuite {
         })
     }
   }
-*/
+   */
   test(s"Should parse result shape map") {
-      val rdfStr =
-        """|prefix : <http://example.org/>
+    val rdfStr =
+      """|prefix : <http://example.org/>
           |:x :p 1 .
         """.stripMargin
 
-      val r = RDFAsJenaModel.fromChars(rdfStr,"TURTLE",None).flatMap(_.use(
-        rdf => for {
-        pm <- rdf.getPrefixMap
-        resultMap <- ShapeMap.parseResultMap(":x@!:S", None, rdf, pm)
-      } yield (resultMap,pm)))
+    val r = RDFAsJenaModel
+      .fromChars(rdfStr, "TURTLE", None)
+      .flatMap(
+        _.use(rdf =>
+          for {
+            pm        <- rdf.getPrefixMap
+            resultMap <- ShapeMap.parseResultMap(":x@!:S", None, rdf, pm)
+          } yield (resultMap, pm)
+        )
+      )
 
-      val x = IRI("http://example.org/x")
-      val s = IRILabel(IRI("http://example.org/S"))
-      r.map(pair => {
-        val (rm,pm) = pair
-        val result: ResultShapeMap = ResultShapeMap(Map(x -> Map(s -> Info(NonConformant, None, None))), pm, pm)
-        assertEquals(rm,result)
-      })
+    val x = IRI("http://example.org/x")
+    val s = IRILabel(IRI("http://example.org/S"))
+    r.map(pair => {
+      val (rm, pm)               = pair
+      val result: ResultShapeMap = ResultShapeMap(Map(x -> Map(s -> Info(NonConformant, None, None))), pm, pm)
+      assertEquals(rm, result)
+    })
   }
 
-/*  describe(s"Get conformant shapes") {
+  /*  describe(s"Get conformant shapes") {
     val pm = PrefixMap.empty.addPrefix("",IRI("http://example.org/"))
     val x: RDFNode = IRI("http://example.org/x")
     val y: RDFNode = IRI("http://example.org/y")
@@ -109,11 +114,11 @@ class ResultShapeMapTest extends CatsEffectSuite {
   } */
 
   test(s"Should show resultShapeMap with details") {
-      val ex = IRI("http://example.org/")
-      val x = ex + "x"
-      val s = IRILabel(ex+"S")
-      val info = Info(status = Conformant, reason = Some("Reason"))
-      val result = ResultShapeMap(Map(x -> Map(s -> info)), PrefixMap.empty, PrefixMap.empty) 
-      assertEquals(result.serialize("details"), Right("<http://example.org/x>@<http://example.org/S>\n   # Reason")) 
+    val ex     = IRI("http://example.org/")
+    val x      = ex + "x"
+    val s      = IRILabel(ex + "S")
+    val info   = Info(status = Conformant, reason = Some("Reason"))
+    val result = ResultShapeMap(Map(x -> Map(s -> info)), PrefixMap.empty, PrefixMap.empty)
+    assertEquals(result.serialize("details"), Right("<http://example.org/x>@<http://example.org/S>\n   # Reason"))
   }
 }
