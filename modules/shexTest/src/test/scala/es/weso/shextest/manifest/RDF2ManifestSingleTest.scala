@@ -8,6 +8,7 @@ import es.weso.utils.VerboseLevel
 import scala.concurrent.duration._
 import es.weso.rdf.nodes.IRI
 import java.nio.file._
+import es.weso.shex.validator.Validator
 
 
 class RDF2ManifestSingleTest extends CatsEffectSuite {
@@ -28,6 +29,7 @@ class RDF2ManifestSingleTest extends CatsEffectSuite {
          "vitals-RESTRICTS-pass_lie-BP"
          ),
        List(),
+       Validator.apply, 
        1.seconds,
        assumeLocal,
        VerboseLevel.Nothing).map(rs => assertEquals(rs.size > 0, true))
