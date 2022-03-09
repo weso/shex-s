@@ -13,6 +13,7 @@ import scala.concurrent.duration._
 import es.weso.rdf.nodes.IRI
 import java.nio.file.Path
 import java.nio.file.Paths
+import es.weso.shex.validator.Validator
 
 
 class RDF2ManifestTest extends CatsEffectSuite {
@@ -27,6 +28,7 @@ class RDF2ManifestTest extends CatsEffectSuite {
     checkResults(parseManifest("manifest", "schemas", validationFolder, 
       All, 
       List("AND3G","Extend3G","ExtendANDExtend3GAND3G"),
+      Validator.apply, 
       1.seconds,
       assumeLocal, VerboseLevel.Nothing)
     )
@@ -38,6 +40,7 @@ class RDF2ManifestTest extends CatsEffectSuite {
         validationFolder, 
         All, 
         List("1unknowndatatypeMaxInclusive"),
+        Validator.apply,
         1.seconds,
         assumeLocal, VerboseLevel.Info)
      )
@@ -60,6 +63,7 @@ class RDF2ManifestTest extends CatsEffectSuite {
        "Cycle2Negation",
        "Cycle2Extra"
       ),
+      Validator.apply, 
       1.seconds,
       assumeLocal, VerboseLevel.Nothing
     ))
@@ -67,10 +71,11 @@ class RDF2ManifestTest extends CatsEffectSuite {
 
   test("RDF2Manifest validating") {
     checkResults(parseManifest("manifest", 
-       "validation", 
-       validationFolder, 
-       All,
-       List(),
+      "validation", 
+      validationFolder, 
+      All,
+      List(),
+      Validator.apply,
       1.seconds,
       assumeLocal, VerboseLevel.Nothing), false)
   }
