@@ -3,5 +3,3 @@ prefix : <http://example/>
 :A { :p [ 1 ] } 
 :B extends @:A 
    { :p [ 2 ] }
-:D IRI
-:C EXTRA :p { :p [ 3 ]; :q . +}   

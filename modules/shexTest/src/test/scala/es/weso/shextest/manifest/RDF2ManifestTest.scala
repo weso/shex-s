@@ -13,18 +13,22 @@ import scala.concurrent.duration._
 import es.weso.rdf.nodes.IRI
 import java.nio.file.Path
 import java.nio.file.Paths
+import es.weso.shex.validator.Validator
 
 
 class RDF2ManifestTest extends CatsEffectSuite {
 
   val conf: Config = ConfigFactory.load()
   val validationFolder = conf.getString("testsFolder")
-  val assumeLocal: Option[(IRI,Path)] = Some((IRI("https://raw.githubusercontent.com/shexSpec/shexTest/master/"), Paths.get("src/test/resources/shexTest")))
+  val assumeLocal: Option[(IRI,Path)] = 
+    Some((IRI("https://raw.githubusercontent.com/shexSpec/shexTest/master/"), 
+          Paths.get("src/test/resources/shexTest")))
   
   test("RDF2Manifest schemas") {
     checkResults(parseManifest("manifest", "schemas", validationFolder, 
       All, 
-      List(), // "AND3G","Extend3G","ExtendANDExtend3GAND3G"),
+      List("AND3G","Extend3G","ExtendANDExtend3GAND3G"),
+      Validator.apply, 
       1.seconds,
       assumeLocal, VerboseLevel.Nothing)
     )
@@ -35,7 +39,8 @@ class RDF2ManifestTest extends CatsEffectSuite {
       parseManifest("manifest", "negativeSyntax", 
         validationFolder, 
         All, 
-        List(), // "1unknowndatatypeMaxInclusive"),
+        List("1unknowndatatypeMaxInclusive"),
+        Validator.apply,
         1.seconds,
         assumeLocal, VerboseLevel.Info)
      )
@@ -47,28 +52,30 @@ class RDF2ManifestTest extends CatsEffectSuite {
       "negativeStructure",
       validationFolder,
       All,
-      List(), 
-/*        "1MissingRef",
-        "1focusMissingRefdot",
-        "includeExpressionNotFound",
-        "Cycle1Negation1",
-        "Cycle1Negation2",
-        "Cycle1Negation3",
-        "TwoNegation",
-        "Cycle2Negation",
-        "Cycle2Extra" */
+      List(
+       "1MissingRef",
+       "1focusMissingRefdot",
+       "includeExpressionNotFound",
+       "Cycle1Negation1",
+       "Cycle1Negation2",
+       "Cycle1Negation3",
+       "TwoNegation",
+       "Cycle2Negation",
+       "Cycle2Extra"
+      ),
+      Validator.apply, 
       1.seconds,
       assumeLocal, VerboseLevel.Nothing
     ))
   } 
 
-  test("RDF2Manifest validating".only) {
+  test("RDF2Manifest validating") {
     checkResults(parseManifest("manifest", 
-       "validation", 
-       validationFolder, 
-       All,
-       // Some("vitals-RESTRICTS-pass_lie-BP"),
-       List(),
+      "validation", 
+      validationFolder, 
+      All,
+      List(),
+      Validator.apply,
       1.seconds,
       assumeLocal, VerboseLevel.Nothing), false)
   }

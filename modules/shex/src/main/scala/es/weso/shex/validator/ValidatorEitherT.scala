@@ -21,14 +21,15 @@ import PartitionUtils._
 
 
 /**
-  * ShEx validator with global state using ref
+  * ShEx validator
   */
-case class ValidatorRef(
-  schema: ResolvedSchema,
-  externalResolver: ExternalResolver = ExternalResolver.NoAction,
-  builder: RDFBuilder
- ) extends ShExChecker
-      with ShowValidator {
+case class ValidatorEitherT(schema: ResolvedSchema,
+                     externalResolver: ExternalResolver = ExternalResolver.NoAction,
+                     builder: RDFBuilder
+                     )
+    extends Validator 
+    with ShExChecker
+    with ShowValidator {
 
   type ShapeChecker     = ShapeExpr => CheckTyping
   type NodeShapeChecker = (RDFNode, Shape) => CheckTyping
@@ -170,6 +171,7 @@ case class ValidatorRef(
     )))
     
   private def satisfies(node: RDFNode, s: ShapeExpr, ext: Option[Neighs], visited: Visited, withDescendants: WithDescendants, attempt: Attempt): CheckTyping = 
+   debug(s"satisfies(${node.show}@${showSE(s)}, withDescendants: ${withDescendants.show(schema)}") *>
    getNodesPrefixMap.flatMap(nodesPrefixMap => 
    s match {
        case so: ShapeOr => checkOr(node, so.shapeExprs, ext, visited, withDescendants, attempt)
@@ -286,7 +288,7 @@ case class ValidatorRef(
     getTyping.flatMap(typing => 
     getNodesPrefixMap.flatMap(nodesPrefixMap =>  
     infoType(s"Ref: ${node.show}@${schema.qualify(ref)}, ext: ${showExt(ext)}, ${showVisited(visited)}, withDescendants: ${withDescendants.show(schema)}") *>
-    checkNodeLabel(node, ref, ext, visited, NoDescendants).flatMap(t => 
+    checkNodeLabel(node, ref, ext, visited, withDescendants).flatMap(t => 
     checkHasType(node, t, attempt)(ref).flatMap(_ => 
     ok(t)))))
 
@@ -340,7 +342,6 @@ case class ValidatorRef(
      }
     )) 
   }}))
-
 
   def checkPartitionNeighs(
      attempt: Attempt, 
@@ -616,7 +617,7 @@ case class ValidatorRef(
           val nodeConstraints = cl.nodeConstraints(table)
           val checkNodeConstraints: List[CheckTyping] = nodeConstraints.map { case (node, pair) => {
                 val (shapeExpr, maybeSemActs) = pair
-                satisfies(node, shapeExpr, None, visited, NoDescendants, attempt).flatMap(t => 
+                satisfies(node, shapeExpr, None, visited, WithDescendants.followDescendants, attempt).flatMap(t => 
                 checkOptSemActs(attempt, node, maybeSemActs).map(_ => t)
                 )
               }
@@ -696,29 +697,3 @@ case class ValidatorRef(
 
 }
 
-object ValidatorRef {
-
-  def empty(builder: RDFBuilder): IO[Validator] = for {
-    schema <- ResolvedSchema.empty
-  } yield Validator(schema = schema, builder = builder)
-
-  /**
-    * Validate RDF according to a Shapes Schema
-    *
-    * @param schema: ShEx schema
-    * @param fixedShapeMap: Shape map
-    * @param rdf: RDF to validate
-    * @param builder: RDF builder to return subgraph validated
-    * @return Result of validation
-    */
-  def validate(schema: ResolvedSchema, 
-               fixedShapeMap: FixedShapeMap, 
-               rdf: RDFReader, 
-               builder: RDFBuilder,
-               verbose: VerboseLevel
-              ): IO[Result] = {
-    val validator = Validator(schema, ExternalResolver.NoAction, builder)
-    validator.validateShapeMap(rdf, fixedShapeMap, verbose)
-  } 
-
-}
