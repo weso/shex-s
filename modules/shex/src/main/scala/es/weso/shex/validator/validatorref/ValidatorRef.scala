@@ -22,36 +22,48 @@ import es.weso.shex.validator.Validator
 import es.weso.shex.validator.ShowValidator
 import es.weso.shex.validator.Result
 
-/** ShEx validator with global state using ref
+
+/**
+  * ShEx validator with global state using ref
   */
 case class ValidatorRef(
-    schema: ResolvedSchema,
-    externalResolver: ExternalResolver = ExternalResolver.NoAction,
-    builder: RDFBuilder
-) extends Validator
-    with ShowValidator {
+  schema: ResolvedSchema,
+  externalResolver: ExternalResolver = ExternalResolver.NoAction,
+  builder: RDFBuilder
+ ) extends Validator with ShowValidator {
 
-  // Public methods
+  
+  
 
-  /** Validate a node against the START declaration
-    */
-  def validateNodeStart(rdf: RDFReader, node: IRI, verbose: VerboseLevel): IO[Result] =
+  // Public methods 
+
+  /**
+   * Validate a node against the START declaration
+   **/
+  def validateNodeStart(rdf: RDFReader, node: IRI, verbose: VerboseLevel): IO[Result] = 
     ???
 
-  /** Validate a node following target declarations. This methods follows SHACL convention and could be deprecated in
-    * the future
-    */
+  /**
+   * Validate a node following target declarations.
+   * This methods follows SHACL convention and could be deprecated in the future
+   * 
+   **/
   def validateNodeDecls(rdf: RDFReader, verbose: VerboseLevel): IO[Result] =
     ???
-
-  /** Validate a node against a shape
-    */
-  def validateNodeShape(rdf: RDFReader, node: IRI, shape: String, verbose: VerboseLevel): IO[Result] =
+  
+  /**
+   * Validate a node against a shape
+   **/
+  def validateNodeShape(rdf: RDFReader, node: IRI, shape: String, verbose: VerboseLevel): IO[Result] = 
     ???
 
-  /** Validate a node against a shape map
-    */
-  def validateShapeMap(rdf: RDFReader, shapeMap: FixedShapeMap, verbose: VerboseLevel): IO[Result] =
+  /**
+   * Validate a node against a shape map
+   **/
+  def validateShapeMap(rdf: RDFReader, 
+                       shapeMap: FixedShapeMap, 
+                       verbose: VerboseLevel): IO[Result] = 
     ???
 
 }
+

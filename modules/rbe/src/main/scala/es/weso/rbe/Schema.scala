@@ -1,10 +1,11 @@
 package es.weso.rbe
 
-/** Defines a Schema which is a map from Labels to Shapes
-  */
+/**
+ * Defines a Schema which is a map from Labels to Shapes
+ */
 case class Schema[Edge, Node, Label, Err, Evidence](
-    m: Map[Label, Shape[DirectedEdge[Edge], Node, Label, Err, Evidence]],
-    ignored: Seq[DirectedEdge[Edge]] // Edges that are ignored in closed schemas
+  m: Map[Label, Shape[DirectedEdge[Edge], Node, Label, Err, Evidence]],
+  ignored: Seq[DirectedEdge[Edge]] // Edges that are ignored in closed schemas
 ) {
 
   type Shape_ = Shape[DirectedEdge[Edge], Node, Label, Err, Evidence]
