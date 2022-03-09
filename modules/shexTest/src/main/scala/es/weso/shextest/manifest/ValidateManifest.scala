@@ -17,12 +17,11 @@ import es.weso.utils._
 import es.weso.utils.VerboseLevel._
 import scala.concurrent.duration.FiniteDuration
 import es.weso.rdf.nodes._
+import es.weso.shex.validator.ExternalResolver
+import es.weso.rdf.RDFBuilder
+import es.weso.shex.validator.Validator
 
 trait RunManifest {
-
-/*  def info(msg: String, verbose: VerboseLevel): IO[Unit] = 
-    if (verbose >= Info) IO.println(msg)
-    else IO(()) */
 
   def runManifest(
       name: String,
@@ -31,6 +30,7 @@ trait RunManifest {
       nameIfSingle: TestSelector,
       ignoreList: List[String],
       withEntry: EntryParam => IO[Option[Result]],
+      validatorBuilder: (ResolvedSchema, ExternalResolver, RDFBuilder) => Validator,
       timeout: FiniteDuration, 
       verbose: VerboseLevel
   ): IO[List[Result]] = {
@@ -40,7 +40,7 @@ trait RunManifest {
     for {
       mf <- RDF2Manifest.read(Paths.get(fileName), "TURTLE", Some(s"$parentFolderURI/$folder/"), true)
       _ <- testInfo(s"Manifest read with ${mf.entries.size} entries", verbose)
-      rs <- processManifest(mf, name, manifestFolder, nameIfSingle, ignoreList, withEntry, timeout, verbose)
+      rs <- processManifest(mf, name, manifestFolder, nameIfSingle, ignoreList, withEntry, validatorBuilder, timeout, verbose)
       _ <-  testInfo(s"Total results: ${rs.size}", verbose)
     } yield rs
   }
@@ -62,6 +62,7 @@ trait RunManifest {
       nameIfSingle: TestSelector,
       ignoreList: List[String],
       withEntry: EntryParam => IO[Option[Result]], 
+      validatorBuilder: (ResolvedSchema, ExternalResolver, RDFBuilder) => Validator,
       timeout: FiniteDuration,
       verbose: VerboseLevel
   ): IO[List[Result]] =
@@ -69,7 +70,7 @@ trait RunManifest {
       rs1 <- m.includes.map {
           case (includeNode, manifest) =>
             val folder = Try { Paths.get(includeNode.getLexicalForm).getParent.toString }.getOrElse("")
-            runManifest(includeNode.getLexicalForm, folder, parentFolder, nameIfSingle, ignoreList, withEntry, timeout, verbose)
+            runManifest(includeNode.getLexicalForm, folder, parentFolder, nameIfSingle, ignoreList, withEntry, validatorBuilder, timeout, verbose)
         }.sequence.map(_.flatten)
       _ <- testInfo(s"Results from imports: ${rs1.size}", verbose)
       maybeResults <- m.entries.map(e => 
@@ -93,12 +94,13 @@ object ValidateManifest extends RunManifest {
       testsFolder: String,
       testSelector: TestSelector,
       ignoreList: List[String],
+      validatorBuilder: (ResolvedSchema, ExternalResolver, RDFBuilder) => Validator,
       timeout: FiniteDuration,
       assumeLocal: Option[(IRI, FilePath)],
       verbose: VerboseLevel,
   ): IO[List[Result]] = {
     testInfo(s"Parse manifest: name: ${name}, folder: $folderName, parentFolder: ${testsFolder}", verbose) *>
-    runManifest(name, folderName, testsFolder, testSelector, ignoreList, processEntryValidating(assumeLocal, verbose), timeout, verbose)
+    runManifest(name, folderName, testsFolder, testSelector, ignoreList, processEntryValidating(assumeLocal, verbose), validatorBuilder, timeout, verbose)
   } 
 
   def processEntryValidating(assumeLocal: Option[(IRI,FilePath)], verbose: VerboseLevel)(ep: EntryParam): IO[Option[Result]] = {

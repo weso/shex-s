@@ -383,7 +383,11 @@ case class Validator21(schema: ResolvedSchema,
   }
 
   def getAvailableShapeExprs(s: Shape): Check[List[ShapeExpr]] = 
-    s.getExtend.map(getShape).sequence.map(s :: _ )
+    s._extends match {
+      case None => ok(List(s))
+      case Some(es) => errStr(s"Shape ${showSE(s)} has extends which are not implemented in version 2.1")
+    }
+    // s.getExtend.map(getShape).sequence.map(s :: _ )
 
   def getAvailablePaths(ses: List[ShapeExpr]): Check[List[Available[Path]]] = {
     ses.map(se => getPaths(se,schema).map(Available.apply)).sequence
@@ -663,8 +667,10 @@ case class Validator21(schema: ResolvedSchema,
    **/
   def validateShapeMap(rdf: RDFReader, 
                        shapeMap: FixedShapeMap, 
-                       verbose: VerboseLevel): IO[Result] = 
+                       verbose: VerboseLevel): IO[Result] = {
+    verbose.info(s"ValidateShapeMap. Validator version: 2.1") *>
     runValidator(checkShapeMap(shapeMap), rdf, verbose)
+  }
 
   /**
    * Execute the validator with a given checker
