@@ -10,28 +10,28 @@ import cats.effect.ExitCode
 import es.weso.shextest.manifest.Result
 import VerboseLevelOpt._
 import es.weso.shextest.manifest._
+import ValidatorVersion._
 import es.weso.utils.VerboseLevel
 import scala.concurrent.duration._
 import es.weso.rdf.nodes.IRI
 import java.nio.file.Paths
-
 
 case class Manifest(
     manifestFileName: String,
     parentPath: String, 
     testsFolderPath: Path, 
     testName: TestSelector,
+    validatorVersion: ValidatorVersion,
     timeout: FiniteDuration,
     verbose: VerboseLevel
 ) {
 
   def run(): IO[ExitCode] = {
     val assumeLocal: Option[(IRI,Path)] = Some((IRI("https://raw.githubusercontent.com/shexSpec/shexTest/master/"), Paths.get("src/test/resources/shexTest")))
-    parseManifest(manifestFileName, parentPath, testsFolderPath.toString, testName, List(), timeout, assumeLocal, verbose).flatMap(results => 
+    parseManifest(manifestFileName, parentPath, testsFolderPath.toString, testName, List(), validatorVersion.buildValidator, timeout, assumeLocal, verbose).flatMap(results => 
     printResults(results) *>
     ExitCode.Success.pure[IO])
   }
-
 
   private def printResults(results: List[Result]): IO[Unit] = 
     IO.println(s"Failed/Total: ${results.filter(!_.isOk).length}/${results.length}") *>
@@ -68,7 +68,7 @@ lazy val timeout: Opts[FiniteDuration] =
 
 lazy val manifestCommand: Opts[Manifest] =
     Opts.subcommand("manifest", "Run manifest file containing tests") {
-      (manifestFileName, parentPath, testsFolder, testName, timeout,verboseLevel)
+      (manifestFileName, parentPath, testsFolder, testName, validatorVersion, timeout,verboseLevel)
       .mapN(Manifest.apply)
     }
 
