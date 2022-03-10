@@ -21,7 +21,8 @@ import es.weso.shex.validator.ExternalResolver
 import es.weso.shex.validator.Validator
 import es.weso.shex.validator.ShowValidator
 import es.weso.shex.validator.Result
-
+import es.weso.shex.validator.ValidationLog
+import alleycats.std.set._
 
 /**
   * ShEx validator with global state using ref
@@ -67,11 +68,61 @@ case class ValidatorRef(
   def validateShapeMap(rdf: RDFReader, 
                        shapeMap: FixedShapeMap, 
                        verbose: VerboseLevel): IO[Result] = {
-    val startState = State.from(shapeMap)
-    Ref[IO].of(startState).flatMap(state =>
+    val startState = State.fromFixedMap(shapeMap)
+    Ref[IO].of(startState).flatMap(refState =>
     verbose.debug(s"Validator with Ref: shapeMap: ${shapeMap.showShapeMap(false)}") *>   
-    IO.raiseError(StringError(s"Not implemented yet")))
+    Monad[IO].whileM_(morePending(refState))(evaluatePending(refState)) *>
+    getResult(refState))
   }
+
+  private def getState(refState: Ref[IO, State]): IO[State] = refState.get
+
+  private def morePending(refState: Ref[IO,State]): IO[Boolean] = 
+    getState(refState).flatMap(state => 
+    state.pending.isEmpty.pure[IO])
+
+  private def evaluatePending(refState: Ref[IO,State]): IO[Unit] = 
+    getState(refState).flatMap(state => 
+    state.pending.parFoldMapA(validateNodeShapePending(refState)))
+
+  private def validateNodeShapePending(refState: Ref[IO,State])(node: RDFNode, shapeLabel: ShapeMapLabel): IO[Unit] = 
+    refState.updateAndGet(_.changePending(node,shapeLabel)).flatMap(newState => 
+      newState.shapeMap.get(node).fold(
+       validateNodeShape(refState)(node,shapeLabel)
+      ){
+      case infoMap => infoMap.get(shapeLabel).fold(
+        validateNodeShape(refState)(node, shapeLabel)
+      ){
+       case info => info.status match {
+         case Pending => validateNodeShape(refState)(node, shapeLabel)
+         case _ => ().pure[IO]
+       }
+      }
+    })
+
+  private def validateNodeShape(refState: Ref[IO,State])(node: RDFNode, shapeMapLabel:ShapeMapLabel): IO[Unit] = {
+    val shapeLabel = ShapeLabel.fromShapeMapLabel(shapeMapLabel)
+    schema.getShape(shapeLabel).fold(
+     e => IO.raiseError(StringError(s"ShapeLabel $shapeLabel not found")),
+     se => validateNodeShapeExpr(refState, node, shapeLabel, se)
+    ) 
+  }
+
+  private def validateNodeShapeExpr(refState: Ref[IO,State], node: RDFNode, shapeLabel: ShapeLabel, se: ShapeExpr): IO[Unit] = se match {
+    case nc: NodeConstraint => validateNodeConstraint(refState,node, nc)
+    case _ => IO.raiseError(StringError(s"validateNodeShapeExpr: not implemented ${se}"))
+  }
+
+  private def validateNodeConstraint(refState: Ref[IO,State], node: RDFNode, nc: NodeConstraint): IO[Unit] = 
+    ???
+
+  private def getResult(refState: Ref[IO,State]): IO[Result] = 
+    getState(refState).flatMap(state => {
+      val vlog: ValidationLog = ValidationLog(List(), List())
+      val rsm: ResultShapeMap = ResultShapeMap(state.shapeMap, nodesPrefixMap = state.nodesPrefixMap, shapesPrefixMap = state.shapesPrefixMap)
+      var r: Result = Result((vlog, rsm).asRight)
+      r.pure[IO]
+    })
 }
 
 

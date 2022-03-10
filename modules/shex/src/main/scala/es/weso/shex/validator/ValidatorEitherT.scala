@@ -72,6 +72,8 @@ case class ValidatorEitherT(schema: ResolvedSchema,
         }
       case Undefined =>
         errStr(s"Cannot check $node against undefined status")
+      case Pending =>
+        errStr(s"Cannot check $node against pending status")
     }
 
   private def checkNotConformant(node: RDFNode, label: ShapeLabel, c: ShapeTyping): CheckTyping =

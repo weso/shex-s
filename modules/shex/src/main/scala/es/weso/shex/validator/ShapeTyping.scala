@@ -10,6 +10,7 @@ import io.circe.Json
 import es.weso.shex.shexR.PREFIXES.sx_start
 import io.circe._
 import io.circe.syntax._
+import cats.effect.IO
 
 case class ShapeTyping(
    t: Typing[RDFNode, ShapeType, ShExError, String]
@@ -214,6 +215,5 @@ object ShapeTyping {
       m.asJson
     }
   }
-
 
 }

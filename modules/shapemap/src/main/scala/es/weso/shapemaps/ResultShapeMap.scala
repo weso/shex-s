@@ -155,7 +155,14 @@ case class ResultShapeMap(
 }
 
 object ResultShapeMap {
+
   def empty = ResultShapeMap(Map(), PrefixMap.empty, PrefixMap.empty)
 
+  def fromFixedMap(fm: FixedShapeMap): ResultShapeMap = 
+    ResultShapeMap(
+     resultMap = fm.shapeMap, 
+     nodesPrefixMap = fm.nodesPrefixMap, 
+     shapesPrefixMap = fm.shapesPrefixMap
+    )
 }
 
