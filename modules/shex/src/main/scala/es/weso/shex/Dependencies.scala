@@ -15,33 +15,33 @@ object Dependencies {
 
   private val noDeps: ES[Deps] = Right(List())
 
-  /** Returns the set of cycles that have a negative dependency in a schema
-    *
-    * @param schema
-    *   the ShEx schema
-    * @return
-    *   either a string signaling an error or the set of negated cycles. If the set is empy, there are no negated
-    *   cycles.
-    */
-  def negCycles(schema: Schema): ES[Set[Set[(ShapeLabel, ShapeLabel)]]] = {
+  /**
+   * Returns the set of cycles that have a negative dependency in a schema
+ *
+   * @param schema the ShEx schema
+   * @return either a string signaling an error or the set of negated cycles.
+   *  If the set is empy, there are no negated cycles.
+   */
+  def negCycles(schema: Schema): ES[Set[Set[(ShapeLabel,ShapeLabel)]]] = {
     depGraph(schema).map(_.negCycles)
   }
 
-  def oddNegCycles(schema: Schema): ES[Set[Set[(ShapeLabel, ShapeLabel)]]] = {
+  def oddNegCycles(schema: Schema): ES[Set[Set[(ShapeLabel,ShapeLabel)]]] = {
     depGraph(schema).map(_.oddNegCycles)
-    /*    for {
+/*    for {
       dg <- depGraph(schema)
       negCycles = dg.negCycles.filter { nc => dg.countNegLinks(nc) % 2 == 1 }
     } yield negCycles */
   }
 
-  /** Returns the dependency graph of a schema
-    *
-    * @param schema
-    *   the ShEx schema
-    * @return
-    *   either a string signalling an error or the dependency graph
-    */
+
+
+  /**
+   * Returns the dependency graph of a schema
+ *
+   * @param schema the ShEx schema
+   * @return either a string signalling an error or the dependency graph
+   */
   def depGraph(schema: Schema): ES[DepGraph[ShapeLabel]] = {
     val emptyGraph: ES[DepGraph[ShapeLabel]] = Right(DepGraph.empty[ShapeLabel])
     val r = schema.shapes match {
@@ -61,9 +61,8 @@ object Dependencies {
     g.addEdge(d._1, d._2, d._3)
   }
 
-  def addDependency(
-      schema: Schema
-  )(se: ShapeExpr, graph: ES[DepGraph[ShapeLabel]]): Either[String, DepGraph[ShapeLabel]] = {
+  def addDependency(schema: Schema)(se: ShapeExpr,
+                                    graph: ES[DepGraph[ShapeLabel]]): Either[String, DepGraph[ShapeLabel]] = {
     for {
       g     <- graph
       label <- getLabel(se)
@@ -92,23 +91,23 @@ object Dependencies {
       case s: Shape =>
         for {
           depsExtras <- s.extra match {
-            case None => noDeps
-            case Some(es) =>
-              s.expression.map(te => dependenciesExtras(es, schema, source, te, posNeg)).getOrElse(noDeps)
+            case None     => noDeps
+            case Some(es) => s.expression.map(te => dependenciesExtras(es, schema, source, te, posNeg)).getOrElse(noDeps)
           }
           depsTripleExpr <- s.expression
             .map((tripleExpr: TripleExpr) => dependenciesTripleExpr(schema, source, tripleExpr, posNeg))
             .getOrElse(noDeps)
         } yield depsExtras ++ depsTripleExpr
 
-      case s: ShapeRef => {
+      case s: ShapeRef      => {
         // println(s"Dependency: $source -$posNeg-> ${s.reference}")
         Right(List((source, posNeg, s.reference)))
       }
       case _: ShapeExternal => noDeps
-      case sd: ShapeDecl    => dependencies(schema, sd.shapeExpr, source, posNeg)
+      case sd: ShapeDecl => dependencies(schema, sd.shapeExpr,source,posNeg)
     }
   }
+
 
   def dependenciesTripleExpr(schema: Schema, source: ShapeLabel, tripleExpr: TripleExpr, posNeg: PosNeg): ES[Deps] = {
     // println(s"Calculating dependencies of tripleExpr $tripleExpr with source label $source and posNeg $posNeg")
@@ -141,27 +140,23 @@ object Dependencies {
               dependencies(schema, ve, source, posNeg)
             }
         }
-      case _ @tripleExpr => sys.error(s"Don't know how to handle TripleExpr $tripleExpr")
+      case _@tripleExpr => sys.error(s"Don't know how to handle TripleExpr $tripleExpr")
     }
   }
 
-  def dependenciesExtras(
-      es: List[IRI],
-      schema: Schema,
-      source: ShapeLabel,
-      tripleExpr: TripleExpr,
-      posNeg: PosNeg
-  ): ES[Deps] = {
-    es.map(dependenciesExtra(_, schema, source, tripleExpr, posNeg)).sequence[ES, Deps].map(_.flatten)
+  def dependenciesExtras(es: List[IRI],
+                         schema: Schema,
+                         source: ShapeLabel,
+                         tripleExpr: TripleExpr,
+                         posNeg: PosNeg): ES[Deps] = {
+    es.map(dependenciesExtra(_, schema, source, tripleExpr, posNeg)).sequence[ES,Deps].map(_.flatten)
   }
 
-  def dependenciesExtra(
-      e: IRI,
-      schema: Schema,
-      source: ShapeLabel,
-      tripleExpr: TripleExpr,
-      posNeg: PosNeg
-  ): ES[Deps] = {
+  def dependenciesExtra(e: IRI,
+                        schema: Schema,
+                        source: ShapeLabel,
+                        tripleExpr: TripleExpr,
+                        posNeg: PosNeg): ES[Deps] = {
     // println(s"Dependencies extra: $e")
     tripleExpr match {
       case t: EachOf => {
@@ -181,23 +176,22 @@ object Dependencies {
       case i: Inclusion => {
         Right(List((source, posNeg, i.include)))
       }
-      case tc: TripleConstraint =>
-        if (tc.predicate == e) {
-          // println(s"DependenciesExtra, tripleConstraint: $tc with predicate $e")
-          tc.valueExpr match {
-            case None => noDeps
-            case Some(ve) =>
-              if (tc.max == IntMax(0)) {
-                // TODO: Should it be negative dependency?
-                dependencies(schema, ve, source, posNeg)
-              } else {
-                val newPosNeg = posNeg.change
-                // println(s"Calling dependencies with $ve, source; $source, newPosNeg: $newPosNeg")
-                dependencies(schema, ve, source, newPosNeg)
-              }
-          }
-        } else noDeps
-      case _ @tripleExpr => sys.error(s"Don't know how to handle TripleExpr $tripleExpr")
+      case tc: TripleConstraint => if (tc.predicate == e) {
+        // println(s"DependenciesExtra, tripleConstraint: $tc with predicate $e")
+        tc.valueExpr match {
+          case None => noDeps
+          case Some(ve) =>
+            if (tc.max == IntMax(0)) {
+              // TODO: Should it be negative dependency?
+              dependencies(schema, ve, source, posNeg)
+            } else {
+              val newPosNeg = posNeg.change
+              // println(s"Calling dependencies with $ve, source; $source, newPosNeg: $newPosNeg")
+              dependencies(schema, ve, source, newPosNeg)
+            }
+        }
+      } else noDeps
+      case _@tripleExpr => sys.error(s"Don't know how to handle TripleExpr $tripleExpr")
     }
   }
 
