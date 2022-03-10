@@ -9,8 +9,8 @@ import scala.io.Source
 
 class JsonResultTest extends FunSuite {
 
-  val conf: Config = ConfigFactory.load()
-  val shexFolder = conf.getString("validationFolder")
+  val conf: Config  = ConfigFactory.load()
+  val shexFolder    = conf.getString("validationFolder")
   val shexFolderURI = Paths.get(shexFolder).normalize.toUri
 
   test(s"ShapeResult parsing") {
@@ -21,13 +21,12 @@ class JsonResultTest extends FunSuite {
     )
   }
 
-  { 
-  val name = "node_kind_example_results.json"  
-  test(s"Should parse ResultParsing $name") {
-     val jsonStr = Source.fromURI(shexFolderURI.resolve(name)).mkString
-     decode[JsonResult](jsonStr).fold(
-      e => fail(s"Error: $e"),
-      result => assertEquals(result.rmap.toList.size > 0, true))
+  {
+    val name = "node_kind_example_results.json"
+    test(s"Should parse ResultParsing $name") {
+      val jsonStr = Source.fromURI(shexFolderURI.resolve(name)).mkString
+      decode[JsonResult](jsonStr)
+        .fold(e => fail(s"Error: $e"), result => assertEquals(result.rmap.toList.size > 0, true))
+    }
   }
- }
 }

@@ -13,22 +13,25 @@ import io.circe.syntax._
 import cats.effect.IO
 
 case class ShapeTyping(
-   t: Typing[RDFNode, ShapeType, ShExError, String]
+    t: Typing[RDFNode, ShapeType, ShExError, String]
 ) {
-   
+
   def showShort(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String = {
-    def showPos(ls: Set[ShapeType]): String = 
-      if (ls.nonEmpty) ls.map(st => st.label.map(sl => "+" + shapesPrefixMap.qualify(sl.toRDFNode)).getOrElse("")).mkString(",")
+    def showPos(ls: Set[ShapeType]): String =
+      if (ls.nonEmpty)
+        ls.map(st => st.label.map(sl => "+" + shapesPrefixMap.qualify(sl.toRDFNode)).getOrElse("")).mkString(",")
       else " "
 
-    def showNeg(ls: Set[ShapeType]): String = 
-      if (ls.nonEmpty) " " + ls.map(st => st.label.map(sl => "-" + shapesPrefixMap.qualify(sl.toRDFNode)).getOrElse("")).mkString(",")
+    def showNeg(ls: Set[ShapeType]): String =
+      if (ls.nonEmpty)
+        " " + ls.map(st => st.label.map(sl => "-" + shapesPrefixMap.qualify(sl.toRDFNode)).getOrElse("")).mkString(",")
       else ""
-    val vs = t.getKeys.map(k => 
-       (nodesPrefixMap.qualify(k), 
-        s"${showPos(t.getOkValues(k).toSet)}${showNeg(t.getFailedValues(k).toSet)}"
-       )
-      ).map{ case (v1,v2) => v1 + "@" + v2 }.mkString("| ")
+    val vs = t.getKeys
+      .map(k =>
+        (nodesPrefixMap.qualify(k), s"${showPos(t.getOkValues(k).toSet)}${showNeg(t.getFailedValues(k).toSet)}")
+      )
+      .map { case (v1, v2) => v1 + "@" + v2 }
+      .mkString("| ")
     vs
   }
 
@@ -50,7 +53,6 @@ case class ShapeTyping(
     getFailedValues(node).filter(_.hasLabel(label)).nonEmpty
   }
 
-
   def getTypingResult(node: RDFNode, label: ShapeLabel): Option[TypingResult[ShExError, String]] =
     t.getMap.get(node).map(_.toList.filter(_._1.label.contains(label)).map(_._2).head)
 
@@ -64,51 +66,58 @@ case class ShapeTyping(
   def addNotEvidence(node: RDFNode, shapeType: ShapeType, err: ShExError): ShapeTyping =
     this.copy(t = t.addNotEvidence(node, shapeType, err))
 
-  def getMap: scala.collection.Map[RDFNode,scala.collection.Map[ShapeType,TypingResult[ShExError,String]]] =
+  def getMap: scala.collection.Map[RDFNode, scala.collection.Map[ShapeType, TypingResult[ShExError, String]]] =
     t.getMap
 
-  def removeShapeTypesWith(cond: ShapeType => Boolean): ShapeTyping = 
+  def removeShapeTypesWith(cond: ShapeType => Boolean): ShapeTyping =
     ShapeTyping(t.removeValuesWith(cond))
 
-  def negateShapeTypesWith(cond: ShapeType => Boolean, err: ShExError): ShapeTyping = 
+  def negateShapeTypesWith(cond: ShapeType => Boolean, err: ShExError): ShapeTyping =
     ShapeTyping(t.negateValuesWith(cond, err))
-
 
   override def toString: String = showShapeTyping
 
   private def cnvShapeType(s: ShapeType): Either[String, ShapeMapLabel] = s.label match {
     case None => Left(s"Can't create Result shape map for a shape expression without label. ShapeExpr: ${s.se}")
-    case Some(lbl) => lbl.toRDFNode match {
-      case `sx_start` => Either.right(Start)
-      case i: IRI => Either.right(IRIMapLabel(i))
-      case b: BNode => Either.right(BNodeLabel(b))
-      case _ => Left(s"Can't create Result shape map for a shape expression with label: $lbl")
-    }
+    case Some(lbl) =>
+      lbl.toRDFNode match {
+        case `sx_start` => Either.right(Start)
+        case i: IRI     => Either.right(IRIMapLabel(i))
+        case b: BNode   => Either.right(BNodeLabel(b))
+        case _          => Left(s"Can't create Result shape map for a shape expression with label: $lbl")
+      }
   }
 
-  private def cnvTypingResult(t: TypingResult[ShExError, String], nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): Info = {
+  private def cnvTypingResult(
+      t: TypingResult[ShExError, String],
+      nodesPrefixMap: PrefixMap,
+      shapesPrefixMap: PrefixMap
+  ): Info = {
     val status = if (t.isOK) Conformant else NonConformant
     val reason =
       if (t.isOK) t.getEvidences.map(_.mkString("\n"))
       else {
-       val s = t.getErrors.map(es => es.map(e => {
-         e.showQualified(nodesPrefixMap,shapesPrefixMap)
-         // e.msg
-       }
-       ).mkString("\n"))
-       s
+        val s = t.getErrors.map(es =>
+          es.map(e => {
+            e.showQualified(nodesPrefixMap, shapesPrefixMap)
+            // e.msg
+          }).mkString("\n")
+        )
+        s
       }
-    val appInfo = ShapeTyping.typingResult2Json(t) 
+    val appInfo = ShapeTyping.typingResult2Json(t)
     Info(status, reason, Some(appInfo))
   }
 
-  private def typing2Labels(m: collection.Map[ShapeType, TypingResult[ShExError, String]],
-                            nodesPrefixMap: PrefixMap,
-                            shapesPrefixMap: PrefixMap
-                   ): Either[String, Map[ShapeMapLabel, Info]] = {
-    def processType(m: Either[String, Map[ShapeMapLabel, Info]],
-                    current: (ShapeType, TypingResult[ShExError, String])
-                   ): Either[String, Map[ShapeMapLabel, Info]] = {
+  private def typing2Labels(
+      m: collection.Map[ShapeType, TypingResult[ShExError, String]],
+      nodesPrefixMap: PrefixMap,
+      shapesPrefixMap: PrefixMap
+  ): Either[String, Map[ShapeMapLabel, Info]] = {
+    def processType(
+        m: Either[String, Map[ShapeMapLabel, Info]],
+        current: (ShapeType, TypingResult[ShExError, String])
+    ): Either[String, Map[ShapeMapLabel, Info]] = {
       cnvShapeType(current._1) match {
         case Left(s) => {
           m
@@ -127,22 +136,22 @@ case class ShapeTyping(
 
     type Result = Either[String, ResultShapeMap]
 
-    def combine(m: Result,
-                current: (RDFNode, scala.collection.Map[ShapeType, TypingResult[ShExError, String]])
-               ): Result =  { 
-     for {
-       rm <- m
-       ls <- typing2Labels(current._2, nodesPrefixMap, shapesPrefixMap)
-     } yield {
-       if (ls.nonEmpty) rm.addNodeAssociations(current._1, ls)
-       else rm
-     }
+    def combine(
+        m: Result,
+        current: (RDFNode, scala.collection.Map[ShapeType, TypingResult[ShExError, String]])
+    ): Result = {
+      for {
+        rm <- m
+        ls <- typing2Labels(current._2, nodesPrefixMap, shapesPrefixMap)
+      } yield {
+        if (ls.nonEmpty) rm.addNodeAssociations(current._1, ls)
+        else rm
+      }
     }
-    
-    val zero: Result = ResultShapeMap.empty.
-        addNodesPrefixMap(nodesPrefixMap).
-        addShapesPrefixMap(shapesPrefixMap).asRight[String]
-    
+
+    val zero: Result =
+      ResultShapeMap.empty.addNodesPrefixMap(nodesPrefixMap).addShapesPrefixMap(shapesPrefixMap).asRight[String]
+
     getMap.foldLeft(zero)(combine)
   }
 
@@ -173,9 +182,7 @@ object ShapeTyping {
   implicit def monoidShapeTyping: Monoid[ShapeTyping] = new Monoid[ShapeTyping] {
     override def empty: ShapeTyping = emptyShapeTyping
 
-    override def combine(
-      t1: ShapeTyping,
-      t2: ShapeTyping): ShapeTyping =
+    override def combine(t1: ShapeTyping, t2: ShapeTyping): ShapeTyping =
       ShapeTyping(t1.t.combineTyping(t2.t))
   }
 
@@ -191,24 +198,23 @@ object ShapeTyping {
     }
   }
 
-  def typingResult2Json(t: TypingResult[ShExError,String]): Json = {
-     if (t.isOK) Json.obj(("evidences", Json.fromValues(t.getEvidences.getOrElse(List()).map(Json.fromString(_)))))
-     else 
-       Json.obj(("errors", 
-         Json.fromValues(t.getErrors.getOrElse(List()).map(_.asJson))))
+  def typingResult2Json(t: TypingResult[ShExError, String]): Json = {
+    if (t.isOK) Json.obj(("evidences", Json.fromValues(t.getEvidences.getOrElse(List()).map(Json.fromString(_)))))
+    else
+      Json.obj(("errors", Json.fromValues(t.getErrors.getOrElse(List()).map(_.asJson))))
   }
-
 
   implicit def encoderShapeTyping: Encoder[ShapeTyping] = new Encoder[ShapeTyping] {
     implicit lazy val keyEncoderRDFNode: KeyEncoder[RDFNode] = new KeyEncoder[RDFNode] {
-     final def apply(p: RDFNode): String = p.show
+      final def apply(p: RDFNode): String = p.show
     }
     implicit lazy val keyEncoderShapeType: KeyEncoder[ShapeType] = new KeyEncoder[ShapeType] {
-     final def apply(p: ShapeType): String = p.show
+      final def apply(p: ShapeType): String = p.show
     }
-    implicit lazy val typingResultEncoder: Encoder[TypingResult[ShExError,String]] = new Encoder[TypingResult[ShExError,String]] {
-      final def apply(t: TypingResult[ShExError,String]): Json = typingResult2Json(t)
-    }
+    implicit lazy val typingResultEncoder: Encoder[TypingResult[ShExError, String]] =
+      new Encoder[TypingResult[ShExError, String]] {
+        final def apply(t: TypingResult[ShExError, String]): Json = typingResult2Json(t)
+      }
 
     final def apply(t: ShapeTyping): Json = {
       val m = t.getMap

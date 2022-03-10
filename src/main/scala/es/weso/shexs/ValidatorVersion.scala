@@ -19,38 +19,58 @@ sealed abstract class ValidatorVersion {
 
 object ValidatorVersion {
 
- case object Version21 extends ValidatorVersion { 
-  val names = List("2.1")
-  override def buildValidator(schema: ResolvedSchema, externalResolver: ExternalResolver, builder: RDFBuilder): Validator = 
-    Validator21(schema,externalResolver,builder)
+  case object Version21 extends ValidatorVersion {
+    val names = List("2.1")
+    override def buildValidator(
+        schema: ResolvedSchema,
+        externalResolver: ExternalResolver,
+        builder: RDFBuilder
+    ): Validator =
+      Validator21(schema, externalResolver, builder)
 
- }
+  }
 
- case object Version22 extends ValidatorVersion { 
-  val names = List("2.2", "eitherT")
-  override def buildValidator(schema: ResolvedSchema, externalResolver: ExternalResolver, builder: RDFBuilder): Validator = 
-    ValidatorEitherT(schema,externalResolver,builder)
- }
+  case object Version22 extends ValidatorVersion {
+    val names = List("2.2", "eitherT")
+    override def buildValidator(
+        schema: ResolvedSchema,
+        externalResolver: ExternalResolver,
+        builder: RDFBuilder
+    ): Validator =
+      ValidatorEitherT(schema, externalResolver, builder)
+  }
 
- case object VersionRef extends ValidatorVersion { 
-  val names = List("ref")
-  override def buildValidator(schema: ResolvedSchema, externalResolver: ExternalResolver, builder: RDFBuilder): Validator = 
-    ValidatorRef(schema,externalResolver,builder)
- }
+  case object VersionRef extends ValidatorVersion {
+    val names = List("ref")
+    override def buildValidator(
+        schema: ResolvedSchema,
+        externalResolver: ExternalResolver,
+        builder: RDFBuilder
+    ): Validator =
+      ValidatorRef(schema, externalResolver, builder)
+  }
 
+  lazy val versions         = List(Version22, Version21, VersionRef)
+  lazy val defaultVersion   = versions.head
+  lazy val versionsStr      = versions.map(_.names).flatten.mkString(",")
+  lazy val otherVersionsStr = versions.tail.map(_.names).flatten.mkString(",")
 
- lazy val versions = List(Version22, Version21,VersionRef)   
- lazy val defaultVersion = versions.head
- lazy val versionsStr = versions.map(_.names).flatten.mkString(",")
- lazy val otherVersionsStr = versions.tail.map(_.names).flatten.mkString(",")
-
- lazy val validatorVersion: Opts[ValidatorVersion] = 
-    Opts.option[String]("validator version", short = "e", help = s"version of validator. Default = ${defaultVersion.names.head}. Other values = ${otherVersionsStr}")
-    .mapValidated(s => 
-      versions.find(_.names.map(_.toLowerCase).contains(s.toLowerCase)) match {
-        case None => Validated.invalidNel[String,ValidatorVersion](s"Error obtaining validator version. Available values = ${versionsStr}")
-        case Some(vv) => Validated.validNel[String,ValidatorVersion](vv)
-    })
-    .withDefault(defaultVersion)
+  lazy val validatorVersion: Opts[ValidatorVersion] =
+    Opts
+      .option[String](
+        "validator version",
+        short = "e",
+        help = s"version of validator. Default = ${defaultVersion.names.head}. Other values = ${otherVersionsStr}"
+      )
+      .mapValidated(s =>
+        versions.find(_.names.map(_.toLowerCase).contains(s.toLowerCase)) match {
+          case None =>
+            Validated.invalidNel[String, ValidatorVersion](
+              s"Error obtaining validator version. Available values = ${versionsStr}"
+            )
+          case Some(vv) => Validated.validNel[String, ValidatorVersion](vv)
+        }
+      )
+      .withDefault(defaultVersion)
 
 }
