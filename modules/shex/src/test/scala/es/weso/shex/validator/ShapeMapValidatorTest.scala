@@ -75,7 +75,7 @@ class ShapeMapValidatorTest extends ShouldValidateShapeMap {
          |""".stripMargin
 
     shouldValidateWithShapeMap(rdfStr, shexStr, ":a@:A", ":a@:A")
-  }
+  } 
 
   { // Shape with EXTRA
     val shexStr =
@@ -98,7 +98,7 @@ class ShapeMapValidatorTest extends ShouldValidateShapeMap {
     shouldValidateWithShapeMap(rdfStr, shexStr, ":a@:S,:b@:S,:bad@:S", ":a@:S,:b@:S,:bad@!:S")
   }
 
-  { // Shape with EXTRA and CLOSED
+   { // Shape with EXTRA and CLOSED
     val shexStr =
       """
         |prefix : <http://example.org/>
@@ -193,7 +193,7 @@ class ShapeMapValidatorTest extends ShouldValidateShapeMap {
     shouldValidateWithShapeMap(rdfStr, shexStr, ":a@:A,:b@:A", ":a@:A,:b@:A")
     shouldValidateWithShapeMap(rdfStr, shexStr, ":a@:A,:b@:A,:x@:A,:y@:A,:z@:A", ":a@:A,:b@:A,:x@!:A,:y@!:A,:z@!:A")
   }
-
+  
   {
     val shexStr =
       """
@@ -222,7 +222,7 @@ class ShapeMapValidatorTest extends ShouldValidateShapeMap {
     shouldValidateWithShapeMap(rdfStr, shexStr, ":a@:A,:ls@:List", ":a@:A,:ls@:List,:b1@:B,:b2@:B")
     shouldValidateWithShapeMap(rdfStr, shexStr, ":a@:A,:x@:A,:ls@:List", ":a@:A,:ls@:List,:b1@:B,:b2@:B,:x@!:A")
   }
-
+  
   {
     val shexStr =
       """
@@ -301,12 +301,7 @@ class ShapeMapValidatorTest extends ShouldValidateShapeMap {
          |""".stripMargin
 
     shouldValidateWithShapeMap(rdfStr, shexStr, ":ok1@:S", ":ok1@:S")
-    shouldValidateWithShapeMap(
-      rdfStr,
-      shexStr,
-      ":ok1@:S,:ok2@:S,:ok3@:S,:ko1@:S,:ko2@:S",
-      ":ok1@:S,:ok2@:S,:ok3@:S,:ko1@!:S,:ko2@!:S"
-    )
+    shouldValidateWithShapeMap(rdfStr, shexStr, ":ok1@:S,:ok2@:S,:ok3@:S,:ko1@:S,:ko2@:S", ":ok1@:S,:ok2@:S,:ok3@:S,:ko1@!:S,:ko2@!:S")
   }
 
   {
@@ -331,7 +326,7 @@ class ShapeMapValidatorTest extends ShouldValidateShapeMap {
     shouldValidateWithShapeMap(rdfStr, shexStr, ":ok1@:S", ":ok1@:S,:x@:T")
     shouldValidateWithShapeMap(rdfStr, shexStr, ":ko1@:S", ":ko1@!:S")
     shouldValidateWithShapeMap(rdfStr, shexStr, ":ko2@:S", ":ko2@!:S")
-  }
+  } 
 
   {
     val shexStr =
@@ -356,5 +351,5 @@ class ShapeMapValidatorTest extends ShouldValidateShapeMap {
     shouldValidateWithShapeMap(rdfStr, shexStr, ":ok2@:S", ":ok2@:S")
     shouldValidateWithShapeMap(rdfStr, shexStr, ":ko1@:S", ":ko1@!:S")
     shouldValidateWithShapeMap(rdfStr, shexStr, ":ko2@:S", ":ko2@!:S")
-  }
+  } 
 }
