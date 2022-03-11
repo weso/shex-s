@@ -13,12 +13,22 @@ import es.weso.shex.validator.Validator
 class RDF2ManifestLocalTest extends FunSuite {
 
   val conf: Config = ConfigFactory.load()
-  val assumeLocal: Option[(IRI,Path)] = Some((IRI("https://raw.githubusercontent.com/shexSpec/shexTest/master/"), Paths.get("src/test/resources/shexTest")))
+  val assumeLocal: Option[(IRI, Path)] = Some(
+    (IRI("https://raw.githubusercontent.com/shexSpec/shexTest/master/"), Paths.get("src/test/resources/shexTest"))
+  )
 
   test("RDF2Manifest localTests") {
     val validationFolder = conf.getString("localTestsFolder")
-    parseManifest("manifest", "schemas", validationFolder, All, List(), 
-    Validator.apply, 
-    1.seconds, assumeLocal, VerboseLevel.Nothing)
+    parseManifest(
+      "manifest",
+      "schemas",
+      validationFolder,
+      All,
+      List(),
+      Validator.apply,
+      1.seconds,
+      assumeLocal,
+      VerboseLevel.Nothing
+    )
   }
 }

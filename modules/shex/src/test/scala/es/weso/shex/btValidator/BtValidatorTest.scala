@@ -11,7 +11,7 @@ import munit._
 
 class BtValidatorTest extends FunSuite {
 
-/*  describe(s"BtValidator semantics") {
+  /*  describe(s"BtValidator semantics") {
     it(s"Should validate OK") {
       val c: Check[Int] = ok(3)
       val rdf = RDFAsJenaModel.empty
