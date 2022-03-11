@@ -1,6 +1,7 @@
 package es.weso.shex.validator.validatorref
 
 import cats._
+import cats._
 import implicits._
 import cats.effect._
 import es.weso.shex._
@@ -13,7 +14,7 @@ import es.weso.shex.implicits.showShEx._
 import es.weso.shapemaps.{BNodeLabel => BNodeMapLabel, IRILabel => IRIMapLabel, Start => StartMapLabel, _}
 import es.weso.shex.actions.TestSemanticAction
 import Function.tupled
-import es.weso.shex.validator.ShExError._
+// import es.weso.shex.validator.ShExError._
 import es.weso.shex.validator.ConstraintRef.{showConstraintRef => _}
 import es.weso.utils.internal.CollectionCompat._
 import es.weso.utils.VerboseLevel
@@ -22,6 +23,8 @@ import es.weso.shex.validator.Validator
 import es.weso.shex.validator.ShowValidator
 import es.weso.shex.validator.Result
 import es.weso.shex.validator.ValidationLog
+import es.weso.shex._
+import es.weso.shex.validator.ShExError._
 import alleycats.std.set._
 
 /**
@@ -78,12 +81,13 @@ case class ValidatorRef(
   private def getState(refState: Ref[IO, State]): IO[State] = refState.get
 
   private def morePending(refState: Ref[IO,State]): IO[Boolean] = 
-    getState(refState).flatMap(state => 
-    state.pending.isEmpty.pure[IO])
+    getState(refState).flatMap(state => state.pending.nonEmpty.pure[IO])
 
   private def evaluatePending(refState: Ref[IO,State]): IO[Unit] = 
     getState(refState).flatMap(state => 
-    state.pending.parFoldMapA(validateNodeShapePending(refState)))
+    IO.println(s"Pending evaluations: ${state.pending}") *>  
+    state.pending.parFoldMapA(validateNodeShapePending(refState))
+    )
 
   private def validateNodeShapePending(refState: Ref[IO,State])(node: RDFNode, shapeLabel: ShapeMapLabel): IO[Unit] = 
     refState.updateAndGet(_.changePending(node,shapeLabel)).flatMap(newState => 
@@ -114,7 +118,10 @@ case class ValidatorRef(
   }
 
   private def validateNodeConstraint(refState: Ref[IO,State], node: RDFNode, nc: NodeConstraint): IO[Unit] = 
-    ???
+    if (NodeConstraintValidator.validateNodeConstraint(node, nc).isValid)
+      IO.println(s"$node conforms to node constraint $nc")
+    else 
+      IO.println(s"$node doesn't conform to $nc")  
 
   private def getResult(refState: Ref[IO,State]): IO[Result] = 
     getState(refState).flatMap(state => {
