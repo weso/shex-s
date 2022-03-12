@@ -6,16 +6,17 @@ import es.weso.rdf._
 object ShExDiff {
 
   type Result[A] = ValidatedNel[String, ((A, A))]
-  type Diff[A] = (A, A) => Result[A]
+  type Diff[A]   = (A, A) => Result[A]
 
   implicit val applyResult: Apply[Result] = new Apply[Result] {
     def ap[A, B](f: Result[A => B])(fa: Result[A]): Result[B] = {
       f match {
         case Validated.Invalid(s) => Validated.Invalid(s)
-        case Validated.Valid((f1, f2)) => fa match {
-          case Validated.Invalid(s) => Validated.Invalid(s)
-          case Validated.Valid((x1, x2)) => Validated.Valid((f1(x1), f2(x2)))
-        }
+        case Validated.Valid((f1, f2)) =>
+          fa match {
+            case Validated.Invalid(s)      => Validated.Invalid(s)
+            case Validated.Valid((x1, x2)) => Validated.Valid((f1(x1), f2(x2)))
+          }
       }
     }
     def map[A, B](fa: Result[A])(f: A => B): Result[B] = {
@@ -31,8 +32,8 @@ object ShExDiff {
     Validated.invalidNel(msg)
 
   def schemaDiff: Diff[Schema] = (s1, s2) => {
-    val pm: Result[Option[PrefixMap]] = prefixesDiff(s1.prefixes, s2.prefixes)
-    val db: Result[Option[IRI]] = baseDiff(s1.base, s2.base)
+    val pm: Result[Option[PrefixMap]]    = prefixesDiff(s1.prefixes, s2.prefixes)
+    val db: Result[Option[IRI]]          = baseDiff(s1.base, s2.base)
     val ds: Result[Option[List[SemAct]]] = startActsDiff(s1.startActs, s2.startActs)
 
     /*    type R1[A] = ValidatedNel[String,A]
@@ -49,34 +50,25 @@ object ShExDiff {
 
   }
 
-  def mkSchema(
-    pm: Option[PrefixMap],
-    db: Option[IRI],
-    ds: Option[List[SemAct]]): Schema = 
-     Schema.empty.withPrefixMap(pm).withBase(db).withStartActions(ds)     
+  def mkSchema(pm: Option[PrefixMap], db: Option[IRI], ds: Option[List[SemAct]]): Schema =
+    Schema.empty.withPrefixMap(pm).withBase(db).withStartActions(ds)
 
   def prefixesDiff: Diff[Option[PrefixMap]] =
     optDiff(prefixMapDiff)
 
-  def prefixMapDiff: Diff[PrefixMap] = (pm1, pm2) =>
-    mapDiff(prefixDiff, iriDiff)(pm1.pm, pm2.pm).map(_ => (pm1, pm2))
+  def prefixMapDiff: Diff[PrefixMap] = (pm1, pm2) => mapDiff(prefixDiff, iriDiff)(pm1.pm, pm2.pm).map(_ => (pm1, pm2))
 
-  def mapDiff[A, B](
-    diffA: Diff[A],
-    diffB: Diff[B]): Diff[Map[A, B]] = (m1, m2) =>
+  def mapDiff[A, B](diffA: Diff[A], diffB: Diff[B]): Diff[Map[A, B]] = (m1, m2) =>
     listDiff(pairDiff(diffA, diffB))(m1.toList, m2.toList).map(_ => (m1, m2))
 
-  def pairDiff[A, B](
-    diffA: Diff[A],
-    diffB: Diff[B]): Diff[(A, B)] = (p1, p2) => {
+  def pairDiff[A, B](diffA: Diff[A], diffB: Diff[B]): Diff[(A, B)] = (p1, p2) => {
     def f(x: A, y: B): (A, B) = (x, y)
     Apply[Result].map2(diffA(p1._1, p2._1), diffB(p1._2, p2._2))(f)
   }
 
   //    (diffA(p1._1, p2._1), diffB(p1._2, p2._2)).map2((_, _) => ))
 
-  def prefixDiff: Diff[Prefix] = (p1, p2) =>
-    valueDiff(p1.str, p2.str).map(_ => (p1, p2))
+  def prefixDiff: Diff[Prefix] = (p1, p2) => valueDiff(p1.str, p2.str).map(_ => (p1, p2))
 
   def baseDiff: Diff[Option[IRI]] =
     optDiff(iriDiff)
@@ -94,7 +86,7 @@ object ShExDiff {
   //    (iriDiff(s1.name, s2.name), valueDiff(s1.code, s2.code)).mapN((_, _) => (s1, s2))
 
   def listDiff[A](cmp: Diff[A]): Diff[List[A]] = (ls1, ls2) => {
-    val ps = ls1.zip(ls2)
+    val ps                    = ls1.zip(ls2)
     val zero: Result[List[A]] = ok((Nil, Nil))
     def comb(rest: Result[List[A]], p: (A, A)): Result[List[A]] = {
       def f(xs: List[A]): List[A] = p._1 :: xs // and p._2 ???
@@ -114,9 +106,9 @@ object ShExDiff {
 
   def optDiff[A](f: Diff[A]): Diff[Option[A]] = (x1, x2) =>
     (x1, x2) match {
-      case (None, None) => ok((x1, x2))
-      case (None, Some(v)) => err(s"1st value is None while 2nd value is $v")
-      case (Some(v), None) => err(s"1st value $v while 2nd value is None")
+      case (None, None)         => ok((x1, x2))
+      case (None, Some(v))      => err(s"1st value is None while 2nd value is $v")
+      case (Some(v), None)      => err(s"1st value $v while 2nd value is None")
       case (Some(v1), Some(v2)) => f(v1, v2).map(p => (Some(p._1), Some(p._2)))
     }
 
