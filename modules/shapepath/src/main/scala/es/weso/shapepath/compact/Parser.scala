@@ -18,37 +18,39 @@ import scala.collection.immutable.ListMap
 
 object Parser {
 
-  type S[A]       = State[BuilderState, A]
+  type S[A] = State[BuilderState, A]
   type Builder[A] = EitherT[S, String, A]
 
   // type PrefixMap = Map[Prefix,IRI]
-  type Start         = Option[ShapeExpr]
-  type ShapesMap     = ListMap[ShapeLabel, ShapeExpr]
+  type Start = Option[ShapeExpr]
+  type ShapesMap = ListMap[ShapeLabel, ShapeExpr]
   type TripleExprMap = Map[ShapeLabel, TripleExpr]
 
   def ok[A](x: A): Builder[A] =
     EitherT.pure(x)
 
   def err[A](msg: String): Builder[A] = {
-    val r: S[String]  = StateT.pure(msg)
+    val r: S[String] = StateT.pure(msg)
     val v: Builder[A] = EitherT.left[A](r)
     v
   }
 
-  def fromEither[A](e: Either[String, A]): Builder[A] =
+  def fromEither[A](e: Either[String,A]): Builder[A] =
     e.fold(str => err(str), ok(_))
 
   def sequence[A](bs: List[Builder[A]]): Builder[List[A]] =
-    bs.sequence[Builder, A]
+    bs.sequence[Builder,A]
 
   def getPrefixMap: Builder[PrefixMap] =
     getState.map(_.prefixMap)
+
 
   def getState: Builder[BuilderState] =
     EitherT.liftF[S, String, BuilderState](StateT.inspect(identity))
 
   def getBase: Builder[Option[IRI]] =
     getState.map(_.base)
+
 
   def addBase(base: IRI): Builder[Unit] =
     updateState(_.copy(base = Some(base)))
@@ -66,10 +68,10 @@ object Parser {
   }
 
   def parseShapePath(
-      str: String,
-      base: Option[IRI],
-      prefixMap: PrefixMap
-  ): Either[String, ShapePath] = {
+     str: String, 
+     base: Option[IRI],
+     prefixMap: PrefixMap
+    ): Either[String, ShapePath] = {
     val UTF8_BOM = "\uFEFF"
     val s =
       if (str.startsWith(UTF8_BOM)) {
@@ -77,24 +79,28 @@ object Parser {
         str.substring(1)
       } else str
     val reader: JavaReader =
-      new InputStreamReader(new ByteArrayInputStream(s.getBytes(StandardCharsets.UTF_8)))
+      new InputStreamReader(
+        new ByteArrayInputStream(s.getBytes(StandardCharsets.UTF_8)))
     // logger.debug(s"s:$s")
     parseReader(reader, base, prefixMap)
   }
 
   def parseShapePathFromFile(
-      fileName: String,
-      base: Option[IRI],
-      prefixMap: PrefixMap
-  ): Either[String, ShapePath] = for {
+     fileName: String, 
+     base: Option[IRI], 
+     prefixMap: PrefixMap
+    ): Either[String, ShapePath] = for {
     reader <- FileUtils.getStream(fileName)
     schema <- parseReader(reader, base, prefixMap)
   } yield schema
 
-  def parseReader(reader: JavaReader, base: Option[IRI], prefixMap: PrefixMap): Either[String, ShapePath] = {
-    val input: CharStream          = CharStreams.fromReader(reader)
-    val lexer: ShapePathDocLexer   = new ShapePathDocLexer(input)
-    val tokens: CommonTokenStream  = new CommonTokenStream(lexer)
+  def parseReader(reader: JavaReader,
+                  base: Option[IRI], 
+                  prefixMap: PrefixMap
+                 ): Either[String, ShapePath] = {
+    val input: CharStream = CharStreams.fromReader(reader)
+    val lexer: ShapePathDocLexer = new ShapePathDocLexer(input)
+    val tokens: CommonTokenStream = new CommonTokenStream(lexer)
     val parser: ShapePathDocParser = new ShapePathDocParser(tokens)
 
     val errorListener = new ParserErrorListener
@@ -103,9 +109,9 @@ object Parser {
     lexer.addErrorListener(errorListener)
     parser.addErrorListener(errorListener)
 
-    val maker   = new ShapePathMaker()
+    val maker = new ShapePathMaker()
     val builder = maker.visit(parser.shapePathDoc()).asInstanceOf[Builder[ShapePath]]
-    val errors  = errorListener.getErrors()
+    val errors = errorListener.getErrors()
     if (errors.length > 0) {
       Left(errors.mkString("\n"))
     } else {
@@ -113,12 +119,13 @@ object Parser {
     }
   }
 
-  def run[A](c: Builder[A], base: Option[IRI], prefixMap: PrefixMap): (BuilderState, Either[String, A]) =
+  def run[A](c: Builder[A],base: Option[IRI],prefixMap: PrefixMap): (BuilderState, Either[String, A]) = 
     c.value.run(initialState(base, prefixMap)).value
 
   def initialState(base: Option[IRI], prefixMap: PrefixMap) =
     BuilderState(prefixMap, base)
 
-  case class BuilderState(prefixMap: PrefixMap, base: Option[IRI])
+  case class BuilderState(prefixMap: PrefixMap,
+                          base: Option[IRI])
 
 }
