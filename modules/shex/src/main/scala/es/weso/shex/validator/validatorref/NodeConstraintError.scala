@@ -2,6 +2,7 @@ package es.weso.shex.validator.validatorref
 
 import scala.util.control.NoStackTrace
 import es.weso.rdf.nodes._
+import es.weso.shex.ValueSetValue
 
 sealed abstract class NodeConstraintError protected (val msg: String) extends Exception(msg) with NoStackTrace with Product with Serializable 
 
@@ -14,3 +15,4 @@ case class LiteralNonDatatypeError(node: RDFNode, datatype: IRI, expectedDatatyp
 case class DatatypeErrorNonLiteral(node: RDFNode, expectedDatatype: IRI) extends NodeConstraintError(s"LiteralNonDatatypeError: $node is not literal, and doesn't datatype $expectedDatatype")
 
 case class NotImplementedNodeConstraintError(node: RDFNode, message: String) extends NodeConstraintError(s"NotImplementedNodeConstraint on $node: $message")
+case class ValueSetError(node: RDFNode, vs: List[ValueSetValue]) extends NodeConstraintError(s"Node ${node} doesn't conform to any value in valueSet: [${vs.map(_.toString).mkString(",")}]")

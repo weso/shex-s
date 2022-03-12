@@ -10,14 +10,14 @@ import cats.data.Validated._
 import cats.implicits._
 
 object NodeConstraintValidator {
-    def validateNodeConstraint(node: RDFNode, nc: NodeConstraint): ValidatedNel[NodeConstraintError, List[NodeConstraintEvidence]] = {
-      combineVs(
+    def validateNodeConstraint(node: RDFNode, nc: NodeConstraint): IO[ValidatedNel[NodeConstraintError, List[NodeConstraintEvidence]]] = {
+      IO(combineVs(
        optValidate(nc.nodeKind, node, nodeKind), 
        optValidate(nc.datatype, node, datatype),
        optValidate(nc.values, node, values),
       ).combine(
       validateList(nc.xsFacets, node, facet)
-      )
+      ))
     }
 
     private def nodeKind(nk: NodeKind, node: RDFNode): ValidatedNel[NodeConstraintError, NodeConstraintEvidence] = nk match {
@@ -38,8 +38,11 @@ object NodeConstraintValidator {
           case _ => DatatypeErrorNonLiteral(node, dt).invalidNel
       }
 
-    private def values(vs: List[ValueSetValue], node: RDFNode): ValidatedNel[NodeConstraintError, NodeConstraintEvidence] = 
-      NotImplementedNodeConstraintError(node, s"ValueSet ${vs}").invalidNel
+    private def values(vs: List[ValueSetValue], node: RDFNode): ValidatedNel[NodeConstraintError, NodeConstraintEvidence] = {
+     val conforms = vs.filter(ValueChecker.valueChecker(node,_).isRight) 
+     if (conforms.nonEmpty) ValueSet(node, conforms, vs).valid
+     else ValueSetError(node,vs).invalidNel
+    }
 
     private def facet(f: XsFacet, node: RDFNode): ValidatedNel[NodeConstraintError, NodeConstraintEvidence] = 
       NotImplementedNodeConstraintError(node, s"facet ${f}").invalidNel  
@@ -49,7 +52,10 @@ object NodeConstraintValidator {
        value: V, 
        validator: (A, V) => ValidatedNel[E, B]
       ): ValidatedNel[E, Option[B]] = 
-     optValue.fold(valid(None))(c => validator(c,value).map(Some(_)))
+     optValue.fold(
+      none[B].validNel[E])(
+      c => validator(c,value).map(_.some)
+     )
 
     private def validateList[A, B, E, V](
        vs: List[A], 
@@ -60,5 +66,5 @@ object NodeConstraintValidator {
     }
 
     private def combineVs[E, A](vs: ValidatedNel[E,Option[A]]*): ValidatedNel[E,List[A]] = 
-      vs.map(_.map(_.toList)).combineAll
+      vs.toList.map(_.map(_.toList)).combineAll
 }

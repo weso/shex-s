@@ -19,6 +19,7 @@ import scala.util.control.NoStackTrace
 import java.io.InputStreamReader
 import java.io.InputStream
 import cats.data.NonEmptyList
+import Status._
 
 abstract class ShapeMap {
   val associations: List[Association]

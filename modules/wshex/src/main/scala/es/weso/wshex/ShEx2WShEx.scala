@@ -30,9 +30,8 @@ case class ShEx2WShEx(convertOptions: ConvertOptions) extends LazyLogging {
           .sequence
 
       start <- shexSchema.start match {
-        case None => Right(None)
-        case Some(se) =>
-          convertShapeExpr(se).flatMap(se => Right(Some(se)))
+        case None => none.asRight
+        case Some(se) => convertShapeExpr(se).flatMap(se => Right(Some(se)))
       }
     } yield Schema(shapes.toMap, start, shexSchema.prefixMap)
   }
@@ -111,16 +110,15 @@ case class ShEx2WShEx(convertOptions: ConvertOptions) extends LazyLogging {
       case _ => UnsupportedValueSetValue(value).asLeft
     }
 
-  private def convertShape(s: shex.Shape): Either[ConvertError, Shape] = s match {
-    case s: shex.Shape => for {
+  private def convertShape(s: shex.Shape): Either[ConvertError, Shape] = 
+    for {
       te <- optConvert(s.expression, convertTripleExpr)
     } yield Shape(
       id = convertId(s.id),
       closed = s.closed.getOrElse(false),
       extra = s.extra.getOrElse(List()).map(PropertyId.fromIRI(_)),
-      expression = te)
-    case _ => UnsupportedShape(s).asLeft
-  }
+      expression = te
+    )
 
   private def optConvert[A, B](
                                 v: Option[A],

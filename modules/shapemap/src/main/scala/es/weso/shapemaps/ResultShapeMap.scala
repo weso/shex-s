@@ -5,6 +5,7 @@ import cats.implicits._
 import es.weso.rdf.PrefixMap
 import es.weso.rdf.nodes.{IRI, RDFNode}
 import es.weso.utils.MapUtils._
+import Status._
 
 
 case class ResultShapeMap(

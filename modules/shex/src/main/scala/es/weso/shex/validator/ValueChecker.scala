@@ -7,10 +7,7 @@ import es.weso.shex._
 import ShExError._
 import es.weso.rdf.RDFBuilder
 
-case class ValueChecker(
- schema: AbstractSchema
- // , builder: RDFBuilder
- )
+case class ValueChecker(schema: AbstractSchema)
   extends ShExChecker
   with ShowValidator {
 
@@ -21,7 +18,7 @@ case class ValueChecker(
       msg => checkCond(true,attempt,msgErr(""), msg))
   }
 
-  /** Checks if a node matchs a valueSet value
+  /** Checks if a node matches a valueSet value
     *
     * @param node: RDF node
     * @param value: ValueSetValue

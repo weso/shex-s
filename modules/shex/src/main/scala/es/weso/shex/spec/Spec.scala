@@ -7,11 +7,14 @@ import es.weso.rdf.{PrefixMap, RDFReader}
 import es.weso.rdf.nodes.{IRI, Literal, RDFNode}
 import es.weso.shapemaps.{
   BNodeLabel => BNodeShapeMapLabel,
-  Conformant => ConformantStatus,
   IRILabel => IriShapeMapLabel,
   Info => ShapeMapInfo,
-  NonConformant => NonConformantStatus,
   Start => StartMapLabel,
+  _
+}
+import es.weso.shapemaps.Status.{
+  Conformant => ConformantStatus,
+  NonConformant => NonConformantStatus,
   _
 }
 import es.weso.shex._

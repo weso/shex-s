@@ -9,6 +9,7 @@ import es.weso.shapemaps.parser._
 import es.weso.utils.{EitherUtils, FileUtils}
 import io.circe.Json
 import scala.jdk.CollectionConverters._
+import Status._
 
 /**
  * Visits the AST and builds the corresponding ShapeMaps classes
