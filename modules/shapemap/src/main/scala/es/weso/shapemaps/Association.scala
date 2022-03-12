@@ -6,6 +6,7 @@ import NodeSelector._
 import ShapeMapLabel._
 import es.weso.utils.json.DecoderUtils._
 import es.weso.rdf.nodes.IRI
+import Status._
 
 case class Association(node: NodeSelector, shape: ShapeMapLabel, info: Info = Info()) {
 

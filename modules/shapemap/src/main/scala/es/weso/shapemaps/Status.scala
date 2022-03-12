@@ -3,12 +3,14 @@ package es.weso.shapemaps
 import io.circe._
 
 abstract sealed class Status
-case object Conformant extends Status
-case object NonConformant extends Status
-case object Undefined extends Status
-case object Pending extends Status
 
 object Status {
+ case object Conformant extends Status
+ case object NonConformant extends Status
+ case object Undefined extends Status
+ case object PendingConforms extends Status
+ case object PendingDoesntConform extends Status
+
   val default = Conformant
 
   implicit val encodeStatus: Encoder[Status] = new Encoder[Status] {
@@ -17,7 +19,8 @@ object Status {
         case Conformant => Json.fromString("conformant")
         case NonConformant => Json.fromString("nonconformant")
         case Undefined => Json.fromString("undefined")
-        case Pending => Json.fromString("pending")
+        case PendingConforms => Json.fromString("pendingConforms")
+        case PendingDoesntConform => Json.fromString("pendingDoesntConform")
       }
     }
   }
@@ -29,7 +32,8 @@ object Status {
        case "conformant" => Right(Conformant)
        case "nonconformant" => Right(NonConformant)
        case "undefined" => Right(Undefined)
-       case "pending" => Right(Pending)
+       case "pendingConforms" => Right(PendingConforms)
+       case "pendingDoesntConform" => Right(PendingDoesntConform)
        case _ => Left(DecodingFailure(s"Unknwon value for status: $str ",Nil))
      }
     } yield status

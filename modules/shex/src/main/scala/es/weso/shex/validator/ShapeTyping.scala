@@ -11,6 +11,7 @@ import es.weso.shex.shexR.PREFIXES.sx_start
 import io.circe._
 import io.circe.syntax._
 import cats.effect.IO
+import es.weso.shapemaps.Status._
 
 case class ShapeTyping(
    t: Typing[RDFNode, ShapeType, ShExError, String]

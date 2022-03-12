@@ -18,7 +18,7 @@ import es.weso.shex.validator.ConstraintRef.{showConstraintRef => _}
 import es.weso.utils.internal.CollectionCompat._
 import es.weso.utils.VerboseLevel
 import PartitionUtils._
-
+import es.weso.shapemaps.Status._
 
 /**
   * ShEx validator
@@ -72,8 +72,8 @@ case class ValidatorEitherT(schema: ResolvedSchema,
         }
       case Undefined =>
         errStr(s"Cannot check $node against undefined status")
-      case Pending =>
-        errStr(s"Cannot check $node against pending status")
+      case unknown =>
+        errStr(s"Cannot check $node against status $unknown")
     }
 
   private def checkNotConformant(node: RDFNode, label: ShapeLabel, c: ShapeTyping): CheckTyping =

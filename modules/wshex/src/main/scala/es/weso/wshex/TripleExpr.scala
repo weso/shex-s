@@ -14,7 +14,7 @@ sealed abstract class TripleExpr extends Product with Serializable {
     case tcl: TripleConstraintLocal => Set()
     case eo: EachOf => eo.exprs.foldLeft(Set[ShapeLabel]()){ case (e,s) => e.union(s.dependsOn()) }
     case oo: OneOf => oo.exprs.foldLeft(Set[ShapeLabel]()){ case (e,s) => e.union(s.dependsOn()) }
-    case _ => Set()  
+    // case _ => Set()  
   }
 
   def rbe: Rbe[(PropertyId,ShapeLabel)] = { 
@@ -33,7 +33,7 @@ sealed abstract class TripleExpr extends Product with Serializable {
     case t: TripleConstraintLocal => List()
     case eo: EachOf => eo.exprs.flatMap(_.tripleConstraints)
     case oo: OneOf => oo.exprs.flatMap(_.tripleConstraints)
-    case _ => List()
+    // case _ => List()
   }
 
   def checkLocal(
@@ -54,13 +54,6 @@ sealed abstract class TripleExpr extends Product with Serializable {
           if (failed == 0 || extra.contains(p)) Right(Set())
           else Left(NotAllowedNotInExtra(List((p,failed))))
        }
-       /* println(s"""|checkLocal for tripleConstraint
-                   |tripleConstraint: $tc
-                   |entity: $entity
-                   |fromLabel: $fromLabel
-                   |checkLocalOpen: ${tc.checkLocalOpen(entity,fromLabel)}
-                   |result: $clo
-                   |""".stripMargin) */
        clo
      } 
      case EachOf(Nil) => Right(Set())
@@ -96,11 +89,11 @@ sealed abstract class TripleExpr extends Product with Serializable {
       /* case OneOf(ts) => 
         combineChecks(ts.map(t => t.checkLocalOpen(entity,fromLabel))
       )*/ 
-   }
+    }
    /* println(s"""|checkLocal($entity,$fromLabel,$this)=
                |$cl
                |""".stripMargin) */
-   cl
+    cl
   }
 
 /*  private def combineChecks(
@@ -116,7 +109,7 @@ sealed abstract class TripleExpr extends Product with Serializable {
 
 
 
-def checkLocalCoded(
+  def checkLocalCoded(
     entity: Entity, 
     fromLabel: ShapeLabel,
     closed: Boolean,
@@ -173,8 +166,8 @@ def checkLocalCoded(
       }
      case OneOf(Nil) => Right(Set())
      case _ => Left(Reason.notImplemented)
-   }
-   cl
+    }
+    cl
   }
 
 }

@@ -2,6 +2,7 @@ package es.weso.shapemaps
 
 import io.circe._
 import io.circe.syntax._
+import Status._
 
 case class Info(
   val status: Status = Conformant,

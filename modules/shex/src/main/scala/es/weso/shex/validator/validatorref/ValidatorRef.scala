@@ -26,6 +26,7 @@ import es.weso.shex.validator.ValidationLog
 import es.weso.shex._
 import es.weso.shex.validator.ShExError._
 import alleycats.std.set._
+import es.weso.shapemaps.Status._
 
 /**
   * ShEx validator with global state using ref
@@ -86,11 +87,13 @@ case class ValidatorRef(
   private def evaluatePending(refState: Ref[IO,State]): IO[Unit] = 
     getState(refState).flatMap(state => 
     IO.println(s"Pending evaluations: ${state.pending}") *>  
-    state.pending.parFoldMapA(validateNodeShapePending(refState))
+    state.pending.parFoldMapA { 
+      case (node, label, info) => validateNodeShapePending(refState, node, label, info) 
+    }
     )
 
-  private def validateNodeShapePending(refState: Ref[IO,State])(node: RDFNode, shapeLabel: ShapeMapLabel): IO[Unit] = 
-    refState.updateAndGet(_.changePending(node,shapeLabel)).flatMap(newState => 
+  private def validateNodeShapePending(refState: Ref[IO,State], node: RDFNode, shapeLabel: ShapeMapLabel, info: Info): IO[Unit] = 
+    refState.updateAndGet(_.changePending(node,shapeLabel,info)).flatMap(newState => 
       newState.shapeMap.get(node).fold(
        validateNodeShape(refState)(node,shapeLabel)
       ){
@@ -98,7 +101,7 @@ case class ValidatorRef(
         validateNodeShape(refState)(node, shapeLabel)
       ){
        case info => info.status match {
-         case Pending => validateNodeShape(refState)(node, shapeLabel)
+         case PendingConforms => validateNodeShape(refState)(node, shapeLabel)
          case _ => ().pure[IO]
        }
       }
@@ -118,10 +121,11 @@ case class ValidatorRef(
   }
 
   private def validateNodeConstraint(refState: Ref[IO,State], node: RDFNode, nc: NodeConstraint): IO[Unit] = 
-    if (NodeConstraintValidator.validateNodeConstraint(node, nc).isValid)
+    NodeConstraintValidator.validateNodeConstraint(node, nc).flatMap(r => 
+    if (r.isValid)
       IO.println(s"$node conforms to node constraint $nc")
     else 
-      IO.println(s"$node doesn't conform to $nc")  
+      IO.println(s"$node doesn't conform to $nc"))
 
   private def getResult(refState: Ref[IO,State]): IO[Result] = 
     getState(refState).flatMap(state => {
