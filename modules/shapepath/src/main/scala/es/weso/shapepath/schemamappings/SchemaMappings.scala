@@ -12,58 +12,54 @@ import es.weso.rdf.PrefixMap
 import es.weso.rdf.nodes.IRI
 
 case class ParseError(msg: String, line: Option[Int])
-sealed abstract class ConversionError 
+sealed abstract class ConversionError
 case class ErrorEvaluatingSource(source: ShapePath, schema: Schema, error: ProcessingError) extends ConversionError
-
-
 
 case class SchemaMapping(source: ShapePath, value: IRI) {
 
- def convert(schema: Schema): Ior[List[ProcessingError],Schema] = {
-   ShapePath.replace(source, schema, None, IRIItem(value))
- }
-
- def showQualify(pm: PrefixMap): String = 
-  s"${source.showQualify(pm)} ~> ${pm.qualify(value)}"
-} 
-
-object SchemaMapping {
-}
-
-case class SchemaMappings(
-  prefixMap: PrefixMap,
-  mappings: List[SchemaMapping]
-  ) {
-
-  def convert(schema: Schema): Ior[List[ProcessingError],Schema] = {
-   val zero: Ior[List[ProcessingError],Schema] = Ior.Right(schema)
-   mappings
-   .foldLeft(zero){ 
-     case (acc, mapping) => 
-      acc.flatMap(s => mapping.convert(s))
-   }
-   .map(_.withPrefixMap(schema.prefixes.map(_.merge(prefixMap))))
+  def convert(schema: Schema): Ior[List[ProcessingError], Schema] = {
+    ShapePath.replace(source, schema, None, IRIItem(value))
   }
 
-  override def toString: String = 
-   mappings.map(_.showQualify(prefixMap)).mkString("\n")
+  def showQualify(pm: PrefixMap): String =
+    s"${source.showQualify(pm)} ~> ${pm.qualify(value)}"
+}
+
+object SchemaMapping {}
+
+case class SchemaMappings(
+    prefixMap: PrefixMap,
+    mappings: List[SchemaMapping]
+) {
+
+  def convert(schema: Schema): Ior[List[ProcessingError], Schema] = {
+    val zero: Ior[List[ProcessingError], Schema] = Ior.Right(schema)
+    mappings
+      .foldLeft(zero) { case (acc, mapping) =>
+        acc.flatMap(s => mapping.convert(s))
+      }
+      .map(_.withPrefixMap(schema.prefixes.map(_.merge(prefixMap))))
+  }
+
+  override def toString: String =
+    mappings.map(_.showQualify(prefixMap)).mkString("\n")
 
 }
 
 object SchemaMappings {
   def fromString(
-    str: String, 
-    base: Option[IRI] = None
-    ): Either[ParseError, SchemaMappings] = { 
-     SchemaMappingsParser.parseSchemaMappings(str.toString, base)
-     .leftMap(str => ParseError(str, None))
+      str: String,
+      base: Option[IRI] = None
+  ): Either[ParseError, SchemaMappings] = {
+    SchemaMappingsParser
+      .parseSchemaMappings(str.toString, base)
+      .leftMap(str => ParseError(str, None))
   }
 
-  def empty: SchemaMappings = 
-   SchemaMappings(
-     prefixMap = PrefixMap.empty,
-     mappings = List()
-   )
-  
+  def empty: SchemaMappings =
+    SchemaMappings(
+      prefixMap = PrefixMap.empty,
+      mappings = List()
+    )
 
 }
