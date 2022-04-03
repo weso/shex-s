@@ -37,7 +37,7 @@ $ sbt universal:packageBin
 which will create a zip file in folder: 
 
 ```
-target/universal/shex-s-{version}.zip
+target/universal/shexs-{version}.zip
 ```
 
 If you uncompress that zip in a folder a add it to your path, you will be able to run shex-s as a command line tool. 
