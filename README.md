@@ -44,12 +44,12 @@ If you uncompress that zip in a folder a add it to your path, you will be able t
 
 ```
 Usage:
-    shex-s mapping
-    shex-s validate
-    shex-s shapePath
-    shex-s manifest
-    shex-s wikibase
-    shex-s schema
+    shexs mapping
+    shexs validate
+    shexs shapePath
+    shexs manifest
+    shexs wikibase
+    shexs schema
 
 ShEx-Scala command line tool
 
@@ -86,10 +86,10 @@ Other options for validation are available as:
 
 ```
 Usage:
-    shex-s validate --schema <path> [--schemaFormat <format>] [--baseIRI <string>] --data <path> [--dataFormat <string>] --shapeMap <path> [--shapeMapFormat <string>] [--validator version <string>] [--showResultFormat <string>] [--output <path>] [--verbose <string>]
-    shex-s validate --schema <path> [--schemaFormat <format>] [--baseIRI <string>] --endpoint <string> --shapeMap <path> [--shapeMapFormat <string>] [--validator version <string>] [--showResultFormat <string>] [--output <path>] [--verbose <string>]
-    shex-s validate --schemaURL <string> [--baseIRI <string>] --data <path> [--dataFormat <string>] --shapeMap <path> [--shapeMapFormat <string>] [--validator version <string>] [--showResultFormat <string>] [--output <path>] [--verbose <string>]
-    shex-s validate --schemaURL <string> [--baseIRI <string>] --endpoint <string> --shapeMap <path> [--shapeMapFormat <string>] [--validator version <string>] [--showResultFormat <string>] [--output <path>] [--verbose <string>]
+    shexs validate --schema <path> [--schemaFormat <format>] [--baseIRI <string>] --data <path> [--dataFormat <string>] --shapeMap <path> [--shapeMapFormat <string>] [--validator version <string>] [--showResultFormat <string>] [--output <path>] [--verbose <string>]
+    shexs validate --schema <path> [--schemaFormat <format>] [--baseIRI <string>] --endpoint <string> --shapeMap <path> [--shapeMapFormat <string>] [--validator version <string>] [--showResultFormat <string>] [--output <path>] [--verbose <string>]
+    shexs validate --schemaURL <string> [--baseIRI <string>] --data <path> [--dataFormat <string>] --shapeMap <path> [--shapeMapFormat <string>] [--validator version <string>] [--showResultFormat <string>] [--output <path>] [--verbose <string>]
+    shexs validate --schemaURL <string> [--baseIRI <string>] --endpoint <string> --shapeMap <path> [--shapeMapFormat <string>] [--validator version <string>] [--showResultFormat <string>] [--output <path>] [--verbose <string>]
 
 Validate RDF data using a schema and a shape map
 
@@ -123,8 +123,6 @@ Options and flags:
     --verbose <string>, -v <string>
         verbose level (0-nothing,1-basic,2-info,3-details,4-debug,5-step,6-all)
 ```
-
-
 
 ## Implementation details
 
