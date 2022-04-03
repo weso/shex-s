@@ -124,7 +124,7 @@ Options and flags:
         verbose level (0-nothing,1-basic,2-info,3-details,4-debug,5-step,6-all)
 ```
 
-The following command can be used to validate 
+
 
 ## Implementation details
 
