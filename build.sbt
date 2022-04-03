@@ -10,33 +10,33 @@ lazy val supportedScalaVersions = List(
 val Java11 = JavaSpec.temurin("11") // "adopt@1.11"
 
 
-lazy val srdfVersion             = "0.1.106"
+lazy val srdfVersion             = "0.1.107"
 lazy val utilsVersion            = "0.2.4"
 lazy val documentVersion         = "0.0.34"
 
 // Dependency versions
 // lazy val antlrVersion            = "4.9.3"
-lazy val logbackVersion          = "1.2.10"
-lazy val scalaLoggingVersion     = "3.9.4"
 lazy val catsVersion             = "2.7.0"
-lazy val catsEffectVersion       = "3.3.7"
+lazy val catsEffectVersion       = "3.3.9"
 lazy val circeVersion            = "0.14.1"
 lazy val commonsTextVersion      = "1.8"
 lazy val declineVersion          = "2.2.0"
 lazy val fansiVersion            = "0.3.0"
-lazy val fs2Version              = "3.2.5"
+lazy val fs2Version              = "3.2.7"
 lazy val jenaVersion             = "4.3.2"
 lazy val junitVersion            = "4.13.2"
 lazy val junitInterfaceVersion   = "0.13.3"
 lazy val jgraphtVersion          = "1.4.0"
+lazy val logbackVersion          = "1.2.11"
 lazy val munitVersion            = "0.7.29"
 lazy val munitEffectVersion      = "1.0.7"
-lazy val pprintVersion           = "0.7.1"
+lazy val pprintVersion           = "0.7.3"
 lazy val rdf4jVersion            = "3.4.2"
-lazy val scalaCollCompatVersion  = "2.6.0"
+lazy val scalaCollCompatVersion  = "2.7.0"
 lazy val scalacheckVersion       = "1.15.4"
+lazy val scalaLoggingVersion     = "3.9.4"
 lazy val typesafeConfigVersion   = "1.4.2"
-lazy val wikidataToolkitVersion  = "0.12.1"
+lazy val wikidataToolkitVersion  = "0.13.1"
 lazy val xercesVersion           = "2.12.2"
 lazy val slf4jVersion            = "1.7.36"
 
@@ -95,8 +95,6 @@ lazy val typing            = "es.weso"                    %% "typing"          %
 lazy val validating        = "es.weso"                    %% "validating"      % utilsVersion
 lazy val utilsTest         = "es.weso"                    %% "utilstest"       % utilsVersion
 lazy val testsuite         = "es.weso"                    %% "testsuite"       % utilsVersion
-
-
 
 ThisBuild / githubWorkflowJavaVersions := Seq(Java11)
 
@@ -514,14 +512,15 @@ lazy val warnUnusedImport = Seq(
 
 lazy val commonSettings = compilationSettings ++ sharedDependencies ++ Seq(
   coverageHighlighting := priorTo2_13(scalaVersion.value),
-  organization := "es.weso",
-  sonatypeProfileName := ("es.weso"),
-  homepage            := Some(url("https://github.com/weso/shaclex")),
-  licenses            := Seq("MIT" -> url("http://opensource.org/licenses/MIT")),
-  scmInfo             := Some(ScmInfo(url("https://github.com/weso/shaclex"), "scm:git:git@github.com:weso/shaclex.git")),
-  autoAPIMappings     := true,
-  apiURL              := Some(url("http://weso.github.io/shaclex/latest/api/")),
-  autoAPIMappings     := true,
+  organization         := "es.weso",
+  sonatypeProfileName  := ("es.weso"),
+  homepage             := Some(url("https://github.com/weso/shaclex")),
+  licenses             := Seq("MIT" -> url("http://opensource.org/licenses/MIT")),
+  scmInfo              := Some(ScmInfo(url("https://github.com/weso/shaclex"), "scm:git:git@github.com:weso/shaclex.git")),
+  autoAPIMappings      := true,
+  apiURL               := Some(url("http://weso.github.io/shaclex/latest/api/")),
+  autoAPIMappings      := true,
+  maintainer           := "labra@WESO",
   developers := List(
     Developer(
       id="labra",

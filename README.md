@@ -19,11 +19,112 @@ and another one using [RDF4j](http://rdf4j.org/).
 This means that it is possible to use this library to validate RDF models from either Jena or RDF4J models,
 as well as from external SPARQL endpoints.
 
+
 ## Installation and compilation
 
 The project uses [sbt](http://www.scala-sbt.org/) for compilation as well as Java 1.8.
 
 * `sbt test` compiles and runs the tests
+
+## Command line usage
+
+It is possible to run `shex-s` as a command line tool. To create the executable run:
+
+```
+$ sbt universal:packageBin
+```
+
+which will create a zip file in folder: 
+
+```
+target/universal/shex-s-{version}.zip
+```
+
+If you uncompress that zip in a folder a add it to your path, you will be able to run shex-s as a command line tool. 
+
+```
+Usage:
+    shex-s mapping
+    shex-s validate
+    shex-s shapePath
+    shex-s manifest
+    shex-s wikibase
+    shex-s schema
+
+ShEx-Scala command line tool
+
+Options and flags:
+    --help
+        Display this help text.
+    --version, -v
+        Print the version number and exit.
+
+Subcommands:
+    mapping
+        Convert a schema through a mapping
+    validate
+        Validate RDF data using a schema and a shape map
+    shapePath
+        Validate a shape path
+    manifest
+        Run manifest file containing tests
+    wikibase
+        Validate RDF data from wikibase
+    schema
+        Schema processing actions
+```
+
+### Validate option
+
+You can run the following in the `examples` folder to validate the turtle file `user.ttl` according to the ShEx file `user.shex` and the shape map `user.sm`:
+
+```
+shexs validate --schema user.shex --data user.ttl --shapeMap user.sm
+```
+
+Other options for validation are available as:
+
+```
+Usage:
+    shex-s validate --schema <path> [--schemaFormat <format>] [--baseIRI <string>] --data <path> [--dataFormat <string>] --shapeMap <path> [--shapeMapFormat <string>] [--validator version <string>] [--showResultFormat <string>] [--output <path>] [--verbose <string>]
+    shex-s validate --schema <path> [--schemaFormat <format>] [--baseIRI <string>] --endpoint <string> --shapeMap <path> [--shapeMapFormat <string>] [--validator version <string>] [--showResultFormat <string>] [--output <path>] [--verbose <string>]
+    shex-s validate --schemaURL <string> [--baseIRI <string>] --data <path> [--dataFormat <string>] --shapeMap <path> [--shapeMapFormat <string>] [--validator version <string>] [--showResultFormat <string>] [--output <path>] [--verbose <string>]
+    shex-s validate --schemaURL <string> [--baseIRI <string>] --endpoint <string> --shapeMap <path> [--shapeMapFormat <string>] [--validator version <string>] [--showResultFormat <string>] [--output <path>] [--verbose <string>]
+
+Validate RDF data using a schema and a shape map
+
+Options and flags:
+    --help
+        Display this help text.
+    --schema <path>, -s <path>
+        Path to ShEx file.
+    --schemaFormat <format>
+        Schema format, default = (ShExC). Possible values = (ShExC,ShExJ)
+    --baseIRI <string>
+        base IRI
+    --schemaURL <string>
+        URL of schema
+    --data <path>, -d <path>
+        Path to data file.
+    --dataFormat <string>
+        Data format. Default=Turtle, available=Turtle,NTriples,RDF/XML,JSON-LD
+    --endpoint <string>
+        endpoint URL
+    --shapeMap <path>, -s <path>, -m <path>
+        Path to shapeMap file.
+    --shapeMapFormat <string>
+        ShapeMap format, default=Compact, available formats=List(Compact, JSON)
+    --validator version <string>, -e <string>
+        version of validator. Default = 2.2. Other values = 2.1,ref
+    --showResultFormat <string>
+        showResultFormat
+    --output <path>
+        Output to file (default = console)
+    --verbose <string>, -v <string>
+        verbose level (0-nothing,1-basic,2-info,3-details,4-debug,5-step,6-all)
+```
+
+The following command can be used to validate 
 
 ## Implementation details
 
