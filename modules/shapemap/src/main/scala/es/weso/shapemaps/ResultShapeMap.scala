@@ -4,14 +4,16 @@ import cats._
 import cats.implicits._
 import es.weso.rdf.PrefixMap
 import es.weso.rdf.nodes.{IRI, RDFNode}
+import es.weso.shapemaps.Status._
 import es.weso.utils.MapUtils._
-import Status._
+
+import scala.language.postfixOps
 
 
 case class ResultShapeMap(
-  resultMap: Map[RDFNode, Map[ShapeMapLabel, Info]],
-  nodesPrefixMap: PrefixMap,
-  shapesPrefixMap: PrefixMap) extends ShapeMap {
+                           resultMap: Map[RDFNode, Map[ShapeMapLabel, Info]],
+                           nodesPrefixMap: PrefixMap,
+                           shapesPrefixMap: PrefixMap) extends ShapeMap {
 
   def addShapesPrefixMap(pm: PrefixMap): ResultShapeMap =
     this.copy(shapesPrefixMap = pm)
@@ -42,7 +44,33 @@ case class ResultShapeMap(
         case None => Info.undefined(s"Node ${node.show} has no value for shape ${shape.show} in ${Show[ShapeMap].show(this)}")
         case Some(info) => info
       }
+    }
+
+  def getInfoAll: List[(ShapeMapLabel, Info)] =
+    resultMap.values.foldLeft(List.empty[(ShapeMapLabel, Info)]) { (curr, nodeResult) =>
+      curr ++ nodeResult
+    }
+
+  // Quick way to find if all results are conformant (and thus the whole thing
+  // is valid
+  def isAllConformant: Boolean = !getInfoAll.exists {
+    case (_, info) => info.status == NonConformant
   }
+
+
+  def getAllConformant: List[ShapeMapLabel] = {
+    getInfoAll.filter(_._2.status == Conformant).map(_._1)
+  }
+
+  def getAllNonConformant: List[ShapeMapLabel] = {
+    val conformant = getAllConformant
+    getInfoAll.map(_._1).filter(!conformant.contains(_))
+  }
+
+  def getAllErrors: List[String] =
+    getInfoAll.map(_._2)
+      .filter(_.status == NonConformant)
+      .map(_.reason.getOrElse("")).filter(_.isBlank)
 
   def getNonConformantShapes(node: RDFNode): List[ShapeMapLabel] = {
     resultMap.get(node) match {
@@ -94,11 +122,12 @@ case class ResultShapeMap(
     val nodes2 = other.resultMap.keySet.filter(_.isIRI)
     val delta = (nodes1 diff nodes2) union (nodes2 diff nodes1)
     if (!delta.isEmpty) {
-      Left(s"""|Nodes in map1 != nodes in map2. Delta: ${delta.map(nodesPrefixMap.qualify(_)).mkString(",")}
-               |Nodes1=${nodes1.map(nodesPrefixMap.qualify(_)).mkString(",")}
-               |Nodes2=${nodes2.map(nodesPrefixMap.qualify(_)).mkString(",")}
-               |Map1=$this
-               |Map2=$other""".stripMargin)
+      Left(
+        s"""|Nodes in map1 != nodes in map2. Delta: ${delta.map(nodesPrefixMap.qualify(_)).mkString(",")}
+            |Nodes1=${nodes1.map(nodesPrefixMap.qualify(_)).mkString(",")}
+            |Nodes2=${nodes2.map(nodesPrefixMap.qualify(_)).mkString(",")}
+            |Map1=$this
+            |Map2=$other""".stripMargin)
     } else {
       val es = resultMap.filter(!_._1.isBNode).map {
         case (node, shapes1) => other.resultMap.get(node) match {
@@ -111,10 +140,10 @@ case class ResultShapeMap(
   }
 
   private def compareShapes(
-    node: RDFNode,
-    shapes1: Map[ShapeMapLabel, Info],
-    shapes2: Map[ShapeMapLabel, Info]): Either[String, Boolean] = {
-    if (shapes1.keySet.filter(! _.isBNodeLabel).size != shapes2.keySet.filter(! _.isBNodeLabel).size)
+                             node: RDFNode,
+                             shapes1: Map[ShapeMapLabel, Info],
+                             shapes2: Map[ShapeMapLabel, Info]): Either[String, Boolean] = {
+    if (shapes1.keySet.filter(!_.isBNodeLabel).size != shapes2.keySet.filter(!_.isBNodeLabel).size)
       Left(s"Node $node has different values. Map1: $shapes1, Map2: $shapes2")
     else {
       val es: List[Either[String, Boolean]] = shapes1.filter(!_._1.isBNodeLabel).map {
@@ -124,8 +153,8 @@ case class ResultShapeMap(
             if (info1.status == info2.status) Right(true)
             else Left(
               s"""|Node $node is ${info1.status} for label $label in map1 and ${info2.status} in map2
-                 |Reason1: ${info1.reason}
-                 |Reason2: ${info2.reason}
+                  |Reason1: ${info1.reason}
+                  |Reason2: ${info2.reason}
                """.stripMargin)
         }
       }.toList
@@ -136,7 +165,7 @@ case class ResultShapeMap(
 
   private type ES[A] = Either[String, A]
 
-  private def seqEither[A,B](es: List[Either[String,B]]): Either[String,List[B]] = es.sequence[ES,B]
+  private def seqEither[A, B](es: List[Either[String, B]]): Either[String, List[B]] = es.sequence[ES, B]
 
   private def cnvResultMap(cnvNode: RDFNode => RDFNode,
                            cnvLabel: ShapeMapLabel => ShapeMapLabel
@@ -159,11 +188,11 @@ object ResultShapeMap {
 
   def empty = ResultShapeMap(Map(), PrefixMap.empty, PrefixMap.empty)
 
-  def fromFixedMap(fm: FixedShapeMap): ResultShapeMap = 
+  def fromFixedMap(fm: FixedShapeMap): ResultShapeMap =
     ResultShapeMap(
-     resultMap = fm.shapeMap, 
-     nodesPrefixMap = fm.nodesPrefixMap, 
-     shapesPrefixMap = fm.shapesPrefixMap
+      resultMap = fm.shapeMap,
+      nodesPrefixMap = fm.nodesPrefixMap,
+      shapesPrefixMap = fm.shapesPrefixMap
     )
 }
 
