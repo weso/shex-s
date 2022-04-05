@@ -12,7 +12,7 @@ import es.weso.utils.VerboseLevel
 
 class ValidationManifestTest extends CatsEffectSuite {
 
-  val timeoutByTest = 10.seconds
+  val timeoutByTest = 15.seconds
 
   override def munitTimeout: Duration = 5.minutes
 
