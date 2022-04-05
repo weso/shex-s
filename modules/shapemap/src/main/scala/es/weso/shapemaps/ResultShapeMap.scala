@@ -1,5 +1,12 @@
 package es.weso.shapemaps
 
+import cats.Show
+import cats.implicits.{toShow, toTraverseOps}
+import es.weso.rdf.PrefixMap
+import es.weso.rdf.nodes.{IRI, RDFNode}
+import es.weso.shapemaps.Status.{Conformant, NonConformant}
+import es.weso.utils.MapUtils.cnvMapMap
+
 import scala.language.postfixOps
 
 case class ResultShapeMap(
@@ -30,9 +37,8 @@ case class ResultShapeMap(
 
   def getInfo(node: RDFNode, shape: ShapeMapLabel): Info =
     resultMap.get(node) match {
-      case None => {
+      case None =>
         Info.undefined(s"Node ${node.show} not found in ${Show[ShapeMap].show(this)}")
-      }
       case Some(m) =>
         m.get(shape) match {
           case None =>
@@ -84,31 +90,27 @@ case class ResultShapeMap(
   def noSolutions: Boolean = resultMap.isEmpty
 
   val associations: List[Association] = resultMap.toList.flatMap {
-    case (node, labelsMap) => {
+    case (node, labelsMap) =>
       labelsMap.toList.map {
-        case (shapeLabel, info) => {
+        case (shapeLabel, info) =>
           Association(RDFNodeSelector(node), shapeLabel, info)
-        }
       }
-    }
   }
 
   override def addAssociation(a: Association): Either[String, ResultShapeMap] = {
     a.node match {
-      case RDFNodeSelector(node) => {
+      case RDFNodeSelector(node) =>
         resultMap.get(node) match {
           case None => Right(this.copy(resultMap = resultMap.updated(node, Map(a.shape -> a.info))))
-          case Some(labelsMap) => {
+          case Some(labelsMap) =>
             labelsMap.get(a.shape) match {
               case None => Right(this.copy(resultMap = resultMap.updated(node, labelsMap.updated(a.shape, a.info))))
               case Some(info) =>
                 if (info.status == a.info.status) Right(this)
                 else
-                  Left(s"Cannot add association with contradictory status: Association: ${a}, Labels map: ${labelsMap}")
+                  Left(s"Cannot add association with contradictory status: Association: $a, Labels map: $labelsMap")
             }
-          }
         }
-      }
       case _ => Left(s"Only RDFNode's can be added as associations to fixedShapeMaps. Value = ${a.node}")
     }
   }
@@ -117,10 +119,10 @@ case class ResultShapeMap(
     val nodes1 = resultMap.keySet.filter(_.isIRI)
     val nodes2 = other.resultMap.keySet.filter(_.isIRI)
     val delta  = (nodes1 diff nodes2) union (nodes2 diff nodes1)
-    if (!delta.isEmpty) {
-      Left(s"""|Nodes in map1 != nodes in map2. Delta: ${delta.map(nodesPrefixMap.qualify(_)).mkString(",")}
-            |Nodes1=${nodes1.map(nodesPrefixMap.qualify(_)).mkString(",")}
-            |Nodes2=${nodes2.map(nodesPrefixMap.qualify(_)).mkString(",")}
+    if (delta.nonEmpty) {
+      Left(s"""|Nodes in map1 != nodes in map2. Delta: ${delta.map(nodesPrefixMap.qualify).mkString(",")}
+            |Nodes1=${nodes1.map(nodesPrefixMap.qualify).mkString(",")}
+            |Nodes2=${nodes2.map(nodesPrefixMap.qualify).mkString(",")}
             |Map1=$this
             |Map2=$other""".stripMargin)
     } else {
@@ -129,7 +131,7 @@ case class ResultShapeMap(
         .map { case (node, shapes1) =>
           other.resultMap.get(node) match {
             case None =>
-              Left(s"Node ${nodesPrefixMap.qualify(node)} appears in map1 with shapes ${shapes1} but not in map2")
+              Left(s"Node ${nodesPrefixMap.qualify(node)} appears in map1 with shapes $shapes1 but not in map2")
             case Some(shapes2) => compareShapes(node, shapes1, shapes2)
           }
         }
@@ -143,7 +145,7 @@ case class ResultShapeMap(
       shapes1: Map[ShapeMapLabel, Info],
       shapes2: Map[ShapeMapLabel, Info]
   ): Either[String, Boolean] = {
-    if (shapes1.keySet.filter(!_.isBNodeLabel).size != shapes2.keySet.filter(!_.isBNodeLabel).size)
+    if (shapes1.keySet.count(!_.isBNodeLabel) != shapes2.keySet.count(!_.isBNodeLabel))
       Left(s"Node $node has different values. Map1: $shapes1, Map2: $shapes2")
     else {
       val es: List[Either[String, Boolean]] = shapes1
@@ -189,7 +191,7 @@ case class ResultShapeMap(
 
 object ResultShapeMap {
 
-  def empty = ResultShapeMap(Map(), PrefixMap.empty, PrefixMap.empty)
+  def empty: ResultShapeMap = ResultShapeMap(Map(), PrefixMap.empty, PrefixMap.empty)
 
   def fromFixedMap(fm: FixedShapeMap): ResultShapeMap =
     ResultShapeMap(
