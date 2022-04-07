@@ -89,12 +89,10 @@ case class ResultShapeMap(
 
   def noSolutions: Boolean = resultMap.isEmpty
 
-  val associations: List[Association] = resultMap.toList.flatMap {
-    case (node, labelsMap) =>
-      labelsMap.toList.map {
-        case (shapeLabel, info) =>
-          Association(RDFNodeSelector(node), shapeLabel, info)
-      }
+  val associations: List[Association] = resultMap.toList.flatMap { case (node, labelsMap) =>
+    labelsMap.toList.map { case (shapeLabel, info) =>
+      Association(RDFNodeSelector(node), shapeLabel, info)
+    }
   }
 
   override def addAssociation(a: Association): Either[String, ResultShapeMap] = {

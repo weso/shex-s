@@ -26,45 +26,64 @@ import es.weso.shapemaps.ResultShapeMap
 import es.weso.shex.validator.ExternalResolver
 
 case class Validate(
-    schemaSpec: SchemaSpec, 
-    dataSpec: DataSpec, 
-    shapeMapSpec: ShapeMapSpec, 
+    schemaSpec: SchemaSpec,
+    dataSpec: DataSpec,
+    shapeMapSpec: ShapeMapSpec,
     validatorVersion: ValidatorVersion,
-    showResultFormat: String, 
-    output: Option[Path], 
-    verbose: VerboseLevel)
- {
+    showResultFormat: String,
+    output: Option[Path],
+    verbose: VerboseLevel
+) {
 
   def run(): IO[ExitCode] = for {
-        res1 <- getRDFData(dataSpec, schemaSpec.baseIRI) // RDFAsJenaModel.fromURI(vc.data.toUri().toString(),vc.dataFormat,None)
-        res2 <- RDFAsJenaModel.empty
-        vv <- (res1,res2).tupled.use { 
-      case (rdf,builder) => for {
-       nodesPrefixMap <- rdf.getPrefixMap
-       schema <- schemaSpec.getSchema(verbose)
-       resolvedSchema <- ResolvedSchema.resolve(schema,None, verbose)
-       shapeMap <- ShapeMapSpec.getShapeMapFromFile(shapeMapSpec.shapeMap, shapeMapSpec.shapeMapFormat,nodesPrefixMap, schema.prefixMap, schemaSpec.baseIRI)
-       fixedMap <- ShapeMap.fixShapeMap(shapeMap, rdf, nodesPrefixMap, resolvedSchema.prefixMap)
-       validator = validatorVersion.buildValidator(resolvedSchema, ExternalResolver.NoAction, builder)
-       result   <- validator.validateShapeMap(rdf, fixedMap, verbose)
-       resultShapeMap <- result.toResultShapeMap
-       _             <- ShowResult.showResult(resultShapeMap, showResultFormat) 
-      } yield ExitCode.Success}
-    } yield vv
+    res1 <- getRDFData(
+      dataSpec,
+      schemaSpec.baseIRI
+    ) // RDFAsJenaModel.fromURI(vc.data.toUri().toString(),vc.dataFormat,None)
+    res2 <- RDFAsJenaModel.empty
+    vv <- (res1, res2).tupled.use { case (rdf, builder) =>
+      for {
+        nodesPrefixMap <- rdf.getPrefixMap
+        schema         <- schemaSpec.getSchema(verbose)
+        resolvedSchema <- ResolvedSchema.resolve(schema, None, verbose)
+        shapeMap <- ShapeMapSpec.getShapeMapFromFile(
+          shapeMapSpec.shapeMap,
+          shapeMapSpec.shapeMapFormat,
+          nodesPrefixMap,
+          schema.prefixMap,
+          schemaSpec.baseIRI
+        )
+        fixedMap <- ShapeMap.fixShapeMap(shapeMap, rdf, nodesPrefixMap, resolvedSchema.prefixMap)
+        validator = validatorVersion.buildValidator(resolvedSchema, ExternalResolver.NoAction, builder)
+        result         <- validator.validateShapeMap(rdf, fixedMap, verbose)
+        resultShapeMap <- result.toResultShapeMap
+        _              <- ShowResult.showResult(resultShapeMap, showResultFormat)
+      } yield ExitCode.Success
+    }
+  } yield vv
 
-  private def getRDFData(dataSpec: DataSpec, baseIRI: Option[IRI]): IO[Resource[IO,RDFReader]] = dataSpec match {
-     case DataPath(dataPath, dataFormat) => RDFAsJenaModel.fromURI(dataPath.toUri().toString(), dataFormat.getOrElse(DataFormat.defaultDataFormat), baseIRI)
-     case EndpointOpt(uri) => IO(Resource.pure[IO,RDFReader](Endpoint(IRI(uri))))
-   }
+  private def getRDFData(dataSpec: DataSpec, baseIRI: Option[IRI]): IO[Resource[IO, RDFReader]] = dataSpec match {
+    case DataPath(dataPath, dataFormat) =>
+      RDFAsJenaModel.fromURI(dataPath.toUri().toString(), dataFormat.getOrElse(DataFormat.defaultDataFormat), baseIRI)
+    case EndpointOpt(uri) => IO(Resource.pure[IO, RDFReader](Endpoint(IRI(uri))))
+  }
 
 }
 
 object Validate {
 
- lazy val validateCommand: Opts[Validate] = 
+  lazy val validateCommand: Opts[Validate] =
     Opts.subcommand("validate", "Validate RDF data using a schema and a shape map") {
-      (SchemaSpec.schemaSpec, DataSpec.dataSpec, ShapeMapSpec.shapeMapSpec, ValidatorVersion.validatorVersion, ShowResult.showResultFormatOpt, OutputOpt.outputOpt, VerboseLevelOpt.verboseLevel)
-      .mapN(Validate.apply)
+      (
+        SchemaSpec.schemaSpec,
+        DataSpec.dataSpec,
+        ShapeMapSpec.shapeMapSpec,
+        ValidatorVersion.validatorVersion,
+        ShowResult.showResultFormatOpt,
+        OutputOpt.outputOpt,
+        VerboseLevelOpt.verboseLevel
+      )
+        .mapN(Validate.apply)
     }
-    
+
 }
