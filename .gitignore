@@ -2,6 +2,7 @@
 *.log
 .bloop
 .bsp
+.scala-build/
 
 # sbt specific
 dist/*
