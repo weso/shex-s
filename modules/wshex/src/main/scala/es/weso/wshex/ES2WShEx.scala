@@ -7,16 +7,17 @@ import es.weso.rbe.interval.{IntLimit, Unbounded}
 import es.weso.rdf.nodes._
 import es.weso.wbmodel._
 
-case class ConvertOptions(siteIri: IRI)
+case class ESConvertOptions()
 
-object ConvertOptions {
-  val default = ConvertOptions(IRI("http://www.wikidata.org/entity/"))
+object ESConvertOptions {
+  val default = ESConvertOptions()
 }
 
-case class ShEx2WShEx(convertOptions: ConvertOptions) extends LazyLogging {
+
+case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
 
   /**
-   * Convert a ShEx schema to a WShEx
+   * Convert an entity schema in ShEx to WShEx
    * */
   def convertSchema(
                      shexSchema: shex.AbstractSchema
@@ -99,13 +100,12 @@ case class ShEx2WShEx(convertOptions: ConvertOptions) extends LazyLogging {
           s"""|convertValueSetValue:
               |name1: $name1
               |base1: $base1
-              |siteIri: ${convertOptions.siteIri}
               |""".stripMargin)
-        if (IRI(base1) == convertOptions.siteIri) {
+        /*if (IRI(base1) == convertOptions.siteIri) {
           Right(EntityIdValueSetValue(EntityId.fromIri(i)))
-        } else {
+        } else { */
           Right(IRIValueSetValue(i))
-        }
+        /*}*/
       }
       case _ => UnsupportedValueSetValue(value).asLeft
     }
@@ -199,7 +199,7 @@ case class ShEx2WShEx(convertOptions: ConvertOptions) extends LazyLogging {
 
 }
 
-object ShEx2WShEx {
+object ES2WShEx {
   def apply(
              convertOptions: ConvertOptions = ConvertOptions.default
            ): ShEx2WShEx = {
