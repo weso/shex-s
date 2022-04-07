@@ -28,19 +28,15 @@ The project uses [sbt](http://www.scala-sbt.org/) for compilation as well as Jav
 
 ## Command line usage
 
-It is possible to run `shex-s` as a command line tool. To create the executable run:
+It is possible to run `shex-s` as a command line tool. 
+
+To create the executable you have to install [scala-cli](https://scala-cli.virtuslab.org/) and once it is installed run the following command in the folder with the shexs repository:
 
 ```
-$ sbt universal:packageBin
+$ scala-cli package . -o shexs -f
 ```
 
-which will create a zip file in folder: 
-
-```
-target/universal/shexs-{version}.zip
-```
-
-If you uncompress that zip in a folder a add it to your path, you will be able to run shex-s as a command line tool. 
+which will create an executable called `shexs`
 
 ```
 Usage:
@@ -73,6 +69,9 @@ Subcommands:
     schema
         Schema processing actions
 ```
+
+It is possible to create binaries for different platforms like Linux, Windows, MacOS, etc. 
+We would like to publish those binaries with each release as discribed [in this issue](https://github.com/weso/shex-s/issues/344).
 
 ### Validate option
 

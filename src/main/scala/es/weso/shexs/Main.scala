@@ -10,7 +10,7 @@ import es.weso.shex.validator.Validator
 import es.weso.shextest.manifest.{Validate => _, _}
 import com.monovore.decline._
 import com.monovore.decline.effect._
-import buildinfo._
+// import buildinfo._
 import java.nio.file.Path
 import es.weso.shapepath.schemamappings.SchemaMappings
 import es.weso.shex.implicits.showShEx._
@@ -43,7 +43,7 @@ case class ShapePathEval(
 object Main extends CommandIOApp (
   name="shex-s", 
   header = "ShEx-Scala command line tool",
-  version = BuildInfo.version
+  version = "0.2.2" // BuildInfo.version
   ) {
 
 lazy val mappingOpt = Opts.option[Path]("mapping", short = "m", metavar = "mappings-file", help = "Path to Mappings file.")

@@ -5,13 +5,13 @@ import es.weso.rdf.PrefixMap
 import es.weso.typing._
 import es.weso.rdf.nodes._
 import es.weso.shapemaps.{BNodeLabel, IRILabel => IRIMapLabel, _}
+import es.weso.shapemaps.Status._
 import es.weso.shex.ShapeLabel
 import io.circe.Json
 import es.weso.shex.shexR.PREFIXES.sx_start
 import io.circe._
 import io.circe.syntax._
 import cats.effect.IO
-import es.weso.shapemaps.Status._
 
 case class ShapeTyping(
    t: Typing[RDFNode, ShapeType, ShExError, String]

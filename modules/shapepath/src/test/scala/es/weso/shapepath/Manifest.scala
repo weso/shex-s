@@ -11,8 +11,9 @@ import java.nio.file.Path
 import scala.io.{BufferedSource, Source}
 import es.weso.shex._
 import es.weso.rdf.nodes.IRI
-import cats._
 import es.weso.utils.FileUtils
+import cats.MonadError
+
 
 import io.circe.CursorOp._
 
