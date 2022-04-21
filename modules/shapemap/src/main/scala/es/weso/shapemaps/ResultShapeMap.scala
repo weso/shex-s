@@ -21,19 +21,17 @@ case class ResultShapeMap(
   def addNodesPrefixMap(pm: PrefixMap): ResultShapeMap =
     this.copy(nodesPrefixMap = pm)
 
-  def addNodeAssociations(node: RDFNode, mapLabels: Map[ShapeMapLabel, Info]): ResultShapeMap = {
+  def addNodeAssociations(node: RDFNode, mapLabels: Map[ShapeMapLabel, Info]): ResultShapeMap =
     resultMap.get(node) match {
       case None     => this.copy(resultMap = this.resultMap.updated(node, mapLabels))
       case Some(vs) => this.copy(resultMap = this.resultMap.updated(node, vs ++ mapLabels))
     }
-  }
 
-  def getConformantShapes(node: RDFNode): List[ShapeMapLabel] = {
+  def getConformantShapes(node: RDFNode): List[ShapeMapLabel] =
     resultMap.get(node) match {
       case None    => List()
       case Some(m) => m.toList.collect { case p if p._2.status == Conformant => p._1 }
     }
-  }
 
   def getInfo(node: RDFNode, shape: ShapeMapLabel): Info =
     resultMap.get(node) match {
@@ -42,7 +40,9 @@ case class ResultShapeMap(
       case Some(m) =>
         m.get(shape) match {
           case None =>
-            Info.undefined(s"Node ${node.show} has no value for shape ${shape.show} in ${Show[ShapeMap].show(this)}")
+            Info.undefined(
+              s"Node ${node.show} has no value for shape ${shape.show} in ${Show[ShapeMap].show(this)}"
+            )
           case Some(info) => info
         }
     }
@@ -58,9 +58,8 @@ case class ResultShapeMap(
     info.status == Conformant
   }
 
-  def getAllConformant: List[ShapeMapLabel] = {
+  def getAllConformant: List[ShapeMapLabel] =
     getInfoAll.filter(_._2.status == Conformant).map(_._1)
-  }
 
   def getAllNonConformant: List[ShapeMapLabel] = {
     val conformant = getAllConformant
@@ -73,54 +72,57 @@ case class ResultShapeMap(
       .filter(_.status == NonConformant)
       .map(_.reason.getOrElse("Unknown error"))
 
-  def getNonConformantShapes(node: RDFNode): List[ShapeMapLabel] = {
+  def getNonConformantShapes(node: RDFNode): List[ShapeMapLabel] =
     resultMap.get(node) match {
       case None    => List()
       case Some(m) => m.toList.collect { case p if p._2.status == NonConformant => p._1 }
     }
-  }
 
-  def hasShapes(node: RDFNode): Seq[ShapeMapLabel] = {
+  def hasShapes(node: RDFNode): Seq[ShapeMapLabel] =
     resultMap.get(node).map(_.keySet.toSeq).getOrElse(Seq())
-  }
 
   def containsDeclaration(node: RDFNode): Boolean =
     resultMap.keySet.contains(node)
 
   def noSolutions: Boolean = resultMap.isEmpty
 
-  val associations: List[Association] = resultMap.toList.flatMap {
-    case (node, labelsMap) =>
-      labelsMap.toList.map {
-        case (shapeLabel, info) =>
-          Association(RDFNodeSelector(node), shapeLabel, info)
-      }
+  val associations: List[Association] = resultMap.toList.flatMap { case (node, labelsMap) =>
+    labelsMap.toList.map { case (shapeLabel, info) =>
+      Association(RDFNodeSelector(node), shapeLabel, info)
+    }
   }
 
-  override def addAssociation(a: Association): Either[String, ResultShapeMap] = {
+  override def addAssociation(a: Association): Either[String, ResultShapeMap] =
     a.node match {
       case RDFNodeSelector(node) =>
         resultMap.get(node) match {
           case None => Right(this.copy(resultMap = resultMap.updated(node, Map(a.shape -> a.info))))
           case Some(labelsMap) =>
             labelsMap.get(a.shape) match {
-              case None => Right(this.copy(resultMap = resultMap.updated(node, labelsMap.updated(a.shape, a.info))))
+              case None =>
+                Right(
+                  this.copy(resultMap = resultMap.updated(node, labelsMap.updated(a.shape, a.info)))
+                )
               case Some(info) =>
                 if (info.status == a.info.status) Right(this)
                 else
-                  Left(s"Cannot add association with contradictory status: Association: $a, Labels map: $labelsMap")
+                  Left(
+                    s"Cannot add association with contradictory status: Association: $a, Labels map: $labelsMap"
+                  )
             }
         }
-      case _ => Left(s"Only RDFNode's can be added as associations to fixedShapeMaps. Value = ${a.node}")
+      case _ =>
+        Left(s"Only RDFNode's can be added as associations to fixedShapeMaps. Value = ${a.node}")
     }
-  }
 
   def compareWith(other: ResultShapeMap): Either[String, Boolean] = {
     val nodes1 = resultMap.keySet.filter(_.isIRI)
     val nodes2 = other.resultMap.keySet.filter(_.isIRI)
-    val delta  = (nodes1 diff nodes2) union (nodes2 diff nodes1)
+    val delta = (nodes1.diff(nodes2)).union(nodes2.diff(nodes1))
     if (delta.nonEmpty) {
-      Left(s"""|Nodes in map1 != nodes in map2. Delta: ${delta.map(nodesPrefixMap.qualify).mkString(",")}
+      Left(s"""|Nodes in map1 != nodes in map2. Delta: ${delta
+                .map(nodesPrefixMap.qualify)
+                .mkString(",")}
             |Nodes1=${nodes1.map(nodesPrefixMap.qualify).mkString(",")}
             |Nodes2=${nodes2.map(nodesPrefixMap.qualify).mkString(",")}
             |Map1=$this
@@ -131,7 +133,9 @@ case class ResultShapeMap(
         .map { case (node, shapes1) =>
           other.resultMap.get(node) match {
             case None =>
-              Left(s"Node ${nodesPrefixMap.qualify(node)} appears in map1 with shapes $shapes1 but not in map2")
+              Left(
+                s"Node ${nodesPrefixMap.qualify(node)} appears in map1 with shapes $shapes1 but not in map2"
+              )
             case Some(shapes2) => compareShapes(node, shapes1, shapes2)
           }
         }
@@ -144,7 +148,7 @@ case class ResultShapeMap(
       node: RDFNode,
       shapes1: Map[ShapeMapLabel, Info],
       shapes2: Map[ShapeMapLabel, Info]
-  ): Either[String, Boolean] = {
+  ): Either[String, Boolean] =
     if (shapes1.keySet.count(!_.isBNodeLabel) != shapes2.keySet.count(!_.isBNodeLabel))
       Left(s"Node $node has different values. Map1: $shapes1, Map2: $shapes2")
     else {
@@ -158,7 +162,8 @@ case class ResultShapeMap(
               )
             case Some(info2) =>
               if (info1.status == info2.status) Right(true)
-              else Left(s"""|Node $node is ${info1.status} for label $label in map1 and ${info2.status} in map2
+              else
+                Left(s"""|Node $node is ${info1.status} for label $label in map1 and ${info2.status} in map2
                   |Reason1: ${info1.reason}
                   |Reason2: ${info2.reason}
                """.stripMargin)
@@ -168,19 +173,21 @@ case class ResultShapeMap(
       val r: Either[String, List[Boolean]] = seqEither(es) // es.sequence
       r.map(_ => true)
     }
-  }
 
   private type ES[A] = Either[String, A]
 
-  private def seqEither[A, B](es: List[Either[String, B]]): Either[String, List[B]] = es.sequence[ES, B]
+  private def seqEither[A, B](es: List[Either[String, B]]): Either[String, List[B]] =
+    es.sequence[ES, B]
 
-  private def cnvResultMap(cnvNode: RDFNode => RDFNode, cnvLabel: ShapeMapLabel => ShapeMapLabel): ResultShapeMap = {
+  private def cnvResultMap(
+      cnvNode: RDFNode => RDFNode,
+      cnvLabel: ShapeMapLabel => ShapeMapLabel
+  ): ResultShapeMap =
     ResultShapeMap(
       cnvMapMap(resultMap, cnvNode, cnvLabel, identity[Info]),
       nodesPrefixMap,
       shapesPrefixMap
     )
-  }
 
   override def relativize(maybeBase: Option[IRI]): ShapeMap = maybeBase match {
     case None       => this
