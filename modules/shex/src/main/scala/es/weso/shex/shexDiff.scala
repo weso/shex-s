@@ -9,15 +9,15 @@ object ShExDiff {
   type Diff[A] = (A, A) => Result[A]
 
   implicit val applyResult: Apply[Result] = new Apply[Result] {
-    def ap[A, B](f: Result[A => B])(fa: Result[A]): Result[B] = {
+    def ap[A, B](f: Result[A => B])(fa: Result[A]): Result[B] =
       f match {
         case Validated.Invalid(s) => Validated.Invalid(s)
-        case Validated.Valid((f1, f2)) => fa match {
-          case Validated.Invalid(s) => Validated.Invalid(s)
-          case Validated.Valid((x1, x2)) => Validated.Valid((f1(x1), f2(x2)))
-        }
+        case Validated.Valid(f1, f2) =>
+          fa match {
+            case Validated.Invalid(s)    => Validated.Invalid(s)
+            case Validated.Valid(x1, x2) => Validated.Valid((f1(x1), f2(x2)))
+          }
       }
-    }
     def map[A, B](fa: Result[A])(f: A => B): Result[B] = {
       def ff(x: (A, A)): (B, B) = (f(x._1), f(x._2))
       fa.map(ff)
@@ -25,7 +25,7 @@ object ShExDiff {
   }
 
   def ok[A](x: (A, A)): Result[A] =
-    Validated.valid((x))
+    Validated.valid(x)
 
   def err[A](msg: String): Result[A] =
     Validated.invalidNel(msg)
@@ -49,11 +49,8 @@ object ShExDiff {
 
   }
 
-  def mkSchema(
-    pm: Option[PrefixMap],
-    db: Option[IRI],
-    ds: Option[List[SemAct]]): Schema = 
-     Schema.empty.withPrefixMap(pm).withBase(db).withStartActions(ds)     
+  def mkSchema(pm: Option[PrefixMap], db: Option[IRI], ds: Option[List[SemAct]]): Schema =
+    Schema.empty.withPrefixMap(pm).withBase(db).withStartActions(ds)
 
   def prefixesDiff: Diff[Option[PrefixMap]] =
     optDiff(prefixMapDiff)
@@ -61,22 +58,17 @@ object ShExDiff {
   def prefixMapDiff: Diff[PrefixMap] = (pm1, pm2) =>
     mapDiff(prefixDiff, iriDiff)(pm1.pm, pm2.pm).map(_ => (pm1, pm2))
 
-  def mapDiff[A, B](
-    diffA: Diff[A],
-    diffB: Diff[B]): Diff[Map[A, B]] = (m1, m2) =>
+  def mapDiff[A, B](diffA: Diff[A], diffB: Diff[B]): Diff[Map[A, B]] = (m1, m2) =>
     listDiff(pairDiff(diffA, diffB))(m1.toList, m2.toList).map(_ => (m1, m2))
 
-  def pairDiff[A, B](
-    diffA: Diff[A],
-    diffB: Diff[B]): Diff[(A, B)] = (p1, p2) => {
+  def pairDiff[A, B](diffA: Diff[A], diffB: Diff[B]): Diff[(A, B)] = (p1, p2) => {
     def f(x: A, y: B): (A, B) = (x, y)
     Apply[Result].map2(diffA(p1._1, p2._1), diffB(p1._2, p2._2))(f)
   }
 
   //    (diffA(p1._1, p2._1), diffB(p1._2, p2._2)).map2((_, _) => ))
 
-  def prefixDiff: Diff[Prefix] = (p1, p2) =>
-    valueDiff(p1.str, p2.str).map(_ => (p1, p2))
+  def prefixDiff: Diff[Prefix] = (p1, p2) => valueDiff(p1.str, p2.str).map(_ => (p1, p2))
 
   def baseDiff: Diff[Option[IRI]] =
     optDiff(iriDiff)
@@ -114,9 +106,9 @@ object ShExDiff {
 
   def optDiff[A](f: Diff[A]): Diff[Option[A]] = (x1, x2) =>
     (x1, x2) match {
-      case (None, None) => ok((x1, x2))
-      case (None, Some(v)) => err(s"1st value is None while 2nd value is $v")
-      case (Some(v), None) => err(s"1st value $v while 2nd value is None")
+      case (None, None)         => ok((x1, x2))
+      case (None, Some(v))      => err(s"1st value is None while 2nd value is $v")
+      case (Some(v), None)      => err(s"1st value $v while 2nd value is None")
       case (Some(v1), Some(v2)) => f(v1, v2).map(p => (Some(p._1), Some(p._2)))
     }
 

@@ -12,26 +12,27 @@ import es.weso.rdf.RDFBuilder
 object ValueWriter {
 
   def entity2JsonStr(v: Entity, showShapes: Boolean): String = {
-    val os = new ByteArrayOutputStream()
+    val os = new ByteArrayOutputStream
     //    val jsonSerializer = new JsonSerializer(os)
     //    jsonSerializer.open()
     val str = entity2entityDocument(v) match {
-      case (id: ItemDocument,okShapes) => JsonSerializer.getJsonString(id) ++ printShapes(showShapes, okShapes)
-      case (pd: PropertyDocument, okShapes) => JsonSerializer.getJsonString(pd) ++ printShapes(showShapes, okShapes)
+      case (id: ItemDocument, okShapes) =>
+        JsonSerializer.getJsonString(id) ++ printShapes(showShapes, okShapes)
+      case (pd: PropertyDocument, okShapes) =>
+        JsonSerializer.getJsonString(pd) ++ printShapes(showShapes, okShapes)
       case _ => ""
     }
     str
     //    jsonSerializer.close()
   }
 
-  private def printShapes(showShapes: Boolean, shapes: Set[ShapeLabel]): String = {
+  private def printShapes(showShapes: Boolean, shapes: Set[ShapeLabel]): String =
     if (showShapes && shapes.nonEmpty) {
       "// Shapes: " ++ shapes.map(_.name).mkString(",")
     } else ""
-  }
 
   def entity2entityDocument(v: Entity): (EntityDocument, Set[ShapeLabel]) = v match {
-    case i: Item => {
+    case i: Item =>
       val ed = new ItemDocumentImpl(
         cnvItemId(i.itemId),
         cnvMultilingual(i.labels).asJava,
@@ -41,9 +42,8 @@ object ValueWriter {
         cnvSiteLinks(i.siteLinks).asJava,
         0L
       )
-      (ed,i.okShapes)
-    }
-    case p: Property => {
+      (ed, i.okShapes)
+    case p: Property =>
       val pd = new PropertyDocumentImpl(
         cnvPropertyId(p.propertyId),
         cnvMultilingual(p.labels).asJava,
@@ -53,18 +53,16 @@ object ValueWriter {
         cnvDatatype(p.datatype),
         0L
       )
-      (pd,p.okShapes)
-    }
+      (pd, p.okShapes)
   }
 
-  def cnvMultilingual(m: Map[Lang,String]): List[MonolingualTextValue] =
-    m.toList.map {
-      case (lang,text) =>
-        new MonolingualTextValueImpl(text, lang.code)
+  def cnvMultilingual(m: Map[Lang, String]): List[MonolingualTextValue] =
+    m.toList.map { case (lang, text) =>
+      new MonolingualTextValueImpl(text, lang.code)
     }
 
   def cnvItemId(id: ItemId): ItemIdValue =
-    new ItemIdValueImpl(id.id,id.iri.getLexicalForm)
+    new ItemIdValueImpl(id.id, id.iri.getLexicalForm)
 
   def cnvPropertyId(pd: PropertyId): PropertyIdValue =
     new PropertyIdValueImpl(pd.id, pd.iri.getLexicalForm)

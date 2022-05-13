@@ -38,11 +38,11 @@ object SchemaMappingsParser {
     v
   }
 
-  def fromEither[A](e: Either[String,A]): Builder[A] =
+  def fromEither[A](e: Either[String, A]): Builder[A] =
     e.fold(str => err(str), ok(_))
 
   def sequence[A](bs: List[Builder[A]]): Builder[List[A]] =
-    bs.sequence[Builder,A]
+    bs.sequence[Builder, A]
 
   def getPrefixMap: Builder[PrefixMap] =
     getState.map(_.prefixMap)
@@ -65,36 +65,33 @@ object SchemaMappingsParser {
   def addBase(base: IRI): Builder[Unit] =
     updateState(_.copy(base = Some(base)))
 
-  def updateState(fn: BuilderState => BuilderState): Builder[Unit] = {
+  def updateState(fn: BuilderState => BuilderState): Builder[Unit] =
     EitherT.liftF[S, String, Unit](StateT.modify(fn))
-  }
 
-  def updateStart(s: Start): Builder[Unit] = {
+  def updateStart(s: Start): Builder[Unit] =
     // logger.info(s"New start: $s")
     updateState(_.copy(start = s))
-  }
 
   // TODO: Check what to do if the label is already assigned
-  def addShape(label: ShapeLabel, expr: ShapeExpr): Builder[Unit] = {
+  def addShape(label: ShapeLabel, expr: ShapeExpr): Builder[Unit] =
     updateState(s => s.copy(shapesMap = s.shapesMap + (label -> expr)))
-  }
 
-  def addPrefix(prefix: Prefix, iri: IRI): Builder[Unit] = {
-    updateState(s => {
+  def addPrefix(prefix: Prefix, iri: IRI): Builder[Unit] =
+    updateState { s =>
       val newS = s.copy(prefixMap = s.prefixMap.addPrefix(prefix, iri))
       // logger.info(s"Updating prefix map. New prefix map=${newS.prefixMap}")
       newS
-    })
-  }
+    }
 
   def addTripleExprLabel(label: ShapeLabel, te: TripleExpr): Builder[TripleExpr] = for {
     s <- getState
     _ <- s.tripleExprMap.get(label) match {
       case None => ok(())
-      case Some(otherTe) => err(s"Label $label has been assigned to ${otherTe} and can't be assigned to $te")
+      case Some(otherTe) =>
+        err(s"Label $label has been assigned to ${otherTe} and can't be assigned to $te")
     }
     _ <- updateState(s => s.copy(tripleExprMap = s.tripleExprMap + (label -> te)))
-  } yield (te.addId(label))
+  } yield te.addId(label)
 
   def parseSchemaMappings(str: String, base: Option[IRI]): Either[String, SchemaMappings] = {
     val UTF8_BOM = "\uFEFF"
@@ -109,14 +106,12 @@ object SchemaMappingsParser {
     parseReader(reader, base)
   }
 
-/*  def parseShapePathFromFile(fileName: String, base: Option[IRI]): Either[String, ShapePath] = for {
+  /*  def parseShapePathFromFile(fileName: String, base: Option[IRI]): Either[String, ShapePath] = for {
     reader <- FileUtils.getStream(fileName)
     schema <- parseReader(reader, base)
   } yield schema */
 
-  def parseReader(reader: JavaReader,
-                  base: Option[IRI]
-                 ): Either[String, SchemaMappings] = {
+  def parseReader(reader: JavaReader, base: Option[IRI]): Either[String, SchemaMappings] = {
     val input: CharStream = CharStreams.fromReader(reader)
     val lexer: SchemaMappingsDocLexer = new SchemaMappingsDocLexer(input)
     val tokens: CommonTokenStream = new CommonTokenStream(lexer)
@@ -126,8 +121,9 @@ object SchemaMappingsParser {
     lexer.addErrorListener(errorListener)
     parser.addErrorListener(errorListener)
 
-    val maker = new SchemaMappingsMaker()
-    val builder: Builder[SchemaMappings] = maker.visit(parser.schemaMappingsDoc()).asInstanceOf[Builder[SchemaMappings]]
+    val maker = new SchemaMappingsMaker
+    val builder: Builder[SchemaMappings] =
+      maker.visit(parser.schemaMappingsDoc()).asInstanceOf[Builder[SchemaMappings]]
     val errors = errorListener.getErrors()
     if (errors.length > 0) {
       Left(errors.mkString("\n"))
@@ -136,23 +132,18 @@ object SchemaMappingsParser {
     }
   }
 
-  def run[A](c: Builder[A],
-             base: Option[IRI]
-            ): (BuilderState, Either[String, A]) = c.value.run(initialState(base)).value
+  def run[A](c: Builder[A], base: Option[IRI]): (BuilderState, Either[String, A]) =
+    c.value.run(initialState(base)).value
 
   def initialState(base: Option[IRI]) =
-    BuilderState(
-      PrefixMap.empty,
-      base,
-      None,
-      ListMap(),
-      Map())
+    BuilderState(PrefixMap.empty, base, None, ListMap(), Map())
 
-  case class BuilderState(prefixMap: PrefixMap,
-                          base: Option[IRI],
-                          start: Option[ShapeExpr],
-                          shapesMap: ShapesMap,
-                          tripleExprMap: TripleExprMap
-                         )
+  case class BuilderState(
+      prefixMap: PrefixMap,
+      base: Option[IRI],
+      start: Option[ShapeExpr],
+      shapesMap: ShapesMap,
+      tripleExprMap: TripleExprMap
+  )
 
 }

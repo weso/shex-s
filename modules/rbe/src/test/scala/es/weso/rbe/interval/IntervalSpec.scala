@@ -9,7 +9,18 @@ trait GenRbe extends GenBag {
 
   // Generates a controlled set of cardinalities
   val genCard: Gen[(Int, Int)] = Gen.oneOf(
-    (0, 0), (0, 1), (1, 1), (0, 2), (1, 2), (2, 2), (3, 2), (20, 20), (1, 20), (2, 20), (3, 20))
+    (0, 0),
+    (0, 1),
+    (1, 1),
+    (0, 2),
+    (1, 2),
+    (2, 2),
+    (3, 2),
+    (20, 20),
+    (1, 20),
+    (2, 20),
+    (3, 20)
+  )
 
   def genEmpty: Gen[Rbe[Char]] =
     Gen.const(Empty)
@@ -47,7 +58,8 @@ trait GenRbe extends GenBag {
         genAnd(newLevel),
         genOr(newLevel),
         genPlus(newLevel),
-        genStar(newLevel))
+        genStar(newLevel)
+      )
     }
 
   def rbe: Gen[Rbe[Char]] = genRbe(0)
@@ -80,5 +92,5 @@ trait GenRbe extends GenBag {
   }
 
 }
-*/
+ */
 //object IntervalSpec extends IntervalSpec

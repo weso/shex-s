@@ -11,9 +11,8 @@ case class CheckResult[E: Show, A: Show, Log: Show](log: Log, eitherResult: Eith
   def errors: Seq[E] =
     eitherResult.fold(e => List(e), _ => Seq())
 
-  def results: List[A] = {
+  def results: List[A] =
     eitherResult.fold(_ => List(), x => List(x))
-  }
 
   def show: String = {
     val result = if (isOK) {
@@ -32,4 +31,3 @@ case class CheckResult[E: Show, A: Show, Log: Show](log: Log, eitherResult: Eith
   def toEither: Either[E, A] = eitherResult
 
 }
-

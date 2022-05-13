@@ -7,8 +7,8 @@ import es.weso.shex.Schema
 import es.weso.shex.ResolvedSchema
 import es.weso.shapemaps.QueryShapeMap
 import es.weso.shapemaps.ShapeMap
-import cats.data._  
-import cats.implicits._ 
+import cats.data._
+import cats.implicits._
 import es.weso.utils.IOUtils._
 import es.weso.shex.validator.Validator
 import es.weso.shapemaps.ResultShapeMap
@@ -23,30 +23,38 @@ class WikibaseRDFTest extends CatsEffectSuite {
   val slow = new munit.Tag("Slow")
 
   test(s"Should obtain triples for an item".tag(slow)) {
-      val r: IO[List[RDFTriple]] = WikibaseRDF.wikidata.flatMap(_.use(wikibase => for {
-        ts <- wikibase.triplesWithSubject(wd + "Q42").compile.toList
-      } yield ts))
-      r.map(vs => assertEquals(vs.length > 0, true))
-  } 
+    val r: IO[List[RDFTriple]] = WikibaseRDF.wikidata.flatMap(
+      _.use(wikibase =>
+        for {
+          ts <- wikibase.triplesWithSubject(wd + "Q42").compile.toList
+        } yield ts
+      )
+    )
+    r.map(vs => assertEquals(vs.length > 0, true))
+  }
 
   {
     val item = IRI("http://www.wikidata.org/entity/Q29377880")
 
     test(s"Should obtain triples for an item".tag(slow)) {
-      val r: IO[(List[RDFTriple],List[RDFTriple],List[RDFTriple],CachedState)] = WikibaseRDF.wikidata.flatMap(_.use(wikibase => 
-      for {
-        ts1 <- wikibase.triplesWithSubject(wd + "Q42").compile.toList
-        ts2 <- wikibase.triplesWithSubject(wd + "Q42").compile.toList
-        ts3 <- wikibase.triplesWithSubject(wd + "Q42").compile.toList
-        cs <- wikibase.refCached.get
-      } yield (ts1,ts2,ts3,cs)))
-      r.map(tuple => { 
-          val (ts1,ts2,ts3,cs) = tuple
-          println(s"Triples: ${ts1.length}, ${ts2.length}\nCachedState: ${cs.iris.mkString(",")}") 
-        })
-    } 
-   
-/*    it(s"Should use wikibase rdf once with the same item cached") {
+      val r: IO[(List[RDFTriple], List[RDFTriple], List[RDFTriple], CachedState)] =
+        WikibaseRDF.wikidata.flatMap(
+          _.use(wikibase =>
+            for {
+              ts1 <- wikibase.triplesWithSubject(wd + "Q42").compile.toList
+              ts2 <- wikibase.triplesWithSubject(wd + "Q42").compile.toList
+              ts3 <- wikibase.triplesWithSubject(wd + "Q42").compile.toList
+              cs <- wikibase.refCached.get
+            } yield (ts1, ts2, ts3, cs)
+          )
+        )
+      r.map { tuple =>
+        val (ts1, ts2, ts3, cs) = tuple
+        println(s"Triples: ${ts1.length}, ${ts2.length}\nCachedState: ${cs.iris.mkString(",")}")
+      }
+    }
+
+    /*    it(s"Should use wikibase rdf once with the same item cached") {
        val r: IO[(Int,Int)] = WikibaseRDF.wikidata.flatMap(_.use(wd => for {
            ts1 <- wd.triplesWithSubject(item).compile.toList
            ts2 <- wd.triplesWithSubject(item).compile.toList
@@ -58,11 +66,11 @@ class WikibaseRDFTest extends CatsEffectSuite {
           n1 should be (n2)
          }
        )
-   } 
+   }
 
    it(s"Should use wikibase rdf twice") {
-       val r: IO[((Int,Int),(Int,Int))] = for { 
-         res <- WikibaseRDF.wikidata   
+       val r: IO[((Int,Int),(Int,Int))] = for {
+         res <- WikibaseRDF.wikidata
          pair1 <- res.use(wd => for {
            _ <- wd.showRDFId("1st use")
            ts1 <- wd.triplesWithSubject(item).compile.toList
@@ -74,7 +82,7 @@ class WikibaseRDFTest extends CatsEffectSuite {
            _ <- wd.showRDFId("2nd use")
            ts1 <- wd.triplesWithSubject(item).compile.toList
            ts2 <- wd.triplesWithSubject(item).compile.toList
-         } yield ((ts1.length, ts2.length))) 
+         } yield ((ts1.length, ts2.length)))
        } yield (pair1,pair2)
        r.attempt.unsafeRunSync.fold(
          s => fail(s"Error: ${s.getMessage}"),
@@ -98,30 +106,30 @@ class WikibaseRDFTest extends CatsEffectSuite {
          } yield () })
       } yield () })
       r.attempt.unsafeRunSync.fold(
-          s => fail(s"Error: $s"), 
+          s => fail(s"Error: $s"),
           _ => info(s"Finnished")
-      ) 
-  } 
+      )
+  }
 
   }
 
   describe(s"Validate Wikidata items") {
    {
     val ex = IRI("http://example.org/")
-    val strSchema = 
+    val strSchema =
       s"""|prefix : <${ex.str}>
-          |prefix wdt: <${wdt.str}> 
+          |prefix wdt: <${wdt.str}>
           |prefix xsd: <${xsd.str}>
           |
-          |:S { 
+          |:S {
           |  wdt:P31 IRI +
           |}""".stripMargin
-    println(s"strSchema: \n${strSchema}")      
+    println(s"strSchema: \n${strSchema}")
     shouldValidateWikidata(wd+"Q42", ex+"S", strSchema, true, Some(ex))
    }
    {
     val ex = IRI("http://example.org/")
-    val strSchema = 
+    val strSchema =
       s"""|PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
           |PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
           |PREFIX wd: <http://www.wikidata.org/entity/>
@@ -147,7 +155,7 @@ class WikibaseRDFTest extends CatsEffectSuite {
           |  wdt:P103 @<language> *;
           |  wdt:P1412 @<language> *;
           |  wdt:P6886  @<language> *;
-          |  rdfs:label rdf:langString +; 
+          |  rdfs:label rdf:langString +;
           |}
           |
           |<country> EXTRA wdt:P31 {
@@ -159,9 +167,9 @@ class WikibaseRDFTest extends CatsEffectSuite {
           |#}
           |<language> { }
           |""".stripMargin
-    println(s"strSchema: \n${strSchema}")      
+    println(s"strSchema: \n${strSchema}")
     shouldValidateWikidata(wd+"Q42", IRI("human"), strSchema, true, Some(ex))
-  } 
+  }
   }
 
  private def fromEitherES[A](e: Either[String,A]): IO[A] =
@@ -175,7 +183,7 @@ class WikibaseRDFTest extends CatsEffectSuite {
      val r: IO[ResultShapeMap] = for {
        res1 <- WikibaseRDF.wikidata
        res2 <- RDFAsJenaModel.empty
-       vv <- (res1, res2).tupled.use{ case (wikibase,builder) => 
+       vv <- (res1, res2).tupled.use{ case (wikibase,builder) =>
         for {
          schema <- Schema.fromString(schemaStr, "ShExC", base)
          resolvedSchema <- ResolvedSchema.resolve(schema, base)
@@ -192,8 +200,8 @@ class WikibaseRDFTest extends CatsEffectSuite {
         } yield (resultShapeMap) }
       } yield vv
       r.attempt.unsafeRunSync.fold(
-        s => fail(s"Error running validation: ${s}"), 
-        result => { 
+        s => fail(s"Error running validation: ${s}"),
+        result => {
           val iriLabel = IRILabel(base.fold(label)(_.resolve(label)))
           println(s"Result: ${result}\nExpected label:${iriLabel}\nEntity: ${entity}\nConformant shapes: ${result.getConformantShapes(entity)}")
           println(s"Condition: ${result.getConformantShapes(entity) contains iriLabel}")
@@ -206,7 +214,7 @@ class WikibaseRDFTest extends CatsEffectSuite {
           }
       )
    }
- */
- } 
- 
+     */
+  }
+
 }

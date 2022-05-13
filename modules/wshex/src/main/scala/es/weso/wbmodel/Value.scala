@@ -16,9 +16,9 @@ sealed abstract class EntityId extends Value {
 }
 object EntityId {
   def fromIri(iri: IRI): EntityId = {
-    val (name,base) = Utils.splitIri(iri)
+    val (name, base) = Utils.splitIri(iri)
     name(0) match {
-      case 'P' => PropertyId(name,iri)
+      case 'P' => PropertyId(name, iri)
       case 'Q' => ItemId(name, iri)
       case _ =>
         throw new RuntimeException(s"""|Match error. EntityId.fromIri($iri):
@@ -31,9 +31,9 @@ object EntityId {
 }
 
 case class PropertyId(
-                       id: String,
-                       iri: IRI
-                     ) extends EntityId {
+    id: String,
+    iri: IRI
+) extends EntityId {
   override def toString = s"$id"
 }
 
@@ -47,7 +47,7 @@ object PropertyId {
 }
 
 case class PropertyRecord(id: PropertyId, vertexId: VertexId) {
-  override def toString=s"$id-$vertexId"
+  override def toString = s"$id-$vertexId"
 }
 
 sealed abstract class Entity extends Value {
@@ -57,30 +57,29 @@ sealed abstract class Entity extends Value {
   // val okShapes: Set[ShapeLabel]
 
   def withLocalStatement(prec: PropertyRecord, literal: LiteralValue, qs: List[Qualifier]): Entity
-  def localStatementsByPropId(propId: PropertyId) = {
+  def localStatementsByPropId(propId: PropertyId) =
     localStatements.filter(_.propertyRecord.id == propId)
-  }
   def withOkShapes(shapes: Set[ShapeLabel]): Entity
 
 }
 
 case class ItemId(id: String, iri: IRI) extends EntityId {
-  override def toString =s"$id"
+  override def toString = s"$id"
 }
 
 case class Lang(code: String) extends AnyVal
 
 case class Item(
-                 itemId: ItemId,
-                 vertexId: VertexId,
-                 labels: Map[Lang,String],
-                 descriptions: Map[Lang,String],
-                 aliases: Map[Lang,String],
-                 siteIri: String = Value.siteDefault,
-                 localStatements: List[LocalStatement],
-                 siteLinks: List[SiteLink],
-                 okShapes: Set[ShapeLabel] = Set()
-               ) extends Entity {
+    itemId: ItemId,
+    vertexId: VertexId,
+    labels: Map[Lang, String],
+    descriptions: Map[Lang, String],
+    aliases: Map[Lang, String],
+    siteIri: String = Value.siteDefault,
+    localStatements: List[LocalStatement],
+    siteLinks: List[SiteLink],
+    okShapes: Set[ShapeLabel] = Set()
+) extends Entity {
 
   val entityId: EntityId = itemId
   def iri: IRI = IRI(siteIri + "/" + itemId.id)
@@ -88,11 +87,12 @@ case class Item(
   override def toString = s"${itemId.id}-${labels.get(Lang("en")).getOrElse("")}@$vertexId"
 
   override def withLocalStatement(
-                                   prec: PropertyRecord,
-                                   literal: LiteralValue,
-                                   qs: List[Qualifier] = List()): Item =
+      prec: PropertyRecord,
+      literal: LiteralValue,
+      qs: List[Qualifier] = List()
+  ): Item =
     this.copy(
-      localStatements = this.localStatements :+ LocalStatement(prec,literal,qs)
+      localStatements = this.localStatements :+ LocalStatement(prec, literal, qs)
     )
 
   override def withOkShapes(shapes: Set[ShapeLabel]): Entity = this.copy(okShapes = shapes)
@@ -100,16 +100,16 @@ case class Item(
 }
 
 case class Property(
-                     propertyId: PropertyId,
-                     vertexId: VertexId,
-                     labels: Map[Lang,String],
-                     descriptions: Map[Lang,String],
-                     aliases: Map[Lang,String],
-                     siteIri: String = Value.siteDefault,
-                     localStatements: List[LocalStatement] = List(),
-                     datatype: Datatype = Datatype.defaultDatatype,
-                     okShapes: Set[ShapeLabel] = Set()
-                   ) extends Entity {
+    propertyId: PropertyId,
+    vertexId: VertexId,
+    labels: Map[Lang, String],
+    descriptions: Map[Lang, String],
+    aliases: Map[Lang, String],
+    siteIri: String = Value.siteDefault,
+    localStatements: List[LocalStatement] = List(),
+    datatype: Datatype = Datatype.defaultDatatype,
+    okShapes: Set[ShapeLabel] = Set()
+) extends Entity {
 
   val entityId: EntityId = propertyId
 
@@ -120,11 +120,12 @@ case class Property(
   lazy val prec: PropertyRecord = PropertyRecord(propertyId, vertexId)
 
   override def withLocalStatement(
-                                   prec: PropertyRecord,
-                                   literal: LiteralValue,
-                                   qs: List[Qualifier] = List()): Property =
+      prec: PropertyRecord,
+      literal: LiteralValue,
+      qs: List[Qualifier] = List()
+  ): Property =
     this.copy(
-      localStatements = this.localStatements :+ LocalStatement(prec,literal,qs)
+      localStatements = this.localStatements :+ LocalStatement(prec, literal, qs)
     )
 
   override def withOkShapes(shapes: Set[ShapeLabel]): Entity =
@@ -135,68 +136,69 @@ case class Property(
 sealed abstract class LiteralValue extends Value
 
 case class StringValue(
-                        str: String
-                      ) extends LiteralValue {
+    str: String
+) extends LiteralValue {
   override def toString = s"$str"
 }
 
 case class DateValue(
-                      date: String,
-                    ) extends LiteralValue {
+    date: String
+) extends LiteralValue {
   override def toString = s"$date"
 }
 
 case class IRIValue(
-                     iri: IRI,
-                   ) extends LiteralValue {
+    iri: IRI
+) extends LiteralValue {
   override def toString = s"${iri.getLexicalForm}"
 }
 
-sealed abstract class Qualifier
-  extends Product with Serializable {
+sealed abstract class Qualifier extends Product with Serializable {
   val propertyId: PropertyId
   val value: Value
 }
 
 case class EntityQualifier(
-                            propertyId: PropertyId,
-                            entity: Entity
-                          ) extends Qualifier {
+    propertyId: PropertyId,
+    entity: Entity
+) extends Qualifier {
   override val value: Value = entity
   override def toString = s"$propertyId:$value"
 }
 
 case class LocalQualifier(
-                           propertyId: PropertyId,
-                           literal: LiteralValue
-                         ) extends Qualifier {
+    propertyId: PropertyId,
+    literal: LiteralValue
+) extends Qualifier {
   override val value: Value = literal
   override def toString = s"$propertyId:$value"
 }
 
 case class Statement(
-                      propertyRecord: PropertyRecord,
-                      qualifiers: List[Qualifier] = List(),
-                    ) {
+    propertyRecord: PropertyRecord,
+    qualifiers: List[Qualifier] = List()
+) {
 
   def id: PropertyId = propertyRecord.id
 
   def withQualifiers(qs: List[Qualifier]): Statement =
     this.copy(qualifiers = qs)
 
-  override def toString = s"$propertyRecord ${if (qualifiers.isEmpty) "" else s"{{" + qualifiers.map(_.toString).mkString(",") + "}}" }"
+  override def toString = s"$propertyRecord ${if (qualifiers.isEmpty) ""
+    else s"{{" + qualifiers.map(_.toString).mkString(",") + "}}"}"
 }
 
 case class LocalStatement(
-                           propertyRecord: PropertyRecord,
-                           literal: LiteralValue,
-                           qualifiers: List[Qualifier]
-                         ) {
+    propertyRecord: PropertyRecord,
+    literal: LiteralValue,
+    qualifiers: List[Qualifier]
+) {
 
   def withQualifiers(qs: List[Qualifier]): LocalStatement =
     this.copy(qualifiers = qs)
 
-  override def toString = s"$propertyRecord - $literal${if (qualifiers.isEmpty) "" else s"{{" + qualifiers.map(_.toString).mkString(",") + "}}" }"
+  override def toString = s"$propertyRecord - $literal${if (qualifiers.isEmpty) ""
+    else s"{{" + qualifiers.map(_.toString).mkString(",") + "}}"}"
 }
 
 object LocalStatement {
@@ -204,10 +206,10 @@ object LocalStatement {
 }
 
 case class SiteLink(
-                     title: String,
-                     siteKey: String,
-                     badges: List[ItemId]
-                   )
+    title: String,
+    siteKey: String,
+    badges: List[ItemId]
+)
 
 case class Datatype(name: String) extends AnyVal
 object Datatype {
@@ -218,13 +220,12 @@ object Value {
 
   lazy val siteDefault = "http://www.wikidata.org/entity"
 
-
   def triple(
-              subj: Entity, prop: Property, value: Entity
-            ): (Entity, PropertyRecord, Entity, List[Qualifier]) = {
+      subj: Entity,
+      prop: Property,
+      value: Entity
+  ): (Entity, PropertyRecord, Entity, List[Qualifier]) =
     (subj, prop.prec, value, List())
-  }
-
 
   /*  def triple(
       subj: Entity, prop: PropertyRecord, value: Entity
@@ -233,17 +234,15 @@ object Value {
     } */
 
   def tripleq(
-               subj: Entity,
-               prop: Property,
-               value: Entity,
-               qs: List[Qualifier]
-             ): (Entity, PropertyRecord, Entity, List[Qualifier]) = {
+      subj: Entity,
+      prop: Property,
+      value: Entity,
+      qs: List[Qualifier]
+  ): (Entity, PropertyRecord, Entity, List[Qualifier]) =
     (subj, prop.prec, value, qs)
-  }
 
-   def mkSite(base: String, localName: String) = IRI(base + "/" + localName)
+  def mkSite(base: String, localName: String) = IRI(base + "/" + localName)
 
- 
   def Date(date: String): DateValue =
     DateValue(date)
 
@@ -257,8 +256,16 @@ object Value {
 
   def Qid(num: Int, label: String, id: Long, site: String = Value.siteDefault): Item = {
     val qid = "Q" + num
-    Item(ItemId(qid, iri = mkSite(site, qid)), VertexId(id), Map(Lang("en") -> label), Map(), Map(), site, List(), List())
+    Item(
+      ItemId(qid, iri = mkSite(site, qid)),
+      VertexId(id),
+      Map(Lang("en") -> label),
+      Map(),
+      Map(),
+      site,
+      List(),
+      List()
+    )
   }
 
- 
 }

@@ -6,5 +6,6 @@ import java.net.URI
 case class EndpointOpt(uri: URI) extends DataSpec
 
 object EndpointOpt {
- lazy val endpoint: Opts[EndpointOpt] = UriOpt.uri("endpoint", "endpoint URL").map(EndpointOpt.apply)
+  lazy val endpoint: Opts[EndpointOpt] =
+    UriOpt.uri("endpoint", "endpoint URL").map(EndpointOpt.apply)
 }

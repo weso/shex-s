@@ -34,16 +34,16 @@ object Parser {
     v
   }
 
-  def info(msg:String): Builder[Unit] = {
-    println(msg) 
+  def info(msg: String): Builder[Unit] = {
+    println(msg)
     EitherT.pure(())
   }
 
-  def fromEither[A](e: Either[String,A]): Builder[A] =
+  def fromEither[A](e: Either[String, A]): Builder[A] =
     e.fold(str => err(str), ok(_))
 
   def sequence[A](bs: List[Builder[A]]): Builder[List[A]] =
-    bs.sequence[Builder,A]
+    bs.sequence[Builder, A]
 
   def getPrefixMap: Builder[PrefixMap] =
     getState.map(_.prefixMap)
@@ -54,7 +54,7 @@ object Parser {
   def getTripleExprMap: Builder[TripleExprMap] =
     getState.map(_.tripleExprMap)
 
-  def getLabelLocationMap: Builder[Map[ShapeLabel,Location]] =
+  def getLabelLocationMap: Builder[Map[ShapeLabel, Location]] =
     getState.map(_.labelLocationMap)
 
   def getState: Builder[BuilderState] =
@@ -69,41 +69,36 @@ object Parser {
   def addBase(base: IRI): Builder[Unit] =
     updateState(_.copy(base = Some(base)))
 
-  def updateState(fn: BuilderState => BuilderState): Builder[Unit] = {
+  def updateState(fn: BuilderState => BuilderState): Builder[Unit] =
     EitherT.liftF[S, String, Unit](StateT.modify(fn))
-  }
 
-  def updateStart(s: Start): Builder[Unit] = {
+  def updateStart(s: Start): Builder[Unit] =
     // logger.info(s"New start: $s")
     updateState(_.copy(start = s))
-  }
 
   // TODO: Check what to do if the label is already assigned
-  def addShape(label: ShapeLabel, expr: ShapeExpr): Builder[Unit] = {
+  def addShape(label: ShapeLabel, expr: ShapeExpr): Builder[Unit] =
     updateState(s => s.copy(shapesMap = s.shapesMap + (label -> expr)))
-  }
 
-  def addLabelLocation(label: ShapeLabel, location: Location): Builder[Unit] = {
+  def addLabelLocation(label: ShapeLabel, location: Location): Builder[Unit] =
     updateState(s => s.copy(labelLocationMap = s.labelLocationMap + (label -> location)))
-  }
 
-
-  def addPrefix(prefix: Prefix, iri: IRI): Builder[Unit] = {
-    updateState(s => {
+  def addPrefix(prefix: Prefix, iri: IRI): Builder[Unit] =
+    updateState { s =>
       val newS = s.copy(prefixMap = s.prefixMap.addPrefix(prefix, iri))
       // logger.info(s"Updating prefix map. New prefix map=${newS.prefixMap}")
       newS
-    })
-  }
+    }
 
   def addTripleExprLabel(label: ShapeLabel, te: TripleExpr): Builder[TripleExpr] = for {
     s <- getState
     _ <- s.tripleExprMap.get(label) match {
       case None => ok(())
-      case Some(otherTe) => err(s"Label $label has been assigned to ${otherTe} and can't be assigned to $te")
+      case Some(otherTe) =>
+        err(s"Label $label has been assigned to ${otherTe} and can't be assigned to $te")
     }
     _ <- updateState(s => s.copy(tripleExprMap = s.tripleExprMap + (label -> te)))
-  } yield (te.addId(label))
+  } yield te.addId(label)
 
   def parseSchema(str: String, base: Option[IRI]): Either[String, Schema] = {
     val UTF8_BOM = "\uFEFF"
@@ -123,9 +118,7 @@ object Parser {
     schema <- parseSchemaReader(reader, base)
   } yield schema
 
-  def parseSchemaReader(reader: JavaReader,
-                        base: Option[IRI]
-                       ): Either[String, Schema] = {
+  def parseSchemaReader(reader: JavaReader, base: Option[IRI]): Either[String, Schema] = {
     val input: CharStream = CharStreams.fromReader(reader)
     val lexer: ShExDocLexer = new ShExDocLexer(input)
     val tokens: CommonTokenStream = new CommonTokenStream(lexer)
@@ -137,7 +130,7 @@ object Parser {
     lexer.addErrorListener(errorListener)
     parser.addErrorListener(errorListener)
 
-    val maker = new SchemaMaker() // new DebugSchemaMaker()
+    val maker = new SchemaMaker // new DebugSchemaMaker()
     val builder = maker.visit(parser.shExDoc()).asInstanceOf[Builder[Schema]]
     val errors = errorListener.getErrors()
     if (errors.length > 0) {
@@ -147,9 +140,7 @@ object Parser {
     }
   }
 
-  def run[A](c: Builder[A],
-             base: Option[IRI]
-            ): (BuilderState, Either[String, A]) = 
+  def run[A](c: Builder[A], base: Option[IRI]): (BuilderState, Either[String, A]) =
     c.value.run(initialState(base)).value
 
   def initialState(base: Option[IRI]) =
@@ -162,12 +153,13 @@ object Parser {
       Map()
     )
 
-  case class BuilderState(prefixMap: PrefixMap,
-                          base: Option[IRI],
-                          start: Option[ShapeExpr],
-                          shapesMap: ShapesMap,
-                          tripleExprMap: TripleExprMap,
-                          labelLocationMap: Map[ShapeLabel,Location]
-                         )
+  case class BuilderState(
+      prefixMap: PrefixMap,
+      base: Option[IRI],
+      start: Option[ShapeExpr],
+      shapesMap: ShapesMap,
+      tripleExprMap: TripleExprMap,
+      labelLocationMap: Map[ShapeLabel, Location]
+  )
 
 }
