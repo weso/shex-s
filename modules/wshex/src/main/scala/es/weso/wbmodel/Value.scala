@@ -44,6 +44,9 @@ object PropertyId {
     val (name, base) = Utils.splitIri(iri)
     PropertyId(name, iri)
   }
+  def fromNumber(n: Int, baseProperty: IRI): PropertyId = {
+    PropertyId(s"P$n", baseProperty)
+  }
 }
 
 case class PropertyRecord(id: PropertyId, vertexId: VertexId) {
