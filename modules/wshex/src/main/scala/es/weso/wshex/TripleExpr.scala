@@ -174,6 +174,9 @@ sealed abstract class TripleConstraint extends TripleExpr with Serializable with
   def min: Int
   def max: IntOrUnbounded
   def property: PropertyId
+  def qs: Option[QualifierSpec]
+
+  def withQs(qs: Option[QualifierSpec]): TripleConstraint
 
   /** Checks local statements of an entity allowing extra values
     *
@@ -245,11 +248,18 @@ case class TripleConstraintRef(
     min: Int,
     max: IntOrUnbounded,
     qs: Option[QualifierSpec]
-) extends TripleConstraint
+) extends TripleConstraint {
+  override def withQs(qs: Option[QualifierSpec]): TripleConstraint =
+    this.copy(qs = qs)
+}
 
 case class TripleConstraintLocal(
     property: PropertyId,
     value: NodeConstraint,
     min: Int,
-    max: IntOrUnbounded
-) extends TripleConstraint
+    max: IntOrUnbounded,
+    qs: Option[QualifierSpec] = None
+) extends TripleConstraint {
+  override def withQs(qs: Option[QualifierSpec]): TripleConstraint =
+    this.copy(qs = qs)
+}

@@ -12,8 +12,8 @@ sealed abstract class ConvertError extends Exception {
 case class UnsupportedShapeExpr(se: shex.ShapeExpr, msg: String = "") extends ConvertError {
   override def toString() = s"Unsupported shapeExpr: ${se.show}\n$msg"
 }
-case class UnsupportedShape(s: shex.Shape) extends ConvertError {
-  override def toString() = s"Unsupported shape: ${s.show}"
+case class UnsupportedShape(s: shex.Shape, msg: String = "") extends ConvertError {
+  override def toString() = s"Unsupported shape: ${s.show}\n$msg"
 }
 case class UnsupportedNodeConstraint(nc: shex.NodeConstraint) extends ConvertError {
   override def toString() = s"Unsupported nodeConstraint: ${nc.show}"

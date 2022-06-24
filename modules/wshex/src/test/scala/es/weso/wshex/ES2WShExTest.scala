@@ -90,10 +90,19 @@ class ES2WShExTest extends CatsEffectSuite {
       List(),
       Some(
         TripleConstraintLocal(
-          PropertyId.fromIRI(wdt + "P31"),
+          PropertyId.fromIRI(wdt + "P856"),
           ValueSet(None, List(EntityIdValueSetValue(EntityId.fromIri(wd + "Q5")))),
           1,
-          IntLimit(1)
+          IntLimit(1),
+          Some(
+            QualifierSpec(
+              Qualifier(
+                PropertyId.fromIRI(wdt + "P856"),
+                ValueSet(None, List(EntityIdValueSetValue(EntityId.fromIri(wd + "Q1860"))))
+              ),
+              false
+            )
+          )
         )
       )
     )

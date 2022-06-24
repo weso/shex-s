@@ -1,6 +1,6 @@
 lazy val scala212 = "2.12.15"
 lazy val scala213 = "2.13.8"
-lazy val scala3   = "3.1.1"
+lazy val scala3   = "3.1.3"
 lazy val supportedScalaVersions = List(
   scala3,
   scala213,
@@ -9,15 +9,15 @@ lazy val supportedScalaVersions = List(
 
 val Java11 = JavaSpec.temurin("11") // "adopt@1.11"
 
-lazy val srdfVersion     = "0.1.107"
-lazy val utilsVersion    = "0.2.4"
+lazy val srdfVersion     = "0.1.108"
+lazy val utilsVersion    = "0.2.24"
 lazy val documentVersion = "0.0.34"
 
 // Dependency versions
 // lazy val antlrVersion            = "4.9.3"
 lazy val catsVersion            = "2.7.0"
-lazy val catsEffectVersion      = "3.3.11"
-lazy val circeVersion           = "0.14.1"
+lazy val catsEffectVersion      = "3.3.12"
+lazy val circeVersion           = "0.14.2"
 lazy val commonsTextVersion     = "1.8"
 lazy val declineVersion         = "2.2.0"
 lazy val fansiVersion           = "0.3.0"
@@ -131,6 +131,7 @@ lazy val shexs = project
     cancelable in Global := true,
     fork                 := true,
     ThisBuild / turbo    := true,
+    maintainer           := "labra@WESO",
     crossScalaVersions   := supportedScalaVersions,
     // ThisBuild / crossScalaVersions := supportedScalaVersions,
     // Do not package logback files in .jar, they interfere with other logback
@@ -529,7 +530,6 @@ lazy val commonSettings = compilationSettings ++ sharedDependencies ++ Seq(
   autoAPIMappings := true,
   apiURL          := Some(url("http://weso.github.io/shaclex/latest/api/")),
   autoAPIMappings := true,
-  maintainer      := "labra@WESO",
   developers := List(
     Developer(
       id = "labra",

@@ -11,16 +11,16 @@ import es.weso.utils.VerboseLevel
 
 object InheritanceGraph {
 
-  private def addLs(g: Inheritance[ShapeLabel, ShapesRelation],
+ private def addLs(g: Inheritance[ShapeLabel, ShapesRelation],
                     ls: List[ShapeLabel], 
                     sub: ShapeLabel, 
                     rel: ShapesRelation) = {
     def cmb(c: Unit, e: ShapeLabel): IO[Unit] = 
       g.addInheritance(sub, e, rel)
     ls.foldM(())(cmb)
-  }
+ }
   
-  private def addExtendsRestricts(g: Inheritance[ShapeLabel, ShapesRelation],
+ private def addExtendsRestricts(g: Inheritance[ShapeLabel, ShapesRelation],
                          sub: ShapeLabel,
                          shape: Shape
                          ): IO[Unit] = {
@@ -32,9 +32,9 @@ object InheritanceGraph {
         addLs(g, es, sub, Extends) *> 
         addLs(g, rs, sub, Restricts)
    }
-  }
+ }
 
-  private def showSE(se: ShapeExpr): String = se match {
+ private def showSE(se: ShapeExpr): String = se match {
     case and: ShapeAnd => "AND"
     case s: Shape => "Shape"
     case sd: ShapeDecl => "ShapeDecl"
@@ -42,8 +42,8 @@ object InheritanceGraph {
     case _ => "other"
   }
 
-  // TODO: Check possible infinite loop when shape exprs contain themselves...
-   private def addShapeExpr(g: Inheritance[ShapeLabel,ShapesRelation], 
+ // TODO: Check possible infinite loop when shape exprs contain themselves...
+ private def addShapeExpr(g: Inheritance[ShapeLabel,ShapesRelation], 
                 sub: ShapeLabel, 
                 se: ShapeExpr,
                 verbose: VerboseLevel
@@ -68,7 +68,7 @@ object InheritanceGraph {
      }
    }}
   
-  private def addPair(
+ private def addPair(
     g: Inheritance[ShapeLabel,ShapesRelation], 
     verboseLevel: VerboseLevel)(
     u: Unit, 
@@ -78,7 +78,7 @@ object InheritanceGraph {
      addShapeExpr(g, shapeLabel, resolvedShapeExpr.se, verboseLevel)
    }
 
-def mkInheritanceGraph(
+ def mkInheritanceGraph(
     m: Map[ShapeLabel,ResolvedShapeExpr],
     verboseLevel: VerboseLevel
   ): IO[Inheritance[ShapeLabel, ShapesRelation]] = for {
@@ -86,9 +86,8 @@ def mkInheritanceGraph(
     _ <- m.toList.foldM(())(addPair(g, verboseLevel))
    } yield g
 
-// TODO: Should we use a resource better?
-def empty: IO[Inheritance[ShapeLabel, ShapesRelation]] = 
+ // TODO: Should we use a resource better?
+ def empty: IO[Inheritance[ShapeLabel, ShapesRelation]] = 
   InheritanceJGraphT.empty[ShapeLabel, ShapesRelation]
 
 }
-

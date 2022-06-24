@@ -197,8 +197,8 @@ object CTable {
     }
   
 
-  implicit lazy val showCTable: Show[CTable] = new Show[CTable] {
-    override def show(table: CTable) = {
+    implicit lazy val showCTable: Show[CTable] = new Show[CTable] {
+     override def show(table: CTable) = {
       def showConstraints(cs: ConstraintsMap): String = {
         def combine(s: List[String], current: (ConstraintRef, CheckExpr)): List[String] = {
           val (cref,expr) = current
@@ -206,24 +206,26 @@ object CTable {
         }
         cs.foldLeft(List[String]())(combine).mkString("\n")
       }
-     def showPaths(paths: PathsMap): String = 
-      paths.map {
+      
+      def showPaths(paths: PathsMap): String = 
+       paths.map {
         case (path, cr) => s"${path.show}->${cr.map(_.show).mkString(",")}"
-      }.mkString(s"\n")
+       }.mkString(s"\n")
 
       s"""Constraints:\n${showConstraints(table.constraints)}\nPaths:\n${showPaths(table.paths)}\n---endTable\n""".stripMargin
+      }
+    
     }
-  }
 
-  implicit val crefKeyEncoder: KeyEncoder[ConstraintRef] = new KeyEncoder[ConstraintRef] {
-    override def apply(cref: ConstraintRef): String = cref.toString
-  }
+    implicit val crefKeyEncoder: KeyEncoder[ConstraintRef] = new KeyEncoder[ConstraintRef] {
+     override def apply(cref: ConstraintRef): String = cref.toString
+    }
 
-  implicit val tableEncoder: Encoder[CTable] = new Encoder[CTable] {
+    implicit val tableEncoder: Encoder[CTable] = new Encoder[CTable] {
     final def apply(v: CTable): Json = 
       Json.obj(
         ("type", "ConstraintsTable".asJson),
         ("rbe", v.constraints.asJson),
       )
-  }
+    }
 }

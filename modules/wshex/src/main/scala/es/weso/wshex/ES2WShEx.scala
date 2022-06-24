@@ -1,5 +1,6 @@
 package es.weso.wshex
 
+import cats._
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import es.weso._
@@ -188,15 +189,11 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
   private def convertTripleConstraint(
       tc: shex.TripleConstraint
   ): Either[ConvertError, TripleConstraint] = {
-    val min = tc.min
-    val max = tc.max match {
-      case shex.Star      => Unbounded
-      case shex.IntMax(m) => IntLimit(m)
-    }
     val iriParsed = IRIConvert.parseIRI(tc.predicate, convertOptions)
     iriParsed match {
       case Some(DirectProperty(n)) =>
         val pred = PropertyId.fromIRI(tc.predicate)
+        val (min, max) = convertMinMax(tc)
         makeTripleConstraint(pred, min, max, tc.valueExpr)
       case Some(PropertyParsed(p)) =>
         tc.valueExpr match {
@@ -205,6 +202,15 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
         }
       case _ => UnsupportedPredicate(tc.predicate).asLeft
     }
+  }
+
+  private def convertMinMax(tc: shex.TripleConstraint): (Int, IntOrUnbounded) = {
+    val min = tc.min
+    val max = tc.max match {
+      case shex.Star      => Unbounded
+      case shex.IntMax(m) => IntLimit(m)
+    }
+    (min, max)
   }
 
   private def convertTripleConstraintProperty(
@@ -218,20 +224,18 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
           case Some(te) =>
             te match {
               case tc: shex.TripleConstraint =>
-                val min = tc.min
-                val max = tc.max match {
-                  case shex.Star      => Unbounded
-                  case shex.IntMax(m) => IntLimit(m)
-                }
                 val iriParsed = IRIConvert.parseIRI(tc.predicate, convertOptions)
                 iriParsed match {
                   case Some(PropertyStatement(ns)) =>
                     if (n == ns) {
                       val pred = PropertyId.fromNumber(n, convertOptions.directPropertyIri)
+                      val (min, max) = convertMinMax(tc)
                       makeTripleConstraint(pred, min, max, tc.valueExpr)
                     } else DifferentPropertyPropertyStatement(n, ns).asLeft
                   case _ => UnsupportedPredicate(tc.predicate).asLeft
                 }
+              case s: shex.EachOf =>
+                parseEachOfForProperty(n, s)
               case _ => UnsupportedTripleExpr(te, s"Parsing property $n").asLeft
             }
         }
@@ -244,6 +248,44 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
       case shex.BNodeLabel(bnode) => BNodeLabel(bnode)
       case shex.Start             => Start
     }
+
+  private def parseEachOfForProperty(
+      n: Int,
+      s: shex.EachOf
+  ): Either[ConvertError, TripleConstraint] =
+    getPropertyStatement(n, s.expressions).flatMap(tc =>
+      getQualifiers(s.expressions).flatMap(qs => tc.withQs(qs).asRight)
+    )
+
+  private def getPropertyStatement(
+      n: Int,
+      es: List[shex.TripleExpr]
+  ): Either[ConvertError, TripleConstraint] =
+    es.collectFirstSome(checkPropertyStatement(n)) match {
+      case None     => ??? // ConverError
+      case Some(tc) => tc.asRight
+    }
+
+  private def checkPropertyStatement(n: Int)(te: shex.TripleExpr): Option[TripleConstraint] =
+    te match {
+      case tc: shex.TripleConstraint =>
+        val iriParsed = IRIConvert.parseIRI(tc.predicate, convertOptions)
+        iriParsed match {
+          case Some(PropertyStatement(ns)) =>
+            if (n == ns) {
+              val pred = PropertyId.fromNumber(n, convertOptions.directPropertyIri)
+              val (min, max) = convertMinMax(tc)
+              makeTripleConstraint(pred, min, max, tc.valueExpr).toOption
+            } else None
+          case _ => None
+        }
+      case _ => None
+    }
+
+  private def getQualifiers(
+      es: List[shex.TripleExpr]
+  ): Either[ConvertError, Option[QualifierSpec]] = // TODO
+    None.asRight
 
 }
 
