@@ -14,7 +14,8 @@ case class ESConvertOptions(
     entityIri: IRI,
     directPropertyIri: IRI,
     propIri: IRI,
-    propStatementIri: IRI
+    propStatementIri: IRI,
+    propQualifierIri: IRI
 )
 
 object ESConvertOptions {
@@ -22,7 +23,8 @@ object ESConvertOptions {
     entityIri = IRI("http://www.wikidata.org/entity/"),
     directPropertyIri = IRI("http://www.wikidata.org/prop/direct/"),
     propIri = IRI("http://www.wikidata.org/prop/"),
-    propStatementIri = IRI("http://www.wikidata.org/prop/statement/")
+    propStatementIri = IRI("http://www.wikidata.org/prop/statement/"),
+    propQualifierIri = IRI("http://www.wikidata.org/prop/qualifier/")
   )
 }
 
@@ -176,12 +178,12 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
       case Some(se) =>
         convertShapeExpr(se).flatMap(s =>
           s match {
-            case ShapeRef(lbl) =>
-              TripleConstraintRef(pred, ShapeRef(lbl), min, max, None).asRight
-            case ValueSet(id, vs) =>
-              TripleConstraintLocal(pred, ValueSet(id, vs), min, max).asRight
+            case s @ ShapeRef(lbl) =>
+              TripleConstraintRef(pred, s, min, max, None).asRight
+            case v @ ValueSet(id, vs) =>
+              TripleConstraintLocal(pred, v, min, max).asRight
             case _ =>
-              UnsupportedShapeExpr(se).asLeft
+              UnsupportedShapeExpr(se, s"Making tripleConstraint for pred: $pred").asLeft
           }
         )
     }
@@ -254,7 +256,7 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
       s: shex.EachOf
   ): Either[ConvertError, TripleConstraint] =
     getPropertyStatement(n, s.expressions).flatMap(tc =>
-      getQualifiers(s.expressions).flatMap(qs => tc.withQs(qs).asRight)
+      getQualifiers(s.expressions, n).flatMap(qs => tc.withQs(qs).asRight)
     )
 
   private def getPropertyStatement(
@@ -262,7 +264,7 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
       es: List[shex.TripleExpr]
   ): Either[ConvertError, TripleConstraint] =
     es.collectFirstSome(checkPropertyStatement(n)) match {
-      case None     => ??? // ConverError
+      case None     => NoValueForPropertyStatementExprs(n, es).asLeft
       case Some(tc) => tc.asRight
     }
 
@@ -283,10 +285,47 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
     }
 
   private def getQualifiers(
-      es: List[shex.TripleExpr]
-  ): Either[ConvertError, Option[QualifierSpec]] = // TODO
-    None.asRight
+      es: List[shex.TripleExpr],
+      n: Int
+  ): Either[ConvertError, Option[QualifierSpec]] = {
+    val (errs, oks) = es.map(getQualifier(n)).partitionMap(x => x)
+    if (errs.isEmpty) {
+      val vs = oks.flatten
+      if (vs.isEmpty) none.asRight
+      else
+        QualifierSpec(EachOfPs(vs), false).some.asRight
+    } else {
+      ConvertErrors(errs).asLeft
+    }
+  }
 
+  private def getQualifier(n: Int)(te: shex.TripleExpr): Either[ConvertError, Option[QualifierS]] =
+    te match {
+      case tc: shex.TripleConstraint =>
+        val iriParsed = IRIConvert.parseIRI(tc.predicate, convertOptions)
+        iriParsed match {
+          case Some(PropertyStatement(ns)) =>
+            if (n == ns) none.asRight
+            else DifferentPropertyPropertyStatement(n, ns, s"Parsing qualifiers").asLeft
+          case Some(PropertyQualifier(nq)) =>
+            val pq = PropertyId.fromNumber(nq, convertOptions.propQualifierIri)
+            val (min, max) = convertMinMax(tc)
+            tc.valueExpr match {
+              case None => QualifierLocal(pq, EmptyExpr, min, max).some.asRight
+              case Some(se) =>
+                convertShapeExpr(se).flatMap(s =>
+                  s match {
+                    case s @ ShapeRef(lbl)    => QualifierRef(pq, s, min, max).some.asRight
+                    case v @ ValueSet(id, vs) => QualifierLocal(pq, v, min, max).some.asRight
+                    case _ =>
+                      UnsupportedShapeExpr(se, s"Parsing qualifiers for property $n").asLeft
+                  }
+                )
+            }
+          case _ => UnsupportedPredicate(tc.predicate, s"Parsing qualifiers for property $n").asLeft
+        }
+      case _ => UnsupportedTripleExpr(te, s"Parsing qualifiers of property $n").asLeft
+    }
 }
 
 object ES2WShEx {

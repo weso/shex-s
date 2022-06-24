@@ -1,5 +1,6 @@
 package es.weso.wshex
 import es.weso.wbmodel._
+import es.weso.rbe.interval.IntOrUnbounded
 
 case class QualifierSpec(ps: PropertySpec, closed: Boolean)
 
@@ -7,4 +8,16 @@ sealed abstract class PropertySpec
 case class EachOfPs(ps: List[PropertySpec]) extends PropertySpec
 case class OneOfPs(ps: List[PropertySpec]) extends PropertySpec
 case object EmptySpec extends PropertySpec
-case class Qualifier(p: PropertyId, ve: ShapeExpr) extends PropertySpec
+sealed abstract class QualifierS extends PropertySpec
+case class QualifierLocal(
+    p: PropertyId,
+    nc: NodeConstraint,
+    min: Int,
+    max: IntOrUnbounded
+) extends QualifierS
+case class QualifierRef(
+    p: PropertyId,
+    ref: ShapeRef,
+    min: Int,
+    max: IntOrUnbounded
+) extends QualifierS

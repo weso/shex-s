@@ -8,6 +8,7 @@ sealed abstract class IRIParsed
 case class DirectProperty(value: Int) extends IRIParsed
 case class PropertyParsed(value: Int) extends IRIParsed
 case class PropertyStatement(value: Int) extends IRIParsed
+case class PropertyQualifier(value: Int) extends IRIParsed
 
 object IRIConvert {
 
@@ -37,6 +38,20 @@ object IRIConvert {
     else None
   }
 
+  private def parsePropertyQualifier(
+      pred: IRI,
+      convertOptions: ESConvertOptions
+  ): Option[PropertyQualifier] = {
+    val (name, base) = Utils.splitIri(pred)
+    val expr = "P(\\d*)".r
+    if (IRI(base) == convertOptions.propQualifierIri)
+      name match {
+        case expr(num) => Some(PropertyQualifier(Integer.parseInt(num)))
+        case _         => None
+      }
+    else None
+  }
+
   private def parseProperty(pred: IRI, convertOptions: ESConvertOptions): Option[PropertyParsed] = {
     val (name, base) = Utils.splitIri(pred)
     val expr = "P(\\d*)".r
@@ -52,5 +67,6 @@ object IRIConvert {
     parseDirect(iri, convertOptions)
       .orElse(parsePropertyStatement(iri, convertOptions))
       .orElse(parseProperty(iri, convertOptions))
+      .orElse(parsePropertyQualifier(iri, convertOptions))
 
 }

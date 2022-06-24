@@ -8,6 +8,7 @@ import es.weso.wbmodel.EntityId
 import es.weso.wbmodel.PropertyId
 import es.weso.utils.VerboseLevel._
 import es.weso.shex.{Schema => ShExSchema}
+import es.weso.rbe.interval._
 
 class ES2WShExTest extends CatsEffectSuite {
 
@@ -18,7 +19,7 @@ class ES2WShExTest extends CatsEffectSuite {
   val wd = IRI("http://www.wikidata.org/entity/")
   val wdt = IRI("http://www.wikidata.org/prop/direct/")
   val pm: PrefixMap =
-    PrefixMap.fromMap(Map("" -> ex, "wd" -> wd, "wdt" -> wdt, "p" -> p, "ps" -> ps))
+    PrefixMap.fromMap(Map("" -> ex, "wd" -> wd, "wdt" -> wdt, "p" -> p, "ps" -> ps, "pq" -> pq))
   val s: ShapeLabel = IRILabel(IRI("S"))
 
   {
@@ -31,7 +32,7 @@ class ES2WShExTest extends CatsEffectSuite {
           PropertyId.fromIRI(wdt + "P31"),
           ValueSet(None, List(EntityIdValueSetValue(EntityId.fromIri(wd + "Q5")))),
           1,
-          IntLimit(1)
+          IntOrUnbounded.fromInt(1)
         )
       )
     )
@@ -43,6 +44,7 @@ class ES2WShExTest extends CatsEffectSuite {
        |prefix wdt: <${wdt.str}>
        |prefix p:   <${p.str}>
        |prefix ps:  <${ps.str}>
+       |prefix pq:  <${pq.str}>
        |<S> {
        | wdt:P31 [ wd:Q5 ]
        |}
@@ -73,6 +75,7 @@ class ES2WShExTest extends CatsEffectSuite {
        |prefix wdt: <${wdt.str}>
        |prefix p:   <${p.str}>
        |prefix ps:  <${ps.str}>
+       |prefix pq:  <${pq.str}>
        |<S> {
        | p:P31 {
        |  ps:P31 [ wd:Q5 ] ;
@@ -84,6 +87,20 @@ class ES2WShExTest extends CatsEffectSuite {
   }
 
   {
+    val schemaStr =
+      s"""|prefix :    <${ex.str}>
+          |prefix wd:  <${wd.str}>
+          |prefix pq:  <${pq.str}>
+          |prefix wdt: <${wdt.str}>
+          |prefix p:   <${p.str}>
+          |prefix ps:  <${ps.str}>
+          |<S> {
+          | p:P856 {
+          |  ps:P856 .   ;
+          |  pq:P407	[ wd:Q1860 ] ;	 
+          | }
+          |}
+          |""".stripMargin
     val se: ShapeExpr = Shape(
       Some(s),
       false,
@@ -91,14 +108,20 @@ class ES2WShExTest extends CatsEffectSuite {
       Some(
         TripleConstraintLocal(
           PropertyId.fromIRI(wdt + "P856"),
-          ValueSet(None, List(EntityIdValueSetValue(EntityId.fromIri(wd + "Q5")))),
+          EmptyExpr,
           1,
-          IntLimit(1),
+          IntOrUnbounded.fromInt(1),
           Some(
             QualifierSpec(
-              Qualifier(
-                PropertyId.fromIRI(wdt + "P856"),
-                ValueSet(None, List(EntityIdValueSetValue(EntityId.fromIri(wd + "Q1860"))))
+              EachOfPs(
+                List(
+                  QualifierLocal(
+                    PropertyId.fromIRI(wdt + "P407"),
+                    ValueSet(None, List(EntityIdValueSetValue(EntityId.fromIri(wd + "Q1860")))),
+                    1,
+                    IntOrUnbounded.fromInt(1)
+                  )
+                )
               ),
               false
             )
@@ -108,20 +131,8 @@ class ES2WShExTest extends CatsEffectSuite {
     )
 
     checkSchema(
-      "simple Reference",
-      s"""|prefix :    <${ex.str}>
-       |prefix wd:  <${wd.str}>
-       |prefix wdt: <${wdt.str}>
-       |prefix p:   <${p.str}>
-       |prefix ps:  <${ps.str}>
-       |prefix pq:  <${pq.str}>
-       |<ES> {
-       | p:P856 {
-       |  ps:P856 .   ;
-       |  pq:P407	[ wd:Q1860 ] ;	 
-       | }
-       |}
-       |""".stripMargin,
+      "Qualifiers",
+      schemaStr,
       Schema(Map(s -> se), None, pm)
     )
   }

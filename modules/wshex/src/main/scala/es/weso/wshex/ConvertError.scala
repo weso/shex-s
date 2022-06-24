@@ -30,18 +30,28 @@ case class UnsupportedTripleExpr(te: shex.TripleExpr, msg: String = "") extends 
 case class CastTripleConstraintError(te: TripleExpr) extends ConvertError {
   override def toString() = s"Cast tripleConstraintError: ${te}"
 }
-case class UnsupportedPredicate(pred: IRI) extends ConvertError {
-  override def toString() = s"Unsupported predicate: ${pred.str}"
+case class UnsupportedPredicate(pred: IRI, msg: String = "") extends ConvertError {
+  override def toString() = s"Unsupported predicate: ${pred.str}\n$msg"
 }
 
 case class NoValueForPropertyConstraint(n: Int, tc: shex.TripleConstraint) extends ConvertError {
   override def toString() = s"No Value for property constraint P$n\nTripleConstraint:${tc}"
 }
 
-case class DifferentPropertyPropertyStatement(n: Int, ns: Int) extends ConvertError {
-  override def toString() = s"Different values for proeprty: $n and propertyStatement: $ns"
+case class NoValueForPropertyStatementExprs(n: Int, es: List[shex.TripleExpr])
+    extends ConvertError {
+  override def toString() = s"No Value for property statement $n in triple expressions: $es"
+}
+
+case class DifferentPropertyPropertyStatement(n: Int, ns: Int, msg: String = "") extends ConvertError {
+  override def toString() = s"Different values for property: $n and propertyStatement: $ns\n$msg"
 }
 
 case class NoExprForTripleConstraintProperty(n: Int, s: shex.Shape) extends ConvertError {
   override def toString() = s"TripleConstraint for property: $n, No expression for shape: $s"
+}
+
+case class ConvertErrors(es: List[ConvertError]) extends ConvertError {
+  override def toString() =
+    s"Conversion errors: ${es.map(_.toString).mkString("\n")}"
 }
