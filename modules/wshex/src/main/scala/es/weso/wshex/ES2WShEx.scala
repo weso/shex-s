@@ -9,6 +9,7 @@ import es.weso.rdf.nodes._
 import es.weso.wbmodel.{Property => _, _}
 import es.weso.wshex.esconvert._
 import es.weso.rbe.interval.IntOrUnbounded
+import scala.collection.compat._ // Required for partitionMap
 
 case class ESConvertOptions(
     entityIri: IRI,
