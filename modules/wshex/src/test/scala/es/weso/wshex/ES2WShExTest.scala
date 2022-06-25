@@ -137,6 +137,85 @@ class ES2WShExTest extends CatsEffectSuite {
     )
   }
 
+  {
+    val schemaStr =
+      s"""|prefix :    <${ex.str}>
+          |prefix wd:  <${wd.str}>
+          |prefix pq:  <${pq.str}>
+          |prefix wdt: <${wdt.str}>
+          |prefix p:   <${p.str}>
+          |prefix ps:  <${ps.str}>
+          |<S> {
+          | p:P856 @<PS>
+          |}
+          |<PS> {
+          |  ps:P856 .            ;
+          |  pq:P407 [ wd:Q1860 ] ;	 
+          |}
+          |""".stripMargin
+    val se: ShapeExpr = Shape(
+      Some(s),
+      false,
+      List(),
+      Some(
+        TripleConstraintLocal(
+          PropertyId.fromIRI(wdt + "P856"),
+          EmptyExpr,
+          1,
+          IntOrUnbounded.fromInt(1),
+          Some(
+            QualifierSpec(
+              EachOfPs(
+                List(
+                  QualifierLocal(
+                    PropertyId.fromIRI(wdt + "P407"),
+                    ValueSet(None, List(EntityIdValueSetValue(EntityId.fromIri(wd + "Q1860")))),
+                    1,
+                    IntOrUnbounded.fromInt(1)
+                  )
+                )
+              ),
+              false
+            )
+          )
+        )
+      )
+    )
+    val psr: ShapeLabel = IRILabel(IRI("PS"))
+
+    val pse: ShapeExpr = Shape(
+      Some(psr),
+      false,
+      List(),
+      Some(
+        EachOf(
+          List(
+            TripleConstraintLocal(
+              PropertyId.fromIRI(wdt + "P856"),
+              EmptyExpr,
+              1,
+              IntOrUnbounded.fromInt(1),
+              None
+            ),
+            TripleConstraintLocal(
+              PropertyId.fromIRI(wdt + "P407"),
+              ValueSet(None, List(EntityIdValueSetValue(EntityId.fromIri(wd + "Q1860")))),
+              1,
+              IntOrUnbounded.fromInt(1),
+              None
+            )
+          )
+        )
+      )
+    )
+
+    checkSchema(
+      "Qualifiers with reference",
+      schemaStr,
+      Schema(Map(s -> se, psr -> pse), None, pm)
+    )
+  }
+
   def checkSchema(
       name: String,
       shexStr: String,

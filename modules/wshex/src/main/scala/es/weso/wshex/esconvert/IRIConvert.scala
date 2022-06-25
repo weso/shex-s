@@ -6,7 +6,7 @@ import es.weso.wbmodel.Utils
 
 sealed abstract class IRIParsed
 case class DirectProperty(value: Int) extends IRIParsed
-case class PropertyParsed(value: Int) extends IRIParsed
+case class Property(value: Int) extends IRIParsed
 case class PropertyStatement(value: Int) extends IRIParsed
 case class PropertyQualifier(value: Int) extends IRIParsed
 
@@ -52,12 +52,12 @@ object IRIConvert {
     else None
   }
 
-  private def parseProperty(pred: IRI, convertOptions: ESConvertOptions): Option[PropertyParsed] = {
+  private def parseProperty(pred: IRI, convertOptions: ESConvertOptions): Option[Property] = {
     val (name, base) = Utils.splitIri(pred)
     val expr = "P(\\d*)".r
     if (IRI(base) == convertOptions.propIri)
       name match {
-        case expr(num) => Some(PropertyParsed(Integer.parseInt(num)))
+        case expr(num) => Some(Property(Integer.parseInt(num)))
         case _         => None
       }
     else None

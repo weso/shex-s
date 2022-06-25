@@ -43,7 +43,8 @@ case class NoValueForPropertyStatementExprs(n: Int, es: List[shex.TripleExpr])
   override def toString() = s"No Value for property statement $n in triple expressions: $es"
 }
 
-case class DifferentPropertyPropertyStatement(n: Int, ns: Int, msg: String = "") extends ConvertError {
+case class DifferentPropertyPropertyStatement(n: Int, ns: Int, msg: String = "")
+    extends ConvertError {
   override def toString() = s"Different values for property: $n and propertyStatement: $ns\n$msg"
 }
 
@@ -54,4 +55,8 @@ case class NoExprForTripleConstraintProperty(n: Int, s: shex.Shape) extends Conv
 case class ConvertErrors(es: List[ConvertError]) extends ConvertError {
   override def toString() =
     s"Conversion errors: ${es.map(_.toString).mkString("\n")}"
+}
+
+case class NotFoundShape(ref: shex.ShapeLabel, msg: String) extends ConvertError {
+  override def toString() = s"Not found shape with Label: $ref\n$msg"
 }
