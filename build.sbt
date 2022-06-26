@@ -284,8 +284,8 @@ lazy val depGraphs = project
       catsKernel,
       catsAlley,
       jgraphtCore,
-      munit,
-      munitEffect,
+      munit       % Test,
+      munitEffect % Test,
       utils
     ),
     testFrameworks += new TestFramework("munit.Framework")
