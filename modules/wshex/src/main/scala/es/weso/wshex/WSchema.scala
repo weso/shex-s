@@ -8,7 +8,7 @@ import cats.effect.IO
 import es.weso.wbmodel._
 import es.weso.utils.VerboseLevel
 
-case class Schema(
+case class WSchema(
     shapesMap: Map[ShapeLabel, ShapeExpr],
     start: Option[ShapeExpr] = None,
     pm: PrefixMap = PrefixMap.empty
@@ -83,15 +83,20 @@ case class Schema(
 
 }
 
-object Schema {
+object WSchema {
 
-  private def cnvFormat(format: WShExFormat): String = format.name
+  private def cnvFormat(format: WShExFormat): String = format match {
+    case WShExFormat.CompactWShExFormat => "ShExC"
+    case WShExFormat.ESCompactFormat    => "ShExC"
+    case WShExFormat.ESJsonFormat       => "ShExJ"
+    case WShExFormat.JsonWShExFormat    => "ShExJ"
+  }
 
   def fromPath(
       path: Path,
       format: WShExFormat = WShExFormat.CompactWShExFormat,
       verbose: VerboseLevel
-  ): IO[Schema] = for {
+  ): IO[WSchema] = for {
     schema <- es.weso.shex.Schema.fromFile(path.toFile().getAbsolutePath(), cnvFormat(format))
     resolvedSchema <- es.weso.shex.ResolvedSchema.resolve(schema, None, verbose)
     schema <- IO.fromEither(ShEx2WShEx().convertSchema(resolvedSchema))
@@ -101,11 +106,20 @@ object Schema {
       schemaString: String,
       format: WShExFormat = WShExFormat.CompactWShExFormat,
       verbose: VerboseLevel
-  ): IO[Schema] = for {
-    schema <- es.weso.shex.Schema.fromString(schemaString, cnvFormat(format))
-    resolvedSchema <- es.weso.shex.ResolvedSchema.resolve(schema, None, verbose)
-    schema <- IO.fromEither(ShEx2WShEx().convertSchema(resolvedSchema))
-  } yield schema
+  ): IO[WSchema] = format match {
+    case WShExFormat.CompactWShExFormat | WShExFormat.JsonWShExFormat =>
+      for {
+        schema <- es.weso.shex.Schema.fromString(schemaString, cnvFormat(format))
+        resolvedSchema <- es.weso.shex.ResolvedSchema.resolve(schema, None, verbose)
+        wschema <- IO.fromEither(ShEx2WShEx().convertSchema(resolvedSchema))
+      } yield wschema
+    case WShExFormat.ESCompactFormat | WShExFormat.ESJsonFormat =>
+      for {
+        schema <- es.weso.shex.Schema.fromString(schemaString, cnvFormat(format))
+        resolvedSchema <- es.weso.shex.ResolvedSchema.resolve(schema, None, verbose)
+        wschema <- IO.fromEither(ES2WShEx(ESConvertOptions.default).convertSchema(resolvedSchema))
+      } yield wschema
+  }
 
   /** Read a Schema from a file
     * This version is unsafe in the sense that it can throw exceptions
@@ -119,7 +133,7 @@ object Schema {
       path: Path,
       format: WShExFormat = WShExFormat.CompactWShExFormat,
       verbose: VerboseLevel
-  ): Schema = {
+  ): WSchema = {
     import cats.effect.unsafe.implicits.global
     fromPath(path, format, verbose).unsafeRunSync()
   }
@@ -132,7 +146,7 @@ object Schema {
     * @param format it can be CompactFormat or JsonFormat
     * @return the schema
     */
-  def unsafeFromString(str: String, format: WShExFormat): Either[ParseError, Schema] = {
+  def unsafeFromString(str: String, format: WShExFormat): Either[ParseError, WSchema] = {
     import cats.effect.unsafe.implicits.global
     try {
       val schema = es.weso.shex.Schema.fromString(str, cnvFormat(format)).unsafeRunSync()
@@ -155,7 +169,7 @@ object Schema {
       schemaString: String,
       format: WShExFormat = WShExFormat.CompactWShExFormat,
       verbose: VerboseLevel
-  ): Schema = {
+  ): WSchema = {
     import cats.effect.unsafe.implicits.global
     fromString(schemaString, format, verbose).unsafeRunSync()
   }

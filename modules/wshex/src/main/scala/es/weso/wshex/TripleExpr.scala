@@ -244,7 +244,7 @@ sealed abstract class TripleConstraint extends TripleExpr with Serializable with
 
 case class TripleConstraintRef(
     property: PropertyId,
-    value: ShapeRef,
+    value: WShapeRef,
     min: Int,
     max: IntOrUnbounded,
     qs: Option[QualifierSpec]
@@ -255,7 +255,7 @@ case class TripleConstraintRef(
 
 case class TripleConstraintLocal(
     property: PropertyId,
-    value: NodeConstraint,
+    value: WNodeConstraint,
     min: Int,
     max: IntOrUnbounded,
     qs: Option[QualifierSpec] = None

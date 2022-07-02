@@ -35,7 +35,7 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
     */
   def convertSchema(
       shexSchema: shex.AbstractSchema
-  ): Either[ConvertError, Schema] =
+  ): Either[ConvertError, WSchema] =
     for {
       shapes <-
         shexSchema.shapesMap.toList.map { case (l, se) =>
@@ -46,7 +46,7 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
         case None     => none.asRight
         case Some(se) => convertShapeExpr(se, shexSchema).flatMap(se => Right(Some(se)))
       }
-    } yield Schema(shapes.toMap, start, shexSchema.prefixMap)
+    } yield WSchema(shapes.toMap, start, shexSchema.prefixMap)
 
   private def convertLabelShapeExpr(
       label: shex.ShapeLabel,
@@ -67,23 +67,25 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
       case sand: shex.ShapeAnd =>
         for {
           ss <- sand.shapeExprs.map(convertShapeExpr(_, schema)).sequence
-        } yield ShapeAnd(id = convertId(sand.id), exprs = ss)
+        } yield WShapeAnd(id = convertId(sand.id), exprs = ss)
       case sor: shex.ShapeOr =>
         for {
           ss <- sor.shapeExprs.map(convertShapeExpr(_, schema)).sequence
-        } yield ShapeOr(id = convertId(sor.id), exprs = ss)
+        } yield WShapeOr(id = convertId(sor.id), exprs = ss)
       case snot: shex.ShapeNot =>
         convertShapeExpr(snot.shapeExpr, schema)
-          .map(se => ShapeNot(id = convertId(snot.id), shapeExpr = se))
+          .map(se => WShapeNot(id = convertId(snot.id), shapeExpr = se))
       case sref: shex.ShapeRef =>
-        ShapeRef(convertShapeLabel(sref.reference)).asRight
+        WShapeRef(convertShapeLabel(sref.reference)).asRight
       case _ => UnsupportedShapeExpr(se).asLeft
     }
 
   private def convertId(id: Option[shex.ShapeLabel]): Option[ShapeLabel] =
     id.map(convertShapeLabel)
 
-  private def convertNodeConstraint(nc: shex.NodeConstraint): Either[ConvertError, NodeConstraint] =
+  private def convertNodeConstraint(
+      nc: shex.NodeConstraint
+  ): Either[ConvertError, WNodeConstraint] =
     nc match {
       case shex.NodeConstraint(id, None, None, List(), Some(values), None, None) =>
         convertValueSet(convertId(id), values)
@@ -126,10 +128,10 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
   private def convertShape(
       s: shex.Shape,
       schema: shex.AbstractSchema
-  ): Either[ConvertError, Shape] =
+  ): Either[ConvertError, WShape] =
     for {
       te <- optConvert(s.expression, convertTripleExpr(schema))
-    } yield Shape(
+    } yield WShape(
       id = convertId(s.id),
       closed = s.closed.getOrElse(false),
       extra = s.extra.getOrElse(List()).map(PropertyId.fromIRI(_)),
@@ -189,7 +191,7 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
       case Some(se) =>
         convertShapeExpr(se, schema).flatMap(s =>
           s match {
-            case s @ ShapeRef(lbl) =>
+            case s @ WShapeRef(lbl) =>
               TripleConstraintRef(pred, s, min, max, None).asRight
             case v @ ValueSet(id, vs) =>
               TripleConstraintLocal(pred, v, min, max).asRight
@@ -365,7 +367,7 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
               case Some(se) =>
                 convertShapeExpr(se, schema).flatMap(s =>
                   s match {
-                    case s @ ShapeRef(lbl)    => QualifierRef(pq, s, min, max).some.asRight
+                    case s @ WShapeRef(lbl)   => QualifierRef(pq, s, min, max).some.asRight
                     case v @ ValueSet(id, vs) => QualifierLocal(pq, v, min, max).some.asRight
                     case _ =>
                       UnsupportedShapeExpr(se, s"Parsing qualifiers for property $n").asLeft

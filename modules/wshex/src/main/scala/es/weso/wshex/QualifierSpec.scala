@@ -11,13 +11,13 @@ case object EmptySpec extends PropertySpec
 sealed abstract class QualifierS extends PropertySpec
 case class QualifierLocal(
     p: PropertyId,
-    nc: NodeConstraint,
+    nc: WNodeConstraint,
     min: Int,
     max: IntOrUnbounded
 ) extends QualifierS
 case class QualifierRef(
     p: PropertyId,
-    ref: ShapeRef,
+    ref: WShapeRef,
     min: Int,
     max: IntOrUnbounded
 ) extends QualifierS

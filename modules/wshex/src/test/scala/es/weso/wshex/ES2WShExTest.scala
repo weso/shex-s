@@ -18,82 +18,87 @@ class ES2WShExTest extends CatsEffectSuite {
   val pq = IRI("http://www.wikidata.org/prop/qualifier/")
   val wd = IRI("http://www.wikidata.org/entity/")
   val wdt = IRI("http://www.wikidata.org/prop/direct/")
+  val rdfs = IRI("http://www.w3.org/2000/01/rdf-schema#")
+
   val pm: PrefixMap =
-    PrefixMap.fromMap(Map("" -> ex, "wd" -> wd, "wdt" -> wdt, "p" -> p, "ps" -> ps, "pq" -> pq))
+    PrefixMap.fromMap(
+      Map("" -> ex, "wd" -> wd, "wdt" -> wdt, "p" -> p, "ps" -> ps, "pq" -> pq, "rdfs" -> rdfs)
+    )
+
+  val pmStr = s"""|prefix :    <${ex.str}>
+       |prefix wd:  <${wd.str}>
+       |prefix wdt: <${wdt.str}>
+       |prefix p:   <${p.str}>
+       |prefix ps:  <${ps.str}>
+       |prefix pq:  <${pq.str}>
+       |prefix rdfs: <${rdfs.str}>
+       |""".stripMargin
   val s: ShapeLabel = IRILabel(IRI("S"))
+  val t: ShapeLabel = IRILabel(IRI("T"))
+  val u: ShapeLabel = IRILabel(IRI("U"))
 
-  {
-    val se: ShapeExpr = Shape(
-      Some(s),
-      false,
-      List(),
-      Some(
-        TripleConstraintLocal(
-          PropertyId.fromIRI(wdt + "P31"),
-          ValueSet(None, List(EntityIdValueSetValue(EntityId.fromIri(wd + "Q5")))),
-          1,
-          IntOrUnbounded.fromInt(1)
-        )
-      )
+  checkSchema(
+    "local valueSetValue",
+    s"""|$pmStr
+        |<S> {
+        | wdt:P31 [ wd:Q5 ]
+        |}
+        |""".stripMargin,
+    WSchema(
+      Map(
+        s ->
+          WShape(
+            Some(s),
+            false,
+            List(),
+            Some(
+              TripleConstraintLocal(
+                PropertyId.fromIRI(wdt + "P31"),
+                ValueSet(None, List(EntityIdValueSetValue(EntityId.fromIri(wd + "Q5")))),
+                1,
+                IntOrUnbounded.fromInt(1)
+              )
+            )
+          )
+      ),
+      None,
+      pm
     )
+  )
 
-    checkSchema(
-      "local valueSetValue",
-      s"""|prefix :    <${ex.str}>
-       |prefix wd:  <${wd.str}>
-       |prefix wdt: <${wdt.str}>
-       |prefix p:   <${p.str}>
-       |prefix ps:  <${ps.str}>
-       |prefix pq:  <${pq.str}>
-       |<S> {
-       | wdt:P31 [ wd:Q5 ]
-       |}
-       |""".stripMargin,
-      Schema(Map(s -> se), None, pm)
-    )
-  }
-
-  {
-    val se: ShapeExpr = Shape(
-      Some(s),
-      false,
-      List(),
-      Some(
-        TripleConstraintLocal(
-          PropertyId.fromIRI(wdt + "P31"),
-          ValueSet(None, List(EntityIdValueSetValue(EntityId.fromIri(wd + "Q5")))),
-          1,
-          IntLimit(1)
-        )
-      )
-    )
-
-    checkSchema(
-      "simple Reference",
-      s"""|prefix :    <${ex.str}>
-       |prefix wd:  <${wd.str}>
-       |prefix wdt: <${wdt.str}>
-       |prefix p:   <${p.str}>
-       |prefix ps:  <${ps.str}>
-       |prefix pq:  <${pq.str}>
+  checkSchema(
+    "simple Reference",
+    s"""|$pmStr
        |<S> {
        | p:P31 {
        |  ps:P31 [ wd:Q5 ] ;
        | }
        |}
        |""".stripMargin,
-      Schema(Map(s -> se), None, pm)
+    WSchema(
+      Map(
+        s -> WShape(
+          Some(s),
+          false,
+          List(),
+          Some(
+            TripleConstraintLocal(
+              PropertyId.fromIRI(wdt + "P31"),
+              ValueSet(None, List(EntityIdValueSetValue(EntityId.fromIri(wd + "Q5")))),
+              1,
+              IntLimit(1)
+            )
+          )
+        )
+      ),
+      None,
+      pm
     )
-  }
+  )
 
   {
     val schemaStr =
-      s"""|prefix :    <${ex.str}>
-          |prefix wd:  <${wd.str}>
-          |prefix pq:  <${pq.str}>
-          |prefix wdt: <${wdt.str}>
-          |prefix p:   <${p.str}>
-          |prefix ps:  <${ps.str}>
+      s"""|$pmStr
           |<S> {
           | p:P856 {
           |  ps:P856 .   ;
@@ -101,7 +106,7 @@ class ES2WShExTest extends CatsEffectSuite {
           | }
           |}
           |""".stripMargin
-    val se: ShapeExpr = Shape(
+    val se: ShapeExpr = WShape(
       Some(s),
       false,
       List(),
@@ -133,18 +138,13 @@ class ES2WShExTest extends CatsEffectSuite {
     checkSchema(
       "Qualifiers",
       schemaStr,
-      Schema(Map(s -> se), None, pm)
+      WSchema(Map(s -> se), None, pm)
     )
   }
 
   {
     val schemaStr =
-      s"""|prefix :    <${ex.str}>
-          |prefix wd:  <${wd.str}>
-          |prefix pq:  <${pq.str}>
-          |prefix wdt: <${wdt.str}>
-          |prefix p:   <${p.str}>
-          |prefix ps:  <${ps.str}>
+      s"""|$pmStr
           |<S> {
           | p:P856 @<PS>
           |}
@@ -153,7 +153,7 @@ class ES2WShExTest extends CatsEffectSuite {
           |  pq:P407 [ wd:Q1860 ] ;	 
           |}
           |""".stripMargin
-    val se: ShapeExpr = Shape(
+    val se: ShapeExpr = WShape(
       Some(s),
       false,
       List(),
@@ -183,7 +183,7 @@ class ES2WShExTest extends CatsEffectSuite {
     )
     val psr: ShapeLabel = IRILabel(IRI("PS"))
 
-    val pse: ShapeExpr = Shape(
+    val pse: ShapeExpr = WShape(
       Some(psr),
       false,
       List(),
@@ -212,14 +212,50 @@ class ES2WShExTest extends CatsEffectSuite {
     checkSchema(
       "Qualifiers with reference",
       schemaStr,
-      Schema(Map(s -> se, psr -> pse), None, pm)
+      WSchema(Map(s -> se, psr -> pse), None, pm)
     )
   }
+
+  checkSchema(
+    "local OR",
+    s"""|$pmStr
+       |<S> @<T> OR @<U>
+       |<T> {} 
+       |<U> {}
+       |""".stripMargin,
+    WSchema(
+      Map(
+        (s ->
+          WShapeOr(Some(s), List(WShapeRef(t), WShapeRef(u)))),
+        t -> WShape(Some(t), false, List(), None),
+        u -> WShape(Some(u), false, List(), None)
+      ),
+      None,
+      pm
+    )
+  )
+
+  /*  checkSchema(
+    "labels",
+    s"""|$pmStr
+        |<S> {
+        | rdfs:label [ @en ]
+        |}
+        |""".stripMargin,
+    WSchema(
+      Map(
+        s ->
+          WShape(Some(s), false, List(), None)
+      ),
+      None,
+      pm
+    )
+  ) */
 
   def checkSchema(
       name: String,
       shexStr: String,
-      expected: Schema,
+      expected: WSchema,
       format: String = "ShExC"
   )(implicit loc: munit.Location): Unit = {
     val convertOptions = ESConvertOptions.default
