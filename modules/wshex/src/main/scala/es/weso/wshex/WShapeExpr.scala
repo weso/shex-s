@@ -8,7 +8,7 @@ import cats.implicits._
 import es.weso.wbmodel._
 import es.weso.rdf.nodes._
 
-sealed abstract class ShapeExpr extends Product with Serializable {
+sealed abstract class WShapeExpr extends Product with Serializable {
 
   def dependsOn(): Set[ShapeLabel] = this match {
     case s: WShapeRef => Set(s.label)
@@ -262,20 +262,21 @@ sealed abstract class ShapeExpr extends Product with Serializable {
 
 }
 
-case class WShapeAnd(id: Option[ShapeLabel], exprs: List[ShapeExpr]) extends ShapeExpr
-case class WShapeOr(id: Option[ShapeLabel], exprs: List[ShapeExpr]) extends ShapeExpr
-case class WShapeNot(id: Option[ShapeLabel], shapeExpr: ShapeExpr) extends ShapeExpr
+case class WShapeAnd(id: Option[ShapeLabel], exprs: List[WShapeExpr]) extends WShapeExpr
+case class WShapeOr(id: Option[ShapeLabel], exprs: List[WShapeExpr]) extends WShapeExpr
+case class WShapeNot(id: Option[ShapeLabel], shapeExpr: WShapeExpr) extends WShapeExpr
 case class WShapeRef(
     label: ShapeLabel
-) extends ShapeExpr
+) extends WShapeExpr
 case class WShape(
     id: Option[ShapeLabel],
     closed: Boolean,
     extra: List[PropertyId],
-    expression: Option[TripleExpr]
-) extends ShapeExpr
+    expression: Option[TripleExpr],
+    termConstraints: List[TermConstraint]
+) extends WShapeExpr
 
-sealed abstract class WNodeConstraint extends ShapeExpr {
+sealed abstract class WNodeConstraint extends WShapeExpr {
   def matchLocal(value: Value): Either[Reason, Unit]
   def matchLocalCoded(value: Value): Either[ReasonCode, Unit] =
     matchLocal(value).leftMap(r => r.errCode)
@@ -361,10 +362,10 @@ object WShapeExpr {
 
   def shapeRef(iri: String): WShapeRef = WShapeRef(label(iri))
 
-  def shape(ls: List[TripleConstraint]): ShapeExpr =
-    WShape(None, false, List(), Some(EachOf(ls)))
+  def shape(ls: List[TripleConstraint]): WShapeExpr =
+    WShape(None, false, List(), Some(EachOf(ls)), List())
 
-  def valueSet(ls: List[ValueSetValue]): ShapeExpr =
+  def valueSet(ls: List[ValueSetValue]): WShapeExpr =
     ValueSet(None, ls)
 
   def qid(num: Int): ValueSetValue =

@@ -58,7 +58,8 @@ class ES2WShExTest extends CatsEffectSuite {
                 1,
                 IntOrUnbounded.fromInt(1)
               )
-            )
+            ),
+            List()
           )
       ),
       None,
@@ -88,7 +89,8 @@ class ES2WShExTest extends CatsEffectSuite {
               1,
               IntLimit(1)
             )
-          )
+          ),
+          List()
         )
       ),
       None,
@@ -106,7 +108,7 @@ class ES2WShExTest extends CatsEffectSuite {
           | }
           |}
           |""".stripMargin
-    val se: ShapeExpr = WShape(
+    val se: WShapeExpr = WShape(
       Some(s),
       false,
       List(),
@@ -132,7 +134,8 @@ class ES2WShExTest extends CatsEffectSuite {
             )
           )
         )
-      )
+      ),
+      List()
     )
 
     checkSchema(
@@ -153,7 +156,7 @@ class ES2WShExTest extends CatsEffectSuite {
           |  pq:P407 [ wd:Q1860 ] ;	 
           |}
           |""".stripMargin
-    val se: ShapeExpr = WShape(
+    val se: WShapeExpr = WShape(
       Some(s),
       false,
       List(),
@@ -179,11 +182,12 @@ class ES2WShExTest extends CatsEffectSuite {
             )
           )
         )
-      )
+      ),
+      List()
     )
     val psr: ShapeLabel = IRILabel(IRI("PS"))
 
-    val pse: ShapeExpr = WShape(
+    val pse: WShapeExpr = WShape(
       Some(psr),
       false,
       List(),
@@ -206,7 +210,8 @@ class ES2WShExTest extends CatsEffectSuite {
             )
           )
         )
-      )
+      ),
+      List()
     )
 
     checkSchema(
@@ -227,8 +232,8 @@ class ES2WShExTest extends CatsEffectSuite {
       Map(
         (s ->
           WShapeOr(Some(s), List(WShapeRef(t), WShapeRef(u)))),
-        t -> WShape(Some(t), false, List(), None),
-        u -> WShape(Some(u), false, List(), None)
+        t -> WShape(Some(t), false, List(), None, List()),
+        u -> WShape(Some(u), false, List(), None, List())
       ),
       None,
       pm

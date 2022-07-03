@@ -9,12 +9,12 @@ import es.weso.wbmodel._
 import es.weso.utils.VerboseLevel
 
 case class WSchema(
-    shapesMap: Map[ShapeLabel, ShapeExpr],
-    start: Option[ShapeExpr] = None,
+    shapesMap: Map[ShapeLabel, WShapeExpr],
+    start: Option[WShapeExpr] = None,
     pm: PrefixMap = PrefixMap.empty
 ) extends Serializable {
 
-  def get(shapeLabel: ShapeLabel): Option[ShapeExpr] = shapeLabel match {
+  def get(shapeLabel: ShapeLabel): Option[WShapeExpr] = shapeLabel match {
     case Start => start
     case _     => shapesMap.get(shapeLabel)
   }
@@ -63,7 +63,7 @@ case class WSchema(
         tcs
     }
 
-  lazy val shapes: List[ShapeExpr] =
+  lazy val shapes: List[WShapeExpr] =
     shapesMap.values.toList
 
   /** Get a shape with label
@@ -71,14 +71,14 @@ case class WSchema(
     * @param lbl
     * @return the shape expression with that label
     */
-  def getShape(lbl: ShapeLabel): Option[ShapeExpr] =
+  def getShape(lbl: ShapeLabel): Option[WShapeExpr] =
     shapesMap.get(lbl)
 
   /** Start shape expression in a schema
     *
     * @return the start shape expression if it has been declared or the first one. None if there are no shape expressions
     */
-  lazy val startShapeExpr: Option[ShapeExpr] =
+  lazy val startShapeExpr: Option[WShapeExpr] =
     getShape(Start).orElse(shapes.headOption)
 
 }

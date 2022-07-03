@@ -20,7 +20,7 @@ class ShEx2WShExTest extends CatsEffectSuite {
   val s: ShapeLabel = IRILabel(IRI("S"))
 
   {
-    val se: ShapeExpr = WShape(
+    val se: WShapeExpr = WShape(
       Some(s),
       false,
       List(),
@@ -31,7 +31,8 @@ class ShEx2WShExTest extends CatsEffectSuite {
           1,
           IntLimit(1)
         )
-      )
+      ),
+      List()
     )
 
     checkSchema(

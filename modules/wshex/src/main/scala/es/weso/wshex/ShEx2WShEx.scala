@@ -33,14 +33,14 @@ case class ShEx2WShEx(convertOptions: ConvertOptions) extends LazyLogging {
   private def convertLabelShapeExpr(
       label: shex.ShapeLabel,
       se: shex.ShapeExpr
-  ): Either[ConvertError, (ShapeLabel, ShapeExpr)] = for {
+  ): Either[ConvertError, (ShapeLabel, WShapeExpr)] = for {
     cse <- convertShapeExpr(se)
     lbl = convertShapeLabel(label)
   } yield (lbl, cse)
 
   private def convertShapeExpr(
       se: shex.ShapeExpr
-  ): Either[ConvertError, ShapeExpr] =
+  ): Either[ConvertError, WShapeExpr] =
     se match {
       case nc: shex.NodeConstraint => convertNodeConstraint(nc)
       case s: shex.Shape           => convertShape(s)
@@ -113,7 +113,8 @@ case class ShEx2WShEx(convertOptions: ConvertOptions) extends LazyLogging {
       id = convertId(s.id),
       closed = s.closed.getOrElse(false),
       extra = s.extra.getOrElse(List()).map(PropertyId.fromIRI(_)),
-      expression = te
+      expression = te,
+      List()
     )
 
   private def optConvert[A, B](
@@ -164,7 +165,7 @@ case class ShEx2WShEx(convertOptions: ConvertOptions) extends LazyLogging {
     }
     for {
       se <- tc.valueExpr match {
-        case None     => none[ShapeExpr].asRight
+        case None     => none[WShapeExpr].asRight
         case Some(se) => convertShapeExpr(se).map(s => Some(s))
       }
       pred = PropertyId.fromIRI(tc.predicate)
