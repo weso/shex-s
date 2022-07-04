@@ -20,7 +20,10 @@ object TermConstraint {
       maybesc: Option[StringConstraint],
       value: MonolingualTextValue
   ): Either[String, Unit] =
-    maybesc.fold(().asRight)(_.matchMonolingualTextValue(value))
+    maybesc match {
+      case None => ().asRight
+      case Some(sc) => sc.matchMonolingualTextValue(value)
+    }
 
   case class LabelConstraint(lang: Lang, strConstraint: Option[StringConstraint])
       extends TermConstraint {

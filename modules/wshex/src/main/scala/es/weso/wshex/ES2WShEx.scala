@@ -151,7 +151,10 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
   ): Either[ConvertError, WShape] =
     for {
       te <- optConvert(s.expression, convertTripleExpr(schema))
-      ls <- s.expression.fold(List().asRight)(parseTermsExpr(_))
+      ls <- s.expression match {
+        case None => List().asRight
+        case Some(ts) => parseTermsExpr(ts)
+      } 
     } yield WShape(
       id = convertId(s.id),
       closed = s.closed.getOrElse(false),
@@ -178,7 +181,7 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
   ): Either[ConvertError, List[TermConstraint]] = tc.predicate match {
     case `rdfsLabel` =>
       List(LabelConstraint(Lang("en"), None)).asRight
-    case `skosAltLabel` =>   
+    case `skosAltLabel` =>
       List(AliasConstraint(Lang("en"), None)).asRight
     case _ => List().asRight
   }
