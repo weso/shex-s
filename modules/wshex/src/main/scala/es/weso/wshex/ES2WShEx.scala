@@ -6,10 +6,12 @@ import com.typesafe.scalalogging.LazyLogging
 import es.weso._
 import es.weso.rbe.interval.{IntLimit, Unbounded}
 import es.weso.rdf.nodes._
-import es.weso.wbmodel.{Property => _, _}
+import es.weso.wbmodel.{Lang => _, Property => _, _}
 import es.weso.wshex.esconvert._
 import es.weso.rbe.interval.IntOrUnbounded
 import scala.collection.compat._ // Required for partitionMap
+import es.weso.rdf.nodes._
+import es.weso.wshex.TermConstraint._
 
 case class ESConvertOptions(
     entityIri: IRI,
@@ -30,6 +32,24 @@ object ESConvertOptions {
 }
 
 case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
+
+  // Properties for labels
+  private lazy val rdfsLabel = IRI("http://www.w3.org/2000/01/rdf-schema#label")
+  private lazy val schemaName = IRI("http://schema.org/name")
+  private lazy val skosPrefLabel = IRI("http://www.w3.org/2004/02/skos/core#prefLabel")
+
+  // Properties for descriptions
+  private lazy val schemaDescription = IRI("http://schema.org/description")
+  // Properties for aliases
+  private lazy val skosAltLabel = IRI("http://www.w3.org/2004/02/skos/core#altLabel")
+
+  private lazy val termPredicates: List[IRI] = List(
+    rdfsLabel,
+    schemaName,
+    skosPrefLabel,
+    schemaDescription,
+    skosAltLabel
+  )
 
   /** Convert an entity schema in ShEx to WShEx
     */
@@ -131,40 +151,75 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
   ): Either[ConvertError, WShape] =
     for {
       te <- optConvert(s.expression, convertTripleExpr(schema))
+      ls <- s.expression.fold(List().asRight)(parseTermsExpr(_))
     } yield WShape(
       id = convertId(s.id),
       closed = s.closed.getOrElse(false),
       extra = s.extra.getOrElse(List()).map(PropertyId.fromIRI(_)),
       expression = te,
-      List()
+      ls
     )
+
+  private def parseTermsExpr(
+      te: shex.TripleExpr
+  ): Either[ConvertError, List[TermConstraint]] =
+    te match {
+      case eo: shex.EachOf =>
+        eo.expressions.map(parseTermsExpr(_)).sequence.map(_.flatten)
+      case tc: shex.TripleConstraint => parseTermTripleConstraint(tc)
+      case oo: shex.OneOf => List().asRight // We ignore term declarations embedded in OneOf
+      case i: shex.Inclusion =>
+        List().asRight // We ignore term declarations embedded in Inclusions
+      case _ => List().asRight // We ignore term declarations in other triple expressions...
+    }
+
+  private def parseTermTripleConstraint(
+      tc: shex.TripleConstraint
+  ): Either[ConvertError, List[TermConstraint]] = tc.predicate match {
+    case `rdfsLabel` =>
+      List(LabelConstraint(Lang("en"), None)).asRight
+    case `skosAltLabel` =>   
+      List(AliasConstraint(Lang("en"), None)).asRight
+    case _ => List().asRight
+  }
 
   private def optConvert[A, B](
       v: Option[A],
-      cnv: A => Either[ConvertError, B]
+      cnv: A => Either[ConvertError, Option[B]]
   ): Either[ConvertError, Option[B]] =
-    v.fold(none[B].asRight[ConvertError])(a => cnv(a).map(Some(_)))
+    v.fold(none[B].asRight[ConvertError])(cnv(_))
 
   private def convertTripleExpr(
       schema: shex.AbstractSchema
-  )(te: shex.TripleExpr): Either[ConvertError, TripleExpr] =
+  )(te: shex.TripleExpr): Either[ConvertError, Option[TripleExpr]] =
     te match {
       case eo: shex.EachOf =>
-        // TODO: generalize to handle triple expressions
-        for {
-          tes <- eo.expressions
-            .map(convertTripleExpr(schema))
-            .sequence
-          tcs <- tes.map(castToTripleConstraint(_)).sequence
-        } yield EachOf(tcs)
+        eo.expressions
+          .map(convertTripleExpr(schema))
+          .sequence
+          .flatMap { ls =>
+            ls.map(castToTripleConstraint(_))
+              .sequence
+              .map(_.flatten)
+              .map(_ match {
+                case Nil => none[TripleExpr]
+                case tcs => EachOf(tcs).some
+              })
+          }
+
       case oo: shex.OneOf =>
-        // TODO: generalize to handle triple expressions
-        for {
-          tes <- oo.expressions
-            .map(convertTripleExpr(schema))
-            .sequence
-          tcs <- tes.map(castToTripleConstraint(_)).sequence
-        } yield OneOf(tcs)
+        oo.expressions
+          .map(convertTripleExpr(schema))
+          .sequence
+          .flatMap { ls =>
+            ls.map(castToTripleConstraint(_))
+              .sequence
+              .map(_.flatten)
+              .map(_ match {
+                case Nil => none[TripleExpr]
+                case tcs => OneOf(tcs).some
+              })
+          }
       case tc: shex.TripleConstraint =>
         convertTripleConstraint(tc, schema)
       case _ =>
@@ -173,10 +228,15 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
     }
 
   private def castToTripleConstraint(
-      te: TripleExpr
-  ): Either[ConvertError, TripleConstraint] = te match {
-    case tc: TripleConstraint => Right(tc)
-    case _                    => Left(CastTripleConstraintError(te))
+      maybeTe: Option[TripleExpr]
+  ): Either[ConvertError, Option[TripleConstraint]] = maybeTe match {
+    case None => none.asRight
+    case Some(te) =>
+      te match {
+        case tc: TripleConstraint =>
+          tc.some.asRight
+        case _ => Left(CastTripleConstraintError(te))
+      }
   }
 
   private def makeTripleConstraint(
@@ -205,27 +265,29 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
   private def convertTripleConstraint(
       tc: shex.TripleConstraint,
       schema: shex.AbstractSchema
-  ): Either[ConvertError, TripleConstraint] = {
+  ): Either[ConvertError, Option[TripleConstraint]] = {
     val iriParsed = IRIConvert.parseIRI(tc.predicate, convertOptions)
     iriParsed match {
       case Some(DirectProperty(n)) =>
         val pred = PropertyId.fromIRI(tc.predicate)
         val (min, max) = convertMinMax(tc)
-        makeTripleConstraint(pred, min, max, tc.valueExpr, schema)
+        makeTripleConstraint(pred, min, max, tc.valueExpr, schema).map(_.some)
       case Some(Property(p)) =>
         tc.valueExpr match {
-          case Some(ve) => convertTripleConstraintProperty(p, ve, schema)
+          case Some(ve) => convertTripleConstraintProperty(p, ve, schema).map(_.some)
           case None     => NoValueForPropertyConstraint(p, tc).asLeft
         }
       case Some(PropertyQualifier(_)) =>
         val pred = PropertyId.fromIRI(tc.predicate)
         val (min, max) = convertMinMax(tc)
-        makeTripleConstraint(pred, min, max, tc.valueExpr, schema)
+        makeTripleConstraint(pred, min, max, tc.valueExpr, schema).map(_.some)
       case Some(PropertyStatement(_)) =>
         val pred = PropertyId.fromIRI(tc.predicate)
         val (min, max) = convertMinMax(tc)
-        makeTripleConstraint(pred, min, max, tc.valueExpr, schema)
-      case _ => UnsupportedPredicate(tc.predicate, s"Parsing direct tripleConstraint $tc").asLeft
+        makeTripleConstraint(pred, min, max, tc.valueExpr, schema).map(_.some)
+      case _ =>
+        if (termPredicates.contains(tc.predicate)) none.asRight
+        else UnsupportedPredicate(tc.predicate, s"Parsing direct tripleConstraint $tc").asLeft
     }
   }
 

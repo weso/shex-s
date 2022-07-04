@@ -59,6 +59,7 @@ sealed abstract class WShapeExpr extends Product with Serializable {
               case t: TripleConstraintLocal => List()
               case eo: EachOf               => eo.exprs.map(_.tripleConstraints).flatten
               case oo: OneOf                => oo.exprs.map(_.tripleConstraints).flatten
+              case EmptyTripleExpr          => List()
             }
         }
       case WShapeAnd(_, ls) =>

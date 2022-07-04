@@ -15,7 +15,7 @@ sealed abstract class TripleExpr extends Product with Serializable {
     case eo: EachOf =>
       eo.exprs.foldLeft(Set[ShapeLabel]()) { case (e, s) => e.union(s.dependsOn()) }
     case oo: OneOf => oo.exprs.foldLeft(Set[ShapeLabel]()) { case (e, s) => e.union(s.dependsOn()) }
-    // case _ => Set()
+    case EmptyTripleExpr => Set()
   }
 
   def rbe: Rbe[(PropertyId, ShapeLabel)] =
@@ -26,14 +26,15 @@ sealed abstract class TripleExpr extends Product with Serializable {
         eo.exprs.foldLeft(empty) { case (e, b) => And(e, b.rbe) }
       case oo: OneOf =>
         oo.exprs.foldLeft(empty) { case (e, b) => Or(e, b.rbe) }
+      case EmptyTripleExpr => empty
     }
 
-  val tripleConstraints: List[TripleConstraintRef] = this match {
+  lazy val tripleConstraints: List[TripleConstraintRef] = this match {
     case t: TripleConstraintRef   => List(t)
     case t: TripleConstraintLocal => List()
     case eo: EachOf               => eo.exprs.flatMap(_.tripleConstraints)
     case oo: OneOf                => oo.exprs.flatMap(_.tripleConstraints)
-    // case _ => List()
+    case EmptyTripleExpr          => List()
   }
 
   def checkLocal(
@@ -169,6 +170,7 @@ sealed abstract class TripleExpr extends Product with Serializable {
 
 case class EachOf(exprs: List[TripleConstraint]) extends TripleExpr
 case class OneOf(exprs: List[TripleConstraint]) extends TripleExpr
+case object EmptyTripleExpr extends TripleExpr
 
 sealed abstract class TripleConstraint extends TripleExpr with Serializable with Product {
   def min: Int
@@ -192,10 +194,6 @@ sealed abstract class TripleConstraint extends TripleExpr with Serializable with
       case tr: TripleConstraintRef => Right(Left(Set(fromLabel)))
       case tl: TripleConstraintLocal =>
         val found = entity.localStatementsByPropId(tl.property)
-        /*        println(s"""|Local statements: ${entity.localStatements}
-                    |Property: ${tl.property}
-                    |found: $found
-                    |""".stripMargin) */
         val matches: Int =
           found
             .map(s =>

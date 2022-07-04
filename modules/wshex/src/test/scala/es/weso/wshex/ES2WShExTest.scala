@@ -8,7 +8,9 @@ import es.weso.wbmodel.EntityId
 import es.weso.wbmodel.PropertyId
 import es.weso.utils.VerboseLevel._
 import es.weso.shex.{Schema => ShExSchema}
+import TermConstraint._
 import es.weso.rbe.interval._
+import es.weso.rdf.nodes._
 
 class ES2WShExTest extends CatsEffectSuite {
 
@@ -19,10 +21,20 @@ class ES2WShExTest extends CatsEffectSuite {
   val wd = IRI("http://www.wikidata.org/entity/")
   val wdt = IRI("http://www.wikidata.org/prop/direct/")
   val rdfs = IRI("http://www.w3.org/2000/01/rdf-schema#")
+  val skos = IRI("http://www.w3.org/2004/02/skos/core#")
 
   val pm: PrefixMap =
     PrefixMap.fromMap(
-      Map("" -> ex, "wd" -> wd, "wdt" -> wdt, "p" -> p, "ps" -> ps, "pq" -> pq, "rdfs" -> rdfs)
+      Map(
+        "" -> ex,
+        "wd" -> wd,
+        "wdt" -> wdt,
+        "p" -> p,
+        "ps" -> ps,
+        "pq" -> pq,
+        "rdfs" -> rdfs,
+        "skos" -> skos
+      )
     )
 
   val pmStr = s"""|prefix :    <${ex.str}>
@@ -32,6 +44,7 @@ class ES2WShExTest extends CatsEffectSuite {
        |prefix ps:  <${ps.str}>
        |prefix pq:  <${pq.str}>
        |prefix rdfs: <${rdfs.str}>
+       |prefix skos: <${skos.str}>
        |""".stripMargin
   val s: ShapeLabel = IRILabel(IRI("S"))
   val t: ShapeLabel = IRILabel(IRI("T"))
@@ -104,7 +117,7 @@ class ES2WShExTest extends CatsEffectSuite {
           |<S> {
           | p:P856 {
           |  ps:P856 .   ;
-          |  pq:P407	[ wd:Q1860 ] ;	 
+          |  pq:P407	[ wd:Q1860 ] ;
           | }
           |}
           |""".stripMargin
@@ -153,7 +166,7 @@ class ES2WShExTest extends CatsEffectSuite {
           |}
           |<PS> {
           |  ps:P856 .            ;
-          |  pq:P407 [ wd:Q1860 ] ;	 
+          |  pq:P407 [ wd:Q1860 ] ;
           |}
           |""".stripMargin
     val se: WShapeExpr = WShape(
@@ -225,7 +238,7 @@ class ES2WShExTest extends CatsEffectSuite {
     "local OR",
     s"""|$pmStr
        |<S> @<T> OR @<U>
-       |<T> {} 
+       |<T> {}
        |<U> {}
        |""".stripMargin,
     WSchema(
@@ -239,8 +252,8 @@ class ES2WShExTest extends CatsEffectSuite {
       pm
     )
   )
-
-  /*  checkSchema(
+  
+  checkSchema(
     "labels",
     s"""|$pmStr
         |<S> {
@@ -250,12 +263,39 @@ class ES2WShExTest extends CatsEffectSuite {
     WSchema(
       Map(
         s ->
-          WShape(Some(s), false, List(), None)
+          WShape(Some(s), false, List(), None, List(LabelConstraint(Lang("en"), None)))
       ),
       None,
       pm
     )
-  ) */
+  )
+
+  checkSchema(
+    "labels and aliases",
+    s"""|$pmStr
+        |<S> {
+        | rdfs:label [ @en ] ;
+        | skos:altLabel [ @en ] 
+        |}
+        |""".stripMargin,
+    WSchema(
+      Map(
+        s ->
+          WShape(
+            Some(s),
+            false,
+            List(),
+            None,
+            List(
+              LabelConstraint(Lang("en"), None),
+              AliasConstraint(Lang("en"), None)
+            )
+          )
+      ),
+      None,
+      pm
+    )
+  )
 
   def checkSchema(
       name: String,

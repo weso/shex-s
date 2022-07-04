@@ -13,6 +13,7 @@ import org.wikidata.wdtk.datamodel.interfaces.TermedDocument
 import org.wikidata.wdtk.datamodel.implementation.ItemIdValueImpl
 import org.wikidata.wdtk.datamodel.helpers.ItemDocumentBuilder
 import org.wikidata.wdtk.datamodel.helpers.Datamodel
+import TermConstraint._
 import es.weso.rdf.nodes.Lang
 
 class TermConstraintTest extends CatsEffectSuite {
@@ -27,7 +28,7 @@ class TermConstraintTest extends CatsEffectSuite {
     checkTerm(
       "Basic label Q42",
       itemDocument,
-      LabelConstraint(Lang("en"), Constant("Douglas Adams")),
+      LabelConstraint(Lang("en"), Some(Constant("Douglas Adams"))),
       true
     )
   }
@@ -42,7 +43,7 @@ class TermConstraintTest extends CatsEffectSuite {
     checkTerm(
       "Basic label Q42",
       itemDocument,
-      LabelConstraint(Lang("es"), Constant("Douglas Adams")),
+      LabelConstraint(Lang("es"), Some(Constant("Douglas Adams"))),
       false
     )
   }
@@ -57,7 +58,7 @@ class TermConstraintTest extends CatsEffectSuite {
     checkTerm(
       "Basic label Q42",
       itemDocument,
-      LabelConstraint(Lang("en"), Constant("Doug")),
+      LabelConstraint(Lang("en"), Some(Constant("Doug"))),
       false
     )
   }
