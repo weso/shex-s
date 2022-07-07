@@ -2,4 +2,5 @@
 
 // This file enables sbt-bloop to create bloop config files.
 
-addSbtPlugin("ch.epfl.scala" % "sbt-bloop" % "1.5.0-30-571d4c74")
+addSbtPlugin("ch.epfl.scala" % "sbt-bloop" % "1.5.2")
+

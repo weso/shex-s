@@ -2,7 +2,18 @@ package es.weso.rbe
 
 import cats._
 import implicits._
-import es.weso.utils.Read
+import es.weso.utils._
+import es.weso.utils.Read.{
+  readBigDecimal => _,
+  readBigInt => _,
+  readBoolean => _,
+  readDouble => _,
+  readInt => _,
+  readLong => _,
+  readShort => _,
+  readString => _,
+  _
+}
 
 object nodeShape {
 
@@ -57,10 +68,10 @@ object nodeShape {
       Pred("any")(node => ok(node, s"$node satisfies constraint any"))
 
     def ok[A, Err, Evidence: Read](x: A, msg: String): CheckVal[A, Err, Evidence] =
-      Either.right((x, implicitly[Read[Evidence]].read(msg)))
+      (x, Read[Evidence].unsafeRead(msg)).asRight
 
     def errString[A, Evidence: Read](err: String): CheckVal[A, RbeError, Evidence] =
-      Either.left(List(MsgError(err)))
+      List(MsgError(err)).asLeft
 
   }
 

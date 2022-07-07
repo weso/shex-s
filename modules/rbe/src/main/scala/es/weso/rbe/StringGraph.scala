@@ -1,5 +1,8 @@
 package es.weso.rbe
+import cats._
+import cats.implicits._
 import es.weso.utils._
+import es.weso.utils.Read._
 import es.weso.rbe.nodeShape._
 
 /**  Simple graphs whose nodes and edges are strings
@@ -10,11 +13,11 @@ trait StringGraph extends Graph[String, String] {}
 object StringGraph {
 
   implicit val readErr: Read[MsgError] = new Read[MsgError] {
-    def read(str: String) = MsgError(str)
+    def read(str: String) = MsgError(str).asRight
   }
 
   implicit val readString: Read[String] = new Read[String] {
-    def read(str: String) = str
+    def read(str: String) = str.asRight
   }
 
   implicit def mkErr: MsgError = MsgError("error")
