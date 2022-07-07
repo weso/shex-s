@@ -5,14 +5,13 @@ import cats.implicits._
 import es.weso.shex._
 // import es.weso.shex.implicits.showShEx._
 
-/**
-  * A normalized shape consists of a list of slots where each slot is formed by a path and a list of constraints.
+/** A normalized shape consists of a list of slots where each slot is formed by a path and a list of constraints.
   * It can be represented as a map from a path to a list of constraints
   * @param slots a vector of pairs (Path, Vector[Constraint])
   * @param closed indicates if the shape is closed
   */
 case class NormalizedShape(slots: Map[Path, Vector[Constraint]], closed: Boolean) {
-  lazy val paths: Set[Path]               = slots.keySet
+  lazy val paths: Set[Path] = slots.keySet
   lazy val hasRepeatedProperties: Boolean = slots.exists(_._2.size > 1)
 }
 
@@ -39,54 +38,61 @@ object NormalizedShape {
       cs: Map[Path, Vector[Constraint]],
       extraPaths: List[Path],
       schema: AbstractSchema
-  ): Either[String, Map[Path, Vector[Constraint]]] = {
+  ): Either[String, Map[Path, Vector[Constraint]]] =
     te match {
       case _: Expr      => Left(s"Contains an expr")
       case _: Inclusion => Left(s"Contains an inclusion")
-      case eo: EachOf => {
+      case eo: EachOf =>
         val zero = cs.asRight[String]
         def cmb(
             current: Either[String, Map[Path, Vector[Constraint]]],
             te: TripleExpr
         ): Either[String, Map[Path, Vector[Constraint]]] =
           for {
-            cs  <- current
+            cs <- current
             cs1 <- normalizeTripleExpr(te, cs, extraPaths, schema)
           } yield cs1
         eo.expressions.foldLeft(zero)(cmb)
-      }
       case _: OneOf => Left(s"Contains a oneOf")
-      case tc: TripleConstraint => {
+      case tc: TripleConstraint =>
         tc.valueExpr match {
           case None =>
             insert(
               cs,
               tc.path,
-              Constraint(tc.valueExpr, extraPaths contains tc.path, Cardinality(tc.min, tc.max), tc.annotations, tc)
+              Constraint(
+                tc.valueExpr,
+                extraPaths contains tc.path,
+                Cardinality(tc.min, tc.max),
+                tc.annotations,
+                tc
+              )
             ).asRight[String]
           case Some(se) =>
             if (se.hasNoReference(schema)) {
               insert(
                 cs,
                 tc.path,
-                Constraint(tc.valueExpr, extraPaths contains tc.path, Cardinality(tc.min, tc.max), tc.annotations, tc)
+                Constraint(
+                  tc.valueExpr,
+                  extraPaths contains tc.path,
+                  Cardinality(tc.min, tc.max),
+                  tc.annotations,
+                  tc
+                )
               ).asRight[String]
             } else Left(s"$se contains a reference")
         }
-      }
     }
-  }
 
   implicit lazy val showNormalizedShape: Show[NormalizedShape] = new Show[NormalizedShape] {
-    final def show(c: NormalizedShape): String = {
+    final def show(c: NormalizedShape): String =
       s"NormalizedShape, closed: ${c.closed}\n${c.slots.map(showSlot).mkString("\n")}"
-    }
 
-    private def showSlot(pair:(Path, Vector[Constraint])): String = {
-      val (path,cs) = pair
+    private def showSlot(pair: (Path, Vector[Constraint])): String = {
+      val (path, cs) = pair
       s"${path.show} -> ${cs.map(_.show).mkString(",")}"
     }
   }
-
 
 }

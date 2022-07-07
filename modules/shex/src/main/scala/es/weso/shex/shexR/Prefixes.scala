@@ -2,9 +2,8 @@ package es.weso.shex.shexR
 
 import es.weso.rdf.nodes.IRI
 
-/**
- * Common Prefixes for RDF
- */
+/** Common Prefixes for RDF
+  */
 object PREFIXES {
 
   // Namespace IRI
@@ -32,7 +31,6 @@ object PREFIXES {
   lazy val sx_TripleConstraint = sx + "TripleConstraint"
   lazy val sx_Wildcard = sx + "Wildcard"
   lazy val sx_INF = sx + "INF"
-
 
   lazy val sx_abstract = sx + "abstract"
   lazy val sx_annotation = sx + "annotation"

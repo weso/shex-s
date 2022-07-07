@@ -21,7 +21,7 @@ object TermConstraint {
       value: MonolingualTextValue
   ): Either[String, Unit] =
     maybesc match {
-      case None => ().asRight
+      case None     => ().asRight
       case Some(sc) => sc.matchMonolingualTextValue(value)
     }
 

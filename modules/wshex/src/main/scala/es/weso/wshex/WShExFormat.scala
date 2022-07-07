@@ -1,7 +1,7 @@
 package es.weso.wshex
 
 sealed trait WShExFormat {
-    def name: String
+  def name: String
 }
 object WShExFormat {
   case object CompactWShExFormat extends WShExFormat {

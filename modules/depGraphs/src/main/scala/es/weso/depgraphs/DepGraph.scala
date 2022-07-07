@@ -16,53 +16,50 @@ trait DepGraph[Node] {
 
   def outEdges(node: Node): Either[String, Set[(PosNeg, Node)]]
 
-  def inEdges(node: Node): Either[String, Set[(Node,PosNeg)]]
+  def inEdges(node: Node): Either[String, Set[(Node, PosNeg)]]
 
   def empty: DepGraph[Node]
 
-  def containsNegCycle: Boolean = {
+  def containsNegCycle: Boolean =
     !negCycles.isEmpty
-  }
 
-  def negCycles: Set[Set[(Node,Node)]]
+  def negCycles: Set[Set[(Node, Node)]]
 
-  def oddNegCycles: Set[Set[(Node,Node)]] = {
+  def oddNegCycles: Set[Set[(Node, Node)]] = {
     val nc = negCycles
-  //  println(s"Neg cycles: $nc")
+    //  println(s"Neg cycles: $nc")
     nc.filter(countNegLinks(_) % 2 == 1)
   }
 
-  def countNegLinks(nodes: Set[(Node,Node)]
-                   ): Int = nodes.size match {
+  def countNegLinks(nodes: Set[(Node, Node)]): Int = nodes.size match {
     case 0 => 0
-    case _ => {
-      val negs = nodes.map{
-        case (n1,n2) => (n1,n2,haveNegativeLink(n1, n2))
-      }.filter(_._3 == true)
+    case _ =>
+      val negs = nodes
+        .map { case (n1, n2) =>
+          (n1, n2, haveNegativeLink(n1, n2))
+        }
+        .filter(_._3 == true)
       val n = negs.size
 //      println(s"#NegLinks of $nodes=$n\nnegs=${negs}")
       n
-    }
   }
 
   def edgeBetween(node1: Node, node2: Node): Option[PosNeg]
 
-  private def haveNegativeLink(node1: Node, node2: Node): Boolean = {
-    edgeBetween(node1,node2) match {
-      case Some(Neg) => true
-      case Some(Pos) => false
+  private def haveNegativeLink(node1: Node, node2: Node): Boolean =
+    edgeBetween(node1, node2) match {
+      case Some(Neg)  => true
+      case Some(Pos)  => false
       case Some(Both) => true
-      case None => false
+      case None       => false
     }
-  }
 
-  def showEdges(showNode: Node => String = (x => x.toString)): String
+  def showEdges(showNode: Node => String = x => x.toString): String
 
-  /**
-   * Checks if this graph is isomorphic with another one
-   * @param other the other dependency graph
-   * @return Left(msg) if it is not isomorphic or Right(()) if it is isomorphic
-   */
+  /** Checks if this graph is isomorphic with another one
+    * @param other the other dependency graph
+    * @return Left(msg) if it is not isomorphic or Right(()) if it is isomorphic
+    */
   def isomorphicWith(other: DepGraph[Node]): Either[String, Unit]
 }
 
@@ -72,12 +69,11 @@ object DepGraph {
   def makeGraph[Node](deps: Set[(Node, Set[(PosNeg, Node)])]): DepGraph[Node] = {
     def combine(pair: (Node, Set[(PosNeg, Node)]), g: DepGraph[Node]): DepGraph[Node] = {
       val (source, edges) = pair
-      edges.foldRight(g)((pair, current) => {
+      edges.foldRight(g) { (pair, current) =>
         val (posNeg, target) = pair
         current.addEdge(source, posNeg, target)
-      })
+      }
     }
     deps.foldRight(empty[Node])(combine)
   }
 }
-

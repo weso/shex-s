@@ -35,15 +35,14 @@ object Parser {
     v
   }
 
-  def fromEither[A](e: Either[String,A]): Builder[A] =
+  def fromEither[A](e: Either[String, A]): Builder[A] =
     e.fold(str => err(str), ok(_))
 
   def sequence[A](bs: List[Builder[A]]): Builder[List[A]] =
-    bs.sequence[Builder,A]
+    bs.sequence[Builder, A]
 
   def getPrefixMap: Builder[PrefixMap] =
     getState.map(_.prefixMap)
-
 
   def getState: Builder[BuilderState] =
     EitherT.liftF[S, String, BuilderState](StateT.inspect(identity))
@@ -51,27 +50,24 @@ object Parser {
   def getBase: Builder[Option[IRI]] =
     getState.map(_.base)
 
-
   def addBase(base: IRI): Builder[Unit] =
     updateState(_.copy(base = Some(base)))
 
-  def updateState(fn: BuilderState => BuilderState): Builder[Unit] = {
+  def updateState(fn: BuilderState => BuilderState): Builder[Unit] =
     EitherT.liftF[S, String, Unit](StateT.modify(fn))
-  }
 
-  def addPrefix(prefix: Prefix, iri: IRI): Builder[Unit] = {
-    updateState(s => {
+  def addPrefix(prefix: Prefix, iri: IRI): Builder[Unit] =
+    updateState { s =>
       val newS = s.copy(prefixMap = s.prefixMap.addPrefix(prefix, iri))
       // logger.info(s"Updating prefix map. New prefix map=${newS.prefixMap}")
       newS
-    })
-  }
+    }
 
   def parseShapePath(
-     str: String, 
-     base: Option[IRI],
-     prefixMap: PrefixMap
-    ): Either[String, ShapePath] = {
+      str: String,
+      base: Option[IRI],
+      prefixMap: PrefixMap
+  ): Either[String, ShapePath] = {
     val UTF8_BOM = "\uFEFF"
     val s =
       if (str.startsWith(UTF8_BOM)) {
@@ -79,25 +75,25 @@ object Parser {
         str.substring(1)
       } else str
     val reader: JavaReader =
-      new InputStreamReader(
-        new ByteArrayInputStream(s.getBytes(StandardCharsets.UTF_8)))
+      new InputStreamReader(new ByteArrayInputStream(s.getBytes(StandardCharsets.UTF_8)))
     // logger.debug(s"s:$s")
     parseReader(reader, base, prefixMap)
   }
 
   def parseShapePathFromFile(
-     fileName: String, 
-     base: Option[IRI], 
-     prefixMap: PrefixMap
-    ): Either[String, ShapePath] = for {
+      fileName: String,
+      base: Option[IRI],
+      prefixMap: PrefixMap
+  ): Either[String, ShapePath] = for {
     reader <- FileUtils.getStream(fileName)
     schema <- parseReader(reader, base, prefixMap)
   } yield schema
 
-  def parseReader(reader: JavaReader,
-                  base: Option[IRI], 
-                  prefixMap: PrefixMap
-                 ): Either[String, ShapePath] = {
+  def parseReader(
+      reader: JavaReader,
+      base: Option[IRI],
+      prefixMap: PrefixMap
+  ): Either[String, ShapePath] = {
     val input: CharStream = CharStreams.fromReader(reader)
     val lexer: ShapePathDocLexer = new ShapePathDocLexer(input)
     val tokens: CommonTokenStream = new CommonTokenStream(lexer)
@@ -119,13 +115,16 @@ object Parser {
     }
   }
 
-  def run[A](c: Builder[A],base: Option[IRI],prefixMap: PrefixMap): (BuilderState, Either[String, A]) = 
+  def run[A](
+      c: Builder[A],
+      base: Option[IRI],
+      prefixMap: PrefixMap
+  ): (BuilderState, Either[String, A]) =
     c.value.run(initialState(base, prefixMap)).value
 
   def initialState(base: Option[IRI], prefixMap: PrefixMap) =
     BuilderState(prefixMap, base)
 
-  case class BuilderState(prefixMap: PrefixMap,
-                          base: Option[IRI])
+  case class BuilderState(prefixMap: PrefixMap, base: Option[IRI])
 
 }

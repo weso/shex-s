@@ -16,26 +16,24 @@ import es.weso.rdf.nodes._
 class shexCodecTest extends FunSuite {
 
   test("Should parse prefix") {
-      val str = "pepe"
-      parsePrefix(str) match {
-        case Right(p) => ()
-        case Left(e) => fail(s"Error parsing $str: $e")
-      }
-  }
-  
-  test("Should parse lang string") {
-      val str = "\"pepe\"@es"
-      parseLang(str) match {
-        case Right(p) => ()
-        case Left(e) => fail(s"Error parsing $str: $e")
-      }
+    val str = "pepe"
+    parsePrefix(str) match {
+      case Right(p) => ()
+      case Left(e)  => fail(s"Error parsing $str: $e")
+    }
   }
 
+  test("Should parse lang string") {
+    val str = "\"pepe\"@es"
+    parseLang(str) match {
+      case Right(p) => ()
+      case Left(e)  => fail(s"Error parsing $str: $e")
+    }
+  }
 
   codecValueTest[IRI](IRI("x"))
   codecValueTest[ShapeLabel](IRILabel(IRI("http://example.org/")))
   codecValueTest[ShapeLabel](BNodeLabel(BNode("x")))
-  
 
   codecValueTest[Max](IntMax(5))
   codecValueTest[Max](Star)
@@ -48,26 +46,109 @@ class shexCodecTest extends FunSuite {
 
   codecValueTest[ObjectLiteral](StringValue("hi"))
 
-  codecValueTest[ShapeExpr](NodeConstraint(Some(IRILabel(IRI("http://example.org/a"))), Some(IRIKind), None, List(), None,None,None))
-  codecValueTest[ShapeExpr](NodeConstraint(Some(IRILabel(IRI("http://example.org/a"))), Some(LiteralKind), None, List(), None,None,None))
-  codecValueTest[ShapeExpr](NodeConstraint(Some(IRILabel(IRI("http://example.org/a"))), Some(NonLiteralKind), None, List(), None,None,None))
-  codecValueTest[ShapeExpr](NodeConstraint(Some(IRILabel(IRI("http://example.org/a"))), Some(BNodeKind), None, List(), None,None,None))
-  codecValueTest[ShapeExpr](NodeConstraint(Some(IRILabel(IRI("http://example.org/a"))), None, Some(IRI("http://datatype.org/int")), List(), None,None,None))
-  codecValueTest[ShapeExpr](NodeConstraint(Some(IRILabel(IRI("http://example.org/a"))), None, Some(IRI("http://datatype.org/int")), List(Length(0)), None,None,None))
-  codecValueTest[ShapeExpr](NodeConstraint(Some(IRILabel(IRI("http://example.org/a"))), None,
-      Some(IRI("http://datatype.org/int")), List(Length(0), MinInclusive(NumericDouble(2.3,"2.3"))), None,None,None)
+  codecValueTest[ShapeExpr](
+    NodeConstraint(
+      Some(IRILabel(IRI("http://example.org/a"))),
+      Some(IRIKind),
+      None,
+      List(),
+      None,
+      None,
+      None
+    )
   )
   codecValueTest[ShapeExpr](
     NodeConstraint(
       Some(IRILabel(IRI("http://example.org/a"))),
-      Some(BNodeKind), Some(IRI("http://datatype.org/int")),
+      Some(LiteralKind),
+      None,
+      List(),
+      None,
+      None,
+      None
+    )
+  )
+  codecValueTest[ShapeExpr](
+    NodeConstraint(
+      Some(IRILabel(IRI("http://example.org/a"))),
+      Some(NonLiteralKind),
+      None,
+      List(),
+      None,
+      None,
+      None
+    )
+  )
+  codecValueTest[ShapeExpr](
+    NodeConstraint(
+      Some(IRILabel(IRI("http://example.org/a"))),
+      Some(BNodeKind),
+      None,
+      List(),
+      None,
+      None,
+      None
+    )
+  )
+  codecValueTest[ShapeExpr](
+    NodeConstraint(
+      Some(IRILabel(IRI("http://example.org/a"))),
+      None,
+      Some(IRI("http://datatype.org/int")),
+      List(),
+      None,
+      None,
+      None
+    )
+  )
+  codecValueTest[ShapeExpr](
+    NodeConstraint(
+      Some(IRILabel(IRI("http://example.org/a"))),
+      None,
+      Some(IRI("http://datatype.org/int")),
+      List(Length(0)),
+      None,
+      None,
+      None
+    )
+  )
+  codecValueTest[ShapeExpr](
+    NodeConstraint(
+      Some(IRILabel(IRI("http://example.org/a"))),
+      None,
+      Some(IRI("http://datatype.org/int")),
+      List(Length(0), MinInclusive(NumericDouble(2.3, "2.3"))),
+      None,
+      None,
+      None
+    )
+  )
+  codecValueTest[ShapeExpr](
+    NodeConstraint(
+      Some(IRILabel(IRI("http://example.org/a"))),
+      Some(BNodeKind),
+      Some(IRI("http://datatype.org/int")),
       List(MinLength(2), MaxLength(5), Pattern("*.ex", None)),
-      Some(List(StringValue("x"))),None,None))
-  codecValueTest[ShapeExpr](ShapeRef(IRILabel(IRI("x")),None,None))
-  codecValueTest[ShapeExpr](ShapeExternal(Some(IRILabel(IRI("http://example.org/a"))),None,None))
-  codecValueTest[ShapeExpr](NodeConstraint(Some(IRILabel(IRI("http://example.org/a"))), None, None, List(), Some(List(DatatypeString("x", IRI("http://schema.org/boolean")))),None,None))
+      Some(List(StringValue("x"))),
+      None,
+      None
+    )
+  )
+  codecValueTest[ShapeExpr](ShapeRef(IRILabel(IRI("x")), None, None))
+  codecValueTest[ShapeExpr](ShapeExternal(Some(IRILabel(IRI("http://example.org/a"))), None, None))
+  codecValueTest[ShapeExpr](
+    NodeConstraint(
+      Some(IRILabel(IRI("http://example.org/a"))),
+      None,
+      None,
+      List(),
+      Some(List(DatatypeString("x", IRI("http://schema.org/boolean")))),
+      None,
+      None
+    )
+  )
 
-  def codecValueTest[A: Encoder: Decoder: Show: Eq](v: A)(implicit loc: munit.Location): Unit = {
+  def codecValueTest[A: Encoder: Decoder: Show: Eq](v: A)(implicit loc: munit.Location): Unit =
     test(s"Should encode and decode ${v.show}") {
       val str = v.asJson.spaces4
       val result = decode[A](str)
@@ -76,14 +157,13 @@ class shexCodecTest extends FunSuite {
       else
         fail(s"Encoded value $v as $str was not equal to ${Right(v)}. Result: ${result}")
     }
-  }
 
-  def codecStrTest[A: Encoder: Decoder: Eq](str: String, expected: String)(implicit loc: munit.Location): Unit = {
+  def codecStrTest[A: Encoder: Decoder: Eq](str: String, expected: String)(implicit
+      loc: munit.Location
+  ): Unit =
     test(s"Should decode $str and obtain $expected through decoder") { // of type ${manifest[A].runtimeClass.getSimpleName}") {
-      decode[A](str).fold(
-        e => fail(s"Error parsing $str: $e"),
-        v => assertEquals(v.asJson.noSpaces, expected))
+      decode[A](str)
+        .fold(e => fail(s"Error parsing $str: $e"), v => assertEquals(v.asJson.noSpaces, expected))
     }
-  }
 
 }
