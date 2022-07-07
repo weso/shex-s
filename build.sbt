@@ -35,7 +35,7 @@ lazy val scalaCollCompatVersion = "2.7.0"
 lazy val scalacheckVersion = "1.15.4"
 lazy val scalaLoggingVersion = "3.9.4"
 lazy val typesafeConfigVersion = "1.4.2"
-lazy val wikidataToolkitVersion = "0.13.1"
+lazy val wikidataToolkitVersion = "0.13.5"
 lazy val xercesVersion = "2.12.2"
 lazy val slf4jVersion = "1.7.36"
 
@@ -284,7 +284,7 @@ lazy val depGraphs = project
       catsKernel,
       catsAlley,
       jgraphtCore,
-      munit       % Test,
+      munit % Test,
       munitEffect % Test,
       utils
     ),
