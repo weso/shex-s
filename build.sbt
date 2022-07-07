@@ -284,7 +284,7 @@ lazy val depGraphs = project
       catsKernel,
       catsAlley,
       jgraphtCore,
-      munit       % Test,
+      munit % Test,
       munitEffect % Test,
       utils
     ),

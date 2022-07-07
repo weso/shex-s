@@ -20,9 +20,8 @@ sealed abstract trait ShapeExpr extends Product with Serializable {
     showShapeExpr(this, pm)
   }
 
-  def showId(pm: PrefixMap) = {
+  def showId(pm: PrefixMap) =
     id.map(_.showQualify(pm)).getOrElse("?")
-  }
 
   def paths(schema: AbstractSchema): Either[String, Set[Path]]
   def addAnnotations(as: List[Annotation]): ShapeExpr
@@ -30,48 +29,47 @@ sealed abstract trait ShapeExpr extends Product with Serializable {
 
   def relativize(base: IRI): ShapeExpr
 
-  def hasNoReference(schema: AbstractSchema): Boolean = { 
+  def hasNoReference(schema: AbstractSchema): Boolean =
     getShapeRefs(schema).fold(e => false, _.isEmpty)
-  }
 
   def isSimple: Boolean = this match {
-    case s: Shape if (s == Shape.empty) => true
-    case _: Shape          => false
-    case _: NodeConstraint => true
-    case _: ShapeExternal  => true
-    case _: ShapeOr        => false
-    case _: ShapeAnd       => false
-    case _: ShapeNot       => false
-    case _: ShapeRef       => false
-    case _: ShapeDecl      => false
+    case s: Shape if s == Shape.empty => true
+    case _: Shape                     => false
+    case _: NodeConstraint            => true
+    case _: ShapeExternal             => true
+    case _: ShapeOr                   => false
+    case _: ShapeAnd                  => false
+    case _: ShapeNot                  => false
+    case _: ShapeRef                  => false
+    case _: ShapeDecl                 => false
   }
 
-  /**
-    * Return the labels that are referenced in a shape expression
+  /** Return the labels that are referenced in a shape expression
     * This method can use useful to detect if a shape doesn't refer to non-existing labels
     */
   def getShapeRefs(schema: AbstractSchema): Either[String, List[ShapeLabel]] = {
     type State = List[ShapeExpr]
-    type S[A]  = StateT[Id, State, A]
-    type E[A]  = EitherT[S, String, A]
-    val initialState: State                       = List()
-    def getState: E[State]                        = EitherT.liftF(StateT.get)
-    def modifyS(f: State => State): S[Unit]       = StateT.modify(f)
-    def modify[A](f: State => State): E[Unit]     = EitherT.liftF(modifyS(f))
-    def ok[A](x: A): E[A]                         = EitherT.pure(x)
-    def empty: List[ShapeLabel]                   = List()
+    type S[A] = StateT[Id, State, A]
+    type E[A] = EitherT[S, String, A]
+    val initialState: State = List()
+    def getState: E[State] = EitherT.liftF(StateT.get)
+    def modifyS(f: State => State): S[Unit] = StateT.modify(f)
+    def modify[A](f: State => State): E[Unit] = EitherT.liftF(modifyS(f))
+    def ok[A](x: A): E[A] = EitherT.pure(x)
+    def empty: List[ShapeLabel] = List()
     def fromEither[A](e: Either[String, A]): E[A] = EitherT.fromEither(e)
-    def err[A](msg: String): E[A]                 = EitherT.leftT(msg)
+    def err[A](msg: String): E[A] = EitherT.leftT(msg)
 
     def checkShapeExprRefs(se: ShapeExpr): E[List[ShapeLabel]] =
       for {
         s <- getState
-        ps <- if (s contains se) ok(empty)
-        else
-          for {
-            _ <- modify(_ :+ se)
-            v <- getShapeExprRefsAux(se)
-          } yield v
+        ps <-
+          if (s contains se) ok(empty)
+          else
+            for {
+              _ <- modify(_ :+ se)
+              v <- getShapeExprRefsAux(se)
+            } yield v
       } yield ps
 
     def checkLabel(l: ShapeLabel): E[List[ShapeLabel]] =
@@ -80,37 +78,35 @@ sealed abstract trait ShapeExpr extends Product with Serializable {
         ls <- checkShapeExprRefs(se)
       } yield l +: ls
 
-    def getShapeExprRefsAux(se: ShapeExpr): E[List[ShapeLabel]] = {
+    def getShapeExprRefsAux(se: ShapeExpr): E[List[ShapeLabel]] =
       se match {
         case nk: NodeConstraint => ok(empty)
         case s: Shape =>
           for {
-            labelsExpr <- s.expression.fold(ok(empty))(
-              te => {
-                for {
-                  ls <- getTripleExprRefs(te)
-                } yield te.id.fold(ls)(_ +: ls)
-              }
+            labelsExpr <- s.expression.fold(ok(empty)) { te =>
+              for {
+                ls <- getTripleExprRefs(te)
+              } yield te.id.fold(ls)(_ +: ls)
+            }
+            labelsExtends <- s._extends.fold(ok(empty))(labels =>
+              labels.map(checkLabel(_)).sequence.map(_.flatten)
             )
-            labelsExtends <- s._extends.fold(ok(empty))(labels => labels.map(checkLabel(_)).sequence.map(_.flatten))
           } yield labelsExpr ++ labelsExtends
 
         case sa: ShapeAnd => sa.shapeExprs.map(checkShapeExprRefs(_)).sequence.map(_.flatten)
         case so: ShapeOr  => so.shapeExprs.map(checkShapeExprRefs(_)).sequence.map(_.flatten)
         case sn: ShapeNot => checkShapeExprRefs(sn.shapeExpr)
-        case sr: ShapeRef => {
+        case sr: ShapeRef =>
           for {
             se <- fromEither(schema.getShape(sr.reference))
             ps <- checkShapeExprRefs(se)
           } yield sr.reference +: ps
-        }
         case se: ShapeExternal => ok(empty)
-        case sd: ShapeDecl => getShapeExprRefsAux(sd.shapeExpr)
+        case sd: ShapeDecl     => getShapeExprRefsAux(sd.shapeExpr)
         // case _ => err(s"getShapeExprRefsAux: Unsupported type of shapeExpr: ${se}")
       }
-    }
 
-    def getTripleExprRefs(te: TripleExpr): E[List[ShapeLabel]] = {
+    def getTripleExprRefs(te: TripleExpr): E[List[ShapeLabel]] =
       te match {
         case e: EachOf => e.expressions.map(getTripleExprRefs(_)).sequence.map(_.flatten)
         case o: OneOf  => o.expressions.map(getTripleExprRefs(_)).sequence.map(_.flatten)
@@ -123,24 +119,21 @@ sealed abstract trait ShapeExpr extends Product with Serializable {
           tc.valueExpr.fold(ok(empty))(getShapeExprRefsAux(_))
         case e: Expr => ok(empty)
       }
-    }
 
     val (_, ls) = getShapeExprRefsAux(this).value.run(initialState)
     ls
   }
 
-  def children(schema: AbstractSchema): List[Shape] = {
+  def children(schema: AbstractSchema): List[Shape] =
     List()
-  }
 
-/*  lazy val flattenTCs: Set[TripleConstraint] = this match {
-    case sa: ShapeAnd => { 
+  /*  lazy val flattenTCs: Set[TripleConstraint] = this match {
+    case sa: ShapeAnd => {
       val ls = sa.shapeExprs.map(_.flattenTCs)
       ???
     }
   } */
 }
-
 
 case class ShapeOr(
     id: Option[ShapeLabel],
@@ -154,12 +147,10 @@ case class ShapeOr(
   override def paths(schema: AbstractSchema): Either[String, Set[Path]] =
     sequence(shapeExprs.map(_.paths(schema))).map(_.toSet.flatten)
 
-  override def addAnnotations(as: List[Annotation]): ShapeExpr = {
+  override def addAnnotations(as: List[Annotation]): ShapeExpr =
     this.copy(annotations = maybeAddList(annotations, as))
-  }
-  override def addSemActs(as: List[SemAct]): ShapeExpr = {
+  override def addSemActs(as: List[SemAct]): ShapeExpr =
     this.copy(actions = maybeAddList(actions, as))
-  }
 
   override def relativize(base: IRI): ShapeOr = ShapeOr(
     id.map(_.relativize(base)),
@@ -187,12 +178,10 @@ case class ShapeAnd(
   override def paths(schema: AbstractSchema): Either[String, Set[Path]] =
     sequence(shapeExprs.map(_.paths(schema))).map(_.toSet.flatten)
 
-  override def addAnnotations(as: List[Annotation]): ShapeExpr = {
+  override def addAnnotations(as: List[Annotation]): ShapeExpr =
     this.copy(annotations = maybeAddList(annotations, as))
-  }
-  override def addSemActs(as: List[SemAct]): ShapeExpr = {
+  override def addSemActs(as: List[SemAct]): ShapeExpr =
     this.copy(actions = maybeAddList(actions, as))
-  }
 
   override def relativize(base: IRI): ShapeAnd = ShapeAnd(
     id.map(_.relativize(base)),
@@ -207,7 +196,6 @@ object ShapeAnd {
   def fromShapeExprs(ses: List[ShapeExpr]): ShapeAnd =
     ShapeAnd(None, ses, None, None)
 }
-
 
 object ShapeExpr {
   def any: ShapeExpr = Shape.empty
@@ -237,10 +225,8 @@ case class Shape(
   def isFlatShape(schema: AbstractSchema): Boolean =
     FlatShape.fromShape(this, schema).isRight
 
-  /**
-   * If the shape can be flatten, returns a FlatShape
-   * 
-   * */  
+  /** If the shape can be flatten, returns a FlatShape
+    */
   def flattenShape(schema: AbstractSchema): Either[String, FlatShape] =
     FlatShape.fromShape(this, schema)
 
@@ -259,21 +245,20 @@ case class Shape(
   def extraPaths: List[Direct] =
     extra.getOrElse(List()).map(Direct.apply)
 
-  def getExtra: List[IRI]              = extra.getOrElse(Shape.emptyExtra)
-  def getExtend: List[ShapeLabel]      = _extends.getOrElse(Shape.emptyExtends)
+  def getExtra: List[IRI] = extra.getOrElse(Shape.emptyExtra)
+  def getExtend: List[ShapeLabel] = _extends.getOrElse(Shape.emptyExtends)
   def getAnnotations: List[Annotation] = annotations.getOrElse(Shape.emptyAnnotations)
-  def getActions: List[SemAct]         = actions.getOrElse(Shape.emptySemActs)
+  def getActions: List[SemAct] = actions.getOrElse(Shape.emptySemActs)
 
-  def isEmpty: Boolean = {
+  def isEmpty: Boolean =
     this.id.isEmpty &&
-    this.isVirtual == Shape.defaultVirtual &&
-    this.isClosed == Shape.defaultClosed &&
-    getExtra == Shape.emptyExtra &&
-    getExtend == Shape.emptyExtends &&
-    getAnnotations == Shape.emptyAnnotations &&
-    getActions == Shape.emptySemActs &&
-    expression.isEmpty
-  }
+      this.isVirtual == Shape.defaultVirtual &&
+      this.isClosed == Shape.defaultClosed &&
+      getExtra == Shape.emptyExtra &&
+      getExtend == Shape.emptyExtends &&
+      getAnnotations == Shape.emptyAnnotations &&
+      getActions == Shape.emptySemActs &&
+      expression.isEmpty
 
   private def extend(s: ShapeExpr): Option[List[ShapeLabel]] = {
     val es = s match {
@@ -289,8 +274,7 @@ case class Shape(
     case _        => None
   }
 
-  /**
-    * Return the all paths that are mentioned in a shape
+  /** Return the all paths that are mentioned in a shape
     * It includes also the paths in extends
     * @param schema Schema to which the shape belongs, it is needed to resolve references to other shapes
     * @return Set of paths or error in case the shape is not well defined (may have bad references)
@@ -298,14 +282,14 @@ case class Shape(
   def allPaths(schema: AbstractSchema): Either[String, Set[Path]] = {
 
     def getPath(s: ShapeExpr): Option[List[Path]] = {
-      def cnv[A,B](e: Either[B,Set[A]]):Option[List[A]] = e.fold(_ => None, _.toList.some)
+      def cnv[A, B](e: Either[B, Set[A]]): Option[List[A]] = e.fold(_ => None, _.toList.some)
       val ps = s match {
-        case s: Shape => Some(s.expression.map(_.paths(schema).toList).getOrElse(List()))
+        case s: Shape      => Some(s.expression.map(_.paths(schema).toList).getOrElse(List()))
         case sd: ShapeDecl => cnv(sd.paths(schema))
-        case sa: ShapeAnd => cnv(sa.paths(schema))
-        case so: ShapeOr => cnv(so.paths(schema)) 
-        case sn: ShapeNot => cnv(sn.paths(schema)) 
-        case _        => Some(List())
+        case sa: ShapeAnd  => cnv(sa.paths(schema))
+        case so: ShapeOr   => cnv(so.paths(schema))
+        case sn: ShapeNot  => cnv(sn.paths(schema))
+        case _             => Some(List())
       }
       // println(s"Result of getPaths($s)=[${ps.map(_.show).mkString(",")}]")
       ps
@@ -313,27 +297,23 @@ case class Shape(
     def combinePaths(p1: List[Path], p2: List[Path]): List[Path] = p1 ++ p2
 
     extendCheckingVisited(this, schema.getShape(_), extend, combinePaths, getPath)
-    .map(_.getOrElse(List()))
-    .map(_.toSet)
+      .map(_.getOrElse(List()))
+      .map(_.toSet)
   }
 
-  override def paths(schema: AbstractSchema): Either[String, Set[Path]] = {
+  override def paths(schema: AbstractSchema): Either[String, Set[Path]] =
     expression.map(_.paths(schema)).getOrElse(Set()).asRight[String]
-  }
 
   def extendExpression(schema: Schema): Either[String, Option[TripleExpr]] = {
-    def combine(e1: TripleExpr, e2: TripleExpr): TripleExpr = {
+    def combine(e1: TripleExpr, e2: TripleExpr): TripleExpr =
       EachOf(None, List(e1, e2), None, None, None, None)
-    }
     extendCheckingVisited(this, schema.getShape(_), extend, combine, expr)
   }
 
-  override def addAnnotations(as: List[Annotation]): ShapeExpr = {
+  override def addAnnotations(as: List[Annotation]): ShapeExpr =
     this.copy(annotations = maybeAddList(annotations, as))
-  }
-  override def addSemActs(as: List[SemAct]): ShapeExpr = {
+  override def addSemActs(as: List[SemAct]): ShapeExpr =
     this.copy(actions = maybeAddList(actions, as))
-  }
 
   override def relativize(base: IRI): Shape =
     Shape(
@@ -363,17 +343,16 @@ object Shape {
     annotations = None
   )
 
-  def defaultVirtual                     = false
-  def defaultClosed                      = false
-  def emptyExtra: List[IRI]              = List[IRI]()
-  def emptyExtends: List[ShapeLabel]     = List[ShapeLabel]()
-  def emptySemActs: List[SemAct]         = List[SemAct]()
+  def defaultVirtual = false
+  def defaultClosed = false
+  def emptyExtra: List[IRI] = List[IRI]()
+  def emptyExtends: List[ShapeLabel] = List[ShapeLabel]()
+  def emptySemActs: List[SemAct] = List[SemAct]()
   def emptyAnnotations: List[Annotation] = List[Annotation]()
-  def defaultExpr: None.type             = None
+  def defaultExpr: None.type = None
 
-  def expr(te: TripleExpr): Shape = {
+  def expr(te: TripleExpr): Shape =
     Shape.empty.copy(expression = Some(te))
-  }
 }
 
 case class NodeConstraint(
@@ -385,19 +364,16 @@ case class NodeConstraint(
     annotations: Option[List[Annotation]],
     actions: Option[List[SemAct]]
 ) extends ShapeExpr {
-  override def addId(lbl: ShapeLabel): NodeConstraint = {
+  override def addId(lbl: ShapeLabel): NodeConstraint =
     this.copy(id = Some(lbl))
-  }
   override def rmId = this.copy(id = None)
 
   override def paths(schema: AbstractSchema): Either[String, Set[Path]] = Right(Set())
 
-  override def addAnnotations(as: List[Annotation]): NodeConstraint = {
+  override def addAnnotations(as: List[Annotation]): NodeConstraint =
     this.copy(annotations = maybeAddList(annotations, as))
-  }
-  override def addSemActs(as: List[SemAct]): NodeConstraint = {
+  override def addSemActs(as: List[SemAct]): NodeConstraint =
     this.copy(actions = maybeAddList(actions, as))
-  }
 
   override def relativize(base: IRI): NodeConstraint =
     NodeConstraint(
@@ -465,12 +441,10 @@ case class ShapeNot(
   override def paths(schema: AbstractSchema): Either[String, Set[Path]] =
     shapeExpr.paths(schema)
 
-  override def addAnnotations(as: List[Annotation]): ShapeExpr = {
+  override def addAnnotations(as: List[Annotation]): ShapeExpr =
     this.copy(annotations = maybeAddList(annotations, as))
-  }
-  override def addSemActs(as: List[SemAct]): ShapeExpr = {
+  override def addSemActs(as: List[SemAct]): ShapeExpr =
     this.copy(actions = maybeAddList(actions, as))
-  }
 
   override def relativize(base: IRI): ShapeNot = ShapeNot(
     id.map(_.relativize(base)),
@@ -487,11 +461,11 @@ object ShapeNot {
 }
 
 case class ShapeRef(
-  reference: ShapeLabel, 
-  annotations: Option[List[Annotation]], 
-  actions: Option[List[SemAct]]
+    reference: ShapeLabel,
+    annotations: Option[List[Annotation]],
+    actions: Option[List[SemAct]]
 ) extends ShapeExpr {
-  def id                     = None
+  def id = None
   override def addId(lbl: ShapeLabel) = this
   override def rmId = this
 
@@ -501,12 +475,10 @@ case class ShapeRef(
       ps <- se.paths(schema)
     } yield ps
 
-  override def addAnnotations(as: List[Annotation]): ShapeExpr = {
+  override def addAnnotations(as: List[Annotation]): ShapeExpr =
     this.copy(annotations = maybeAddList(annotations, as))
-  }
-  override def addSemActs(as: List[SemAct]): ShapeExpr = {
+  override def addSemActs(as: List[SemAct]): ShapeExpr =
     this.copy(actions = maybeAddList(actions, as))
-  }
 
   override def relativize(base: IRI): ShapeRef =
     ShapeRef(
@@ -521,19 +493,20 @@ object ShapeRef {
   def apply(iri: IRI): ShapeRef = ShapeRef(IRILabel(iri), None, None)
 }
 
-case class ShapeExternal(id: Option[ShapeLabel], annotations: Option[List[Annotation]], actions: Option[List[SemAct]])
-    extends ShapeExpr {
+case class ShapeExternal(
+    id: Option[ShapeLabel],
+    annotations: Option[List[Annotation]],
+    actions: Option[List[SemAct]]
+) extends ShapeExpr {
   override def addId(lbl: ShapeLabel) = this.copy(id = Some(lbl))
   override def rmId = this.copy(id = None)
 
   override def paths(schema: AbstractSchema): Either[String, Set[Path]] = Right(Set())
 
-  override def addAnnotations(as: List[Annotation]): ShapeExpr = {
+  override def addAnnotations(as: List[Annotation]): ShapeExpr =
     this.copy(annotations = maybeAddList(annotations, as))
-  }
-  override def addSemActs(as: List[SemAct]): ShapeExpr = {
+  override def addSemActs(as: List[SemAct]): ShapeExpr =
     this.copy(actions = maybeAddList(actions, as))
-  }
 
   override def relativize(base: IRI): ShapeExternal =
     ShapeExternal(
@@ -548,12 +521,11 @@ object ShapeExternal {
   def empty: ShapeExternal = ShapeExternal(None, None, None)
 }
 
-/**
- * Declares an abstract shape expression
- **/
+/** Declares an abstract shape expression
+  */
 case class ShapeDecl(
     lbl: ShapeLabel,
-    shapeExpr: ShapeExpr,
+    shapeExpr: ShapeExpr
 ) extends ShapeExpr {
 
   override def id = Some(lbl)
@@ -562,28 +534,21 @@ case class ShapeDecl(
 
   def isVirtual: Boolean = true
 
-  override def paths(schema: AbstractSchema): Either[String, Set[Path]] = {
+  override def paths(schema: AbstractSchema): Either[String, Set[Path]] =
     shapeExpr.paths(schema)
-  }
 
-
-  override def addAnnotations(as: List[Annotation]): ShapeExpr = {
+  override def addAnnotations(as: List[Annotation]): ShapeExpr =
     this.copy(shapeExpr = shapeExpr.addAnnotations(as))
-  }
-  
-  override def addSemActs(as: List[SemAct]): ShapeExpr = {
+
+  override def addSemActs(as: List[SemAct]): ShapeExpr =
     this.copy(shapeExpr = shapeExpr.addSemActs(as))
-  }
 
   override def relativize(base: IRI): ShapeDecl =
     this.copy(
-        lbl = lbl.relativize(base),
-        shapeExpr = shapeExpr.relativize(base)
+      lbl = lbl.relativize(base),
+      shapeExpr = shapeExpr.relativize(base)
     )
 
 }
 
-object ShapeDecl {
-}
-
-
+object ShapeDecl {}

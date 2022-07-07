@@ -11,17 +11,15 @@ case class CheckResult[E: Show, A: Show, Log: Show](log: Log, eitherResult: Eith
   def errors: Seq[E] =
     eitherResult.fold(e => List(e), _ => Seq())
 
-  def results: List[A] = {
+  def results: List[A] =
     eitherResult.fold(_ => List(), x => List(x))
-  }
 
   def show: String = {
     val result = if (isOK) {
       val first = results.head
       "OK. Result: " ++ "\n" ++
         Show[A].show(first)
-    } else
-      "Not OK. Error: " ++ "\n" ++ errors.map(e => Show[E].show(e)).mkString("\n")
+    } else "Not OK. Error: " ++ "\n" ++ errors.map(e => Show[E].show(e)).mkString("\n")
     val sb = new StringBuilder
     sb ++= result
     sb ++= "\n----------------------------log-----------------------\n"
@@ -32,4 +30,3 @@ case class CheckResult[E: Show, A: Show, Log: Show](log: Log, eitherResult: Eith
   def toEither: Either[E, A] = eitherResult
 
 }
-
