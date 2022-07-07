@@ -45,6 +45,4 @@ object values {
   case class Var(name: VarName) extends ValueExpr
   case class Const(node: RDFNode) extends ValueExpr
 
-
 }
-

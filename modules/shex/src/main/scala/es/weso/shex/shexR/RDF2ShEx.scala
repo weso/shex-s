@@ -21,18 +21,19 @@ trait RDF2ShEx extends RDFParser {
   val initialNode = BNode("internalNode")
 
   def getSchema(rdf: RDFReader): RDFParser[Schema] = for {
-    schemaNodes <- fromStream(rdf.triplesWithPredicateObject(`rdf:type`, sx_Schema)) // .map(_.subj).toList
-    cfg = Config(initialNode,rdf)
-    schemas <- 
+    schemaNodes <- fromStream(
+      rdf.triplesWithPredicateObject(`rdf:type`, sx_Schema)
+    ) // .map(_.subj).toList
+    cfg = Config(initialNode, rdf)
+    schemas <-
       parseNodes(schemaNodes.toList.map(_.subj), schema)
     r <- schemas.length match {
-        case 0 => parseOk(Schema.empty)
-        case 1 => parseOk(schemas.head)
-        case _ => {
-          // logger.warn(s"More than one schema obtained when parsing RDF\n${rdf.serialize("TURTLE")}")
-          parseOk(schemas.head)
-        }
-      }
+      case 0 => parseOk(Schema.empty)
+      case 1 => parseOk(schemas.head)
+      case _ =>
+        // logger.warn(s"More than one schema obtained when parsing RDF\n${rdf.serialize("TURTLE")}")
+        parseOk(schemas.head)
+    }
   } yield r
 
   private def schema: RDFParser[Schema] = for {
@@ -44,55 +45,51 @@ trait RDF2ShEx extends RDFParser {
     shapes <- star(sx_shapes, shapeExpr)
     pm <- liftIO(rdf.getPrefixMap)
     // TODO: import
-  } yield {
-    Schema.empty.withPrefixMap(Some(pm)).withStartActions(startActions).withStart(start).withShapes(Some(shapes))
-  }
+  } yield Schema.empty
+    .withPrefixMap(Some(pm))
+    .withStartActions(startActions)
+    .withStart(start)
+    .withShapes(Some(shapes))
 
   /*  def cnvShapePairs(ps: List[(RDFNode,ShapeExpr)]): Try[Map[ShapeLabel,ShapeExpr]] = {
     ps.map(cnvShapePair).sequence.map(_.toMap)
   } */
 
-/*  private def cnvShapePair(p: (RDFNode, ShapeExpr)): Either[String, (ShapeLabel, ShapeExpr)] =
+  /*  private def cnvShapePair(p: (RDFNode, ShapeExpr)): Either[String, (ShapeLabel, ShapeExpr)] =
     toLabel(p._1).map(l => (l, p._2)) */
 
-/*  private def toLabel(node: RDFNode): Either[String, ShapeLabel] = node match {
+  /*  private def toLabel(node: RDFNode): Either[String, ShapeLabel] = node match {
     case i: IRI => parseOk(IRILabel(i))
     case b: BNodeId => parseOk(BNodeLabel(b))
     case _ => parseFail(s"node $node must be an IRI or a BNode in order to be a ShapeLabel")
   } */
 
-  private def shapeExpr: RDFParser[ShapeExpr] = firstOf(
-    shapeOr,
-    shapeAnd,
-    shapeNot,
-    shapeDecl,
-    nodeConstraint,
-    shape,
-    shapeExternal)
+  private def shapeExpr: RDFParser[ShapeExpr] =
+    firstOf(shapeOr, shapeAnd, shapeNot, shapeDecl, nodeConstraint, shape, shapeExternal)
 
   private def shapeOr: RDFParser[ShapeExpr] = for {
     n <- getNode
     _ <- checkType(sx_ShapeOr)
     shapeExprs <- arc(sx_shapeExprs, shapeExprList2Plus)
-  } yield ShapeOr(mkId(n), shapeExprs,None,None)
+  } yield ShapeOr(mkId(n), shapeExprs, None, None)
 
   private def mkId(n: RDFNode): Option[ShapeLabel] = n match {
-    case iri: IRI => Some(IRILabel(iri))
+    case iri: IRI     => Some(IRILabel(iri))
     case bnode: BNode => Some(BNodeLabel(bnode))
-    case _ => None // TODO: Raise an exception?
+    case _            => None // TODO: Raise an exception?
   }
 
   private def shapeAnd: RDFParser[ShapeExpr] = for {
     n <- getNode
     _ <- checkType(sx_ShapeAnd)
     shapeExprs <- arc(sx_shapeExprs, shapeExprList2Plus)
-  } yield ShapeAnd(mkId(n), shapeExprs,None,None)
+  } yield ShapeAnd(mkId(n), shapeExprs, None, None)
 
   private def shapeNot: RDFParser[ShapeExpr] = for {
     n <- getNode
     _ <- checkType(sx_ShapeNot)
     shapeExpr <- arc(sx_shapeExpr, shapeExpr)
-  } yield ShapeNot(mkId(n), shapeExpr,None,None)
+  } yield ShapeNot(mkId(n), shapeExpr, None, None)
 
   private def shapeDecl: RDFParser[ShapeExpr] = for {
     n <- getNode
@@ -102,7 +99,6 @@ trait RDF2ShEx extends RDFParser {
     shapeExpr <- arc(sx_shapeExpr, shapeExpr)
   } yield ShapeDecl(id, shapeExpr)
 
-
   private def nodeConstraint: RDFParser[ShapeExpr] = for {
     n <- getNode
     _ <- checkType(sx_NodeConstraint)
@@ -110,7 +106,7 @@ trait RDF2ShEx extends RDFParser {
     datatype <- opt(sx_datatype, iri)
     facets <- collect(xsFacets)
     values <- opt(sx_values, valueSetValueList1Plus)
-  } yield NodeConstraint(mkId(n), nk, datatype, facets, values,None,None)
+  } yield NodeConstraint(mkId(n), nk, datatype, facets, values, None, None)
 
   private def xsFacets: List[RDFParser[XsFacet]] = List(
     length,
@@ -122,7 +118,8 @@ trait RDF2ShEx extends RDFParser {
     maxinclusive,
     maxexclusive,
     totaldigits,
-    fractiondigits)
+    fractiondigits
+  )
 
   private def length: RDFParser[XsFacet] = for {
     value <- arc(sx_length, integer)
@@ -160,11 +157,11 @@ trait RDF2ShEx extends RDFParser {
   private def numericLiteral: RDFParser[NumericLiteral] = for {
     n <- getNode
     v <- n match {
-     case IntegerLiteral(n,repr) => parseOk(NumericInt(n, repr))
-     case DoubleLiteral(d,repr) => parseOk(NumericDouble(d, repr))
-     case DecimalLiteral(d,repr) => parseOk(NumericDecimal(d, repr))
-     case _ => parseFail[NumericLiteral](s"Expected numeric literal but found $n")
-    } 
+      case IntegerLiteral(n, repr) => parseOk(NumericInt(n, repr))
+      case DoubleLiteral(d, repr)  => parseOk(NumericDouble(d, repr))
+      case DecimalLiteral(d, repr) => parseOk(NumericDecimal(d, repr))
+      case _ => parseFail[NumericLiteral](s"Expected numeric literal but found $n")
+    }
   } yield v
 
   private def fractiondigits: RDFParser[XsFacet] = for {
@@ -178,13 +175,13 @@ trait RDF2ShEx extends RDFParser {
   private def nodeKind: RDFParser[NodeKind] = for {
     n <- getNode
     v <- n match {
-     case `sx_iri` => parseOk(IRIKind)
-     case `sx_bnode` => parseOk(BNodeKind)
-     case `sx_literal` => parseOk(LiteralKind)
-     case `sx_nonliteral` => parseOk(NonLiteralKind)
-     case _ => parseFail[NodeKind](s"Expected nodekind, found: $n")
+      case `sx_iri`        => parseOk(IRIKind)
+      case `sx_bnode`      => parseOk(BNodeKind)
+      case `sx_literal`    => parseOk(LiteralKind)
+      case `sx_nonliteral` => parseOk(NonLiteralKind)
+      case _               => parseFail[NodeKind](s"Expected nodekind, found: $n")
     }
-  } yield v 
+  } yield v
 
   private def shape: RDFParser[ShapeExpr] = for {
     n <- getNode
@@ -195,12 +192,22 @@ trait RDF2ShEx extends RDFParser {
     semActs <- opt(sx_semActs, semActList1Plus)
     annotations <- star(sx_annotation, annotationParser)
     // TODO: extends and restricts!!!
-  } yield Shape(mkId(n), None, closed, ls2Option(extras), expression, None, None, ls2Option(annotations), semActs)
+  } yield Shape(
+    mkId(n),
+    None,
+    closed,
+    ls2Option(extras),
+    expression,
+    None,
+    None,
+    ls2Option(annotations),
+    semActs
+  )
 
   private def shapeExternal: RDFParser[ShapeExpr] = for {
     n <- getNode
     _ <- checkType(sx_ShapeExternal)
-  } yield ShapeExternal(mkId(n),None,None)
+  } yield ShapeExternal(mkId(n), None, None)
 
   private def semAct: RDFParser[SemAct] = for {
     _ <- checkType(sx_SemAct)
@@ -224,9 +231,17 @@ trait RDF2ShEx extends RDFParser {
     annotations <- star(sx_annotation, annotationParser)
   } yield // TODO: Variable decl
     TripleConstraint(
-    mkId(n),
-    optInverse, optNegated, predicate, valueExpr, optMin, optMax, None, semActs,
-    ls2Option(annotations))
+      mkId(n),
+      optInverse,
+      optNegated,
+      predicate,
+      valueExpr,
+      optMin,
+      optMax,
+      None,
+      semActs,
+      ls2Option(annotations)
+    )
 
   private def valueSetValue: RDFParser[ValueSetValue] = firstOf(
     objectValue,
@@ -259,11 +274,11 @@ trait RDF2ShEx extends RDFParser {
     exclusions <- star(sx_exclusion, iriExclusion)
   } yield IRIStemRange(sv, ls2Option(exclusions))
 
-  private def iriStemRangeValue: RDFParser[IRIStemRangeValue] = 
-  firstOf(
-    iriStemValueIRI,
-    iriStemWildCard
-  )
+  private def iriStemRangeValue: RDFParser[IRIStemRangeValue] =
+    firstOf(
+      iriStemValueIRI,
+      iriStemWildCard
+    )
 
   private def literalStemRange: RDFParser[ValueSetValue] = for {
     _ <- checkType(sx_LiteralStemRange)
@@ -271,18 +286,18 @@ trait RDF2ShEx extends RDFParser {
     exclusions <- star(sx_exclusion, literalExclusion)
   } yield LiteralStemRange(sv, ls2Option(exclusions))
 
-  private def literalStemRangeValue: RDFParser[LiteralStemRangeValue] = 
-   firstOf(
-    literalStemRangeString,
-    literalStemRangeWildCard,
-   )
+  private def literalStemRangeValue: RDFParser[LiteralStemRangeValue] =
+    firstOf(
+      literalStemRangeString,
+      literalStemRangeWildCard
+    )
 
   private def literalStemRangeString: RDFParser[LiteralStemRangeValue] = for {
-    n <- getNode 
+    n <- getNode
     v <- n match {
-     case StringLiteral(str) => parseOk(LiteralStemRangeString(str))
-     case _ => parseFail[LiteralStemRangeValue](s"LiteralStemRangeString: Expected string for $n")
-   }
+      case StringLiteral(str) => parseOk(LiteralStemRangeString(str))
+      case _ => parseFail[LiteralStemRangeValue](s"LiteralStemRangeString: Expected string for $n")
+    }
   } yield v
 
   private def literalStemRangeWildCard: RDFParser[LiteralStemRangeValue] = for {
@@ -295,74 +310,75 @@ trait RDF2ShEx extends RDFParser {
     exclusions <- star(sx_exclusion, languageExclusion)
   } yield LanguageStemRange(sv, ls2Option(exclusions))
 
-  private def languageStemRangeValue: RDFParser[LanguageStemRangeValue] = 
-   firstOf(
-    languageStemRangeLang,
-    languageStemWildCard,
-   )
+  private def languageStemRangeValue: RDFParser[LanguageStemRangeValue] =
+    firstOf(
+      languageStemRangeLang,
+      languageStemWildCard
+    )
 
   private def languageStemRangeLang: RDFParser[LanguageStemRangeValue] = for {
     n <- getNode
     v <- n match {
-     case StringLiteral(str) => parseOk(LanguageStemRangeLang(Lang(str)))
-     case _ => parseFail[LanguageStemRangeValue](s"LanguageStemRangeLang: Expected string for $n")
+      case StringLiteral(str) => parseOk(LanguageStemRangeLang(Lang(str)))
+      case _ => parseFail[LanguageStemRangeValue](s"LanguageStemRangeLang: Expected string for $n")
     }
-   } yield v
+  } yield v
 
   private def iriExclusion: RDFParser[IRIExclusion] = firstOf(
     iriRefExclusion,
     iriStemExclusion
   )
 
-  private def languageExclusion: RDFParser[LanguageExclusion] = 
-   firstOf(
-    languageTagExclusion,languageStemExclusion
-   )
+  private def languageExclusion: RDFParser[LanguageExclusion] =
+    firstOf(
+      languageTagExclusion,
+      languageStemExclusion
+    )
 
-  private def literalExclusion: RDFParser[LiteralExclusion] = 
-   firstOf(
-    literalStringExclusion,literalStemExclusion
-   )
+  private def literalExclusion: RDFParser[LiteralExclusion] =
+    firstOf(
+      literalStringExclusion,
+      literalStemExclusion
+    )
 
-  private def iriRefExclusion: RDFParser[IRIExclusion] = for { 
-    n <- getNode 
+  private def iriRefExclusion: RDFParser[IRIExclusion] = for {
+    n <- getNode
     v <- n match {
-    case iri: IRI => parseOk(IRIRefExclusion(iri))
-    case _ => parseFail[IRIExclusion](s"iriRefExclusion: expected an IRI for $n")
-   }
+      case iri: IRI => parseOk(IRIRefExclusion(iri))
+      case _        => parseFail[IRIExclusion](s"iriRefExclusion: expected an IRI for $n")
+    }
   } yield v
 
   private def iriStemExclusion: RDFParser[IRIExclusion] = for {
     vs <- iriStem
     iriStem <- vs match {
       case i: IRIStem => ok(i)
-      case _ => parseFail[IRIStem](s"Expected iriStem")
+      case _          => parseFail[IRIStem](s"Expected iriStem")
     }
   } yield IRIStemExclusion(iriStem)
 
-  private def literalStringExclusion: RDFParser[LiteralExclusion] =    for {
-    n <- getNode 
+  private def literalStringExclusion: RDFParser[LiteralExclusion] = for {
+    n <- getNode
     v <- n match {
-     case StringLiteral(str) => parseOk(LiteralStringExclusion(str))
-     case _ => parseFail[LiteralExclusion](s"literalStringExclusion: expected a StringLiteral for $n")
+      case StringLiteral(str) => parseOk(LiteralStringExclusion(str))
+      case _ =>
+        parseFail[LiteralExclusion](s"literalStringExclusion: expected a StringLiteral for $n")
     }
-  } yield v 
+  } yield v
 
   private def literalStemExclusion: RDFParser[LiteralExclusion] = for {
     vsv <- literalStem
     ls <- vsv match {
       case l: LiteralStem => ok(l)
-      case _ => parseFail[LiteralStem](s"Expected $vsv to be a LiteralStem")
+      case _              => parseFail[LiteralStem](s"Expected $vsv to be a LiteralStem")
     }
   } yield LiteralStemExclusion(ls)
 
-  private def languageTagExclusion: RDFParser[LanguageExclusion] = {
+  private def languageTagExclusion: RDFParser[LanguageExclusion] =
     throw new Exception(s"Not implemented languageTagExclusion yet")
-  }
 
-  private def languageStemExclusion: RDFParser[LanguageExclusion] = {
+  private def languageStemExclusion: RDFParser[LanguageExclusion] =
     throw new Exception(s"Not implemented languageStemExclusion yet")
-  }
 
   private def iriStemValueIRI: RDFParser[IRIStemRangeValue] = for {
     str <- anyUri
@@ -372,17 +388,17 @@ trait RDF2ShEx extends RDFParser {
     _ <- checkType(sx_Wildcard)
   } yield IRIStemWildcard()
 
-  private def languageStemWildCard: RDFParser[LanguageStemRangeValue] = 
-  for {
-    _ <- checkType(sx_Wildcard)
-  } yield LanguageStemRangeWildcard()
+  private def languageStemWildCard: RDFParser[LanguageStemRangeValue] =
+    for {
+      _ <- checkType(sx_Wildcard)
+    } yield LanguageStemRangeWildcard()
 
   private def anyUri: RDFParser[String] = for {
     n <- getNode
     v <- n match {
-     case DatatypeLiteral(str, iri) if iri == `xsd:anyUri` => parseOk(str)
-     case _ => parseFail[String](s"Expected typed literal with datatype xsd:anyUri. Obtained: $n")
-   }
+      case DatatypeLiteral(str, iri) if iri == `xsd:anyUri` => parseOk(str)
+      case _ => parseFail[String](s"Expected typed literal with datatype xsd:anyUri. Obtained: $n")
+    }
   } yield v
 
   private def oneOf: RDFParser[TripleExpr] = for {
@@ -414,28 +430,28 @@ trait RDF2ShEx extends RDFParser {
     vsv <- arc(sx_object, objectValue)
     obj <- vsv match {
       case o: ObjectValue => ok(o)
-      case _ => parseFail(s"Expected $vsv to be an ObjectValue")
+      case _              => parseFail(s"Expected $vsv to be an ObjectValue")
     }
   } yield Annotation(pred, obj)
 
   private def objectValue: RDFParser[ValueSetValue] = for {
     n <- getNode
     v <- n match {
-    case iri: IRI => parseOk(IRIValue(iri))
-    case StringLiteral(str) => parseOk(StringValue(str))
-    case DatatypeLiteral(str, iri) => parseOk(DatatypeString(str, iri))
-    case LangLiteral(lex, lan) => parseOk(LangString(lex, lan))
-    case _ => parseFail[ValueSetValue](s"Unexpected object value: $n must be an IRI or a Literal")
-   }
+      case iri: IRI                  => parseOk(IRIValue(iri))
+      case StringLiteral(str)        => parseOk(StringValue(str))
+      case DatatypeLiteral(str, iri) => parseOk(DatatypeString(str, iri))
+      case LangLiteral(lex, lan)     => parseOk(LangString(lex, lan))
+      case _ => parseFail[ValueSetValue](s"Unexpected object value: $n must be an IRI or a Literal")
+    }
   } yield v
 
   private def max: RDFParser[Max] = for {
     n <- getNode
     v <- n match {
-    case IntegerLiteral(n,_) => parseOk(IntMax(n))
-    case StringLiteral("*") => parseOk(Star)
-    case _ => parseFail[Max](s"Unexpected node parsing max cardinality: $n")
-   }
+      case IntegerLiteral(n, _) => parseOk(IntMax(n))
+      case StringLiteral("*")   => parseOk(Star)
+      case _                    => parseFail[Max](s"Unexpected node parsing max cardinality: $n")
+    }
   } yield v
 
   private def tripleExpressionList2Plus: RDFParser[List[TripleExpr]] =
@@ -447,7 +463,7 @@ trait RDF2ShEx extends RDFParser {
   private def shapeExprList2Plus: RDFParser[List[ShapeExpr]] =
     list2Plus(shapeExpr)
 
-/*  private def shapeExprList1Plus: RDFParser[List[ShapeExpr]] =
+  /*  private def shapeExprList1Plus: RDFParser[List[ShapeExpr]] =
     list1Plus(shapeExpr) */
 
   private def valueSetValueList1Plus: RDFParser[List[ValueSetValue]] =
@@ -455,15 +471,15 @@ trait RDF2ShEx extends RDFParser {
 
   // def fromIO[A](io: IO[A]): RDFParser[A] = liftIO(io)
 
-  def fromStream[A](s: Stream[IO,A]): RDFParser[List[A]] = 
+  def fromStream[A](s: Stream[IO, A]): RDFParser[List[A]] =
     fromIO(s.compile.toList)
 
 }
 
 object RDF2ShEx extends RDF2ShEx {
 
-  def rdf2Schema(rdf: RDFReader): IO[Either[String,Schema]] = {
-    val cfg = Config(IRI("http://internal/"),rdf)
+  def rdf2Schema(rdf: RDFReader): IO[Either[String, Schema]] = {
+    val cfg = Config(IRI("http://internal/"), rdf)
     getSchema(rdf).value.run(cfg).map(_.leftMap(_.getMessage))
   }
 

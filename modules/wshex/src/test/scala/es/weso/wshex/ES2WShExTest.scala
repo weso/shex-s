@@ -243,8 +243,8 @@ class ES2WShExTest extends CatsEffectSuite {
        |""".stripMargin,
     WSchema(
       Map(
-        (s ->
-          WShapeOr(Some(s), List(WShapeRef(t), WShapeRef(u)))),
+        s ->
+          WShapeOr(Some(s), List(WShapeRef(t), WShapeRef(u))),
         t -> WShape(Some(t), false, List(), None, List()),
         u -> WShape(Some(u), false, List(), None, List())
       ),
@@ -252,7 +252,7 @@ class ES2WShExTest extends CatsEffectSuite {
       pm
     )
   )
-  
+
   checkSchema(
     "labels",
     s"""|$pmStr

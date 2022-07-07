@@ -27,9 +27,10 @@ object ParserNodeSelector extends LazyLogging {
   }
 
   def parse(
-             str: String,
-             base: Option[String],
-             nodesPrefixMap: PrefixMap): Either[String, NodeSelector] = {
+      str: String,
+      base: Option[String],
+      nodesPrefixMap: PrefixMap
+  ): Either[String, NodeSelector] = {
     val s = removeBOM(str)
     val reader: JavaReader =
       new InputStreamReader(new ByteArrayInputStream(s.getBytes(StandardCharsets.UTF_8)))
@@ -39,10 +40,10 @@ object ParserNodeSelector extends LazyLogging {
   }
 
   def parseSchemaReader(
-                         reader: JavaReader,
-                         base: Option[String],
-                         nodesPrefixMap: PrefixMap
-                       ): Either[String, NodeSelector] = {
+      reader: JavaReader,
+      base: Option[String],
+      nodesPrefixMap: PrefixMap
+  ): Either[String, NodeSelector] = {
     val input: CharStream = CharStreams.fromReader(reader)
     val lexer: NodeSelectorLexer = new NodeSelectorLexer(input)
     val tokens: CommonTokenStream = new CommonTokenStream(lexer)
@@ -52,9 +53,7 @@ object ParserNodeSelector extends LazyLogging {
     lexer.addErrorListener(errorListener)
     parser.addErrorListener(errorListener)
 
-    val maker = new NodeSelectorMaker(
-      base: Option[String],
-      nodesPrefixMap)
+    val maker = new NodeSelectorMaker(base: Option[String], nodesPrefixMap)
     val builder = maker.visit(parser.nodeSelector()).asInstanceOf[Builder[NodeSelector]]
     val errors = errorListener.getErrors
     if (errors.nonEmpty) {
