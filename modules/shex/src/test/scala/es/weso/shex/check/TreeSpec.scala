@@ -14,8 +14,8 @@ object TreeSpec extends Properties("Tree") {
   val genLeaf = Gen.const(Leaf)
   val genNode = for {
     v <- arbitrary[Int]
-    left <- Gen.sized(h => Gen.resize(h/2, genTree))
-    right <- Gen.sized(h => Gen.resize(h/2, genTree))
+    left <- Gen.sized(h => Gen.resize(h / 2, genTree))
+    right <- Gen.sized(h => Gen.resize(h / 2, genTree))
   } yield Node(left, right, v)
 
   def genTree: Gen[Tree] = Gen.sized { height =>
@@ -26,12 +26,12 @@ object TreeSpec extends Properties("Tree") {
     }
   }
 
-  def elems(t:Tree):Int = t match {
-    case Leaf => 0
-    case Node(t1,t2,v) => elems(t1) + elems(t2)
+  def elems(t: Tree): Int = t match {
+    case Leaf            => 0
+    case Node(t1, t2, v) => elems(t1) + elems(t2)
   }
 
-  property("elems(t) > 0") = forAll(genTree) { (t: Tree)  =>
+  property("elems(t) > 0") = forAll(genTree) { (t: Tree) =>
     elems(t) >= 0
   }
 

@@ -4,8 +4,7 @@ import es.weso.checking._
 import cats._
 import implicits._
 
-case class MatcherLog[Edge, Node, Label, Evidence](
-  messages: List[(Attempt[Node, Label], String)])
+case class MatcherLog[Edge, Node, Label, Evidence](messages: List[(Attempt[Node, Label], String)])
 
 case class Attempt[Node, Label](node: Node, label: Label)
 
@@ -42,9 +41,7 @@ trait Matcher[Edge, Node, Label, Evidence] extends CheckerCats {
     def show(t: Env): String = t.toString
   }
 
-  def matchNodeLabel(
-    node: Node,
-    label: Label): Check[Typing[Node, Label, Err, Evidence]]
+  def matchNodeLabel(node: Node, label: Label): Check[Typing[Node, Label, Err, Evidence]]
 
   def getTyping: Check[Typing[Node, Label, Err, Evidence]] = getEnv
 

@@ -5,11 +5,13 @@ import cats.implicits._
 
 trait Extend {
 
-  def extendCheckingVisited[S,E,Label](s: S,
-                   finder: Label => Either[String,S],
-                   extend: S => Option[List[Label]],
-                   combineExpr: (E, E) => E,
-                   expr: S => Option[E]): Either[String, Option[E]] = {
+  def extendCheckingVisited[S, E, Label](
+      s: S,
+      finder: Label => Either[String, S],
+      extend: S => Option[List[Label]],
+      combineExpr: (E, E) => E,
+      expr: S => Option[E]
+  ): Either[String, Option[E]] = {
     type Visited[A] = State[List[Label], A]
     def getVisited: Visited[List[Label]] = State.get
     def addVisited(x: Label): Visited[Unit] = {
@@ -30,43 +32,35 @@ trait Extend {
       case (Some(v1), Some(v2)) => Some(combineExpr(v1, v2))
     }
 
-    type Result = Either[String,Option[E]]
+    type Result = Either[String, Option[E]]
 
     def flattenExprAux(s: S): Visited[Result] = extend(s) match {
       case None => ok(Right(expr(s)))
-      case Some(lbls) => {
+      case Some(lbls) =>
         val zero: Result = Right(None)
-        def comb(r: Result, x: Label): Visited[Result] = {
+        def comb(r: Result, x: Label): Visited[Result] =
           // println(s"comb, x=$x, r=$r")
           for {
             visited <- getVisited
-            v <- if (visited contains x) {
-              ok(r) // Circular dependency
-            } else
-              finder(x) match {
-                case Left(e) => err(e)
-                case Right(shape) =>
-                  for {
-                    _  <- addVisited(x)
-                    ef <- flattenExprAux(shape)
-                  } yield
+            v <-
+              if (visited contains x) {
+                ok(r) // Circular dependency
+              } else
+                finder(x) match {
+                  case Left(e) => err(e)
+                  case Right(shape) =>
                     for {
+                      _ <- addVisited(x)
+                      ef <- flattenExprAux(shape)
+                    } yield for {
                       v1 <- ef
                       v2 <- r
-                    } yield {
-                      combine(v1, v2)
-                    }
-              }
+                    } yield combine(v1, v2)
+                }
           } yield v
-        }
-        for { r <- Foldable[List].foldM(lbls, zero)(comb)
-        } yield {
-          r.map(combine(_,expr(s)))
-        }
-      }
+        for { r <- Foldable[List].foldM(lbls, zero)(comb) } yield r.map(combine(_, expr(s)))
     }
     val (visited, e) = flattenExprAux(s).run(List()).value
     e
   }
 }
-

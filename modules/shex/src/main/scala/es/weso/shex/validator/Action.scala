@@ -4,8 +4,7 @@ import cats._
 import implicits._
 import es.weso.rdf.nodes.IRI
 
-/**
-* Represents actions to be done
+/** Represents actions to be done
   * @param name represents the kind of action
   * @param code contains the code to be executed
   */
