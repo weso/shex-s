@@ -15,7 +15,7 @@ object ShExSpec extends Properties("ShEx") {
   } yield IRI(s"http://${str.mkString}.org")
 
   lazy val bnodeGen: Gen[BNode] = for {
-    str <- Gen.listOfN(2,Gen.alphaLowerChar).map(_.mkString)
+    str <- Gen.listOfN(2, Gen.alphaLowerChar).map(_.mkString)
   } yield BNode(str)
 
   lazy val stringLiteralGen: Gen[StringLiteral] = for {
@@ -46,15 +46,12 @@ object ShExSpec extends Properties("ShEx") {
   lazy val unknownDatatypeLiteralGen: Gen[DatatypeLiteral] = for {
     datatype <- arbitrary[IRI]
     str <- arbitrary[String]
-  } yield DatatypeLiteral(str,datatype)
+  } yield DatatypeLiteral(str, datatype)
 
   lazy val rdfnodeGen: Gen[RDFNode] =
-    Gen.frequency(3 -> iriGen,
-      1 -> bnodeGen,
-      2 -> literalGen
-    )
+    Gen.frequency(3 -> iriGen, 1 -> bnodeGen, 2 -> literalGen)
 
-/*    
+  /*
   lazy val rdfTripleGen: Gen[RDFTriple] = for {
     subj <- Gen.frequency(1 -> iriGen, 1 -> bnodeGen)
     pred <- iriGen
@@ -86,6 +83,5 @@ object ShExSpec extends Properties("ShEx") {
     r.isRight
    }
   } */
-
 
 }

@@ -14,23 +14,20 @@ object TestSemanticAction {
     val sExpr = raw"s".r
     val cleanedStr = code.stripPrefix(" ").stripSuffix(" ")
     cleanedStr match {
-      case printExpr(str) => {
+      case printExpr(str) =>
         str match {
           case sExpr() => IO(println(s"$node"))
-          case _ => IO(println(str))
+          case _       => IO(println(str))
         }
-      }
-      case failExpr(str) => {
+      case failExpr(str) =>
         val s = str match {
           case sExpr() => s"$node"
-          case _ => str
+          case _       => str
         }
         IO.raiseError(FailSemanticAction(node, s"Error: $s. Processor: $processorName"))
-      }
       case "" => IO.unit
-      case str => {
+      case str =>
         IO.raiseError(FailSemanticAction(node, s"Unknown command: $str. Processor: $processorName"))
-      }
     }
   }
 }

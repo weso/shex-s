@@ -1,30 +1,29 @@
 package es.weso.shex
 
 import es.weso.rdf.nodes._
-import cats.data._ 
+import cats.data._
 import cats.effect._
 import cats.implicits._
 import munit._
 
 class PathsTest extends CatsEffectSuite {
 
-
   {
-      val shexStr =
-        """
+    val shexStr =
+      """
           |prefix : <http://example.org/>
           |:A { $<lbl> (:p .; :q .) }
           |:B { :r . ; &<lbl> }
           |""".stripMargin
 
-      val ex = IRI("http://example.org/")
-      val p = Direct(ex + "p")
-      val q = Direct(ex + "q")
-      val r = Direct(ex + "r")
-      val a = ex + "A"
-      val b = ex + "B"
-      shouldMatchPaths(shexStr,a,Set(p,q))
-      shouldMatchPaths(shexStr,b,Set(p,q,r))
+    val ex = IRI("http://example.org/")
+    val p = Direct(ex + "p")
+    val q = Direct(ex + "q")
+    val r = Direct(ex + "r")
+    val a = ex + "A"
+    val b = ex + "B"
+    shouldMatchPaths(shexStr, a, Set(p, q))
+    shouldMatchPaths(shexStr, b, Set(p, q, r))
   }
 
   {
@@ -37,7 +36,7 @@ class PathsTest extends CatsEffectSuite {
     val ex = IRI("http://example.org/")
     val p = Direct(ex + "p")
     val a = ex + "A"
-    shouldMatchPaths(shexStr,a,Set(p))
+    shouldMatchPaths(shexStr, a, Set(p))
   }
 
   {
@@ -51,7 +50,7 @@ class PathsTest extends CatsEffectSuite {
     val p = Direct(ex + "p")
     val q = Direct(ex + "q")
     val a = ex + "A"
-    shouldMatchPaths(shexStr,a,Set(p,q))
+    shouldMatchPaths(shexStr, a, Set(p, q))
   }
 
   {
@@ -67,7 +66,7 @@ class PathsTest extends CatsEffectSuite {
     val q = Direct(ex + "q")
     val r = Direct(ex + "r")
     val b = ex + "B"
-    shouldMatchPaths(shexStr,b,Set(r))
+    shouldMatchPaths(shexStr, b, Set(r))
   }
 
   {
@@ -85,11 +84,15 @@ class PathsTest extends CatsEffectSuite {
     val r = Direct(ex + "r")
     val s = Direct(ex + "s")
     val c = ex + "C"
-    shouldMatchPaths(shexStr,c,Set(s))
+    shouldMatchPaths(shexStr, c, Set(s))
   }
 
-  def shouldMatchPaths(strSchema: String, shapeLabel: IRI, paths: Set[Path])(implicit loc: munit.Location): Unit = {
-    test(s"Should match paths for schema: ${strSchema} and shapeLabel ${shapeLabel}\nExpected: ${paths}") {
+  def shouldMatchPaths(strSchema: String, shapeLabel: IRI, paths: Set[Path])(implicit
+      loc: munit.Location
+  ): Unit =
+    test(
+      s"Should match paths for schema: ${strSchema} and shapeLabel ${shapeLabel}\nExpected: ${paths}"
+    ) {
       val shapeLbl = IRILabel(shapeLabel)
       val result = for {
         schema <- EitherT.liftF(Schema.fromString(strSchema))
@@ -97,7 +100,6 @@ class PathsTest extends CatsEffectSuite {
         paths <- EitherT.fromEither[IO](shape.paths(schema))
       } yield paths
       assertIO(result.value, paths.asRight[String])
-    }    
-  }
+    }
 
 }

@@ -152,9 +152,9 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
     for {
       te <- optConvert(s.expression, convertTripleExpr(schema))
       ls <- s.expression match {
-        case None => List().asRight
+        case None     => List().asRight
         case Some(ts) => parseTermsExpr(ts)
-      } 
+      }
     } yield WShape(
       id = convertId(s.id),
       closed = s.closed.getOrElse(false),
