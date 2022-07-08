@@ -66,7 +66,7 @@ class ES2WShExTest extends CatsEffectSuite {
             List(),
             Some(
               TripleConstraintLocal(
-                PropertyId.fromIRI(wdt + "P31"),
+                PropertyId.fromIRI(wd + "P31"),
                 ValueSet(None, List(EntityIdValueSetValue(EntityId.fromIri(wd + "Q5")))),
                 1,
                 IntOrUnbounded.fromInt(1)
@@ -97,7 +97,7 @@ class ES2WShExTest extends CatsEffectSuite {
           List(),
           Some(
             TripleConstraintLocal(
-              PropertyId.fromIRI(wdt + "P31"),
+              PropertyId.fromIRI(wd + "P31"),
               ValueSet(None, List(EntityIdValueSetValue(EntityId.fromIri(wd + "Q5")))),
               1,
               IntLimit(1)
@@ -127,7 +127,7 @@ class ES2WShExTest extends CatsEffectSuite {
       List(),
       Some(
         TripleConstraintLocal(
-          PropertyId.fromIRI(wdt + "P856"),
+          PropertyId.fromIRI(wd + "P856"),
           EmptyExpr,
           1,
           IntOrUnbounded.fromInt(1),
@@ -136,7 +136,7 @@ class ES2WShExTest extends CatsEffectSuite {
               EachOfPs(
                 List(
                   QualifierLocal(
-                    PropertyId.fromIRI(wdt + "P407"),
+                    PropertyId.fromIRI(wd + "P407"),
                     ValueSet(None, List(EntityIdValueSetValue(EntityId.fromIri(wd + "Q1860")))),
                     1,
                     IntOrUnbounded.fromInt(1)
@@ -175,7 +175,7 @@ class ES2WShExTest extends CatsEffectSuite {
       List(),
       Some(
         TripleConstraintLocal(
-          PropertyId.fromIRI(wdt + "P856"),
+          PropertyId.fromIRI(wd + "P856"),
           EmptyExpr,
           1,
           IntOrUnbounded.fromInt(1),
@@ -184,7 +184,7 @@ class ES2WShExTest extends CatsEffectSuite {
               EachOfPs(
                 List(
                   QualifierLocal(
-                    PropertyId.fromIRI(wdt + "P407"),
+                    PropertyId.fromIRI(wd + "P407"),
                     ValueSet(None, List(EntityIdValueSetValue(EntityId.fromIri(wd + "Q1860")))),
                     1,
                     IntOrUnbounded.fromInt(1)
@@ -208,14 +208,14 @@ class ES2WShExTest extends CatsEffectSuite {
         EachOf(
           List(
             TripleConstraintLocal(
-              PropertyId.fromIRI(wdt + "P856"),
+              PropertyId.fromIRI(wd + "P856"),
               EmptyExpr,
               1,
               IntOrUnbounded.fromInt(1),
               None
             ),
             TripleConstraintLocal(
-              PropertyId.fromIRI(wdt + "P407"),
+              PropertyId.fromIRI(wd + "P407"),
               ValueSet(None, List(EntityIdValueSetValue(EntityId.fromIri(wd + "Q1860")))),
               1,
               IntOrUnbounded.fromInt(1),

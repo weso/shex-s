@@ -18,6 +18,7 @@ import org.wikidata.wdtk.datamodel.helpers.JsonDeserializer
 import org.wikidata.wdtk.datamodel.helpers
 import es.weso.utils.internal.CollectionCompat._
 import es.weso.wbmodel._
+import es.weso.wbmodel.Utils._
 import es.weso.wshex.{NotImplemented => _, _}
 import es.weso.utils.VerboseLevel
 
@@ -28,16 +29,16 @@ import es.weso.utils.VerboseLevel
   * @param verbose by default false
   */
 case class Matcher(
-    wShEx: WShEx,
+    wShEx: WSchema,
     site: String = "http://www.wikidata.org/entity/",
-    verbose: Boolean = false
+    verbose: VerboseLevel = VerboseLevel.Nothing
 ) {
 
   private lazy val jsonDeserializer = new helpers.JsonDeserializer(site)
 
   private lazy val logger = LoggerFactory.getLogger(this.getClass().getCanonicalName());
 
-  private def info(msg: String): Unit = if (verbose) logger.info(msg)
+  private def info(msg: String): Unit = if (verbose.asBoolean) logger.info(msg)
 
   /** Checks if an entityDocument matches the start shape of a WShEx schema
     * If the schema doesn't have a start declaration, it tries to match
@@ -93,7 +94,6 @@ case class Matcher(
   ): MatchingStatus =
     te match {
       case tc: TripleConstraint =>
-        // (predicate, Some(ValueSet(_, IRIValue(value)::Nil)), None, None) =>
         matchTripleConstraint(tc, entity, se)
       case EachOf(es) if es.forall(_.isInstanceOf[TripleConstraint]) =>
         val tcs: LazyList[TripleConstraint] = es.map(_.asInstanceOf[TripleConstraint]).toLazyList
@@ -192,22 +192,6 @@ case class Matcher(
         NoMatching(List(NotImplemented(s"matchPredicateValueSetValue different from IRI: $value")))
     }
 
-  /** Get local name and prefix of a IRI
-    * This code has been adapted from WikidataToolkit ItemIdValueImpl
-    * @param iri
-    * @return a pair with (localName, base)
-    */
-  private def splitIri(iri: IRI): (String, String) = {
-    val iriStr = iri.getLexicalForm
-    val separator = iriStr.lastIndexOf('/') + 1;
-    try
-      (iriStr.substring(separator), iriStr.substring(0, separator))
-    catch {
-      case e: IllegalArgumentException =>
-        throw new IllegalArgumentException("Invalid Wikibase entity IRI: " + iriStr, e)
-    }
-  }
-
   private def predicate2propertyIdValue(predicate: IRI): PropertyIdValue = {
     val (localName, base) = splitIri(predicate)
     val propertyId = new PropertyIdValueImpl(localName, base)
@@ -289,11 +273,11 @@ object Matcher {
     */
   def fromPath(
       schemaPath: Path,
-      verbose: Boolean,
-      format: WShExFormat = WShExFormat.CompactWShExFormat
+      format: WShExFormat = WShExFormat.CompactWShExFormat,
+      verbose: VerboseLevel
   ): IO[Matcher] =
-    WShEx
-      .fromPath(schemaPath, format, if (verbose) VerboseLevel.Debug else VerboseLevel.Info)
+    WSchema
+      .fromPath(schemaPath, format, verbose)
       .map(s => Matcher(wShEx = s, verbose = verbose))
 
   /** Read a WShEx from a path
@@ -307,19 +291,19 @@ object Matcher {
     */
   def unsafeFromPath(
       schemaPath: Path,
-      verbose: Boolean = false,
-      format: WShExFormat = WShExFormat.CompactWShExFormat
+      format: WShExFormat = WShExFormat.CompactWShExFormat,
+      verbose: VerboseLevel = VerboseLevel.Nothing
   ): Matcher = {
     import cats.effect.unsafe.implicits.global
-    fromPath(schemaPath, verbose, format).unsafeRunSync()
+    fromPath(schemaPath, format, verbose).unsafeRunSync()
   }
 
   def unsafeFromString(
       str: String,
-      verbose: Boolean = false,
+      verbose: VerboseLevel = VerboseLevel.Nothing,
       format: WShExFormat = WShExFormat.CompactWShExFormat
   ): Either[ParseError, Matcher] =
-    WShEx
-      .unsafeFromString(str, format)
+    WSchema
+      .unsafeFromString(str, format, verbose)
       .map(s => Matcher(wShEx = s, verbose = verbose))
 }

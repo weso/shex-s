@@ -45,7 +45,7 @@ object PropertyId {
     PropertyId(name, iri)
   }
   def fromNumber(n: Int, baseProperty: IRI): PropertyId =
-    PropertyId(s"P$n", baseProperty)
+    PropertyId(s"P$n", baseProperty + s"P$n")
 }
 
 case class PropertyRecord(id: PropertyId, vertexId: VertexId) {

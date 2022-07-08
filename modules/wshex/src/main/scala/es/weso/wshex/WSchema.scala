@@ -143,16 +143,20 @@ object WSchema {
     * Use `fromPath` for a safe version which returns an `IO[Schema]`
     *
     * @param str string that represents the schema
-    * @param format it can be CompactFormat or JsonFormat
+    * @param format schema format
     * @return the schema
     */
-  def unsafeFromString(str: String, format: WShExFormat): Either[ParseError, WSchema] = {
+  def unsafeFromString(
+      str: String,
+      format: WShExFormat,
+      verbose: VerboseLevel
+  ): Either[ParseError, WSchema] = {
     import cats.effect.unsafe.implicits.global
-    try {
-      val schema = es.weso.shex.Schema.fromString(str, cnvFormat(format)).unsafeRunSync()
-      val wShEx = ShEx2WShEx().convertSchema(schema)
-      wShEx.bimap(ConversionError(_), identity)
-    } catch {
+    try
+      /*      val schema = es.weso.shex.Schema.fromString(str, cnvFormat(format)).unsafeRunSync()
+      val wShEx = ShEx2WShEx().convertSchema(schema) */
+      fromString(str, format, verbose).unsafeRunSync().asRight
+    catch {
       case e: Exception => ParseException(e).asLeft
     }
   }

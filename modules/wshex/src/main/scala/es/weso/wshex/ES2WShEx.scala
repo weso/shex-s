@@ -155,13 +155,26 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
         case None     => List().asRight
         case Some(ts) => parseTermsExpr(ts)
       }
+      extras <- {
+        val es = s.extra.getOrElse(List())
+        es.map(convertPropertyIRIExtra(_)).sequence
+      }
     } yield WShape(
       id = convertId(s.id),
       closed = s.closed.getOrElse(false),
-      extra = s.extra.getOrElse(List()).map(PropertyId.fromIRI(_)),
+      extra = extras,
       expression = te,
       ls
     )
+
+  private def convertPropertyIRIExtra(iri: IRI): Either[ConvertError, PropertyId] = {
+    val iriParsed = IRIConvert.parseIRI(iri, convertOptions)
+    iriParsed match {
+      case Some(DirectProperty(n)) => PropertyId.fromNumber(n, convertOptions.entityIri).asRight
+      case Some(Property(n))       => PropertyId.fromNumber(n, convertOptions.entityIri).asRight
+      case _                       => UnsupportedExtraProperty(iri).asLeft
+    }
+  }
 
   private def parseTermsExpr(
       te: shex.TripleExpr
@@ -272,7 +285,7 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
     val iriParsed = IRIConvert.parseIRI(tc.predicate, convertOptions)
     iriParsed match {
       case Some(DirectProperty(n)) =>
-        val pred = PropertyId.fromIRI(tc.predicate)
+        val pred = PropertyId.fromNumber(n, convertOptions.entityIri)
         val (min, max) = convertMinMax(tc)
         makeTripleConstraint(pred, min, max, tc.valueExpr, schema).map(_.some)
       case Some(Property(p)) =>
@@ -280,12 +293,12 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
           case Some(ve) => convertTripleConstraintProperty(p, ve, schema).map(_.some)
           case None     => NoValueForPropertyConstraint(p, tc).asLeft
         }
-      case Some(PropertyQualifier(_)) =>
-        val pred = PropertyId.fromIRI(tc.predicate)
+      case Some(PropertyQualifier(n)) =>
+        val pred = PropertyId.fromNumber(n, convertOptions.entityIri)
         val (min, max) = convertMinMax(tc)
         makeTripleConstraint(pred, min, max, tc.valueExpr, schema).map(_.some)
-      case Some(PropertyStatement(_)) =>
-        val pred = PropertyId.fromIRI(tc.predicate)
+      case Some(PropertyStatement(n)) =>
+        val pred = PropertyId.fromNumber(n, convertOptions.entityIri)
         val (min, max) = convertMinMax(tc)
         makeTripleConstraint(pred, min, max, tc.valueExpr, schema).map(_.some)
       case _ =>
@@ -339,7 +352,7 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
             iriParsed match {
               case Some(PropertyStatement(ns)) =>
                 if (n == ns) {
-                  val pred = PropertyId.fromNumber(n, convertOptions.directPropertyIri)
+                  val pred = PropertyId.fromNumber(n, convertOptions.entityIri)
                   val (min, max) = convertMinMax(tc)
                   makeTripleConstraint(pred, min, max, tc.valueExpr, schema)
                 } else DifferentPropertyPropertyStatement(n, ns).asLeft

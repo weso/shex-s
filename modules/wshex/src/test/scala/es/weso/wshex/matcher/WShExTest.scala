@@ -54,7 +54,7 @@ class WShExTest extends FunSuite {
     val itemDocument =
       ItemDocumentBuilder.forItemId(q42).withStatement(statementBuilder.build())
     assertEquals(
-      Matcher(wShEx = WShEx(schema), verbose = true).matchStart(itemDocument.build()),
+      Matcher(wShEx = schema).matchStart(itemDocument.build()),
       Matching(List(shape))
     )
   }
@@ -68,7 +68,7 @@ class WShExTest extends FunSuite {
     val itemDocument =
       ItemDocumentBuilder.forItemId(q42).withStatement(statementBuilder.build())
     assertEquals(
-      Matcher(wShEx = WShEx(schema), verbose = true).matchStart(itemDocument.build()).matches,
+      Matcher(wShEx = schema).matchStart(itemDocument.build()).matches,
       false
     )
   }
@@ -82,7 +82,7 @@ class WShExTest extends FunSuite {
     val itemDocument =
       ItemDocumentBuilder.forItemId(q42).withStatement(statementBuilder.build())
     assertEquals(
-      Matcher(wShEx = WShEx(schema), verbose = true).matchStart(itemDocument.build()).matches,
+      Matcher(wShEx = schema).matchStart(itemDocument.build()).matches,
       false
     )
   }
@@ -96,7 +96,7 @@ class WShExTest extends FunSuite {
     val s2 = StatementBuilder.forSubjectAndProperty(q42, p31).withValue(q516).build()
     val itemDocument = ItemDocumentBuilder.forItemId(q42).withStatement(s1).withStatement(s2)
     assertEquals(
-      Matcher(wShEx = WShEx(schema), verbose = true).matchStart(itemDocument.build()),
+      Matcher(wShEx = schema).matchStart(itemDocument.build()),
       Matching(List(shape))
     )
   }

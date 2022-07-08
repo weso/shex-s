@@ -52,6 +52,10 @@ case class NoExprForTripleConstraintProperty(n: Int, s: shex.Shape) extends Conv
   override def toString() = s"TripleConstraint for property: $n, No expression for shape: $s"
 }
 
+case class UnsupportedExtraProperty(iri: IRI) extends ConvertError {
+  override def toString() = s"Unsupported EXTRA property: $IRI"
+}
+
 case class ConvertErrors(es: List[ConvertError]) extends ConvertError {
   override def toString() =
     s"Conversion errors: ${es.map(_.toString).mkString("\n")}"

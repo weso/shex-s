@@ -14,8 +14,8 @@ case class Pending(
 case class NotImplemented(msg: String) extends MatchingError(s"Not Implemented: $msg")
 
 case class NoShapeExprs(
-    wShEx: WShEx
-) extends MatchingError(s"No shape expressions in schema ${wShEx.schema}")
+    wShEx: WSchema
+) extends MatchingError(s"No shape expressions in schema ${wShEx}")
 
 case class NoStatementGroupProperty(
     property: PropertyIdValue,
