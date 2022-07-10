@@ -34,13 +34,13 @@ case class NoStatementDocument(
 ) extends MatchingError(s"""|Entity is not an StatementDocument
                                 |Entity: ${entityDocument}""".stripMargin)
 
-case class NotShapeFail(se: WShapeExpr, entity: EntityDocumentWrapper)
+case class NotShapeFail(se: WShapeExpr, entity: EntityDoc)
     extends MatchingError(s"""|NOT failed because entity matches shapeExpr
                                               |Entity: ${entity.show()}
                                               |ShapeExpr: $se
                                               |""".stripMargin)
 
-case class NoValuesProperty(property: IRI, entity: EntityDocumentWrapper)
+case class NoValuesProperty(property: IRI, entity: EntityDoc)
     extends MatchingError(s"""|No values for property: ${property}
                                               |Entity ${entity.show()}
                                               |""".stripMargin)

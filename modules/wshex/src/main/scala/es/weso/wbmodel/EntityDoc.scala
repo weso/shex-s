@@ -15,8 +15,11 @@ import cats.effect._
 import collection.JavaConverters._
 import _root_.java.io.ByteArrayOutputStream
 import es.weso.utils.internal.CollectionCompat._
+import org.wikidata.wdtk.wikibaseapi.WikibaseDataFetcher
+import org.wikidata.wdtk.datamodel.helpers.ItemDocumentBuilder
+import org.wikidata.wdtk.datamodel.helpers.PropertyDocumentBuilder
 
-case class EntityDocumentWrapper(entityDocument: EntityDocument) extends Serializable {
+case class EntityDoc(entityDocument: EntityDocument) extends Serializable {
 
   private val mapper = new ObjectMapper()
   mapper.configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false)
@@ -90,18 +93,15 @@ case class EntityDocumentWrapper(entityDocument: EntityDocument) extends Seriali
   def show(options: ShowEntityOptions = ShowEntityOptions.default): String =
     s"${entityDocument.getEntityId().getId()} ${showStatements(options)}"
 
-  /*    def toJsonStr(): String = {
-      val os = new ByteArrayOutputStream()
-      val jsonSerializer = new JsonSerializer(os)
-      jsonSerializer.open()
-      val str = jsonSerializer.getJsonString(entityDocument)
-      jsonSerializer.open()
-      str
-    } */
+  /*  def merge(other: EntityDoc): EntityDoc =
+    // TODO
+    EntityDoc(this.entityDocument)
 
+  def addProperty(pid: PropertyId): EntityDoc =
+    this.copy(entityDo = entityDocument.) */
 }
 
-object EntityDocumentWrapper {
+object EntityDoc {
 
   /** Get Entity from a JSON string
     *
@@ -114,8 +114,31 @@ object EntityDocumentWrapper {
   def fromJsonStr(
       str: String,
       jsonDeserializer: JsonDeserializer
-  ): IO[EntityDocumentWrapper] = IO {
-    EntityDocumentWrapper(jsonDeserializer.deserializeEntityDocument(str))
+  ): IO[EntityDoc] = IO {
+    EntityDoc(jsonDeserializer.deserializeEntityDocument(str))
+  }
+
+  private lazy val wbdf: WikibaseDataFetcher = WikibaseDataFetcher.getWikidataDataFetcher()
+
+  /** Get an entity from Wikidata
+    *
+    * @param entity
+    * @return entity
+    */
+  def fetchEntity(entity: String): IO[EntityDoc] = for {
+    entityDocument <- IO(wbdf.getEntityDocument(entity))
+  } yield EntityDoc(entityDocument)
+
+  def emptyFrom(e: EntityDocument): EntityDoc = {
+    val ed = e match {
+      case id: ItemDocument =>
+        ItemDocumentBuilder.forItemId(id.getEntityId()).build()
+      case pd: PropertyDocument =>
+        PropertyDocumentBuilder.forPropertyIdAndDatatype(pd.getEntityId(), pd.getDatatype()).build()
+      case _ =>
+        throw new Exception(s"emptyFromEntityDoc: Unsupported type of entity document yet: $e")
+    }
+    EntityDoc(ed)
   }
 
 }

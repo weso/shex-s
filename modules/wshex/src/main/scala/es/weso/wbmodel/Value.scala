@@ -4,7 +4,14 @@ import cats.implicits._
 import cats._
 import es.weso.rdf.nodes._
 import es.weso.wshex.ShapeLabel
-import org.wikidata.wdtk.datamodel.interfaces.DatatypeIdValue
+import org.wikidata.wdtk.datamodel.interfaces.{
+  DatatypeIdValue,
+  Statement => WDStatement,
+  Value => WDValue
+}
+import org.wikidata.wdtk.datamodel.interfaces.EntityDocument
+import org.wikidata.wdtk.datamodel.interfaces.ItemDocument
+import org.wikidata.wdtk.datamodel.interfaces.PropertyDocument
 
 case class VertexId(value: Long) extends AnyVal
 
@@ -15,6 +22,7 @@ sealed abstract class EntityId extends Value {
   def iri: IRI
 }
 object EntityId {
+
   def fromIri(iri: IRI): EntityId = {
     val (name, base) = Utils.splitIri(iri)
     name(0) match {
@@ -59,10 +67,29 @@ sealed abstract class Entity extends Value {
   // val okShapes: Set[ShapeLabel]
 
   def withLocalStatement(prec: PropertyRecord, literal: LiteralValue, qs: List[Qualifier]): Entity
+  def addPropertyValues(pid: PropertyId, value: List[WDValue]): Entity
   def localStatementsByPropId(propId: PropertyId) =
     localStatements.filter(_.propertyRecord.id == propId)
   def withOkShapes(shapes: Set[ShapeLabel]): Entity
 
+  def mergeStatements(ls: List[WDStatement]): Entity =
+    println(s"mergeStatements for entity: $entityId not implemented yet")
+    this
+
+  def merge(other: Entity): Entity = {
+    println(s"merge for entity: $entityId not implemented yet")
+    this
+  }
+}
+
+object Entity {
+  def fromEntityDocument(ed: EntityDocument): Entity =
+    ed match {
+      case id: ItemDocument =>
+        Item.fromItemDocument(id)
+      case pd: PropertyDocument =>
+        Property.fromPropertyDocument(pd)
+    }
 }
 
 case class ItemId(id: String, iri: IRI) extends EntityId {
@@ -99,6 +126,26 @@ case class Item(
 
   override def withOkShapes(shapes: Set[ShapeLabel]): Entity = this.copy(okShapes = shapes)
 
+  override def addPropertyValues(pid: PropertyId, value: List[WDValue]): Entity = {
+    println(s"AddPropertyValues: $pid not implemented yet")
+    this
+  }
+
+}
+object Item {
+  def fromItemDocument(id: ItemDocument): Item =
+    val itemId = ItemId(id.getEntityId().getId(), IRI(id.getEntityId().getIri()))
+    Item(
+      itemId,
+      VertexId(0L),
+      Map(),
+      Map(),
+      Map(),
+      id.getEntityId().getSiteIri(),
+      List(),
+      List(),
+      Set()
+    )
 }
 
 case class Property(
@@ -133,6 +180,26 @@ case class Property(
   override def withOkShapes(shapes: Set[ShapeLabel]): Entity =
     this.copy(okShapes = shapes)
 
+  override def addPropertyValues(pid: PropertyId, values: List[WDValue]): Entity =
+    println(s"AddPropertyValues: $pid not implemented yet")
+    this
+
+}
+object Property {
+  def fromPropertyDocument(pd: PropertyDocument): Property = {
+    val propertyId = PropertyId(pd.getEntityId().getId(), IRI(pd.getEntityId().getIri()))
+    Property(
+      propertyId,
+      VertexId(0L),
+      Map(),
+      Map(),
+      Map(),
+      pd.getEntityId().getSiteIri(),
+      List(),
+      Datatype(pd.getDatatype().getIri()),
+      Set()
+    )
+  }
 }
 
 sealed abstract class LiteralValue extends Value

@@ -9,6 +9,8 @@ import org.wikidata.wdtk.datamodel.implementation._
 import org.wikidata.wdtk.datamodel.helpers.ItemDocumentBuilder
 import org.wikidata.wdtk.datamodel.helpers.StatementBuilder
 import es.weso.wshex._
+import es.weso.wbmodel.Value
+import es.weso.wbmodel.Entity
 
 object IRIHelpers {
 
@@ -52,10 +54,10 @@ class WShExTest extends FunSuite {
     val statementBuilder =
       StatementBuilder.forSubjectAndProperty(q42, p31).withValue(q515)
     val itemDocument =
-      ItemDocumentBuilder.forItemId(q42).withStatement(statementBuilder.build())
+      ItemDocumentBuilder.forItemId(q42).withStatement(statementBuilder.build()).build()
     assertEquals(
-      Matcher(wShEx = schema).matchStart(itemDocument.build()),
-      Matching(List(shape))
+      Matcher(wShEx = schema).matchStart(itemDocument),
+      Matching(List(shape), Entity.fromEntityDocument(itemDocument))
     )
   }
 
@@ -94,10 +96,11 @@ class WShExTest extends FunSuite {
     val q516 = new ItemIdValueImpl("Q516", "http://www.wikidata.org/entity/")
     val s1 = StatementBuilder.forSubjectAndProperty(q42, p31).withValue(q515).build()
     val s2 = StatementBuilder.forSubjectAndProperty(q42, p31).withValue(q516).build()
-    val itemDocument = ItemDocumentBuilder.forItemId(q42).withStatement(s1).withStatement(s2)
+    val itemDocument =
+      ItemDocumentBuilder.forItemId(q42).withStatement(s1).withStatement(s2).build()
     assertEquals(
-      Matcher(wShEx = schema).matchStart(itemDocument.build()),
-      Matching(List(shape))
+      Matcher(wShEx = schema).matchStart(itemDocument),
+      Matching(List(shape), Entity.fromEntityDocument(itemDocument))
     )
   }
 

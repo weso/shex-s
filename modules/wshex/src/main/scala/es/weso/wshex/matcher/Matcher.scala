@@ -49,8 +49,13 @@ case class Matcher(
     */
   def matchStart(entityDocument: EntityDocument): MatchingStatus =
     wShEx.startShapeExpr match {
-      case None     => NoMatching(List(NoShapeExprs(wShEx)))
-      case Some(se) => matchShapeExpr(se, EntityDocumentWrapper(entityDocument))
+      case None => NoMatching(List(NoShapeExprs(wShEx)))
+      case Some(se) =>
+        matchShapeExpr(
+          se,
+          EntityDoc(entityDocument),
+          Entity.fromEntityDocument(entityDocument)
+        )
     }
 
   /** Match a JSON string that represents an Entity document against the start shape or the first shape
@@ -63,48 +68,64 @@ case class Matcher(
     matchStart(entityDocument)
   }
 
-  private def matchShapeExpr(shapeExpr: WShapeExpr, entity: EntityDocumentWrapper): MatchingStatus =
+  private def matchShapeExpr(
+      shapeExpr: WShapeExpr,
+      entity: EntityDoc,
+      current: Entity
+  ): MatchingStatus =
     shapeExpr match {
+
       case s: WShape =>
         s.expression match {
-          case Some(te) => matchTripleExpr(te, entity, shapeExpr)
-          case None     => MatchingStatus.matchEmpty
+          case Some(te) => matchTripleExpr(te, entity, shapeExpr, current)
+          case None     => MatchingStatus.matchEmpty(current)
         }
 
       case sand: WShapeAnd =>
-        val ls: LazyList[MatchingStatus] = sand.exprs.toLazyList.map(matchShapeExpr(_, entity))
-        MatchingStatus.combineAnds(ls)
+        val ls: LazyList[MatchingStatus] =
+          sand.exprs.toLazyList.map(matchShapeExpr(_, entity, current))
+        MatchingStatus.combineAnds(current, ls)
+
       case sor: WShapeOr =>
-        val ls: LazyList[MatchingStatus] = sor.exprs.toLazyList.map(matchShapeExpr(_, entity))
-        MatchingStatus.combineOrs(ls)
+        val ls: LazyList[MatchingStatus] =
+          sor.exprs.toLazyList.map(matchShapeExpr(_, entity, current))
+        MatchingStatus.combineOrs(current, ls)
+
       case snot: WShapeNot =>
-        val ms = matchShapeExpr(snot.shapeExpr, entity)
+        val ms = matchShapeExpr(snot.shapeExpr, entity, current)
         if (ms.matches) NoMatching(List(NotShapeFail(snot.shapeExpr, entity)))
-        else Matching(List(shapeExpr), ms.dependencies)
+        else
+          Matching(shapeExprs = List(shapeExpr), entity = current, dependencies = ms.dependencies)
+
       case _ =>
         // TODO: Pending
         val notImplemented: MatchingError = NotImplemented(s"matchShape: $shapeExpr")
         NoMatching(List(notImplemented))
+
     }
 
   private def matchTripleExpr(
       te: TripleExpr,
-      entity: EntityDocumentWrapper,
-      se: WShapeExpr
+      entity: EntityDoc,
+      se: WShapeExpr,
+      current: Entity
   ): MatchingStatus =
     te match {
       case tc: TripleConstraint =>
-        matchTripleConstraint(tc, entity, se)
+        matchTripleConstraint(tc, entity, se, current)
+
       case EachOf(es) if es.forall(_.isInstanceOf[TripleConstraint]) =>
         val tcs: LazyList[TripleConstraint] = es.map(_.asInstanceOf[TripleConstraint]).toLazyList
         MatchingStatus.combineAnds(
+          current,
           tcs
-            .map(tc => matchTripleConstraint(tc, entity, se))
+            .map(tc => matchTripleConstraint(tc, entity, se, current))
         )
       case OneOf(es) if es.forall(_.isInstanceOf[TripleConstraint]) =>
         val tcs: LazyList[TripleConstraint] = es.map(_.asInstanceOf[TripleConstraint]).toLazyList
         MatchingStatus.combineOrs(
-          tcs.map(tc => matchTripleConstraint(tc, entity, se))
+          current,
+          tcs.map(tc => matchTripleConstraint(tc, entity, se, current))
         )
       case _ =>
         NoMatching(List(NotImplemented(s"matchTripleExpr: $te")))
@@ -112,55 +133,69 @@ case class Matcher(
 
   private def matchTripleConstraint(
       tc: TripleConstraint,
-      e: EntityDocumentWrapper,
-      se: WShapeExpr
+      e: EntityDoc,
+      se: WShapeExpr,
+      current: Entity
   ): MatchingStatus =
     tc match {
       case tcr: TripleConstraintRef =>
-        val matchPid = matchPropertyIdValueExpr(tc.property, Some(tcr.value), e, se)
+        val matchPid = matchPropertyIdValueExpr(tc.property, Some(tcr.value), e, se, current)
         tcr.qs match {
           case None     => matchPid
-          case Some(qs) => matchPid.and(matchQs(qs, e))
+          case Some(qs) => matchPid.and(matchQs(qs, e, current))
         }
       case tcl: TripleConstraintLocal =>
-        val matchPid = matchPropertyIdValueExpr(tc.property, Some(tcl.value), e, se)
+        val matchPid = matchPropertyIdValueExpr(tc.property, Some(tcl.value), e, se, current)
         tcl.qs match {
           case None     => matchPid
-          case Some(qs) => matchPid.and(matchQs(qs, e))
+          case Some(qs) => matchPid.and(matchQs(qs, e, current))
         }
     }
 
   // TODO...add matching on qualifiers
-  private def matchQs(qs: QualifierSpec, e: EntityDocumentWrapper): MatchingStatus =
-    MatchingStatus.matchEmpty
+  private def matchQs(qs: QualifierSpec, e: EntityDoc, current: Entity): MatchingStatus =
+    MatchingStatus.matchEmpty(current)
 
   private def matchPropertyIdValueExpr(
       propertyId: PropertyId,
       valueExpr: Option[WShapeExpr],
-      e: EntityDocumentWrapper,
-      se: WShapeExpr
+      e: EntityDoc,
+      se: WShapeExpr,
+      current: Entity
   ): MatchingStatus = {
     val predicate = propertyId.iri
     val pidValue: PropertyIdValue = predicate2propertyIdValue(predicate)
     valueExpr match {
       case None =>
         if (e.getValues(pidValue).isEmpty) NoMatching(List(NoValuesProperty(predicate, e)))
-        else Matching(List(se))
+        else
+          Matching(
+            shapeExprs = List(se),
+            entity = current.addPropertyValues(propertyId, e.getValues(pidValue))
+          )
+
       case Some(ValueSet(_, vs)) =>
         MatchingStatus
           .combineOrs(
+            current,
             vs.toLazyList
-              .map(value => matchPredicateValueSetValue(predicate, value, e, se))
+              .map(matchPredicateValueSetValue(predicate, _, e, se, current))
           )
       case Some(EmptyExpr) =>
         if (e.getValues(pidValue).isEmpty) NoMatching(List(NoValuesProperty(predicate, e)))
-        else Matching(List(se))
+        else
+          Matching(
+            shapeExprs = List(se),
+            entity = current.addPropertyValues(propertyId, e.getValues(pidValue))
+          )
       case _ =>
         NoMatching(
           List(NotImplemented(s"matchPropertyIdValueExpr: ${predicate}, valueExpr: ${valueExpr}"))
         )
     }
   }
+
+  // private def makeEntity()
 
   /*  private def matchPredicateValueExpr(predicate: IRI, valueExpr: Option[ShapeExpr], e: Entity, se: ShapeExpr): MatchingStatus = {
    val propertyId = predicate2propertyIdValue(predicate)
@@ -182,12 +217,14 @@ case class Matcher(
   private def matchPredicateValueSetValue(
       predicate: IRI,
       value: ValueSetValue,
-      e: EntityDocumentWrapper,
-      se: WShapeExpr
+      e: EntityDoc,
+      se: WShapeExpr,
+      current: Entity
   ) =
     value match {
-      case IRIValueSetValue(iri)     => matchPredicateIri(predicate, iri, e.entityDocument, se)
-      case EntityIdValueSetValue(id) => matchPredicateIri(predicate, id.iri, e.entityDocument, se)
+      case IRIValueSetValue(iri) => matchPredicateIri(predicate, iri, e.entityDocument, se, current)
+      case EntityIdValueSetValue(id) =>
+        matchPredicateIri(predicate, id.iri, e.entityDocument, se, current)
       case _ =>
         NoMatching(List(NotImplemented(s"matchPredicateValueSetValue different from IRI: $value")))
     }
@@ -202,7 +239,8 @@ case class Matcher(
       predicate: IRI,
       iri: IRI,
       entityDocument: EntityDocument,
-      se: WShapeExpr
+      se: WShapeExpr,
+      current: Entity
   ): MatchingStatus = {
     val propertyId = predicate2propertyIdValue(predicate)
     entityDocument match {
@@ -218,7 +256,7 @@ case class Matcher(
           info(s"Statements with predicate $predicate that match also value ${iri}: $matched")
           if (matched.isEmpty)
             NoMatching(List(NoStatementMatchesValue(predicate, iri, entityDocument)))
-          else Matching(List(se))
+          else Matching(List(se), current.mergeStatements(matched.toList))
         }
       case _ =>
         NoMatching(List(NoStatementDocument(entityDocument)))

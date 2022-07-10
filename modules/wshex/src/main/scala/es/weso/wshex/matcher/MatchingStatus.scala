@@ -5,6 +5,7 @@ import cats._
 import cats.data._
 import es.weso.utils.internal.CollectionCompat._
 import es.weso.wshex._
+import es.weso.wbmodel._
 
 abstract class MatchingStatus {
   def matches: Boolean
@@ -13,21 +14,27 @@ abstract class MatchingStatus {
   def or(other: => MatchingStatus): MatchingStatus
 }
 
+/** Represents a valid matching of an entity with a list of shape expressions
+  */
 case class Matching(
-    ses: List[WShapeExpr],
+    shapeExprs: List[WShapeExpr],
+    entity: Entity, // Matched entity
     override val dependencies: List[Dependency] = List()
 ) extends MatchingStatus {
   override def matches: Boolean = true
   override def and(other: => MatchingStatus): MatchingStatus = other match {
     case m: Matching =>
       Matching(
-        ses = this.ses ++ m.ses,
+        shapeExprs = this.shapeExprs ++ m.shapeExprs,
+        entity = merge(this.entity, m.entity),
         this.dependencies ++ m.dependencies
       )
     case nm: NoMatching => nm
   }
 
   override def or(other: => MatchingStatus): MatchingStatus = this
+
+  private def merge(e: Entity, other: Entity): Entity = e.merge(other)
 
 }
 
@@ -50,13 +57,14 @@ case class NoMatching(
 
 object MatchingStatus {
 
-  lazy val matchEmpty: MatchingStatus = Matching(ses = List())
+  def matchEmpty(e: Entity): MatchingStatus = Matching(shapeExprs = List(), entity = e)
+
   lazy val noMatchingEmpty: MatchingStatus = NoMatching(matchingErrors = List())
 
-  def combineAnds(ls: LazyList[MatchingStatus]): MatchingStatus =
-    ls.foldLeft(matchEmpty)(_.and(_))
+  def combineAnds(e: Entity, ls: LazyList[MatchingStatus]): MatchingStatus =
+    ls.foldLeft(matchEmpty(e))(_.and(_))
 
-  def combineOrs(ls: LazyList[MatchingStatus]): MatchingStatus =
+  def combineOrs(e: Entity, ls: LazyList[MatchingStatus]): MatchingStatus =
     ls.foldLeft(noMatchingEmpty)(_.or(_))
 
 }
