@@ -13,6 +13,7 @@ import java.io.InputStream
 import es.weso.wshex.WShExFormat
 import es.weso.wbmodel.Entity
 import es.weso.utils.VerboseLevel
+import es.weso.wbmodel.Value
 
 case class Entities(es: List[Entity]) extends AnyVal
 object Entities {
@@ -35,31 +36,41 @@ class DumpMatcherTest extends CatsEffectSuite {
   def getResourcePath(fileName: String): Path =
     Paths.get(getClass().getClassLoader().getResource(fileName).toURI().getPath())
 
-  test("Musicians") {
+  {
+    val e: Entity = Value.Qid(633)
     checkMatch(
       "Musicians",
       musiciansShExFile,
       humansDumpFile,
-      Entities(List()),
+      Entities(List(e)),
       WShExFormat.ESCompactFormat
     )
   }
 
-  test("Humans") {
-    checkMatch(
-      "Humans",
-      humansShExFile,
-      humansDumpFile,
-      Entities(List()),
-      WShExFormat.ESCompactFormat
-    )
-  }
+  /*  checkMatch(
+    "Humans",
+    humansShExFile,
+    humansDumpFile,
+    Entities(List()),
+    WShExFormat.ESCompactFormat
+  ) */
 
   private def entityMatch(matcher: Matcher)(e: EntityDoc): IO[Entities] =
-    IO.println(s"Matching...${e.getID()}") >> (matcher.matchStart(e.entityDocument) match {
-      case _: NoMatching => Entities(List()).pure[IO]
-      case m: Matching   => Entities(List(m.entity)).pure[IO]
-    })
+    // IO.print(s"Trying to match...${e.getID()}...") >>
+    matcher.matchStart(e.entityDocument) match {
+      case nm: NoMatching =>
+        if (e.getID() == "Q633")
+          IO.println(
+            s"Error with Neil\n${nm.matchingErrors.map(_.toString.take(300)).mkString("\n")}"
+          ) >>
+            Entities(List()).pure[IO]
+        else
+          IO.println(s"No matching for ${e.getID()}") >>
+            Entities(List()).pure[IO]
+      case m: Matching =>
+        IO.println(s"Matches: ${m.entity}!") >>
+          Entities(List(m.entity)).pure[IO]
+    }
 
   def checkMatch(
       name: String,
@@ -74,10 +85,10 @@ class DumpMatcherTest extends CatsEffectSuite {
         Matcher
           .fromPath(getResourcePath(schemaFile), format, verboseLevel)
           .flatMap(matcher =>
-            DumpReader.read(getResourceInputStream(dumpFileName), entityMatch(matcher))
+            IO.println(s"Matcher obtained...${matcher.wShEx}") >>
+              DumpReader.read(getResourceInputStream(dumpFileName), entityMatch(matcher))
           ),
         expected
       )
     }
-
 }

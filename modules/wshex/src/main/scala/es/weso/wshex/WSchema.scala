@@ -92,15 +92,25 @@ object WSchema {
     case WShExFormat.JsonWShExFormat    => "ShExJ"
   }
 
+  // Technical debt: Unify common code in this method and the next one
   def fromPath(
       path: Path,
       format: WShExFormat = WShExFormat.CompactWShExFormat,
       verbose: VerboseLevel
-  ): IO[WSchema] = for {
-    schema <- es.weso.shex.Schema.fromFile(path.toFile().getAbsolutePath(), cnvFormat(format))
-    resolvedSchema <- es.weso.shex.ResolvedSchema.resolve(schema, None, verbose)
-    schema <- IO.fromEither(ShEx2WShEx().convertSchema(resolvedSchema))
-  } yield schema
+  ): IO[WSchema] = format match {
+    case WShExFormat.CompactWShExFormat | WShExFormat.JsonWShExFormat =>
+      for {
+        schema <- es.weso.shex.Schema.fromFile(path.toFile().getAbsolutePath(), cnvFormat(format))
+        resolvedSchema <- es.weso.shex.ResolvedSchema.resolve(schema, None, verbose)
+        schema <- IO.fromEither(ShEx2WShEx().convertSchema(resolvedSchema))
+      } yield schema
+    case WShExFormat.ESCompactFormat | WShExFormat.ESJsonFormat =>
+      for {
+        schema <- es.weso.shex.Schema.fromFile(path.toFile().getAbsolutePath(), cnvFormat(format))
+        resolvedSchema <- es.weso.shex.ResolvedSchema.resolve(schema, None, verbose)
+        wschema <- IO.fromEither(ES2WShEx(ESConvertOptions.default).convertSchema(resolvedSchema))
+      } yield wschema
+  }
 
   def fromString(
       schemaString: String,

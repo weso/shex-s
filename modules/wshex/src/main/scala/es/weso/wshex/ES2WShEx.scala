@@ -261,7 +261,8 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
       max: IntOrUnbounded,
       se: Option[shex.ShapeExpr],
       schema: shex.AbstractSchema
-  ): Either[ConvertError, TripleConstraint] =
+  ): Either[ConvertError, TripleConstraint] = {
+    println(s"Making tripleConstraint with $pred")
     se match {
       case None =>
         TripleConstraintLocal(pred, EmptyExpr, min, max).asRight
@@ -277,6 +278,7 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
           }
         )
     }
+  }
 
   private def convertTripleConstraint(
       tc: shex.TripleConstraint,
@@ -287,6 +289,7 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
       case Some(DirectProperty(n)) =>
         val pred = PropertyId.fromNumber(n, convertOptions.entityIri)
         val (min, max) = convertMinMax(tc)
+        println(s"ES2WShEx!: DirectProperty: $pred")
         makeTripleConstraint(pred, min, max, tc.valueExpr, schema).map(_.some)
       case Some(Property(p)) =>
         tc.valueExpr match {
@@ -403,7 +406,7 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
         iriParsed match {
           case Some(PropertyStatement(ns)) =>
             if (n == ns) {
-              val pred = PropertyId.fromNumber(n, convertOptions.directPropertyIri)
+              val pred = PropertyId.fromNumber(n, convertOptions.entityIri)
               val (min, max) = convertMinMax(tc)
               makeTripleConstraint(pred, min, max, tc.valueExpr, schema).toOption
             } else None

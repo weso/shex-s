@@ -20,7 +20,8 @@ case class NoShapeExprs(
 case class NoStatementGroupProperty(
     property: PropertyIdValue,
     entityDocument: EntityDocument
-) extends MatchingError(s"No statement group for property $property\nEntity: $entityDocument")
+) extends MatchingError(s"No statement group for property $property\nEntity: ${entityDocument
+        .getEntityId()}")
 
 case class NoStatementMatchesValue(
     predicate: IRI,

@@ -311,7 +311,7 @@ object Matcher {
     */
   def fromPath(
       schemaPath: Path,
-      format: WShExFormat = WShExFormat.CompactWShExFormat,
+      format: WShExFormat = WShExFormat.ESCompactFormat,
       verbose: VerboseLevel = VerboseLevel.Nothing
   ): IO[Matcher] =
     WSchema

@@ -90,6 +90,7 @@ object Entity {
       case pd: PropertyDocument =>
         Property.fromPropertyDocument(pd)
     }
+
 }
 
 case class ItemId(id: String, iri: IRI) extends EntityId {
@@ -289,7 +290,7 @@ object Datatype {
 
 object Value {
 
-  lazy val siteDefault = "http://www.wikidata.org/entity"
+  lazy val siteDefault = "http://www.wikidata.org/entity/"
 
   def triple(
       subj: Entity,
@@ -312,7 +313,7 @@ object Value {
   ): (Entity, PropertyRecord, Entity, List[Qualifier]) =
     (subj, prop.prec, value, qs)
 
-  def mkSite(base: String, localName: String) = IRI(base + "/" + localName)
+  def mkSite(base: String, localName: String) = IRI(base + localName)
 
   def Date(date: String): DateValue =
     DateValue(date)
@@ -325,12 +326,17 @@ object Value {
     PropertyId(pid, mkSite(site, pid))
   }
 
-  def Qid(num: Int, label: String, id: Long, site: String = Value.siteDefault): Item = {
+  def Qid(
+      num: Int,
+      label: Option[String] = None,
+      id: Long = 0L,
+      site: String = Value.siteDefault
+  ): Item = {
     val qid = "Q" + num
     Item(
       ItemId(qid, iri = mkSite(site, qid)),
       VertexId(id),
-      Map(Lang("en") -> label),
+      label.fold(Map())(lbl => Map(Lang("en") -> lbl)),
       Map(),
       Map(),
       site,
