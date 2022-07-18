@@ -312,7 +312,7 @@ object Matcher {
   def fromPath(
       schemaPath: Path,
       format: WShExFormat = WShExFormat.CompactWShExFormat,
-      verbose: VerboseLevel
+      verbose: VerboseLevel = VerboseLevel.Nothing
   ): IO[Matcher] =
     WSchema
       .fromPath(schemaPath, format, verbose)
