@@ -21,6 +21,8 @@ import es.weso.wbmodel._
 import es.weso.wbmodel.Utils._
 import es.weso.wshex.{NotImplemented => _, _}
 import es.weso.utils.VerboseLevel
+import TermConstraint._
+import MatchingError._
 
 /** Matcher contains methods to match a WShEx schema with Wikibase entities
   *
@@ -54,7 +56,7 @@ case class Matcher(
         matchShapeExpr(
           se,
           EntityDoc(entityDocument),
-          Entity.fromEntityDocument(entityDocument)
+          EntityDoc.emptyFrom(entityDocument)
         )
     }
 
@@ -71,15 +73,12 @@ case class Matcher(
   private def matchShapeExpr(
       shapeExpr: WShapeExpr,
       entity: EntityDoc,
-      current: Entity
+      current: EntityDoc
   ): MatchingStatus =
     shapeExpr match {
 
       case s: WShape =>
-        s.expression match {
-          case Some(te) => matchTripleExpr(te, entity, shapeExpr, current)
-          case None     => MatchingStatus.matchEmpty(current)
-        }
+        matchWShape(s, entity, current)
 
       case sand: WShapeAnd =>
         val ls: LazyList[MatchingStatus] =
@@ -104,11 +103,33 @@ case class Matcher(
 
     }
 
+  private def matchWShape(s: WShape, entity: EntityDoc, current: EntityDoc): MatchingStatus = {
+    val matchExpr = s.expression match {
+      case Some(te) => matchTripleExpr(te, entity, s, current)
+      case None     => MatchingStatus.matchEmpty(current)
+    }
+    val ms =
+      s.termConstraints.map(tc => matchTermConstraint(tc, entity, s, current))
+    ms.foldLeft(matchExpr) { case (c, ms) => c.and(ms) }
+  }
+
+  private def matchTermConstraint(
+      tc: TermConstraint,
+      entity: EntityDoc,
+      s: WShape,
+      current: EntityDoc
+  ): MatchingStatus = tc
+    .matchTerm(entity, current)
+    .fold(
+      err => NoMatching(List(err)),
+      matched => Matching(List(s), matched)
+    )
+
   private def matchTripleExpr(
       te: TripleExpr,
       entity: EntityDoc,
       se: WShapeExpr,
-      current: Entity
+      current: EntityDoc
   ): MatchingStatus =
     te match {
       case tc: TripleConstraint =>
@@ -135,7 +156,7 @@ case class Matcher(
       tc: TripleConstraint,
       e: EntityDoc,
       se: WShapeExpr,
-      current: Entity
+      current: EntityDoc
   ): MatchingStatus =
     tc match {
       case tcr: TripleConstraintRef =>
@@ -153,7 +174,11 @@ case class Matcher(
     }
 
   // TODO...add matching on qualifiers
-  private def matchQs(qs: QualifierSpec, e: EntityDoc, current: Entity): MatchingStatus =
+  private def matchQs(
+      qs: QualifierSpec,
+      e: EntityDoc,
+      current: EntityDoc
+  ): MatchingStatus =
     MatchingStatus.matchEmpty(current)
 
   private def matchPropertyIdValueExpr(
@@ -161,17 +186,18 @@ case class Matcher(
       valueExpr: Option[WShapeExpr],
       e: EntityDoc,
       se: WShapeExpr,
-      current: Entity
+      current: EntityDoc
   ): MatchingStatus = {
     val predicate = propertyId.iri
     val pidValue: PropertyIdValue = predicate2propertyIdValue(predicate)
+    val values = e.getValues(pidValue)
     valueExpr match {
       case None =>
-        if (e.getValues(pidValue).isEmpty) NoMatching(List(NoValuesProperty(predicate, e)))
+        if (values.isEmpty) NoMatching(List(NoValuesProperty(predicate, e)))
         else
           Matching(
             shapeExprs = List(se),
-            entity = current.addPropertyValues(propertyId, e.getValues(pidValue))
+            entity = current.addPropertyValues(pidValue, values)
           )
 
       case Some(ValueSet(_, vs)) =>
@@ -182,11 +208,11 @@ case class Matcher(
               .map(matchPredicateValueSetValue(predicate, _, e, se, current))
           )
       case Some(EmptyExpr) =>
-        if (e.getValues(pidValue).isEmpty) NoMatching(List(NoValuesProperty(predicate, e)))
+        if (values.isEmpty) NoMatching(List(NoValuesProperty(predicate, e)))
         else
           Matching(
             shapeExprs = List(se),
-            entity = current.addPropertyValues(propertyId, e.getValues(pidValue))
+            entity = current.addPropertyValues(pidValue, values)
           )
       case _ =>
         NoMatching(
@@ -195,31 +221,12 @@ case class Matcher(
     }
   }
 
-  // private def makeEntity()
-
-  /*  private def matchPredicateValueExpr(predicate: IRI, valueExpr: Option[ShapeExpr], e: Entity, se: ShapeExpr): MatchingStatus = {
-   val propertyId = predicate2propertyIdValue(predicate)
-   valueExpr match {
-    case None =>
-      if (e.getValues(propertyId).isEmpty) NoMatching(List(NoValuesProperty(predicate,e)))
-      else Matching(List(se))
-    case Some(ValueSet(_,vs)) =>
-      MatchingStatus
-      .combineOrs(vs
-       .toLazyList
-       .map(value => matchPredicateValueSetValue(predicate, value, e, se))
-       )
-    case _ =>
-      NoMatching(List(NotImplemented(s"matchPredicateValueExpr: ${predicate}, valueExpr: ${valueExpr}")))
-   }
-  } */
-
   private def matchPredicateValueSetValue(
       predicate: IRI,
       value: ValueSetValue,
       e: EntityDoc,
       se: WShapeExpr,
-      current: Entity
+      current: EntityDoc
   ) =
     value match {
       case IRIValueSetValue(iri) => matchPredicateIri(predicate, iri, e.entityDocument, se, current)
@@ -240,7 +247,7 @@ case class Matcher(
       iri: IRI,
       entityDocument: EntityDocument,
       se: WShapeExpr,
-      current: Entity
+      current: EntityDoc
   ): MatchingStatus = {
     val propertyId = predicate2propertyIdValue(predicate)
     entityDocument match {
@@ -256,7 +263,8 @@ case class Matcher(
           info(s"Statements with predicate $predicate that match also value ${iri}: $matched")
           if (matched.isEmpty)
             NoMatching(List(NoStatementMatchesValue(predicate, iri, entityDocument)))
-          else Matching(List(se), current.mergeStatements(matched.toList))
+          else
+            Matching(List(se), current.mergeStatements(matched.toList))
         }
       case _ =>
         NoMatching(List(NoStatementDocument(entityDocument)))

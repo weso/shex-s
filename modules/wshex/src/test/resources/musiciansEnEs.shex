@@ -4,6 +4,7 @@ prefix wdt: <http://www.wikidata.org/prop/direct/>
 start = @<Musician>
 
 <Musician> EXTRA wdt:P106 {
-  wdt:P106 [ wd:Q639669 ] ; # Occupation = Musician
-  wdt:P31 .
+  rdfs:label [ @en @es ]  ;
+  wdt:P31  .              ;
+  wdt:P106 [ wd:Q639669 ] # Occupation = Musician
 }

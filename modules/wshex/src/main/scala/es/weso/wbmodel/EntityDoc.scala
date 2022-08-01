@@ -18,7 +18,11 @@ import es.weso.utils.internal.CollectionCompat._
 import org.wikidata.wdtk.wikibaseapi.WikibaseDataFetcher
 import org.wikidata.wdtk.datamodel.helpers.ItemDocumentBuilder
 import org.wikidata.wdtk.datamodel.helpers.PropertyDocumentBuilder
+import org.wikidata.wdtk.datamodel.implementation.ItemIdValueImpl
+import org.wikidata.wdtk.datamodel.helpers.StatementBuilder
 
+/** EntityDoc is a Scala wrapper for WDTK EntityDocuments
+  */
 case class EntityDoc(entityDocument: EntityDocument) extends Serializable {
 
   private val mapper = new ObjectMapper()
@@ -38,6 +42,30 @@ case class EntityDoc(entityDocument: EntityDocument) extends Serializable {
 
     case _ => Map()
   }
+
+  def getStatements(): List[WDTKStatement] = entityDocument match {
+    case s: StatementDocument =>
+      s.getAllStatements().asScala.toList
+    case _ => List()
+  }
+
+  def getLabels(): Map[String, MonolingualTextValue] =
+    entityDocument match {
+      case id: ItemDocument     => id.getLabels().asScala.toMap
+      case pd: PropertyDocument => pd.getLabels().asScala.toMap
+    }
+
+  def getDescriptions(): Map[String, MonolingualTextValue] =
+    entityDocument match {
+      case id: ItemDocument     => id.getDescriptions().asScala.toMap
+      case pd: PropertyDocument => pd.getDescriptions().asScala.toMap
+    }
+
+  def getAliases(): Map[String, java.util.List[MonolingualTextValue]] =
+    entityDocument match {
+      case id: ItemDocument     => id.getAliases().asScala.toMap
+      case pd: PropertyDocument => pd.getAliases().asScala.toMap
+    }
 
   def getValues(property: PropertyIdValue): List[WDTKValue] =
     valueMap.get(property).getOrElse(List())
@@ -93,12 +121,33 @@ case class EntityDoc(entityDocument: EntityDocument) extends Serializable {
   def show(options: ShowEntityOptions = ShowEntityOptions.default): String =
     s"${entityDocument.getEntityId().getId()} ${showStatements(options)}"
 
-  /*  def merge(other: EntityDoc): EntityDoc =
-    // TODO
-    EntityDoc(this.entityDocument)
+  def merge(other: EntityDoc): EntityDoc =
+    mergeStatements(other.getStatements())
 
-  def addProperty(pid: PropertyId): EntityDoc =
-    this.copy(entityDo = entityDocument.) */
+  def addPropertyValues(pidValue: PropertyIdValue, values: List[WDTKValue]): EntityDoc = {
+    val sb: StatementBuilder =
+      StatementBuilder.forSubjectAndProperty(entityDocument.getEntityId(), pidValue)
+    val st: WDTKStatement = values
+      .foldLeft(sb) { case (c, value) =>
+        c.withValue(value)
+      }
+      .build()
+    EntityDoc(entityDocument match {
+      case id: ItemDocument     => id.withStatement(st)
+      case pd: PropertyDocument => pd.withStatement(st)
+    })
+  }
+
+  def mergeStatements(ss: List[WDTKStatement]): EntityDoc = {
+    val ed = ss.foldLeft(entityDocument) { case (c, s) =>
+      c match {
+        case id: ItemDocument     => id.withStatement(s)
+        case pd: PropertyDocument => pd.withStatement(s)
+      }
+    }
+    EntityDoc(ed)
+  }
+
 }
 
 object EntityDoc {
@@ -117,6 +166,8 @@ object EntityDoc {
   ): IO[EntityDoc] = IO {
     EntityDoc(jsonDeserializer.deserializeEntityDocument(str))
   }
+
+//  def fromEntityDocument(ed: EntityDocument): EntityDoc = EntityDoc(ed)
 
   private lazy val wbdf: WikibaseDataFetcher = WikibaseDataFetcher.getWikidataDataFetcher()
 
@@ -140,5 +191,11 @@ object EntityDoc {
     }
     EntityDoc(ed)
   }
+
+  lazy val defaultSite = "http://www.wikidata.org/entity/"
+
+  def QId(num: Long, site: String = defaultSite): EntityDoc =
+    val id: ItemIdValue = new ItemIdValueImpl(s"Q$num", site)
+    EntityDoc(ItemDocumentBuilder.forItemId(id).build())
 
 }

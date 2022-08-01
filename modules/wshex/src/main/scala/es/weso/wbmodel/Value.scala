@@ -13,14 +13,13 @@ import org.wikidata.wdtk.datamodel.interfaces.EntityDocument
 import org.wikidata.wdtk.datamodel.interfaces.ItemDocument
 import org.wikidata.wdtk.datamodel.interfaces.PropertyDocument
 
-case class VertexId(value: Long) extends AnyVal
-
 sealed abstract trait Value extends Product with Serializable
 
 sealed abstract class EntityId extends Value {
   def id: String
   def iri: IRI
 }
+
 object EntityId {
 
   def fromIri(iri: IRI): EntityId = {
@@ -72,9 +71,13 @@ sealed abstract class Entity extends Value {
     localStatements.filter(_.propertyRecord.id == propId)
   def withOkShapes(shapes: Set[ShapeLabel]): Entity
 
-  def mergeStatements(ls: List[WDStatement]): Entity =
-    println(s"mergeStatements for entity: $entityId not implemented yet")
-    this
+  def withStatement(s: WDStatement): Entity
+
+  def mergeStatements(ls: List[WDStatement]): Entity = {
+    ls.foldLeft(this) { 
+      case (current, st) => current.withStatement(st) 
+    }
+  }
 
   def merge(other: Entity): Entity = {
     println(s"merge for entity: $entityId not implemented yet")
@@ -83,6 +86,7 @@ sealed abstract class Entity extends Value {
 }
 
 object Entity {
+
   def fromEntityDocument(ed: EntityDocument): Entity =
     ed match {
       case id: ItemDocument =>
@@ -132,7 +136,11 @@ case class Item(
     this
   }
 
+  override def withStatement(s: WDStatement): Entity =
+    this
+
 }
+
 object Item {
   def fromItemDocument(id: ItemDocument): Item =
     val itemId = ItemId(id.getEntityId().getId(), IRI(id.getEntityId().getIri()))
@@ -177,6 +185,8 @@ case class Property(
     this.copy(
       localStatements = this.localStatements :+ LocalStatement(prec, literal, qs)
     )
+
+  override def withStatement(s: WDStatement): Entity = this
 
   override def withOkShapes(shapes: Set[ShapeLabel]): Entity =
     this.copy(okShapes = shapes)
@@ -283,10 +293,6 @@ case class SiteLink(
     badges: List[ItemId]
 )
 
-case class Datatype(name: String) extends AnyVal
-object Datatype {
-  lazy val defaultDatatype = Datatype(DatatypeIdValue.DT_ITEM)
-}
 
 object Value {
 

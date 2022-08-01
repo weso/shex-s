@@ -15,6 +15,7 @@ import org.wikidata.wdtk.datamodel.helpers.ItemDocumentBuilder
 import org.wikidata.wdtk.datamodel.helpers.Datamodel
 import TermConstraint._
 import es.weso.rdf.nodes.Lang
+import es.weso.wbmodel.EntityDoc
 
 class TermConstraintTest extends CatsEffectSuite {
 
@@ -70,7 +71,7 @@ class TermConstraintTest extends CatsEffectSuite {
       expected: Boolean
   )(implicit loc: munit.Location): Unit =
     test(name) {
-      tc.matchTerm(td) match {
+      tc.matchTerm(EntityDoc(td), EntityDoc(td)) match {
         case Left(s) =>
           if (expected) fail(s"Matching term $td with term constraint $tc: $s")
           else ()
