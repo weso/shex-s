@@ -264,11 +264,15 @@ sealed abstract class WShapeExpr extends Product with Serializable {
 }
 
 case class WShapeAnd(id: Option[ShapeLabel], exprs: List[WShapeExpr]) extends WShapeExpr
+
 case class WShapeOr(id: Option[ShapeLabel], exprs: List[WShapeExpr]) extends WShapeExpr
+
 case class WShapeNot(id: Option[ShapeLabel], shapeExpr: WShapeExpr) extends WShapeExpr
+
 case class WShapeRef(
     label: ShapeLabel
 ) extends WShapeExpr
+
 case class WShape(
     id: Option[ShapeLabel],
     closed: Boolean,

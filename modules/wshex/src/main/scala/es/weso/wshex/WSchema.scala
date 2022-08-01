@@ -7,12 +7,16 @@ import java.nio.file.Path
 import cats.effect.IO
 import es.weso.wbmodel._
 import es.weso.utils.VerboseLevel
+import es.weso.rdf.nodes._
 
 case class WSchema(
-    shapesMap: Map[ShapeLabel, WShapeExpr],
+    shapesMap: Map[ShapeLabel, WShapeExpr] = Map(),
     start: Option[WShapeExpr] = None,
-    pm: PrefixMap = PrefixMap.empty
+    prefixes: Option[PrefixMap] = None,
+    base: Option[IRI] = None
 ) extends Serializable {
+
+  def pm: PrefixMap = prefixes.getOrElse(PrefixMap.empty)
 
   def get(shapeLabel: ShapeLabel): Option[WShapeExpr] = shapeLabel match {
     case Start => start
@@ -81,9 +85,15 @@ case class WSchema(
   lazy val startShapeExpr: Option[WShapeExpr] =
     getShape(Start).orElse(shapes.headOption)
 
+  def withPrefixMap(maybePrefixMap: Option[PrefixMap]): WSchema =
+    this.copy(prefixes = maybePrefixMap)
+
 }
 
 object WSchema {
+
+  def empty: WSchema =
+    WSchema(Map())
 
   private def cnvFormat(format: WShExFormat): String = format match {
     case WShExFormat.CompactWShExFormat => "ShExC"

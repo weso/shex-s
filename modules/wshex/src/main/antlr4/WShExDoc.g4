@@ -1,9 +1,6 @@
-// WShEx Grammar
-
 grammar WShExDoc;
 
-wShExDoc
- : directive* ((notStartAction | startActions) statement*)? EOF;  // leading CODE
+wShExDoc: directive* statement* EOF ; 
 
 directive
  : baseDecl
@@ -23,758 +20,506 @@ importDecl
  : KW_IMPORT iri
  ;
 
-notStartAction
- : start
- | shapeExprDecl
- ;
+statement: start | shapeExprDecl;
 
-start
- : KW_START '=' shapeExpression
- ;
+start: KW_START '=' shapeExpression;
 
-startActions
- : semanticAction+
- ;
+shapeExprDecl: shapeExprLabel shapeExpression;
 
-statement
- : directive
- | notStartAction
- ;
+shapeExpression: shapeOr;
 
-shapeExprDecl
- : KW_ABSTRACT? shapeExprLabel (shapeExpression | KW_EXTERNAL)
- ;
+inlineShapeExpression: inlineShapeOr;
 
-shapeExpression
- : shapeOr
- ;
+shapeOr: shapeAnd (KW_OR shapeAnd)*;
 
-inlineShapeExpression
- : inlineShapeOr
- ;
+inlineShapeOr: inlineShapeAnd (KW_OR inlineShapeAnd)*;
 
-shapeOr
- : shapeAnd (KW_OR shapeAnd)*
- ;
+shapeAnd: shapeNot (KW_AND shapeNot)*;
 
-inlineShapeOr
- : inlineShapeAnd (KW_OR inlineShapeAnd)*
- ;
+inlineShapeAnd: inlineShapeNot (KW_AND inlineShapeNot)*;
 
-shapeAnd
- : shapeNot (KW_AND shapeNot)*
- ;
+shapeNot: negation? shapeAtom;
 
-inlineShapeAnd
- : inlineShapeNot (KW_AND inlineShapeNot)*
- ;
+inlineShapeNot: negation? inlineShapeAtom;
 
-shapeNot
- : negation? shapeAtom
- ;
+negation: KW_NOT | '!';
 
-inlineShapeNot
- : negation? inlineShapeAtom
- ;
+shapeAtom:
+	nonLitNodeConstraint shapeOrRef?	# shapeAtomNonLitNodeConstraint
+	| litNodeConstraint					# shapeAtomLitNodeConstraint
+	| shapeOrRef nonLitNodeConstraint?	# shapeAtomShapeOrRef
+	| '(' shapeExpression ')'			# shapeAtomShapeExpression
+	| '.'								# shapeAtomAny; // no constraint
 
-negation
- : KW_NOT
- | '!'
- ;
+inlineShapeAtom:
+	inlineNonLitNodeConstraint inlineShapeOrRef?	# inlineShapeAtomNonLitNodeConstraint
+	| inlineLitNodeConstraint						# inlineShapeAtomLitNodeConstraint
+	| inlineShapeOrRef inlineNonLitNodeConstraint?	# inlineShapeAtomShapeOrRef
+	| '(' shapeExpression ')'						# inlineShapeAtomShapeExpression
+	| '.'											# inlineShapeAtomAny; // no constraint
 
-shapeAtom
- : nonLitNodeConstraint shapeOrRef?	# shapeAtomNonLitNodeConstraint
- | litNodeConstraint # shapeAtomLitNodeConstraint
- | shapeOrRef nonLitNodeConstraint?	# shapeAtomShapeOrRef
- | '(' shapeExpression ')' # shapeAtomShapeExpression
- | '.' # shapeAtomAny			// no constraint
- ;
+shapeOrRef: shapeDefinition | shapeRef;
 
-inlineShapeAtom
- : inlineNonLitNodeConstraint inlineShapeOrRef? # inlineShapeAtomNonLitNodeConstraint
- | inlineLitNodeConstraint # inlineShapeAtomLitNodeConstraint
- | inlineShapeOrRef inlineNonLitNodeConstraint? # inlineShapeAtomShapeOrRef
- | '(' shapeExpression ')' # inlineShapeAtomShapeExpression
- | '.' # inlineShapeAtomAny   // no constraint
- ;
+inlineShapeOrRef: inlineShapeDefinition | shapeRef;
 
-shapeOrRef
- : shapeDefinition
- | shapeRef
- ;
+shapeRef: ATPNAME_LN | ATPNAME_NS | '@' shapeExprLabel;
 
-inlineShapeOrRef
- : inlineShapeDefinition
- | shapeRef
- ;
+inlineLitNodeConstraint:
+	KW_LITERAL xsFacet*				# nodeConstraintLiteral
+	| nonLiteralKind stringFacet*	# nodeConstraintNonLiteral
+	| datatype xsFacet*				# nodeConstraintDatatype
+	| valueSet xsFacet*				# nodeConstraintValueSet
+	| numericFacet+					# nodeConstraintNumericFacet;
 
-shapeRef
- : ATPNAME_LN
- | ATPNAME_NS
- | '@' shapeExprLabel
- ;
+litNodeConstraint:
+	inlineLitNodeConstraint annotation* semanticAction*;
 
-inlineLitNodeConstraint
- : KW_LITERAL xsFacet* # nodeConstraintLiteral
- | nonLiteralKind stringFacet* # nodeConstraintNonLiteral
- | datatype xsFacet* # nodeConstraintDatatype
- | valueSet xsFacet* # nodeConstraintValueSet
- | numericFacet+ # nodeConstraintNumericFacet
- ;
+inlineNonLitNodeConstraint:
+	nonLiteralKind stringFacet*	# litNodeConstraintLiteral
+	| stringFacet+				# litNodeConstraintStringFacet;
 
-litNodeConstraint
- : inlineLitNodeConstraint annotation* semanticAction*
- ;
+nonLitNodeConstraint:
+	inlineNonLitNodeConstraint annotation* semanticAction*;
 
-inlineNonLitNodeConstraint
- : nonLiteralKind stringFacet* # litNodeConstraintLiteral
- | stringFacet+ # litNodeConstraintStringFacet
- ;
+nonLiteralKind: KW_IRI | KW_BNODE | KW_NONLITERAL;
 
-nonLitNodeConstraint
- : inlineNonLitNodeConstraint annotation* semanticAction*
- ;
+xsFacet: stringFacet | numericFacet;
 
-nonLiteralKind
- : KW_IRI
- | KW_BNODE
- | KW_NONLITERAL
- ;
+stringFacet: stringLength INTEGER | REGEXP REGEXP_FLAGS?;
 
-xsFacet
- : stringFacet
- | numericFacet
- ;
+stringLength: KW_LENGTH | KW_MINLENGTH | KW_MAXLENGTH;
 
-stringFacet
- : stringLength INTEGER
- | REGEXP REGEXP_FLAGS?
- ;
+numericFacet: numericRange rawNumeric | numericLength INTEGER;
 
-stringLength
- : KW_LENGTH
- | KW_MINLENGTH
- | KW_MAXLENGTH
- ;
+numericRange:
+	KW_MININCLUSIVE
+	| KW_MINEXCLUSIVE
+	| KW_MAXINCLUSIVE
+	| KW_MAXEXCLUSIVE;
 
-numericFacet
- : numericRange rawNumeric
- | numericLength INTEGER
- ;
-
-numericRange
- : KW_MININCLUSIVE
- | KW_MINEXCLUSIVE
- | KW_MAXINCLUSIVE
- | KW_MAXEXCLUSIVE
- ;
-
-numericLength
- : KW_TOTALDIGITS
- | KW_FRACTIONDIGITS
- ;
+numericLength: KW_TOTALDIGITS | KW_FRACTIONDIGITS;
 
 // rawNumeric is like numericLiteral but returns a JSON integer or float
-rawNumeric
- : INTEGER
- | DECIMAL
- | DOUBLE
- ;
+rawNumeric: INTEGER | DECIMAL | DOUBLE;
 
-shapeDefinition
- : inlineShapeDefinition annotation* semanticAction*
- ;
+shapeDefinition:
+	inlineShapeDefinition annotation* semanticAction*;
 
-inlineShapeDefinition
- : qualifier* '{' tripleExpression? '}'
- ;
+inlineShapeDefinition: qualifier* '{' tripleExpression? '}';
 
-qualifier
- : extension
- | restriction
- | extraPropertySet
- | KW_CLOSED
- ;
+qualifier:
+	extension
+	| restriction
+	| extraPropertySet
+	| KW_CLOSED;
 
-extraPropertySet
- : KW_EXTRA predicate+
- ;
+extraPropertySet: KW_EXTRA predicate+;
 
-tripleExpression
- : oneOfTripleExpr
- ;
+tripleExpression: oneOfTripleExpr;
 
-oneOfTripleExpr
- : groupTripleExpr
- | multiElementOneOf
- ;
+oneOfTripleExpr: groupTripleExpr | multiElementOneOf;
 
-multiElementOneOf
- : groupTripleExpr ( '|' groupTripleExpr)+
- ;
+multiElementOneOf: groupTripleExpr ( '|' groupTripleExpr)+;
 
-groupTripleExpr
- : singleElementGroup
- | multiElementGroup
- ;
+groupTripleExpr: singleElementGroup | multiElementGroup;
 
 /*
-innerTripleExpr
+ innerTripleExpr
  : multiElementGroup
  | multiElementOneOf
  ;
-*/
+ */
 
-singleElementGroup
- : unaryTripleExpr ';'?
- ;
+singleElementGroup: unaryTripleExpr ';'?;
 
-multiElementGroup
- : unaryTripleExpr (';' unaryTripleExpr)+ ';'?
- ;
+multiElementGroup: unaryTripleExpr (';' unaryTripleExpr)+ ';'?;
 
-unaryTripleExpr
- : ('$' tripleExprLabel)? (tripleConstraint | bracketedTripleExpr )
- | include
- | expr
- ;
+unaryTripleExpr: ('$' tripleExprLabel)? (
+		tripleConstraint
+		| bracketedTripleExpr
+	)
+	| include
+	| expr;
 
-bracketedTripleExpr
- : '(' tripleExpression ')' cardinality? annotation* semanticAction*
- ;
+bracketedTripleExpr:
+	'(' tripleExpression ')' cardinality? annotation* semanticAction*;
 
-tripleConstraint
- : senseFlags? predicate inlineShapeExpression cardinality? annotation* semanticAction* /* variableDecl? */
- ;
+tripleConstraint:
+	senseFlags? predicate inlineShapeExpression cardinality? annotation* semanticAction* /* variableDecl? */
+		;
 
-cardinality
- :  '*'         # starCardinality
- | '+'          # plusCardinality
- | '?'          # optionalCardinality
- | repeatRange  # repeatCardinality
- ;
+cardinality:
+	'*'				# starCardinality
+	| '+'			# plusCardinality
+	| '?'			# optionalCardinality
+	| repeatRange	# repeatCardinality;
 
-repeatRange
- : '{' INTEGER '}'		            # exactRange
- | '{' min_range ',' max_range? '}'  # minMaxRange
- ;
+repeatRange:
+	'{' INTEGER '}'						# exactRange
+	| '{' min_range ',' max_range? '}'	# minMaxRange;
 
-min_range
- : INTEGER
- ;
+min_range: INTEGER;
 
-max_range
- : INTEGER
- | '*'
- ;
+max_range: INTEGER | '*';
 
 /*
-variableDecl
+ variableDecl
  : KW_AS varName
  ;
-*/
+ */
 
 /*
-varName
+ varName
  : VAR
  ;
-*/
+ */
 
-expr
- : expr binOp expr
- | basicExpr
- ;
+expr: expr binOp expr | basicExpr;
 
-binOp
- : '='  # equals
- | '!=' # notEquals
- | '>'  # gt
- | '<'  # lt
- | '>=' # ge
- | '<=' # le
- | '*'  # mult
- | '/'  # div
- | '+'  # add
- | '-'  # minus
- ;
+binOp:
+	'='		# equals
+	| '!='	# notEquals
+	| '>'	# gt
+	| '<'	# lt
+	| '>='	# ge
+	| '<='	# le
+	| '*'	# mult
+	| '/'	# div
+	| '+'	# add
+	| '-'	# minus;
 
-basicExpr
- : /* varName
- | */ literal
- | iri
- | blankNode
- ;
+basicExpr:
+	/* varName
+ |
+	 */
+	literal
+	| iri
+	| blankNode;
 
-senseFlags
- : '!' '^'?
- | '^' '!'?		// inverse not
- ;
+senseFlags: '!' '^'? | '^' '!'?; // inverse not
 
-valueSet
- : '[' valueSetValue* ']'
- ;
+valueSet: '[' valueSetValue* ']';
 
-valueSetValue
- : iriRange
- | literalRange
- | languageRange
- | '.' (iriExclusion+ | literalExclusion+ | languageExclusion+)
- ;
+valueSetValue:
+	iriRange
+	| literalRange
+	| languageRange
+	| '.' (
+		iriExclusion+
+		| literalExclusion+
+		| languageExclusion+
+	);
 
-iriRange
- : iri (STEM_MARK iriExclusion*)?
- ;
+iriRange: iri (STEM_MARK iriExclusion*)?;
 
-iriExclusion
- : '-' iri STEM_MARK?
- ;
+iriExclusion: '-' iri STEM_MARK?;
 
-literalRange
- : literal (STEM_MARK literalExclusion*)?
- ;
+literalRange: literal (STEM_MARK literalExclusion*)?;
 
-literalExclusion
- : '-' literal STEM_MARK?
- ;
+literalExclusion: '-' literal STEM_MARK?;
 
-languageRange
- : LANGTAG (STEM_MARK languageExclusion*)? # languageRangeFull
- | '@' STEM_MARK languageExclusion*        # languageRangeAt
- ;
+languageRange:
+	LANGTAG (STEM_MARK languageExclusion*)?	# languageRangeFull
+	| '@' STEM_MARK languageExclusion*		# languageRangeAt;
 
-languageExclusion
- : '-' LANGTAG STEM_MARK?
- ;
-include
- : '&' tripleExprLabel
- ;
+languageExclusion: '-' LANGTAG STEM_MARK?;
 
-annotation
- : '//' predicate (iri | literal)
- ;
+include: '&' tripleExprLabel;
 
-semanticAction
- : '%' iri (CODE | '%')
- ;
+annotation: '//' predicate (iri | literal);
 
-literal
- : rdfLiteral
- | numericLiteral
- | booleanLiteral
- ;
+semanticAction: '%' iri (CODE | '%');
+
+literal: rdfLiteral | numericLiteral | booleanLiteral;
 
 // BNF: predicate ::= iri | RDF_TYPE
-predicate
+/* predicate
  : iri
  | rdfType
  ;
+ */
+predicate: PROPERTY;
 
-rdfType
- : RDF_TYPE
- ;
+rdfType: RDF_TYPE;
 
-datatype
- : iri
- ;
+datatype: iri;
 
-shapeExprLabel
- : iri
- | blankNode
- ;
+shapeExprLabel: iri | blankNode;
 
-tripleExprLabel
- : iri
- | blankNode
- ;
+tripleExprLabel: iri | blankNode;
 
-numericLiteral
- : INTEGER
- | DECIMAL
- | DOUBLE
- ;
+numericLiteral: INTEGER | DECIMAL | DOUBLE;
 
-rdfLiteral
- : string (LANGTAG | '^^' datatype)?
- ;
+rdfLiteral: string (LANGTAG | '^^' datatype)?;
 
-booleanLiteral
- : KW_TRUE
- | KW_FALSE
- ;
+booleanLiteral: KW_TRUE | KW_FALSE;
 
-string
- : STRING_LITERAL_LONG1
- | STRING_LITERAL_LONG2
- | STRING_LITERAL1
- | STRING_LITERAL2
- ;
+string:
+	STRING_LITERAL_LONG1
+	| STRING_LITERAL_LONG2
+	| STRING_LITERAL1
+	| STRING_LITERAL2;
 
-iri
- : IRIREF
- | prefixedName
- ;
+iri: IRIREF | prefixedName;
 
-prefixedName
- : PNAME_LN
- | PNAME_NS
- ;
+prefixedName: PNAME_LN | PNAME_NS;
 
-blankNode
- : BLANK_NODE_LABEL
- ;
+blankNode: BLANK_NODE_LABEL;
 
-extension
- : KW_EXTENDS shapeRef +
- | '&' shapeRef +
- ;
+extension: KW_EXTENDS shapeRef+ | '&' shapeRef+;
 
-restriction
- : KW_RESTRICTS shapeRef +
- | '-' shapeRef +
- ;
-
+restriction: KW_RESTRICTS shapeRef+ | '-' shapeRef+;
 
 // Keywords
-KW_ABSTRACT
- : A B S T R A C T
- ;
+KW_ABSTRACT: A B S T R A C T;
 
-KW_AS
- : A S
- ;
+KW_AS: A S;
 
-KW_BASE
- : B A S E
- ;
+KW_BASE: B A S E;
 
-KW_EXTENDS
- : E X T E N D S
- ;
+KW_EXTENDS: E X T E N D S;
 
-KW_IMPORT
- : I M P O R T
- ;
+KW_IMPORT: I M P O R T;
 
-KW_RESTRICTS
- : R E S T R I C T S
- ;
+KW_RESTRICTS: R E S T R I C T S;
 
-KW_EXTERNAL
- : E X T E R N A L
- ;
+KW_EXTERNAL: E X T E R N A L;
 
-KW_PREFIX
- : P R E F I X
- ;
+KW_PREFIX: P R E F I X;
 
-KW_START
- : S T A R T
- ;
+KW_START: S T A R T;
 
-KW_VIRTUAL
- : V I R T U A L
- ;
+KW_VIRTUAL: V I R T U A L;
 
+KW_CLOSED: C L O S E D;
 
-KW_CLOSED
- : C L O S E D
- ;
+KW_EXTRA: E X T R A;
 
-KW_EXTRA
- : E X T R A
- ;
+KW_LITERAL: L I T E R A L;
 
-KW_LITERAL
- : L I T E R A L
- ;
+KW_IRI: I R I;
 
-KW_IRI
- : I R I
- ;
+KW_NONLITERAL: N O N L I T E R A L;
 
-KW_NONLITERAL
- : N O N L I T E R A L
- ;
+KW_BNODE: B N O D E;
 
-KW_BNODE
- : B N O D E
- ;
+KW_AND: A N D;
 
-KW_AND
- : A N D
- ;
+KW_OR: O R;
 
-KW_OR
- : O R
- ;
+KW_MININCLUSIVE: M I N I N C L U S I V E;
 
-KW_MININCLUSIVE
- : M I N I N C L U S I V E
- ;
+KW_MINEXCLUSIVE: M I N E X C L U S I V E;
 
-KW_MINEXCLUSIVE
- : M I N E X C L U S I V E
- ;
+KW_MAXINCLUSIVE: M A X I N C L U S I V E;
 
-KW_MAXINCLUSIVE
- : M A X I N C L U S I V E
- ;
+KW_MAXEXCLUSIVE: M A X E X C L U S I V E;
 
-KW_MAXEXCLUSIVE
- : M A X E X C L U S I V E
- ;
+KW_LENGTH: L E N G T H;
 
-KW_LENGTH
- : L E N G T H
- ;
+KW_MINLENGTH: M I N L E N G T H;
 
-KW_MINLENGTH
- : M I N L E N G T H
- ;
+KW_MAXLENGTH: M A X L E N G T H;
 
-KW_MAXLENGTH
- : M A X L E N G T H
- ;
+KW_TOTALDIGITS: T O T A L D I G I T S;
 
-KW_TOTALDIGITS
- : T O T A L D I G I T S
- ;
+KW_FRACTIONDIGITS: F R A C T I O N D I G I T S;
 
-KW_FRACTIONDIGITS
- : F R A C T I O N D I G I T S
- ;
+KW_NOT: N O T;
 
-KW_NOT
- : N O T
- ;
+KW_TRUE: 'true';
 
-KW_TRUE
- : 'true'
- ;
+KW_FALSE: 'false';
 
-KW_FALSE
- : 'false'
- ;
-
- // --------------------------
- // TERMINALS
- // --------------------------
+// -------------------------- TERMINALS --------------------------
 
 // Skip white spaces in the shEx and comments.
-SKIP_
- : (WHITE_SPACE | COMMENT) -> skip
- ;
+SKIP_: (WHITE_SPACE | COMMENT) -> skip;
 
-fragment COMMENT
- : ('#' ~[\r\n]* | '/*' (~[*] | '*' ('\\/' | ~[/]))* '*/') 
- ;
+fragment COMMENT: (
+		'#' ~[\r\n]*
+		| '/*' (~[*] | '*' ('\\/' | ~[/]))* '*/'
+	);
 
 // A white space is defined as '\t' or '\r' or '\n'.
-fragment WHITE_SPACE
- : [ \t\r\n]+
- ;
+fragment WHITE_SPACE: [ \t\r\n]+;
 
-CODE
- : '{' (~[%\\] | '\\' [%\\] | UCHAR)* '%' '}'
- ;
+CODE: '{' (~[%\\] | '\\' [%\\] | UCHAR)* '%' '}';
 
 /*
-VAR
+ VAR
  : /* VAR1
  | VAR2
  ;
-*/
+ */
 
 /*
-VAR1
+ VAR1
  : '$' VARNAME
  ;
-*/
+ */
 
 /*
-VAR2
+ VAR2
  : '?' VARNAME
  ;
-*/
+ */
 
-RDF_TYPE
- : 'a'
- ;
+RDF_TYPE: 'a';
 
-IRIREF
- : '<' (~[\u0000-\u0020=<>"{}|^`\\] | UCHAR)* '>'
- ; /* #x00=NULL #01-#x1F=control codes #x20=space */
+IRIREF: '<' (~[\u0000-\u0020=<>"{}|^`\\] | UCHAR)* '>';
+/* #x00=NULL #01-#x1F=control codes #x20=space */
 
-PNAME_NS
- : PN_PREFIX? ':'
- ;
+PNAME_NS: PN_PREFIX? ':';
 
-PNAME_LN
- : PNAME_NS PN_LOCAL
- ;
+PNAME_LN: PNAME_NS PN_LOCAL;
 
-ATPNAME_NS
- : '@' PN_PREFIX? ':'
- ;
+ATPNAME_NS: '@' PN_PREFIX? ':';
 
-ATPNAME_LN
- : '@' PNAME_NS PN_LOCAL
- ;
+ATPNAME_LN: '@' PNAME_NS PN_LOCAL;
 
-REGEXP
- : '/' (~[/\n\r\\] | '\\' [/nrt\\|.?*+(){}[\]$^-] | UCHAR)+ '/'
- ;
+REGEXP:
+	'/' (~[/\n\r\\] | '\\' [/nrt\\|.?*+(){}[\]$^-] | UCHAR)+ '/';
 
-REGEXP_FLAGS
- : [smix]+
- ;
+REGEXP_FLAGS: [smix]+;
 
-BLANK_NODE_LABEL
- : '_:' (PN_CHARS_U | [0-9]) ((PN_CHARS | '.')* PN_CHARS)?
- ;
+BLANK_NODE_LABEL:
+	'_:' (PN_CHARS_U | [0-9]) ((PN_CHARS | '.')* PN_CHARS)?;
 
-LANGTAG
- : '@' [a-zA-Z]+ ('-' [a-zA-Z0-9]+)*
- ;
+LANGTAG: '@' [a-zA-Z]+ ('-' [a-zA-Z0-9]+)*;
 
-INTEGER
- : [+-]? [0-9]+
- ;
+PROPERTY: [Pp] UNSIGNEDINT;
 
-DECIMAL
- : [+-]? [0-9]* '.' [0-9]+
- ;
+ITEM: [Qq] UNSIGNEDINT;
 
-DOUBLE
- : [+-]? ([0-9]+ '.' [0-9]* EXPONENT | '.'? [0-9]+ EXPONENT)
- ;
+INTEGER: [+-]? [0-9]+;
 
-STEM_MARK
- : '~'
- ;
+UNSIGNEDINT: [0-9]+;
 
-UNBOUNDED
- : '*'
- ;
+DECIMAL: [+-]? [0-9]* '.' [0-9]+;
 
-fragment EXPONENT
- : [eE] [+-]? [0-9]+
- ;
+DOUBLE:
+	[+-]? ([0-9]+ '.' [0-9]* EXPONENT | '.'? [0-9]+ EXPONENT);
 
-STRING_LITERAL1
- : '\'' (~[\u0027\u005C\u000A\u000D] | ECHAR | UCHAR)* '\''
- ; /* #x27=' #x5C=\ #xA=new line #xD=carriage return */
+STEM_MARK: '~';
 
-STRING_LITERAL2
- : '"' (~[\u0022\u005C\u000A\u000D] | ECHAR | UCHAR)* '"'
- ;   /* #x22=" #x5C=\ #xA=new line #xD=carriage return */
+UNBOUNDED: '*';
 
-STRING_LITERAL_LONG1
- : '\'\'\'' (('\'' | '\'\'')? (~['\\] | ECHAR | UCHAR))* '\'\'\''
- ;
+fragment EXPONENT: [eE] [+-]? [0-9]+;
 
-STRING_LITERAL_LONG2
- : '"""' (('"' | '""')? (~["\\] | ECHAR | UCHAR))* '"""'
- ;
+STRING_LITERAL1:
+	'\'' (~[\u0027\u005C\u000A\u000D] | ECHAR | UCHAR)* '\'';
+/* #x27=' #x5C=\ #xA=new line #xD=carriage return */
 
-fragment UCHAR
- : '\\u' HEX HEX HEX HEX
- | '\\U' HEX HEX HEX HEX HEX HEX HEX HEX
- ;
+STRING_LITERAL2:
+	'"' (~[\u0022\u005C\u000A\u000D] | ECHAR | UCHAR)* '"';
+/* #x22=" #x5C=\ #xA=new line #xD=carriage return */
 
-fragment ECHAR
- : '\\' [tbnrf\\"']
- ;
+STRING_LITERAL_LONG1:
+	'\'\'\'' (('\'' | '\'\'')? (~['\\] | ECHAR | UCHAR))* '\'\'\'';
 
-fragment PN_CHARS_BASE
- : [A-Z]
- | [a-z]
- | [\u00C0-\u00D6]
- | [\u00D8-\u00F6]
- | [\u00F8-\u02FF]
- | [\u0370-\u037D]
- | [\u037F-\u1FFF]
- | [\u200C-\u200D]
- | [\u2070-\u218F]
- | [\u2C00-\u2FEF]
- | [\u3001-\uD7FF]
- | [\uF900-\uFDCF]
- | [\uFDF0-\uFFFD]
- | [\u{10000}-\u{EFFFD}]
- // | [\uD800-\uDB7F] [\uDC00-\uDFFF]
- ;
+STRING_LITERAL_LONG2:
+	'"""' (('"' | '""')? (~["\\] | ECHAR | UCHAR))* '"""';
 
-fragment PN_CHARS_U
- : PN_CHARS_BASE
- | '_'
- ;
+fragment UCHAR:
+	'\\u' HEX HEX HEX HEX
+	| '\\U' HEX HEX HEX HEX HEX HEX HEX HEX;
 
-fragment PN_CHARS
- : PN_CHARS_U
- | '-'
- | [0-9]
- | [\u00B7]
- | [\u0300-\u036F]
- | [\u203F-\u2040]
- ;
+fragment ECHAR: '\\' [tbnrf\\"'];
 
-fragment PN_PREFIX
- : PN_CHARS_BASE ((PN_CHARS | '.')* PN_CHARS)?
- ;
+fragment PN_CHARS_BASE:
+	[A-Z]
+	| [a-z]
+	| [\u00C0-\u00D6]
+	| [\u00D8-\u00F6]
+	| [\u00F8-\u02FF]
+	| [\u0370-\u037D]
+	| [\u037F-\u1FFF]
+	| [\u200C-\u200D]
+	| [\u2070-\u218F]
+	| [\u2C00-\u2FEF]
+	| [\u3001-\uD7FF]
+	| [\uF900-\uFDCF]
+	| [\uFDF0-\uFFFD]
+	| [\u{10000}-\u{EFFFD}]; // | [\uD800-\uDB7F] [\uDC00-\uDFFF]
 
-fragment PN_LOCAL
- : (PN_CHARS_U | ':' | [0-9] | PLX) ((PN_CHARS | '.' | ':' | PLX)* (PN_CHARS | ':' | PLX))?
- ;
+fragment PN_CHARS_U: PN_CHARS_BASE | '_';
 
-fragment PLX
- : PERCENT
- | PN_LOCAL_ESC
- ;
+fragment PN_CHARS:
+	PN_CHARS_U
+	| '-'
+	| [0-9]
+	| [\u00B7]
+	| [\u0300-\u036F]
+	| [\u203F-\u2040];
 
-fragment PERCENT
- : '%' HEX HEX
- ;
+fragment PN_PREFIX: PN_CHARS_BASE ((PN_CHARS | '.')* PN_CHARS)?;
 
-fragment HEX
- : [0-9]
- | [A-F]
- | [a-f]
- ;
+fragment PN_LOCAL: (PN_CHARS_U | ':' | [0-9] | PLX) (
+		(PN_CHARS | '.' | ':' | PLX)* (PN_CHARS | ':' | PLX)
+	)?;
 
-fragment PN_LOCAL_ESC
- : '\\' ('_' | '~' | '.' | '-' | '!' | '$' | '&' | '\'' | '(' | ')' | '*' | '+' | ',' | ';' | '=' | '/' | '?' | '#' | '@' | '%')
- ;
+fragment PLX: PERCENT | PN_LOCAL_ESC;
+
+fragment PERCENT: '%' HEX HEX;
+
+fragment HEX: [0-9] | [A-F] | [a-f];
+
+fragment PN_LOCAL_ESC:
+	'\\' (
+		'_'
+		| '~'
+		| '.'
+		| '-'
+		| '!'
+		| '$'
+		| '&'
+		| '\''
+		| '('
+		| ')'
+		| '*'
+		| '+'
+		| ','
+		| ';'
+		| '='
+		| '/'
+		| '?'
+		| '#'
+		| '@'
+		| '%'
+	);
 
 /*
-VARNAME
- : ( PN_CHARS_U | DIGIT ) ( PN_CHARS_U | DIGIT | '\u00B7' | ('\u0300'..'\u036F') | ('\u203F'..'\u2040') )*
+ VARNAME
+ : ( PN_CHARS_U | DIGIT ) ( PN_CHARS_U | DIGIT | '\u00B7' | ('\u0300'..'\u036F') |
+ ('\u203F'..'\u2040') )*
  ;
-*/
+ */
 
 /* fragment DIGIT: '0'..'9' ; */
-fragment A:('a'|'A');
-fragment B:('b'|'B');
-fragment C:('c'|'C');
-fragment D:('d'|'D');
-fragment E:('e'|'E');
-fragment F:('f'|'F');
-fragment G:('g'|'G');
-fragment H:('h'|'H');
-fragment I:('i'|'I');
-fragment J:('j'|'J');
-fragment K:('k'|'K');
-fragment L:('l'|'L');
-fragment M:('m'|'M');
-fragment N:('n'|'N');
-fragment O:('o'|'O');
-fragment P:('p'|'P');
-fragment Q:('q'|'Q');
-fragment R:('r'|'R');
-fragment S:('s'|'S');
-fragment T:('t'|'T');
-fragment U:('u'|'U');
-fragment V:('v'|'V');
-fragment W:('w'|'W');
-fragment X:('x'|'X');
-fragment Y:('y'|'Y');
-fragment Z:('z'|'Z');
+fragment A: ('a' | 'A');
+fragment B: ('b' | 'B');
+fragment C: ('c' | 'C');
+fragment D: ('d' | 'D');
+fragment E: ('e' | 'E');
+fragment F: ('f' | 'F');
+fragment G: ('g' | 'G');
+fragment H: ('h' | 'H');
+fragment I: ('i' | 'I');
+fragment J: ('j' | 'J');
+fragment K: ('k' | 'K');
+fragment L: ('l' | 'L');
+fragment M: ('m' | 'M');
+fragment N: ('n' | 'N');
+fragment O: ('o' | 'O');
+fragment P: ('p' | 'P');
+fragment Q: ('q' | 'Q');
+fragment R: ('r' | 'R');
+fragment S: ('s' | 'S');
+fragment T: ('t' | 'T');
+fragment U: ('u' | 'U');
+fragment V: ('v' | 'V');
+fragment W: ('w' | 'W');
+fragment X: ('x' | 'X');
+fragment Y: ('y' | 'Y');
+fragment Z: ('z' | 'Z');

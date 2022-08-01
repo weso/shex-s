@@ -38,8 +38,8 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
   ): Builder[Schema] =
     for {
       directives <- visitList(visitDirective, ctx.directive())
-      startActions <- visitStartActions(ctx.startActions())
-      notStartAction <- visitNotStartAction(ctx.notStartAction())
+//      startActions <- visitStartActions(ctx.startActions())
+//      notStartAction <- visitNotStartAction(ctx.notStartAction())
       statements <- visitList(visitStatement, ctx.statement())
       prefixMap <- getPrefixMap
       base <- getBase
@@ -57,7 +57,7 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
       Schema.empty
         .withPrefixMap(pm)
         .withBase(base)
-        .withStartActions(startActions)
+        // .withStartActions(startActions)
         .withStart(start)
         .withShapes(shapes)
         .withOptTripleExprMap(optTripleExprMap)
@@ -509,38 +509,6 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
       case _                                    => err(s"visitLiteral: Unknown ${ctx}")
     }
 
-  /*  private def getNumericLiteralOrNumericDatatype(ctx: NumericFacetContext): Builder[NumericLiteral] = ctx match {
-    case _ if isDefined(ctx.numericLiteral()) => for {
-      lit <- visitNumericLiteral(ctx.numericLiteral())
-      nl <- literal2NumericLiteral(lit)
-    } yield nl
-    case _ if isDefined(ctx.string()) => for {
-      str <- visitString(ctx.string())
-      dt <- visitDatatype(ctx.datatype())
-      nl <- dt match {
-        case `xsd_integer` => ok(NumericInt(Integer.parseInt(str),str))
-        case `xsd_double` => ok(NumericDecimal(str.toDouble,str))
-        case `xsd_decimal` => ok(NumericDecimal(BigDecimal(str),str))
-        case _ => err(s"Unsupported numericFacet of string $str with datatype $dt")
-      }
-    } yield nl
-  } */
-
-  /*  private def literal2NumericLiteral(l: Literal): Builder[NumericLiteral] = l match {
-    case IntegerLiteral(n, repr) => ok(NumericInt(n,repr))
-    case DecimalLiteral(d, repr) => ok(NumericDecimal(d,repr))
-    case DoubleLiteral(d, repr) => ok(NumericDouble(d,repr))
-    case _ => err(s"Cannot convert literal $l to numeric literal")
-  } */
-
-  /*   private def numericLiteral2ValueObject(nl: Literal): Builder[ValueSetValue] = {
-    nl match {
-      case IntegerLiteral(n) => ok(ObjectValue.intValue(n))
-      case DoubleLiteral(d) => ok(ObjectValue.doubleValue(d,d.toString))
-      case DecimalLiteral(d) => ok(ObjectValue.decimalValue(d,d.toString))
-    }
-  } */
-
   override def visitRdfLiteral(ctx: RdfLiteralContext): Builder[Literal] = {
     val str = visitString(ctx.string())
     if (isDefined(ctx.LANGTAG())) {
@@ -689,6 +657,13 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
         val repr = ctx.DOUBLE().getText
         ok(DoubleLiteral(repr.toDouble, repr))
       case _ => err("Unknown ctx in numericLiteral")
+    }
+
+  def getBigInt(str: String): Builder[BigInt] =
+    try
+      ok(BigInt(str))
+    catch {
+      case _ => err(s"Cannot get BigInt from $str")
     }
 
   def getInteger(str: String): Builder[Int] =
@@ -1196,7 +1171,7 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
     } else
       ok(None)
 
-  override def visitPredicate(ctx: PredicateContext): Builder[IRI] =
+  override def visitPredicate(ctx: PredicateContext): Builder[PropertyId] =
     ctx match {
       case _ if isDefined(ctx.iri()) =>
         visitIri(ctx.iri())
@@ -1334,14 +1309,14 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
   }
 
   override def visitDirective(ctx: DirectiveContext): Builder[Directive] = ctx match {
-    case _ if isDefined(ctx.baseDecl()) =>
+    /*    case _ if isDefined(ctx.baseDecl()) =>
       for {
         iri <- visitBaseDecl(ctx.baseDecl())
       } yield Right(Left(iri))
     case _ if isDefined(ctx.prefixDecl()) =>
       for {
         p <- visitPrefixDecl(ctx.prefixDecl())
-      } yield Left(p)
+      } yield Left(p) */
     case _ if isDefined(ctx.importDecl()) =>
       for {
         iri <- visitImportDecl(ctx.importDecl())
