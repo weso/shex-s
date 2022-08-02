@@ -66,7 +66,11 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
         case None     => none.asRight
         case Some(se) => convertShapeExpr(se, shexSchema).flatMap(se => Right(Some(se)))
       }
-    } yield WSchema(shapes.toMap, start, shexSchema.prefixMap)
+    } yield WSchema(shapesMap = shapes.toMap, 
+                    start = start, 
+                    prefixes = shexSchema.prefixes,
+                    base = shexSchema.base
+                    )
 
   private def convertLabelShapeExpr(
       label: shex.ShapeLabel,

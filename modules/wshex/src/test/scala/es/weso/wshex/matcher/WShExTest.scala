@@ -44,7 +44,7 @@ class WShExTest extends FunSuite {
   )
 
   val schema: WSchema = WSchema(
-    pm = PrefixMap.empty,
+    prefixes = None,
     shapesMap = Map(Start -> shape)
   )
 

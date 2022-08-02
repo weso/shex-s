@@ -58,7 +58,7 @@ class ES2WShExTest extends CatsEffectSuite {
         |}
         |""".stripMargin,
     WSchema(
-      Map(
+      shapesMap =Map(
         s ->
           WShape(
             Some(s),
@@ -75,8 +75,7 @@ class ES2WShExTest extends CatsEffectSuite {
             List()
           )
       ),
-      None,
-      pm
+      prefixes = Some(pm)
     )
   )
 
@@ -90,7 +89,7 @@ class ES2WShExTest extends CatsEffectSuite {
        |}
        |""".stripMargin,
     WSchema(
-      Map(
+      shapesMap = Map(
         s -> WShape(
           Some(s),
           false,
@@ -106,8 +105,7 @@ class ES2WShExTest extends CatsEffectSuite {
           List()
         )
       ),
-      None,
-      pm
+      prefixes = Some(pm)
     )
   )
 
@@ -154,7 +152,7 @@ class ES2WShExTest extends CatsEffectSuite {
     checkSchema(
       "Qualifiers",
       schemaStr,
-      WSchema(Map(s -> se), None, pm)
+      WSchema(shapesMap = Map(s -> se), prefixes = Some(pm))
     )
   }
 
@@ -230,7 +228,7 @@ class ES2WShExTest extends CatsEffectSuite {
     checkSchema(
       "Qualifiers with reference",
       schemaStr,
-      WSchema(Map(s -> se, psr -> pse), None, pm)
+      WSchema(shapesMap = Map(s -> se, psr -> pse), prefixes = Some(pm))
     )
   }
 
@@ -242,14 +240,13 @@ class ES2WShExTest extends CatsEffectSuite {
        |<U> {}
        |""".stripMargin,
     WSchema(
-      Map(
+      shapesMap = Map(
         s ->
           WShapeOr(Some(s), List(WShapeRef(t), WShapeRef(u))),
         t -> WShape(Some(t), false, List(), None, List()),
         u -> WShape(Some(u), false, List(), None, List())
       ),
-      None,
-      pm
+      prefixes = Some(pm)
     )
   )
 
@@ -261,12 +258,11 @@ class ES2WShExTest extends CatsEffectSuite {
         |}
         |""".stripMargin,
     WSchema(
-      Map(
+      shapesMap = Map(
         s ->
           WShape(Some(s), false, List(), None, List(LabelConstraint(Lang("en"), None)))
       ),
-      None,
-      pm
+      prefixes = Some(pm)
     )
   )
 
@@ -279,7 +275,7 @@ class ES2WShExTest extends CatsEffectSuite {
         |}
         |""".stripMargin,
     WSchema(
-      Map(
+      shapesMap = Map(
         s ->
           WShape(
             Some(s),
@@ -292,8 +288,7 @@ class ES2WShExTest extends CatsEffectSuite {
             )
           )
       ),
-      None,
-      pm
+      prefixes = Some(pm)
     )
   )
 

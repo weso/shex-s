@@ -12,14 +12,15 @@ import es.weso.rdf.operations.Comparisons._
 import scala.jdk.CollectionConverters._
 import es.weso.rdf.locations.Location
 import org.antlr.v4.runtime.Token
-import es.weso.shex._
+import es.weso.shex.{ Star, IntMax, Max } 
+import es.weso.wshex._
 
 /** Visits the AST and builds the corresponding ShEx abstract syntax
   */
 class SchemaMaker extends WShExDocBaseVisitor[Any] {
 
-  type Start = Option[ShapeExpr]
-  type NotStartAction = Either[Start, (ShapeLabel, ShapeExpr)]
+  type Start = Option[WShapeExpr]
+  type NotStartAction = Either[Start, (ShapeLabel, WShapeExpr)]
   type Cardinality = (Option[Int], Option[Max])
   type Directive = Either[
     (Prefix, IRI), // Prefix decl
@@ -35,8 +36,8 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
 
   override def visitWShExDoc(
       ctx: WShExDocContext
-  ): Builder[Schema] =
-    for {
+  ): Builder[WSchema] = {
+/*    for {
       directives <- visitList(visitDirective, ctx.directive())
 //      startActions <- visitStartActions(ctx.startActions())
 //      notStartAction <- visitNotStartAction(ctx.notStartAction())
@@ -62,10 +63,11 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
         .withShapes(shapes)
         .withOptTripleExprMap(optTripleExprMap)
         .withImports(importIRIs)
-        .withLabelLocationMap(Some(labelLocationMap))
+        .withLabelLocationMap(Some(labelLocationMap)) */
+        ok(WSchema.empty)
     }
 
-  def shapesMap2List(sm: ShapesMap): List[ShapeExpr] =
+/*  def shapesMap2List(sm: ShapesMap): List[ShapeExpr] =
     sm.map { case (lbl, se) => se.addId(lbl) }.toList
 
   override def visitStatement(ctx: StatementContext): Builder[Unit] = ctx match {
@@ -1387,5 +1389,5 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
   /* Remove @ from language tag */
   private def getLanguage(str: String): Lang =
     Lang(str.tail)
-
+*/
 }

@@ -46,7 +46,7 @@ class ShEx2WShExTest extends CatsEffectSuite {
        | wdt:P31 [ wd:Q5 ]
        |}
        |""".stripMargin,
-      WSchema(Map(s -> se), None, pm)
+      WSchema(shapesMap = Map(s -> se), prefixes = Some(pm))
     )
   }
 
