@@ -23,20 +23,20 @@ sealed abstract class WShapeExpr extends Product with Serializable {
     case sn: WShapeNot      => sn.shapeExpr.dependsOn()
   }
 
-  lazy val empty: Rbe[(PropertyId, ShapeLabel)] = Empty
+  private def empty(): Rbe[(PropertyId, ShapeLabel)] = Empty
 
   def rbe: Rbe[(PropertyId, ShapeLabel)] =
     this match {
-      case _: WShapeRef       => empty
-      case _: WNodeConstraint => empty
+      case _: WShapeRef       => empty()
+      case _: WNodeConstraint => empty()
       case s: WShape =>
         s.expression match {
-          case None     => empty
+          case None     => empty()
           case Some(te) =>
             // TODO: Extend with extras?
             te.rbe
         }
-      case _ => empty // TODO!!
+      case _ => empty() // TODO!!
     }
 
   implicit val showPair: Show[(PropertyId, ShapeLabel)] = Show.show(p => p.toString)
@@ -281,6 +281,17 @@ case class WShape(
     termConstraints: List[TermConstraint]
 ) extends WShapeExpr
 
+object WShape {
+  def empty: WShape = WShape(
+    id = None,
+    closed = false,
+    extra = List(),
+    expression = None,
+    termConstraints = List()
+  )
+}  
+
+
 sealed abstract class WNodeConstraint extends WShapeExpr {
   def matchLocal(value: Value): Either[Reason, Unit]
   def matchLocalCoded(value: Value): Either[ReasonCode, Unit] =
@@ -361,7 +372,10 @@ case class EntityIdValueSetValue(id: EntityId) extends NonLocalValueSetValue
 case class IRIValueSetValue(iri: IRI) extends LocalValueSetValue
 case class StringValueSetValue(str: String) extends LocalValueSetValue
 
+
 object WShapeExpr {
+
+  def any: WShapeExpr = WShape.empty
 
   def label(iri: String): ShapeLabel = IRILabel(IRI(iri))
 

@@ -18,6 +18,13 @@ case class WSchema(
 
   def pm: PrefixMap = prefixes.getOrElse(PrefixMap.empty)
 
+  def withPrefixMap(maybePrefixMap: Option[PrefixMap]): WSchema =
+    this.copy(prefixes = maybePrefixMap)
+
+  def withStart(start: Option[WShapeExpr]): WSchema = this.copy(start = start)
+
+  def withBase(base: Option[IRI]): WSchema = this.copy(base = base)
+
   def get(shapeLabel: ShapeLabel): Option[WShapeExpr] = shapeLabel match {
     case Start => start
     case _     => shapesMap.get(shapeLabel)
@@ -85,8 +92,6 @@ case class WSchema(
   lazy val startShapeExpr: Option[WShapeExpr] =
     getShape(Start).orElse(shapes.headOption)
 
-  def withPrefixMap(maybePrefixMap: Option[PrefixMap]): WSchema =
-    this.copy(prefixes = maybePrefixMap)
 
 }
 
