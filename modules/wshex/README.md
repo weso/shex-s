@@ -1,6 +1,7 @@
 # WShEx-s
 
-WShEx-s is an implementation of WShEx, a language inspired by [ShEx](http://shex.io/) that can be used to describe and validate Wikidata and Wikibase entities.
+WShEx-s is an implementation of [WShEx](https://www.weso.es/WShEx/), 
+ a language inspired by [ShEx](http://shex.io/) that can be used to describe and validate Wikidata and Wikibase entities.
 
 While [ShEx](http://shex.io/) has been designed as a language to describe and validate RDF, WShEx has been designed to describe and validate Wikibase entities.
 
