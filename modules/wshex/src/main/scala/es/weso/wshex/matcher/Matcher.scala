@@ -347,9 +347,10 @@ object Matcher {
   def unsafeFromString(
       str: String,
       verbose: VerboseLevel = VerboseLevel.Nothing,
+      base: Option[IRI] = None,
       format: WShExFormat = WShExFormat.CompactWShExFormat
   ): Either[ParseError, Matcher] =
     WSchema
-      .unsafeFromString(str, format, verbose)
+      .unsafeFromString(str, format, base, verbose)
       .map(s => Matcher(wShEx = s, verbose = verbose))
 }

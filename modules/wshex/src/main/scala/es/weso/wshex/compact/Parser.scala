@@ -13,6 +13,7 @@ import es.weso.utils.FileUtils
 import scala.collection.immutable.ListMap
 import es.weso.rdf.locations.Location
 
+// TODO mark most of these methods private
 object Parser {
 
   case class BuilderState(
@@ -30,7 +31,7 @@ object Parser {
   // type PrefixMap = Map[Prefix,IRI]
   type Start = Option[WShapeExpr]
   type ShapesMap = ListMap[ShapeLabel, WShapeExpr]
-  type TripleExprMap = Map[ShapeLabel, TripleExpr]
+  private type TripleExprMap = Map[ShapeLabel, TripleExpr]
 
   def ok[A](x: A): Builder[A] =
     EitherT.pure(x)

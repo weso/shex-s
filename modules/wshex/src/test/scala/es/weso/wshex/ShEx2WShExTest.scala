@@ -81,7 +81,7 @@ class ShEx2WShExTest extends CatsEffectSuite {
   )(implicit loc: munit.Location): Unit =
     test(name) {
       WSchema
-        .fromString(shexStr, format, Info)
+        .fromString(shexStr, format, None, Info)
         .map(it => assertEquals(it.toString, expected.toString))
     }
 }

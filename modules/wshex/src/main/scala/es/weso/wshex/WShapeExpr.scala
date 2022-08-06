@@ -7,6 +7,7 @@ import cats._
 import cats.implicits._
 import es.weso.wbmodel._
 import es.weso.rdf.nodes._
+import es.weso.shex.{XsFacet}
 
 sealed abstract class WShapeExpr extends Product with Serializable {
 
@@ -265,7 +266,18 @@ sealed abstract class WShapeExpr extends Product with Serializable {
 
 case class WShapeAnd(id: Option[ShapeLabel], exprs: List[WShapeExpr]) extends WShapeExpr
 
+object WShapeAnd {
+  def fromShapeExprs(es: List[WShapeExpr]): WShapeAnd =
+    WShapeAnd(None, es)
+}
+
 case class WShapeOr(id: Option[ShapeLabel], exprs: List[WShapeExpr]) extends WShapeExpr
+
+object WShapeOr {
+  def fromShapeExprs(es: List[WShapeExpr]): WShapeOr =
+    WShapeOr(None, es)
+}
+
 
 case class WShapeNot(id: Option[ShapeLabel], shapeExpr: WShapeExpr) extends WShapeExpr
 
@@ -291,11 +303,19 @@ object WShape {
   )
 }  
 
-
 sealed abstract class WNodeConstraint extends WShapeExpr {
   def matchLocal(value: Value): Either[Reason, Unit]
   def matchLocalCoded(value: Value): Either[ReasonCode, Unit] =
     matchLocal(value).leftMap(r => r.errCode)
+}
+
+object WNodeConstraint {
+  def valueSet(vs: List[ValueSetValue]) //W, facets: List[XsFacet])
+   : WNodeConstraint =
+    ValueSet(id = None, values = vs) //W , xsFacets = facets)
+
+  def xsFacets(sfs: List[XsFacet]): WNodeConstraint = ???
+
 }
 
 case object EmptyExpr extends WNodeConstraint {

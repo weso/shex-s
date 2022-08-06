@@ -4,6 +4,7 @@ import cats.implicits._
 import es.weso.rbe.interval.IntOrUnbounded
 import es.weso.rbe._
 import es.weso.wbmodel._
+import es.weso.shex.{Max}
 
 sealed abstract class TripleExpr extends Product with Serializable {
 
@@ -56,10 +57,10 @@ sealed abstract class TripleExpr extends Product with Serializable {
                 else Left(NotAllowedNotInExtra(List((p, failed))))
             }
           clo
-        case EachOf(Nil) => Right(Set())
-        case EachOf(ts) =>
+        case eo: EachOf if eo.exprs == Nil => Right(Set())
+        case eo: EachOf =>
           val results =
-            ts
+            eo.exprs
               .map(_.checkLocalOpen(entity, fromLabel))
               .sequence
               .map(_.sequence)
@@ -168,8 +169,27 @@ sealed abstract class TripleExpr extends Product with Serializable {
 
 }
 
-case class EachOf(exprs: List[TripleConstraint]) extends TripleExpr
-case class OneOf(exprs: List[TripleConstraint]) extends TripleExpr
+case class EachOf(
+//  id: Option[ShapeLabel],
+  exprs: List[TripleConstraint],
+//  optMin: Option[Int],
+//  optMax: Option[Max]
+ ) extends TripleExpr {
+//  lazy val min: Int = optMin.getOrElse(Cardinality.defaultMin)
+//  lazy val max: Max = optMax.getOrElse(Cardinality.defaultMax)
+}
+
+case class OneOf(
+//  id: Option[ShapeLabel],
+  exprs: List[TripleConstraint],
+//  optMin: Option[Int],
+//  optMax: Option[Max]
+) extends TripleExpr {
+
+//  lazy val min: Int = optMin.getOrElse(Cardinality.defaultMin)
+//  lazy val max: Max = optMax.getOrElse(Cardinality.defaultMax)
+
+}
 case object EmptyTripleExpr extends TripleExpr
 
 sealed abstract class TripleConstraint extends TripleExpr with Serializable with Product {
