@@ -1031,7 +1031,7 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
             case Some(lbl) => addTripleExprLabel(lbl, te)
           }
         } yield te1 */
-    }
+    
 
   override def visitExpr(e: ExprContext): Builder[ValueExpr] = e match {
     case _ if isDefined(e.basicExpr()) =>
@@ -1361,6 +1361,7 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
   /* Remove @ from language tag */
   private def getLanguage(str: String): Lang =
     Lang(str.tail)
+}    
 
 sealed trait Qualifier {
  
@@ -1386,7 +1387,6 @@ case class Extends(labels: List[ShapeLabel]) extends Qualifier
 case class Restricts(labels: List[ShapeLabel]) extends Qualifier
 case object Closed extends Qualifier
 
-}
 
 
 
