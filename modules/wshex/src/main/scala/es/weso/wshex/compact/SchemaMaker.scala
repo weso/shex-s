@@ -14,6 +14,9 @@ import es.weso.rdf.locations.Location
 import org.antlr.v4.runtime.Token
 import es.weso.shex.{ Star, IntMax, Max, MinInclusive, MinExclusive, MaxInclusive, MaxExclusive, FractionDigits, TotalDigits, Pattern, NumericFacet, XsFacet, MaxLength, MinLength, Length, StringFacet } 
 import es.weso.wshex._
+import es.weso.wbmodel.{ Lang => WBLang, _ }
+import es.weso.rbe.interval._
+
 
 /** Visits the AST and builds the corresponding ShEx abstract syntax
   */
@@ -21,7 +24,7 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
 
   type Start = Option[WShapeExpr]
   type NotStartAction = Either[Start, (ShapeLabel, WShapeExpr)]
-  type Cardinality = (Int, Max)
+  type Cardinality = (Int, IntOrUnbounded)
   type Directive = Either[
     (Prefix, IRI), // Prefix decl
     Either[
@@ -30,10 +33,10 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
     ]
   ]
 
-  val star = (0, Star)
-  val plus = (1, Star)
-  val optional = (0, IntMax(1))
-  val defaultCardinality = (1,IntMax(1))
+  val star = (0, Unbounded)
+  val plus = (1, Unbounded)
+  val optional = (0, IntLimit(1))
+  val defaultCardinality = (1,IntLimit(1))
 
 
   override def visitWShExDoc(
@@ -903,7 +906,7 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
     for {
       qualifiers <- visitList(visitQualifier, ctx.qualifier())
       tripleExpr <- visitOpt(visitTripleExpression, ctx.tripleExpression)
-      shape <- makeShape(qualifiers, tripleExpr, List(), List())
+      shape <- makeShape(qualifiers, tripleExpr) //W , List(), List())
     } yield shape
 
   override def visitTripleExpression(ctx: TripleExpressionContext): Builder[TripleExpr] =
@@ -942,24 +945,24 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
   ): Builder[WShapeExpr] = {
     val containsClosed =
       if (qualifiers.contains(Closed))
-        Some(true)
+        true
       else
-        Some(false)
-    val ls: List[IRI] = qualifiers.map(_.getExtras).flatten
-    val extras: Option[List[IRI]] =
+        false
+    //W val ls: List[IRI] = qualifiers.map(_.getExtras).flatten
+    /*W val extras: Option[List[IRI]] =
       if (ls.isEmpty) None
-      else Some(ls)
-    val inheritList = qualifiers.map(_.getExtends).flatten
-    val restrictsList = qualifiers.map(_.getRestricts).flatten
+      else Some(ls) */
+    //W val inheritList = qualifiers.map(_.getExtends).flatten
+    //W val restrictsList = qualifiers.map(_.getRestricts).flatten
     val shape =
-      Shape.empty.copy(
-        closed = if (qualifiers.isEmpty) None else containsClosed,
-        extra = extras,
+      WShape.empty.copy(
+        closed = if (qualifiers.isEmpty) false else containsClosed,
+        // extra = extras,
         expression = tripleExpr,
-        _extends = if (inheritList.isEmpty) None else Some(inheritList),
-        restricts = if (restrictsList.isEmpty) None else Some(restrictsList),
-        actions = if (semActs.isEmpty) None else Some(semActs),
-        annotations = if (anns.isEmpty) None else Some(anns)
+      //  _extends = if (inheritList.isEmpty) None else Some(inheritList),
+      //  restricts = if (restrictsList.isEmpty) None else Some(restrictsList),
+      //  actions = if (semActs.isEmpty) None else Some(semActs),
+      //  annotations = if (anns.isEmpty) None else Some(anns)
       )
     ok(shape)
   }
@@ -999,7 +1002,7 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
     case _ => err(s"visitOneOfShape: unknown $ctx")
   }
 
-  override def visitGroupTripleExpr(ctx: GroupTripleExprContext): Builder[TripleExpr] =
+  override def visitGroupTripleExpr(ctx: GroupTripleExprContext): Builder[TripleConstraint] =
     ctx match {
       case _ if isDefined(ctx.singleElementGroup()) =>
         visitSingleElementGroup(ctx.singleElementGroup())
@@ -1009,7 +1012,7 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
     }
 
   override def visitUnaryTripleExpr(ctx: UnaryTripleExprContext): Builder[TripleConstraint] =
-    visitTripleConstraint(ctx)
+    visitTripleConstraint(ctx.tripleConstraint())
 /*W    ctx match {
       case _ if isDefined(ctx.include()) =>
         visitInclude(ctx.include())
@@ -1033,7 +1036,7 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
         } yield te1 */
     
 
-  override def visitExpr(e: ExprContext): Builder[ValueExpr] = e match {
+/*  override def visitExpr(e: ExprContext): Builder[ValueExpr] = e match {
     case _ if isDefined(e.basicExpr()) =>
       for {
         e <- visitBasicExpr(e.basicExpr())
@@ -1044,7 +1047,7 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
         op <- visitBinOp(e.binOp())
         e2 <- visitExpr(e.expr(1))
       } yield BinExpr(e1, op, e2)
-  }
+  } */
 
   override def visitBasicExpr(e: BasicExprContext): Builder[ValueExpr] = e match {
     // case _ if (isDefined(e.varName())) => {
@@ -1057,7 +1060,8 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
     case _ if isDefined(e.iri())       => err("Not implemented iris yet in visitBasicExpr")
     case _ if isDefined(e.blankNode()) => err("Not implemented blankNode yet in visitBasicExpr")
   }
-  private def visitBinOp(b: BinOpContext): Builder[BinOp] = b match {
+
+/*  private def visitBinOp(b: BinOpContext): Builder[BinOp] = b match {
     case _: EqualsContext    => ok(Equals)
     case _: NotEqualsContext => ok(NotEquals)
     case _: AddContext       => ok(Add)
@@ -1068,7 +1072,7 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
     case _: GeContext        => ok(GE)
     case _: LtContext        => ok(LT)
     case _: GtContext        => ok(GT)
-  }
+  } */
 
   // TODO: Where should I put ProductionLabels ?
   override def visitTripleExprLabel(ctx: TripleExprLabelContext): Builder[ShapeLabel] = ctx match {
@@ -1258,16 +1262,17 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
       case _ => err("visitInnerShape. Unknown alternative")
     } */
 
-  override def visitSingleElementGroup(ctx: SingleElementGroupContext): Builder[TripleExpr] =
+  override def visitSingleElementGroup(ctx: SingleElementGroupContext): Builder[TripleConstraint] =
     visitUnaryTripleExpr(ctx.unaryTripleExpr())
 
-  override def visitMultiElementGroup(ctx: MultiElementGroupContext): Builder[TripleExpr] =
-    for {
+  override def visitMultiElementGroup(ctx: MultiElementGroupContext): Builder[TripleConstraint] =
+    err("Not implemented multiElementGroup yet!")
+    /*W for {
       ses <- visitList(visitUnaryTripleExpr, ctx.unaryTripleExpr())
     } yield ses.length match {
       case 1 => ses.head
       case _ => EachOf(exprs = ses) //W , None, None)
-    }
+    } */
 
   override def visitMultiElementOneOf(ctx: MultiElementOneOfContext): Builder[TripleExpr] = for {
     groups <- visitList(visitGroupTripleExpr, ctx.groupTripleExpr)
