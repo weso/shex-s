@@ -292,7 +292,7 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
       case s: ShapeAtomShapeExpressionContext =>
         visitShapeExpression(s.shapeExpression())
       case _: ShapeAtomAnyContext =>
-        ok(WShapeExpr.any)
+        ok(EmptyExpr)
       case _ => err(s"Internal error visitShapeAtom: unknown ctx $ctx")
     }
 
@@ -1018,7 +1018,7 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
     case _ => err(s"visitOneOfShape: unknown $ctx")
   }
 
-  override def visitGroupTripleExpr(ctx: GroupTripleExprContext): Builder[TripleConstraint] =
+  override def visitGroupTripleExpr(ctx: GroupTripleExprContext): Builder[TripleExpr] =
     ctx match {
       case _ if isDefined(ctx.singleElementGroup()) =>
         visitSingleElementGroup(ctx.singleElementGroup())
@@ -1122,10 +1122,13 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
       //W anns <- visitList(visitAnnotation, ctx.annotation())
       //W semActs <- visitList(visitSemanticAction, ctx.semanticAction())
       propertyId <- predicate2PropertyId(predicate)
-    } yield shapeExpr match { 
-      case sref: WShapeRef => TripleConstraintRef(propertyId, sref, cardinality._1, cardinality._2, None)
-      case nc: WNodeConstraint => TripleConstraintLocal(propertyId, nc, cardinality._1, cardinality._2)
+      tc <- shapeExpr match { 
+      case sref: WShapeRef => ok(TripleConstraintRef(propertyId, sref, cardinality._1, cardinality._2, None))
+      case nc: WNodeConstraint => ok(TripleConstraintLocal(propertyId, nc, cardinality._1, cardinality._2))
+      case WShape(None,false,Nil,None,Nil) => ok(TripleConstraintLocal(propertyId, EmptyExpr, cardinality._1,cardinality._2))
+      case _ => err(s"visitTripleConstraint. Error matching shapeExpr: $shapeExpr")
     }
+    } yield tc
 /*W    TripleConstraint
       .emptyPred(predicate)
       .copy(
@@ -1287,24 +1290,28 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
       case _ => err("visitInnerShape. Unknown alternative")
     } */
 
-  override def visitSingleElementGroup(ctx: SingleElementGroupContext): Builder[TripleConstraint] =
-    visitUnaryTripleExpr(ctx.unaryTripleExpr())
+  override def visitSingleElementGroup(ctx: SingleElementGroupContext): Builder[TripleExpr] =
+    visitUnaryTripleExpr(ctx.unaryTripleExpr()).flatMap(tc => {
+      val te: TripleExpr = tc
+      ok(te)
+    })
 
-  override def visitMultiElementGroup(ctx: MultiElementGroupContext): Builder[TripleConstraint] =
-    err("Not implemented multiElementGroup yet!")
-    /*W for {
+  override def visitMultiElementGroup(ctx: MultiElementGroupContext): Builder[TripleExpr] =
+     for {
       ses <- visitList(visitUnaryTripleExpr, ctx.unaryTripleExpr())
     } yield ses.length match {
       case 1 => ses.head
       case _ => EachOf(exprs = ses) //W , None, None)
-    } */
+    } 
 
-  override def visitMultiElementOneOf(ctx: MultiElementOneOfContext): Builder[TripleExpr] = for {
+  override def visitMultiElementOneOf(ctx: MultiElementOneOfContext): Builder[TripleExpr] = 
+    err(s"Not implemented multiElementOneOf yet")
+    /*W for {
     groups <- visitList(visitGroupTripleExpr, ctx.groupTripleExpr)
   } yield groups.length match {
     case 1 => groups.head
     case _ => OneOf(exprs = groups) //W, None, None)
-  }
+  } */
 
   override def visitShapeExprLabel(ctx: ShapeExprLabelContext): Builder[ShapeLabel] =
     ctx match {

@@ -43,6 +43,42 @@ class WShExParserTest extends CatsEffectSuite {
           |""".stripMargin,
       WSchema(shapesMap = Map(s -> se), prefixes = Some(pm))
     )
+  } 
+
+    {
+    val se: WShapeExpr = WShape(
+      None,
+      false,
+      List(),
+      Some(
+        EachOf(List(
+         TripleConstraintLocal(
+          PropertyId.fromIRI(wdt + "P31"),
+          ValueSet(None, List(EntityIdValueSetValue(ItemId("Q5", wd + "Q5")))),
+          1,
+          IntLimit(1)
+        ), 
+        TripleConstraintLocal(
+          PropertyId.fromIRI(wdt + "P279"),
+          EmptyExpr,
+          1,
+          IntLimit(1)
+        )
+        ))
+      ),
+      List()
+    )
+
+    checkSchema(
+      "local valueSetValue",
+      s"""|prefix :    <${wd.str}>
+          |<S> {
+          | :P31 [ :Q5 ] ;
+          | :P279 .      
+          |}
+          |""".stripMargin,
+      WSchema(shapesMap = Map(s -> se), prefixes = Some(pm))
+    )
   }
 
   /* {
