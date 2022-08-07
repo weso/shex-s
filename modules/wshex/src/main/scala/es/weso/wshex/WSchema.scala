@@ -12,6 +12,7 @@ import java.io.InputStream
 import java.io.InputStreamReader
 import java.io.ByteArrayInputStream
 import es.weso.wshex.compact.Parser._
+import es.weso.wshex.compact.ParserOptions
 
 case class WSchema(
     shapesMap: Map[ShapeLabel, WShapeExpr] = Map(),
@@ -101,6 +102,8 @@ case class WSchema(
 
 object WSchema {
 
+  val defaultEntityIRI = es.weso.wbmodel.Value.defaultIRI
+
   def empty: WSchema =
     WSchema(Map())
 
@@ -137,12 +140,14 @@ object WSchema {
       schemaString: String,
       format: WShExFormat = WShExFormat.CompactWShExFormat,
       base: Option[IRI] = None,
+      entityIRI: IRI = defaultEntityIRI,
       verbose: VerboseLevel
   ): IO[WSchema] = format match {
     case WShExFormat.CompactWShExFormat => {
       val is = new ByteArrayInputStream(schemaString.getBytes())
       val reader = new InputStreamReader(is)
-      parseSchemaReader(reader, base).fold(e => IO.raiseError(WShExErrorReadingString(e, schemaString, format)), _.pure[IO])
+      val parserOptions = ParserOptions(entityIRI)
+      parseSchemaReader(reader, base, parserOptions).fold(e => IO.raiseError(WShExErrorReadingString(e, schemaString, format)), _.pure[IO])
     }
     case WShExFormat.JsonWShExFormat =>
       for {
@@ -187,13 +192,14 @@ object WSchema {
       str: String,
       format: WShExFormat,
       base: Option[IRI] = None,
+      entityIRI: IRI = defaultEntityIRI, 
       verbose: VerboseLevel
   ): Either[ParseError, WSchema] = {
     import cats.effect.unsafe.implicits.global
     try
       /*      val schema = es.weso.shex.Schema.fromString(str, cnvFormat(format)).unsafeRunSync()
       val wShEx = ShEx2WShEx().convertSchema(schema) */
-      fromString(str, format, base, verbose).unsafeRunSync().asRight
+      fromString(str, format, base, entityIRI, verbose).unsafeRunSync().asRight
     catch {
       case e: Exception => ParseException(e).asLeft
     }
@@ -211,9 +217,10 @@ object WSchema {
       schemaString: String,
       format: WShExFormat = WShExFormat.CompactWShExFormat,
       base: Option[IRI] = None,
+      entityIRI: IRI = defaultEntityIRI,
       verbose: VerboseLevel
   ): WSchema = {
     import cats.effect.unsafe.implicits.global
-    fromString(schemaString, format, base, verbose).unsafeRunSync()
+    fromString(schemaString, format, base, entityIRI, verbose).unsafeRunSync()
   }
 }

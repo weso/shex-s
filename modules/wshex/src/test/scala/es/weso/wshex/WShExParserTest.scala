@@ -77,7 +77,7 @@ class WShExParserTest extends CatsEffectSuite {
   )(implicit loc: munit.Location): Unit =
     test(name) {
       WSchema
-        .fromString(shexStr, format, None, Info)
+        .fromString(schemaString = shexStr, format = format, base = None, verbose = Info)
         .map(it => assertEquals(it.toString, expected.toString))
     }
 }

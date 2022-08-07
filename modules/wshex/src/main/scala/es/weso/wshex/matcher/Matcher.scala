@@ -348,9 +348,14 @@ object Matcher {
       str: String,
       verbose: VerboseLevel = VerboseLevel.Nothing,
       base: Option[IRI] = None,
+      entityIRI: IRI = defaultIRI, 
       format: WShExFormat = WShExFormat.CompactWShExFormat
   ): Either[ParseError, Matcher] =
     WSchema
-      .unsafeFromString(str, format, base, verbose)
+      .unsafeFromString(str, format, base, entityIRI, verbose)
       .map(s => Matcher(wShEx = s, verbose = verbose))
+
+
+  val defaultIRI = es.weso.wbmodel.Value.defaultIRI   
+
 }

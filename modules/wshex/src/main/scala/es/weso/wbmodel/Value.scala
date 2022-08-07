@@ -297,6 +297,7 @@ case class SiteLink(
 object Value {
 
   lazy val siteDefault = "http://www.wikidata.org/entity/"
+  lazy val defaultIRI  = IRI(siteDefault)
 
   def triple(
       subj: Entity,

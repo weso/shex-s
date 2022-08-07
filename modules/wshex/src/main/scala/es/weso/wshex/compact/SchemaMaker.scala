@@ -294,7 +294,7 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
       case _ => err(s"Internal error visitShapeAtom: unknown ctx $ctx")
     }
 
-  def visitInlineLitNodeConstraint(ctx: InlineLitNodeConstraintContext): Builder[WNodeConstraint] =
+  override def visitInlineLitNodeConstraint(ctx: InlineLitNodeConstraintContext): Builder[WNodeConstraint] =
     ctx match {
 /*W      case s: NodeConstraintLiteralContext =>
         for {
@@ -325,7 +325,7 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
           facets <- visitList(visitNumericFacet, c.numericFacet)
           _ <- checkFacets(facets)
         } yield NodeConstraint.empty.copy(xsFacets = facets) */
-    }
+     }
 
   override def visitLitNodeConstraint(ctx: LitNodeConstraintContext): Builder[WNodeConstraint] =
     for {
@@ -1085,7 +1085,16 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
   //   ok(VarName(ctx.varName().getText))
   // }
 
-  private def predicate2PropertyId(predicate: IRI): Builder[PropertyId] = ???
+  def extractProperty(entityIRI: IRI, predicate: IRI): Builder[PropertyId] = { 
+    val p = "P[0-9]+".r
+    p.findFirstIn(predicate.str.stripPrefix(entityIRI.str)) match {
+     case Some(name) => ok(PropertyId(name, predicate))
+     case _ => err(s"extractProperty: Predicate $predicate doesn't match entityIRI $entityIRI + P[0-9]+")
+    }
+  }
+
+  private def predicate2PropertyId(predicate: IRI): Builder[PropertyId] = 
+    getEntityIRI.flatMap(extractProperty(_, predicate))
 
   override def visitTripleConstraint(ctx: TripleConstraintContext): Builder[TripleConstraint] =
     for {
@@ -1098,7 +1107,7 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
       //W semActs <- visitList(visitSemanticAction, ctx.semanticAction())
       propertyId <- predicate2PropertyId(predicate)
     } yield shapeExpr match { 
-      case sref: WShapeRef => TripleConstraintRef(propertyId, sref, cardinality._1, cardinality._2)
+      case sref: WShapeRef => TripleConstraintRef(propertyId, sref, cardinality._1, cardinality._2, None)
       case nc: WNodeConstraint => TripleConstraintLocal(propertyId, nc, cardinality._1, cardinality._2)
     }
 /*W    TripleConstraint
@@ -1145,31 +1154,31 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
   private def visitRepeatRange(ctx: RepeatRangeContext): Builder[Cardinality] =
     ctx match {
       case s: ExactRangeContext =>
-        getInteger(s.INTEGER().getText()).map(n => (n, IntMax(n)))
+        getInteger(s.INTEGER().getText()).map(n => (n, IntLimit(n)))
       case s: MinMaxRangeContext =>
         for {
           min <- visitMin_range(s.min_range())
           max <- visitMax_range(s.max_range())
-        } yield max match {
-          case None    => (min, Star)
+        } yield (min,max) /* max match {
+          case None    => (min, Unbounded)
           case Some(m) => (min, m)
-        }
+        } */
       case _ => err(s"visitRepeatRange: unknown value of ctx: ${ctx.getClass().getName()}")
     }
 
   override def visitMin_range(ctx: Min_rangeContext): Builder[Int] =
     getInteger(ctx.INTEGER().getText())
 
-  override def visitMax_range(ctx: Max_rangeContext): Builder[Max] =
+  override def visitMax_range(ctx: Max_rangeContext): Builder[IntOrUnbounded] =
     if (isDefined(ctx)) {
       if (isDefined(ctx.INTEGER())) {
-        getInteger(ctx.INTEGER().getText()).map(n => IntMax(n))
+        getInteger(ctx.INTEGER().getText()).map(n => IntLimit(n))
       } else {
         // Asume star
-        ok(Star)
+        ok(Unbounded)
       }
     } else
-      ok(IntMax(1)) //W TODO: Not sure about this
+      ok(IntLimit(1)) //W TODO: Not sure about this
 
   override def visitPredicate(ctx: PredicateContext): Builder[IRI] =
     ctx match {
