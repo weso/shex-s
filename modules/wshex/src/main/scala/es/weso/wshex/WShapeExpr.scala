@@ -384,15 +384,6 @@ case object DateDatatype extends WNodeConstraint {
   }
 }
 
-sealed trait ValueSetValue
-sealed trait NonLocalValueSetValue extends ValueSetValue
-sealed trait LocalValueSetValue extends ValueSetValue
-
-case class EntityIdValueSetValue(id: EntityId) extends NonLocalValueSetValue
-case class IRIValueSetValue(iri: IRI) extends LocalValueSetValue
-case class StringValueSetValue(str: String) extends LocalValueSetValue
-
-
 object WShapeExpr {
 
   def any: WShapeExpr = WShape.empty
@@ -407,6 +398,8 @@ object WShapeExpr {
   def valueSet(ls: List[ValueSetValue]): WShapeExpr =
     ValueSet(None, ls)
 
-  def qid(num: Int): ValueSetValue =
-    EntityIdValueSetValue(EntityId.fromIri(IRI(Value.siteDefault) + ("/Q" + num)))
+  def qid(num: Int): ValueSetValue = {
+    val name = "Q" + num
+    EntityIdValueSetValue(ItemId(name, IRI(Value.siteDefault + "/" + name)))
+  }
 }

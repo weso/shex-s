@@ -64,3 +64,7 @@ case class ConvertErrors(es: List[ConvertError]) extends ConvertError {
 case class NotFoundShape(ref: shex.ShapeLabel, msg: String) extends ConvertError {
   override def toString() = s"Not found shape with Label: $ref\n$msg"
 }
+
+case class ErrorConvertingIRI(msg: String) extends ConvertError {
+  override def toString() = s"Error obtaining EntityId from IRI: $msg"
+}

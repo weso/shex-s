@@ -22,17 +22,17 @@ sealed abstract class EntityId extends Value {
 
 object EntityId {
 
-  def fromIri(iri: IRI): EntityId = {
+  def fromIri(iri: IRI): Either[String, EntityId] = {
     val (name, base) = Utils.splitIri(iri)
     name(0) match {
-      case 'P' => PropertyId(name, iri)
-      case 'Q' => ItemId(name, iri)
+      case 'P' => PropertyId(name, iri).asRight
+      case 'Q' => ItemId(name, iri).asRight
       case _ =>
-        throw new RuntimeException(s"""|Match error. EntityId.fromIri($iri):
-                                       | localName: $name
-                                       | base: $base
-                                       | Should start by P or Q
-                                       |""".stripMargin)
+        s"""|Match error. EntityId.fromIri($iri):
+            | localName: $name
+            | base: $base
+            | Should start by P or Q
+            |""".stripMargin.asLeft
     }
   }
 }

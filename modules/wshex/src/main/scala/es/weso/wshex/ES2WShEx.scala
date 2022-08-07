@@ -142,9 +142,12 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
               |base1: $base1
               |""".stripMargin)
         if (IRI(base1) == convertOptions.entityIri) {
-          Right(EntityIdValueSetValue(EntityId.fromIri(i)))
+          EntityId
+          .fromIri(i)
+          .leftMap(ErrorConvertingIRI(_))
+          .map(EntityIdValueSetValue(_))
         } else {
-          Right(IRIValueSetValue(i))
+          IRIValueSetValue(i).asRight
         }
       case _ => UnsupportedValueSetValue(value).asLeft
     }

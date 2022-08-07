@@ -104,9 +104,12 @@ case class ShEx2WShEx(convertOptions: ConvertOptions) extends LazyLogging {
               |siteIri: ${convertOptions.siteIri}
               |""".stripMargin)
         if (IRI(base1) == convertOptions.siteIri) {
-          Right(EntityIdValueSetValue(EntityId.fromIri(i)))
+          EntityId
+          .fromIri(i)
+          .leftMap(ErrorConvertingIRI(_))
+          .map(EntityIdValueSetValue(_))
         } else {
-          Right(IRIValueSetValue(i))
+          IRIValueSetValue(i).asRight
         }
       case _ => UnsupportedValueSetValue(value).asLeft
     }

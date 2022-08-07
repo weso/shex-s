@@ -1,5 +1,4 @@
 package es.weso.wshex.compact
-
 import java.io.{ByteArrayInputStream, InputStreamReader, Reader => JavaReader}
 import cats.data._
 import cats.implicits._
@@ -10,7 +9,6 @@ import es.weso.wshex.parser._
 import org.antlr.v4.runtime._
 import java.nio.charset.StandardCharsets
 import es.weso.utils.FileUtils
-import scala.collection.immutable.ListMap
 import es.weso.rdf.locations.Location
 
 // TODO mark most of these methods private
@@ -31,7 +29,7 @@ object Parser {
 
   // type PrefixMap = Map[Prefix,IRI]
   type Start = Option[WShapeExpr]
-  type ShapesMap = ListMap[ShapeLabel, WShapeExpr]
+  type ShapesMap = Map[ShapeLabel, WShapeExpr]
   private type TripleExprMap = Map[ShapeLabel, TripleExpr]
 
   def ok[A](x: A): Builder[A] =
@@ -163,9 +161,8 @@ object Parser {
       PrefixMap.empty,
       base,
       None,
-      ListMap(),
+      Map(),
       Map()
     )
-
 
 }

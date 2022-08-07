@@ -65,7 +65,7 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
         .withBase(base)
         // .withStartActions(startActions)
         .withStart(start)
-        // .withShapes(shapes)
+        .withShapesMap(shapeMap)
         // .withOptTripleExprMap(optTripleExprMap)
         //.withImports(importIRIs)
         // .withLabelLocationMap(Some(labelLocationMap)) 
@@ -165,9 +165,11 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
   override def visitShapeExprDecl(ctx: ShapeExprDeclContext): Builder[(ShapeLabel, WShapeExpr)] =
     for {
       label <- visitShapeExprLabel(ctx.shapeExprLabel())
+      _ <- info(s"Visited label $label")
       location <- getLocation(ctx.start)
       _ <- addLabelLocation(label, location)
       shapeExpr <- obtainShapeExpr(ctx)
+      _ <- info(s"Visited shapeExpr: $shapeExpr")
       se <-
         /*if (isDefined(ctx.KW_ABSTRACT()))
           ok(ShapeDecl(label, shapeExpr))
@@ -486,12 +488,26 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
       } else LiteralStringExclusion(str)
 */
 
-  override def visitIriRange(ctx: IriRangeContext): Builder[ValueSetValue] = for {
-    iri <- visitIri(ctx.iri())
-//    exclusions <- visitList(visitIriExclusion, ctx.iriExclusion())
-  } yield
+  def iri2ValueSetValue(iri: IRI): Builder[ValueSetValue] = 
+    getEntityIRI.flatMap(entityIRI => {
+      val itemExp = "Q([0-9]+)".r
+      val propertyExp = "P([0-9]+)".r
+      val name = iri.str.stripPrefix(entityIRI.str)
+      name match {
+        case itemExp(ns) => ok(EntityIdValueSetValue(ItemId(name, iri)))
+        case propertyExp(_) => ok(EntityIdValueSetValue(PropertyId(name, iri)))
+        case _ => ok(IRIValueSetValue(iri))
+      }
+    })
+
+  override def visitIriRange(ctx: IriRangeContext): Builder[ValueSetValue] = 
+    visitIri(ctx.iri()).flatMap(
+    iri2ValueSetValue(_)
+    )
+//W    exclusions <- visitList(visitIriExclusion, ctx.iriExclusion())
+  
     /* WShEx if (!isDefined(ctx.STEM_MARK()))  */
-     IRIValueSetValue(iri) //W TODO (check if the IRI is an entity)
+     
    /* else if (exclusions.isEmpty)
       IRIStem(iri)
     else {

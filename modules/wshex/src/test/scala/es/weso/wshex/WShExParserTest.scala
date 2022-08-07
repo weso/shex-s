@@ -4,8 +4,7 @@ import io.circe.Json
 import es.weso.rdf.nodes.IRI
 import es.weso.rdf.PrefixMap
 import es.weso.rbe.interval.IntLimit
-import es.weso.wbmodel.EntityId
-import es.weso.wbmodel.PropertyId
+import es.weso.wbmodel._
 import es.weso.utils.VerboseLevel._
 
 class WShExParserTest extends CatsEffectSuite {
@@ -21,13 +20,13 @@ class WShExParserTest extends CatsEffectSuite {
 
   {
     val se: WShapeExpr = WShape(
-      Some(s),
+      None,
       false,
       List(),
       Some(
         TripleConstraintLocal(
           PropertyId.fromIRI(wdt + "P31"),
-          ValueSet(None, List(EntityIdValueSetValue(EntityId.fromIri(wd + "Q5")))),
+          ValueSet(None, List(EntityIdValueSetValue(ItemId("Q5", wd + "Q5")))),
           1,
           IntLimit(1)
         )

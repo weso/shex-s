@@ -30,6 +30,9 @@ case class WSchema(
 
   def withBase(base: Option[IRI]): WSchema = this.copy(base = base)
 
+  def withShapesMap(sm: Map[ShapeLabel, WShapeExpr]) =
+    this.copy(shapesMap = sm)
+
   def get(shapeLabel: ShapeLabel): Option[WShapeExpr] = shapeLabel match {
     case Start => start
     case _     => shapesMap.get(shapeLabel)
