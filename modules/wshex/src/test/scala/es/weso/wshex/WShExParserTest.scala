@@ -147,6 +147,52 @@ class WShExParserTest extends CatsEffectSuite {
     )
   } */
 
+  {
+    val se: WShapeExpr = 
+      WShapeOr(None, 
+       List(
+        WShape(
+         None,
+         false,
+         List(),
+         Some(
+         TripleConstraintLocal(
+           PropertyId.fromIRI(wdt + "P31"),
+           ValueSet(None, List(EntityIdValueSetValue(ItemId("Q5", wd + "Q5")))),
+           1,
+           IntLimit(1),
+           None
+         )),
+         List()
+        ), 
+       WShape(
+        None,
+        false,
+        List(),
+        Some(
+          TripleConstraintLocal(
+            PropertyId.fromIRI(wdt + "P31"),
+            ValueSet(None, List(EntityIdValueSetValue(ItemId("Q6", wd + "Q6")))),
+            1,
+            IntLimit(1),
+            None
+          )),
+        List()
+       ))
+      )
+
+    checkSchema(
+      "simple OR",
+      s"""|prefix :    <${wd.str}>
+          |<S> {
+          | :P31 [ :Q5 ]
+          |} OR {
+          | :P31 [ :Q6 ]
+          |}
+          |""".stripMargin,
+      WSchema(shapesMap = Map(s -> se), prefixes = Some(pm))
+    )
+  }   
 
   def checkSchema(
       name: String,
