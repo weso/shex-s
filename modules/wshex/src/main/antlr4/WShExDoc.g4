@@ -157,7 +157,7 @@ unaryTripleExpr:
 
 tripleConstraint:
 	//W senseFlags? 
-	predicate inlineShapeExpression cardinality? qualifierSpec ?//W annotation* semanticAction* /* variableDecl? */
+	predicate inlineShapeExpression cardinality? qualifierSpec? //W annotation* semanticAction* /* variableDecl? */
 		;
 
 cardinality:
@@ -175,7 +175,7 @@ min_range: INTEGER;
 max_range: INTEGER | '*';
 
 qualifierSpec:
-   '{|' predicate shapeAtom '|}' 
+   '{|' predicate shapeAtom cardinality? '|}' 
    ;
 /*
  variableDecl

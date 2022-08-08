@@ -1118,15 +1118,16 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
       predicate <- visitPredicate(ctx.predicate())
       shapeExpr <- visitInlineShapeExpression(ctx.inlineShapeExpression())
       cardinality <- getCardinality(ctx.cardinality())
+      qualifierSpec <- getQualifierSpec(ctx.qualifierSpec())
       
       //W anns <- visitList(visitAnnotation, ctx.annotation())
       //W semActs <- visitList(visitSemanticAction, ctx.semanticAction())
       propertyId <- predicate2PropertyId(predicate)
       tc <- shapeExpr match { 
-      case sref: WShapeRef => ok(TripleConstraintRef(propertyId, sref, cardinality._1, cardinality._2, None))
-      case nc: WNodeConstraint => ok(TripleConstraintLocal(propertyId, nc, cardinality._1, cardinality._2))
-      case WShape(None,false,Nil,None,Nil) => ok(TripleConstraintLocal(propertyId, EmptyExpr, cardinality._1,cardinality._2))
-      case _ => err(s"visitTripleConstraint. Error matching shapeExpr: $shapeExpr")
+       case sref: WShapeRef => ok(TripleConstraintRef(propertyId, sref, cardinality._1, cardinality._2, qualifierSpec))
+       case nc: WNodeConstraint => ok(TripleConstraintLocal(propertyId, nc, cardinality._1, cardinality._2, qualifierSpec))
+       case WShape(None,false,Nil,None,Nil) => ok(TripleConstraintLocal(propertyId, EmptyExpr, cardinality._1,cardinality._2,qualifierSpec))
+       case _ => err(s"visitTripleConstraint. Error matching shapeExpr: $shapeExpr")
     }
     } yield tc
 /*W    TripleConstraint
@@ -1145,6 +1146,22 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
           if (semActs.isEmpty) None
           else Some(semActs)  */
       ) */
+
+  private def getQualifierSpec(ctx: QualifierSpecContext): Builder[Option[QualifierSpec]] = 
+    if (isDefined(ctx)) {
+     visitPredicate(ctx.predicate()).flatMap(pred =>
+     predicate2PropertyId(pred).flatMap(propId =>  
+     visitShapeAtom(ctx.shapeAtom()).flatMap(se => 
+     getCardinality(ctx.cardinality()).flatMap(cardinality => 
+      se match {
+        case nc: WNodeConstraint => ok(Some(QualifierSpec(QualifierLocal(propId, nc,cardinality._1,cardinality._2),false)))
+        case sref: WShapeRef => ok(Some(QualifierSpec(QualifierRef(propId, sref,cardinality._1,cardinality._2),false)))
+        case WShape(None,false,Nil,None,Nil) => ok(Some(QualifierSpec(QualifierLocal(propId, EmptyExpr,cardinality._1,cardinality._2),false)))
+        case _ => err(s"getQualifierSpec. Error matching shapeExpr: $se")
+      }
+      ))))
+    }
+    else ok(None) 
 
 /*  case class Sense(optInverse: Option[Boolean], optNegated: Option[Boolean])
 

@@ -142,7 +142,7 @@ case class Item(
 }
 
 object Item {
-  def fromItemDocument(id: ItemDocument): Item =
+  def fromItemDocument(id: ItemDocument): Item = {
     val itemId = ItemId(id.getEntityId().getId(), IRI(id.getEntityId().getIri()))
     Item(
       itemId,
@@ -155,6 +155,7 @@ object Item {
       List(),
       Set()
     )
+  }
 }
 
 case class Property(
@@ -191,9 +192,10 @@ case class Property(
   override def withOkShapes(shapes: Set[ShapeLabel]): Entity =
     this.copy(okShapes = shapes)
 
-  override def addPropertyValues(pid: PropertyId, values: List[WDValue]): Entity =
+  override def addPropertyValues(pid: PropertyId, values: List[WDValue]): Entity = {
     println(s"AddPropertyValues: $pid not implemented yet")
     this
+  }
 
 }
 object Property {
@@ -343,7 +345,7 @@ object Value {
     Item(
       ItemId(qid, iri = mkSite(site, qid)),
       VertexId(id),
-      label.fold(Map())(lbl => Map(Lang("en") -> lbl)),
+      label.fold(Map[Lang,String]())(lbl => Map(Lang("en") -> lbl)),
       Map(),
       Map(),
       site,

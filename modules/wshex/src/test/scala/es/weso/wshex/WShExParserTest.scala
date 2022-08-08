@@ -118,7 +118,7 @@ class WShExParserTest extends CatsEffectSuite {
   }
 */
 
-/* {
+{
     val se: WShapeExpr = WShape(
       None,
       false,
@@ -145,7 +145,7 @@ class WShExParserTest extends CatsEffectSuite {
           |""".stripMargin,
       WSchema(shapesMap = Map(s -> se), prefixes = Some(pm))
     )
-  } */
+  } 
 
   {
     val se: WShapeExpr = 
