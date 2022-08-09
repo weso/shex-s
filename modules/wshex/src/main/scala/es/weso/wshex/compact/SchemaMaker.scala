@@ -16,6 +16,7 @@ import es.weso.shex.{ Star, IntMax, Max, MinInclusive, MinExclusive, MaxInclusiv
 import es.weso.wshex._
 import es.weso.wbmodel.{ Lang => WBLang, _ }
 import es.weso.rbe.interval._
+import TripleConstraint._
 
 
 /** Visits the AST and builds the corresponding ShEx abstract syntax
@@ -1028,31 +1029,34 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
     }
 
   override def visitUnaryTripleExpr(ctx: UnaryTripleExprContext): Builder[TripleConstraint] =
-    visitTripleConstraint(ctx.tripleConstraint())
+    ctx match {
+/*W TODO     case _ if isDefined(ctx.bracketedTripleExpr()) => visitBracketedTripleExpr(ctx.bracketedTripleExpr()) */
+      case _ if isDefined(ctx.tripleConstraint()) => visitTripleConstraint(ctx.tripleConstraint()) 
+      case _ => err(s"visitUnaryTripleExpr: Unknown ctx: $ctx")
+    }
+
 /*W    ctx match {
       case _ if isDefined(ctx.include()) =>
         visitInclude(ctx.include())
       case _ if isDefined(ctx.expr()) =>
         for {
           e <- visitExpr(ctx.expr())
-        } yield Expr(None, e)
+        } yield Expr(None, e) 
       case _ =>
         for {
-          maybeLbl <- visitOpt(visitTripleExprLabel, ctx.tripleExprLabel())
+          maybeLbl <- visitOpt(visitTripleExprLabel, ctx.tripleExprLabel()) 
           te <-
             if (isDefined(ctx.bracketedTripleExpr()))
               visitBracketedTripleExpr(ctx.bracketedTripleExpr())
             else if (isDefined(ctx.tripleConstraint()))
               visitTripleConstraint(ctx.tripleConstraint())
             else err[TripleExpr](s"visitUnaryTripleExpr: unknown $ctx")
-          te1 <- maybeLbl match {
+           te1 <- maybeLbl match {
             case None      => ok(te)
             case Some(lbl) => addTripleExprLabel(lbl, te)
-          }
-        } yield te1 */
-    
-
-/*  override def visitExpr(e: ExprContext): Builder[ValueExpr] = e match {
+          } 
+      } yield te1  
+  override def visitExpr(e: ExprContext): Builder[ValueExpr] = e match {
     case _ if isDefined(e.basicExpr()) =>
       for {
         e <- visitBasicExpr(e.basicExpr())
@@ -1119,14 +1123,17 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
       shapeExpr <- visitInlineShapeExpression(ctx.inlineShapeExpression())
       cardinality <- getCardinality(ctx.cardinality())
       qualifierSpec <- getQualifierSpec(ctx.qualifierSpec())
-      
+      min = cardinality._1
+      max = cardinality._2
       //W anns <- visitList(visitAnnotation, ctx.annotation())
       //W semActs <- visitList(visitSemanticAction, ctx.semanticAction())
       propertyId <- predicate2PropertyId(predicate)
       tc <- shapeExpr match { 
-       case sref: WShapeRef => ok(TripleConstraintRef(propertyId, sref, cardinality._1, cardinality._2, qualifierSpec))
-       case nc: WNodeConstraint => ok(TripleConstraintLocal(propertyId, nc, cardinality._1, cardinality._2, qualifierSpec))
-       case WShape(None,false,Nil,None,Nil) => ok(TripleConstraintLocal(propertyId, EmptyExpr, cardinality._1,cardinality._2,qualifierSpec))
+       case sref: WShapeRef => ok(tripleConstraintRef(propertyId, sref, min, max).withQs(qualifierSpec))
+       case nc: WNodeConstraint => ok(tripleConstraintLocal(propertyId, nc, min, max).withQs(qualifierSpec))
+       case WShape(None,false,Nil,None,Nil) => ok(tripleConstraintLocal(propertyId, EmptyExpr, min, max).withQs(qualifierSpec))
+       case se: WShapeExpr => 
+        ok(TripleConstraintGeneral(propertyId, se, min, max).withQs(qualifierSpec))
        case _ => err(s"visitTripleConstraint. Error matching shapeExpr: $shapeExpr")
     }
     } yield tc
@@ -1230,13 +1237,13 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
       lbl <- visitTripleExprLabel(ctx.tripleExprLabel())
     } yield Inclusion(lbl) */
 
-/*  override def visitBracketedTripleExpr(ctx: BracketedTripleExprContext): Builder[TripleExpr] =
+  override def visitBracketedTripleExpr(ctx: BracketedTripleExprContext): Builder[TripleExpr] =
     for {
       tripleExpr <- visitTripleExpression(ctx.tripleExpression())
       cardinality <- getCardinality(ctx.cardinality())
 //W      annotations <- visitList(visitAnnotation, ctx.annotation())
 //W      semActs <- visitList(visitSemanticAction, ctx.semanticAction())
-    } yield extendTripleExpr(tripleExpr, cardinality, annotations, semActs)
+    } yield extendTripleExpr(tripleExpr, cardinality) //W , annotations, semActs)
 
   def extendTripleExpr(
       te: TripleExpr,
@@ -1245,34 +1252,41 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
       //W sActs: List[SemAct]
   ): TripleExpr =
     te match {
-      case tc: TripleConstraint =>
+      case tc: TripleConstraintLocal =>
         tc.copy(
-          optMin = cardinality._1,
-          optMax = cardinality._2,
+          min = cardinality._1,
+          max = cardinality._2,
+          //W annotations = optListCombine(tc.annotations, anns),
+          //W semActs = optListCombine(tc.semActs, sActs)
+        )
+      case tc: TripleConstraintRef =>
+        tc.copy(
+          min = cardinality._1,
+          max = cardinality._2,
           //W annotations = optListCombine(tc.annotations, anns),
           //W semActs = optListCombine(tc.semActs, sActs)
         )
       case eo: EachOf =>
-        eo.copy(
-          optMin = cardinality._1,
-          optMax = cardinality._2,
+        eo /*W .copy(
+          min = cardinality._1,
+          max = cardinality._2,
           //W annotations = optListCombine(eo.annotations, anns),
           //W semActs = optListCombine(eo.semActs, sActs)
-        )
+        ) */
       case so: OneOf =>
-        so.copy(
-          optMin = cardinality._1,
-          optMax = cardinality._2,
+        so /*W .copy(
+          min = cardinality._1,
+          max = cardinality._2,
           //W annotations = optListCombine(so.annotations, anns),
           //W semActs = optListCombine(so.semActs, sActs)
-        )
+        ) */
 /*W      case i: Inclusion =>
         // TODO: Check how to extend include
         i */
 /*W      case e: Expr =>
         // TODO: Check how to extend include
         e */
-    } */
+    } 
 
   def optListCombine[A](maybeAs: Option[List[A]], as: List[A]): Option[List[A]] =
     maybeAs match {
@@ -1322,13 +1336,12 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
     } 
 
   override def visitMultiElementOneOf(ctx: MultiElementOneOfContext): Builder[TripleExpr] = 
-    err(s"Not implemented multiElementOneOf yet")
-    /*W for {
+    for {
     groups <- visitList(visitGroupTripleExpr, ctx.groupTripleExpr)
   } yield groups.length match {
     case 1 => groups.head
     case _ => OneOf(exprs = groups) //W, None, None)
-  } */
+  } 
 
   override def visitShapeExprLabel(ctx: ShapeExprLabelContext): Builder[ShapeLabel] =
     ctx match {

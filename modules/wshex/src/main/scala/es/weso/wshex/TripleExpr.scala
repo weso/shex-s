@@ -4,7 +4,6 @@ import cats.implicits._
 import es.weso.rbe.interval.IntOrUnbounded
 import es.weso.rbe._
 import es.weso.wbmodel._
-import es.weso.shex.{Max}
 
 sealed abstract class TripleExpr extends Product with Serializable {
 
@@ -17,6 +16,7 @@ sealed abstract class TripleExpr extends Product with Serializable {
       eo.exprs.foldLeft(Set[ShapeLabel]()) { case (e, s) => e.union(s.dependsOn()) }
     case oo: OneOf => oo.exprs.foldLeft(Set[ShapeLabel]()) { case (e, s) => e.union(s.dependsOn()) }
     case EmptyTripleExpr => Set()
+    case tcg: TripleConstraintGeneral => tcg.value.dependsOn()
   }
 
   def rbe: Rbe[(PropertyId, ShapeLabel)] =
@@ -28,6 +28,7 @@ sealed abstract class TripleExpr extends Product with Serializable {
       case oo: OneOf =>
         oo.exprs.foldLeft(empty) { case (e, b) => Or(e, b.rbe) }
       case EmptyTripleExpr => empty
+      case tcg: TripleConstraintGeneral => tcg.value.rbe
     }
 
   lazy val tripleConstraints: List[TripleConstraintRef] = this match {
@@ -36,6 +37,7 @@ sealed abstract class TripleExpr extends Product with Serializable {
     case eo: EachOf               => eo.exprs.flatMap(_.tripleConstraints)
     case oo: OneOf                => oo.exprs.flatMap(_.tripleConstraints)
     case EmptyTripleExpr          => List()
+    case tcg: TripleConstraintGeneral => tcg.tripleConstraints
   }
 
   def checkLocal(
@@ -85,7 +87,7 @@ sealed abstract class TripleExpr extends Product with Serializable {
                   else Right(Set())
               }
           }
-        case OneOf(Nil) => Right(Set())
+        case oo: OneOf if oo.exprs == Nil => Right(Set())
         case _          => Left(NotImplemented("checkLocal EachOf"))
         /* case OneOf(ts) =>
         combineChecks(ts.map(t => t.checkLocalOpen(entity,fromLabel))
@@ -133,10 +135,10 @@ sealed abstract class TripleExpr extends Product with Serializable {
                    |result: $clo
                    |""".stripMargin) */
           clo
-        case EachOf(Nil) => Right(Set())
-        case EachOf(ts) =>
+        case eo: EachOf if eo.exprs == Nil => Right(Set())
+        case eo: EachOf =>
           val results =
-            ts
+            eo.exprs
               .map(_.checkLocalOpenCoded(entity, fromLabel))
               .sequence
               .map(_.sequence)
@@ -161,7 +163,7 @@ sealed abstract class TripleExpr extends Product with Serializable {
                   else Right(Set())
               }
           }
-        case OneOf(Nil) => Right(Set())
+        case oo: OneOf if oo.exprs == Nil => Right(Set())
         case _          => Left(Reason.notImplemented)
       }
       cl
@@ -172,8 +174,8 @@ sealed abstract class TripleExpr extends Product with Serializable {
 case class EachOf(
 //  id: Option[ShapeLabel],
   exprs: List[TripleConstraint],
-//  optMin: Option[Int],
-//  optMax: Option[Max]
+  optMin: Option[Int] = None,
+  optMax: Option[Max] = None
  ) extends TripleExpr {
 //  lazy val min: Int = optMin.getOrElse(Cardinality.defaultMin)
 //  lazy val max: Max = optMax.getOrElse(Cardinality.defaultMax)
@@ -182,8 +184,8 @@ case class EachOf(
 case class OneOf(
 //  id: Option[ShapeLabel],
   exprs: List[TripleConstraint],
-//  optMin: Option[Int],
-//  optMax: Option[Max]
+ optMin: Option[Int] = None,
+  optMax: Option[Max] = None
 ) extends TripleExpr {
 
 //  lazy val min: Int = optMin.getOrElse(Cardinality.defaultMin)
@@ -199,6 +201,8 @@ sealed abstract class TripleConstraint extends TripleExpr with Serializable with
   def qs: Option[QualifierSpec]
 
   def withQs(qs: Option[QualifierSpec]): TripleConstraint
+  def withMin(min: Int): TripleConstraint
+  def withMax(max: IntOrUnbounded): TripleConstraint
 
   /** Checks local statements of an entity allowing extra values
     *
@@ -223,14 +227,9 @@ sealed abstract class TripleConstraint extends TripleExpr with Serializable with
             .collect { case Right(()) => () }
             .size
         val failed = found.size - matches
-        /* println(s"""|Local statements: ${entity.localStatements}
-                    |Property: ${tl.property}
-                    |found: $found
-                    |matches: $matches
-                    |failed: $failed
-                    |""".stripMargin) */
         if (min <= matches && max >= matches) Right(Right((tl.property, matches, failed)))
         else Left(CardinalityError(tl.property, matches, min, max))
+      case _ => NotImplemented(s"matchLocalOpen: not implemented: $this").asLeft
     }
 
   def checkLocalOpenCoded(
@@ -255,7 +254,8 @@ sealed abstract class TripleConstraint extends TripleExpr with Serializable with
             .size
         val failed = found.size - matches
         if (min <= matches && max >= matches) Right(Right((tl.property, matches, failed)))
-        else Left(Reason.cardinalityError)
+        else Reason.cardinalityError.asLeft
+      case _ => Reason.notImplemented.asLeft
     }
 
 }
@@ -265,19 +265,49 @@ case class TripleConstraintRef(
     value: WShapeRef,
     min: Int,
     max: IntOrUnbounded,
-    qs: Option[QualifierSpec]
+    qs: Option[QualifierSpec] = None
 ) extends TripleConstraint {
-  override def withQs(qs: Option[QualifierSpec]): TripleConstraint =
-    this.copy(qs = qs)
+   override def withQs(qs: Option[QualifierSpec]): TripleConstraint = this.copy(qs = qs)
+
+   override def withMin(min: Int) = this.copy(min = min) 
+
+   override def withMax(max: IntOrUnbounded) = this.copy(max = max)
 }
 
 case class TripleConstraintLocal(
-    property: PropertyId,
-    value: WNodeConstraint,
-    min: Int,
-    max: IntOrUnbounded,
-    qs: Option[QualifierSpec] = None
+  property: PropertyId,
+  value: WNodeConstraint,
+  min: Int,
+  max: IntOrUnbounded,
+  qs: Option[QualifierSpec] = None
 ) extends TripleConstraint {
-  override def withQs(qs: Option[QualifierSpec]): TripleConstraint =
-    this.copy(qs = qs)
+
+   override def withQs(qs: Option[QualifierSpec]): TripleConstraint = this.copy(qs = qs)
+
+   override def withMin(min: Int) = this.copy(min = min) 
+
+   override def withMax(max: IntOrUnbounded) = this.copy(max = max)
+}
+
+case class TripleConstraintGeneral(
+  property: PropertyId,
+  value: WShapeExpr,
+  min: Int,
+  max: IntOrUnbounded,
+  qs: Option[QualifierSpec] = None
+) extends TripleConstraint {
+   
+   override def withQs(qs: Option[QualifierSpec]): TripleConstraint = this.copy(qs = qs)
+
+   override def withMin(min: Int) = this.copy(min = min) 
+
+   override def withMax(max: IntOrUnbounded) = this.copy(max = max)
+
+}
+
+object TripleConstraint {
+  def tripleConstraintLocal(propertyId: PropertyId, nodeConstraint: WNodeConstraint, min: Int = defaultMin, max: IntOrUnbounded = defaultMax) =
+    TripleConstraintLocal(propertyId, nodeConstraint, min, max)
+  def tripleConstraintRef(propertyId: PropertyId, ref: WShapeRef, min: Int = defaultMin, max: IntOrUnbounded = defaultMax) =
+    TripleConstraintRef(propertyId, ref, min, max)  
 }

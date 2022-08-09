@@ -143,17 +143,18 @@ singleElementGroup: unaryTripleExpr ';'?;
 multiElementGroup: unaryTripleExpr (';' unaryTripleExpr)+ ';'?;
 
 unaryTripleExpr: 
- //W ('$' tripleExprLabel)? (
-		tripleConstraint
- //W		| bracketedTripleExpr
- //W	)
+ //W ('$' tripleExprLabel)? 
+    (
+      tripleConstraint
+ 	| bracketedTripleExpr
+ 	)
 //W 	| include
 //W 	| expr
 	;
 
-//W bracketedTripleExpr:
-//	'(' tripleExpression ')' cardinality? //W annotation* semanticAction*
-//	;
+bracketedTripleExpr:
+	'(' tripleExpression ')' cardinality? //W annotation* semanticAction*
+	;
 
 tripleConstraint:
 	//W senseFlags? 
