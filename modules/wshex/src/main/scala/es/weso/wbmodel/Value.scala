@@ -22,17 +22,17 @@ sealed abstract class EntityId extends Value {
 
 object EntityId {
 
-  def fromIri(iri: IRI): EntityId = {
+  def fromIri(iri: IRI): Either[String, EntityId] = {
     val (name, base) = Utils.splitIri(iri)
     name(0) match {
-      case 'P' => PropertyId(name, iri)
-      case 'Q' => ItemId(name, iri)
+      case 'P' => PropertyId(name, iri).asRight
+      case 'Q' => ItemId(name, iri).asRight
       case _ =>
-        throw new RuntimeException(s"""|Match error. EntityId.fromIri($iri):
-                                       | localName: $name
-                                       | base: $base
-                                       | Should start by P or Q
-                                       |""".stripMargin)
+        s"""|Match error. EntityId.fromIri($iri):
+            | localName: $name
+            | base: $base
+            | Should start by P or Q
+            |""".stripMargin.asLeft
     }
   }
 }
@@ -142,7 +142,7 @@ case class Item(
 }
 
 object Item {
-  def fromItemDocument(id: ItemDocument): Item =
+  def fromItemDocument(id: ItemDocument): Item = {
     val itemId = ItemId(id.getEntityId().getId(), IRI(id.getEntityId().getIri()))
     Item(
       itemId,
@@ -155,6 +155,7 @@ object Item {
       List(),
       Set()
     )
+  }
 }
 
 case class Property(
@@ -191,9 +192,10 @@ case class Property(
   override def withOkShapes(shapes: Set[ShapeLabel]): Entity =
     this.copy(okShapes = shapes)
 
-  override def addPropertyValues(pid: PropertyId, values: List[WDValue]): Entity =
+  override def addPropertyValues(pid: PropertyId, values: List[WDValue]): Entity = {
     println(s"AddPropertyValues: $pid not implemented yet")
     this
+  }
 
 }
 object Property {
@@ -297,6 +299,7 @@ case class SiteLink(
 object Value {
 
   lazy val siteDefault = "http://www.wikidata.org/entity/"
+  lazy val defaultIRI  = IRI(siteDefault)
 
   def triple(
       subj: Entity,
@@ -342,7 +345,7 @@ object Value {
     Item(
       ItemId(qid, iri = mkSite(site, qid)),
       VertexId(id),
-      label.fold(Map())(lbl => Map(Lang("en") -> lbl)),
+      label.fold(Map[Lang,String]())(lbl => Map(Lang("en") -> lbl)),
       Map(),
       Map(),
       site,

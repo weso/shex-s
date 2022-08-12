@@ -88,7 +88,7 @@ object DumpReader {
       withEntity: EntityDoc => IO[A],
       parsedLine: ParsedLine,
       lineNumber: Long
-  ): IO[A] =
+  ): IO[A] = {
     val empty = Monoid[A].empty
     parsedLine match {
       case OpenBracket     => empty.pure[IO] //  "[\n".pure[IO]
@@ -98,6 +98,7 @@ object DumpReader {
         IO(println(s"Error at line $lineNumber: $e")) >> empty.pure[IO]
       case EndStream => empty.pure[IO]
     }
+  }
 
   private def parseLine(line: String, opts: DumpReaderOptions): IO[ParsedLine] =
     (line.trim match {

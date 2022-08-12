@@ -7,6 +7,7 @@ import cats._
 import cats.implicits._
 import es.weso.wbmodel._
 import es.weso.rdf.nodes._
+import es.weso.shex.XsFacet
 
 sealed abstract class WShapeExpr extends Product with Serializable {
 
@@ -265,7 +266,17 @@ sealed abstract class WShapeExpr extends Product with Serializable {
 
 case class WShapeAnd(id: Option[ShapeLabel], exprs: List[WShapeExpr]) extends WShapeExpr
 
+object WShapeAnd {
+  def fromShapeExprs(es: List[WShapeExpr]): WShapeAnd =
+    WShapeAnd(None, es)
+}
+
 case class WShapeOr(id: Option[ShapeLabel], exprs: List[WShapeExpr]) extends WShapeExpr
+
+object WShapeOr {
+  def fromShapeExprs(es: List[WShapeExpr]): WShapeOr =
+    WShapeOr(None, es)
+}
 
 case class WShapeNot(id: Option[ShapeLabel], shapeExpr: WShapeExpr) extends WShapeExpr
 
@@ -289,13 +300,21 @@ object WShape {
     expression = None,
     termConstraints = List()
   )
-}  
-
+}
 
 sealed abstract class WNodeConstraint extends WShapeExpr {
   def matchLocal(value: Value): Either[Reason, Unit]
   def matchLocalCoded(value: Value): Either[ReasonCode, Unit] =
     matchLocal(value).leftMap(r => r.errCode)
+}
+
+object WNodeConstraint {
+  def valueSet(vs: List[ValueSetValue]) // W, facets: List[XsFacet])
+      : WNodeConstraint =
+    ValueSet(id = None, values = vs) // W , xsFacets = facets)
+
+  def xsFacets(sfs: List[XsFacet]): WNodeConstraint = ???
+
 }
 
 case object EmptyExpr extends WNodeConstraint {
@@ -364,15 +383,6 @@ case object DateDatatype extends WNodeConstraint {
   }
 }
 
-sealed trait ValueSetValue
-sealed trait NonLocalValueSetValue extends ValueSetValue
-sealed trait LocalValueSetValue extends ValueSetValue
-
-case class EntityIdValueSetValue(id: EntityId) extends NonLocalValueSetValue
-case class IRIValueSetValue(iri: IRI) extends LocalValueSetValue
-case class StringValueSetValue(str: String) extends LocalValueSetValue
-
-
 object WShapeExpr {
 
   def any: WShapeExpr = WShape.empty
@@ -382,11 +392,13 @@ object WShapeExpr {
   def shapeRef(iri: String): WShapeRef = WShapeRef(label(iri))
 
   def shape(ls: List[TripleConstraint]): WShapeExpr =
-    WShape(None, false, List(), Some(EachOf(ls)), List())
+    WShape(None, false, List(), Some(EachOf(exprs = ls)), List())
 
   def valueSet(ls: List[ValueSetValue]): WShapeExpr =
     ValueSet(None, ls)
 
-  def qid(num: Int): ValueSetValue =
-    EntityIdValueSetValue(EntityId.fromIri(IRI(Value.siteDefault) + ("/Q" + num)))
+  def qid(num: Int): ValueSetValue = {
+    val name = "Q" + num
+    EntityIdValueSetValue(ItemId(name, IRI(Value.siteDefault + "/" + name)))
+  }
 }
