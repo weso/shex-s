@@ -4,8 +4,7 @@ import io.circe.Json
 import es.weso.rdf.nodes.IRI
 import es.weso.rdf.PrefixMap
 import es.weso.rbe.interval.IntLimit
-import es.weso.wbmodel.EntityId
-import es.weso.wbmodel.PropertyId
+import es.weso.wbmodel._
 import es.weso.utils.VerboseLevel._
 
 class ShEx2WShExTest extends CatsEffectSuite {
@@ -27,7 +26,7 @@ class ShEx2WShExTest extends CatsEffectSuite {
       Some(
         TripleConstraintLocal(
           PropertyId.fromIRI(wdt + "P31"),
-          ValueSet(None, List(EntityIdValueSetValue(EntityId.fromIri(wd + "Q5")))),
+          ValueSet(None, List(EntityIdValueSetValue(ItemId("Q5",wd + "Q5")))),
           1,
           IntLimit(1)
         )
@@ -81,7 +80,7 @@ class ShEx2WShExTest extends CatsEffectSuite {
   )(implicit loc: munit.Location): Unit =
     test(name) {
       WSchema
-        .fromString(shexStr, format, Info)
+        .fromString(schemaString = shexStr, format = format, base = None, verbose = Info)
         .map(it => assertEquals(it.toString, expected.toString))
     }
 }

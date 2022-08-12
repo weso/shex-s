@@ -8,6 +8,11 @@ import cats.effect.IO
 import es.weso.wbmodel._
 import es.weso.utils.VerboseLevel
 import es.weso.rdf.nodes._
+import java.io.InputStream
+import java.io.InputStreamReader
+import java.io.ByteArrayInputStream
+import es.weso.wshex.compact.Parser._
+import es.weso.wshex.compact.ParserOptions
 
 case class WSchema(
     shapesMap: Map[ShapeLabel, WShapeExpr] = Map(),
@@ -24,6 +29,9 @@ case class WSchema(
   def withStart(start: Option[WShapeExpr]): WSchema = this.copy(start = start)
 
   def withBase(base: Option[IRI]): WSchema = this.copy(base = base)
+
+  def withShapesMap(sm: Map[ShapeLabel, WShapeExpr]) =
+    this.copy(shapesMap = sm)
 
   def get(shapeLabel: ShapeLabel): Option[WShapeExpr] = shapeLabel match {
     case Start => start
@@ -97,6 +105,8 @@ case class WSchema(
 
 object WSchema {
 
+  val defaultEntityIRI = es.weso.wbmodel.Value.defaultIRI
+
   def empty: WSchema =
     WSchema(Map())
 
@@ -127,12 +137,22 @@ object WSchema {
       } yield wschema
   }
 
+  case class WShExErrorReadingString(msg: String, inputStr: String, format: WShExFormat) extends RuntimeException(msg)
+
   def fromString(
       schemaString: String,
       format: WShExFormat = WShExFormat.CompactWShExFormat,
+      base: Option[IRI] = None,
+      entityIRI: IRI = defaultEntityIRI,
       verbose: VerboseLevel
   ): IO[WSchema] = format match {
-    case WShExFormat.CompactWShExFormat | WShExFormat.JsonWShExFormat =>
+    case WShExFormat.CompactWShExFormat => {
+      val is = new ByteArrayInputStream(schemaString.getBytes())
+      val reader = new InputStreamReader(is)
+      val parserOptions = ParserOptions(entityIRI)
+      parseSchemaReader(reader, base, parserOptions).fold(e => IO.raiseError(WShExErrorReadingString(e, schemaString, format)), _.pure[IO])
+    }
+    case WShExFormat.JsonWShExFormat =>
       for {
         schema <- es.weso.shex.Schema.fromString(schemaString, cnvFormat(format))
         resolvedSchema <- es.weso.shex.ResolvedSchema.resolve(schema, None, verbose)
@@ -174,13 +194,15 @@ object WSchema {
   def unsafeFromString(
       str: String,
       format: WShExFormat,
+      base: Option[IRI] = None,
+      entityIRI: IRI = defaultEntityIRI, 
       verbose: VerboseLevel
   ): Either[ParseError, WSchema] = {
     import cats.effect.unsafe.implicits.global
     try
       /*      val schema = es.weso.shex.Schema.fromString(str, cnvFormat(format)).unsafeRunSync()
       val wShEx = ShEx2WShEx().convertSchema(schema) */
-      fromString(str, format, verbose).unsafeRunSync().asRight
+      fromString(str, format, base, entityIRI, verbose).unsafeRunSync().asRight
     catch {
       case e: Exception => ParseException(e).asLeft
     }
@@ -197,9 +219,11 @@ object WSchema {
   def unsafeFromString2(
       schemaString: String,
       format: WShExFormat = WShExFormat.CompactWShExFormat,
+      base: Option[IRI] = None,
+      entityIRI: IRI = defaultEntityIRI,
       verbose: VerboseLevel
   ): WSchema = {
     import cats.effect.unsafe.implicits.global
-    fromString(schemaString, format, verbose).unsafeRunSync()
+    fromString(schemaString, format, base, entityIRI, verbose).unsafeRunSync()
   }
 }

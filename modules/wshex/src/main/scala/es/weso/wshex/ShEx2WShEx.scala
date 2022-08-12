@@ -29,10 +29,10 @@ case class ShEx2WShEx(convertOptions: ConvertOptions) extends LazyLogging {
         case Some(se) => convertShapeExpr(se).flatMap(se => Right(Some(se)))
       }
     } yield WSchema(
-       shapesMap = shapes.toMap, 
-       start = start, 
-       prefixes = shexSchema.prefixes,
-       base = shexSchema.base
+      shapesMap = shapes.toMap,
+      start = start,
+      prefixes = shexSchema.prefixes,
+      base = shexSchema.base
     )
 
   private def convertLabelShapeExpr(
@@ -104,9 +104,12 @@ case class ShEx2WShEx(convertOptions: ConvertOptions) extends LazyLogging {
               |siteIri: ${convertOptions.siteIri}
               |""".stripMargin)
         if (IRI(base1) == convertOptions.siteIri) {
-          Right(EntityIdValueSetValue(EntityId.fromIri(i)))
+          EntityId
+            .fromIri(i)
+            .leftMap(ErrorConvertingIRI(_))
+            .map(EntityIdValueSetValue(_))
         } else {
-          Right(IRIValueSetValue(i))
+          IRIValueSetValue(i).asRight
         }
       case _ => UnsupportedValueSetValue(value).asLeft
     }
@@ -136,16 +139,16 @@ case class ShEx2WShEx(convertOptions: ConvertOptions) extends LazyLogging {
           tes <- eo.expressions
             .map(convertTripleExpr)
             .sequence
-          tcs <- tes.map(castToTripleConstraint(_)).sequence
-        } yield EachOf(tcs)
+          // tcs <- tes.map(castToTripleConstraint(_)).sequence
+        } yield EachOf(exprs = tes)
       case oo: shex.OneOf =>
         // TODO: generalize to handle triple expressions
         for {
           tes <- oo.expressions
             .map(convertTripleExpr)
             .sequence
-          tcs <- tes.map(castToTripleConstraint(_)).sequence
-        } yield OneOf(tcs)
+          // tcs <- tes.map(castToTripleConstraint(_)).sequence
+        } yield OneOf(exprs = tes)
       case tc: shex.TripleConstraint =>
         convertTripleConstraint(tc)
       case _ =>

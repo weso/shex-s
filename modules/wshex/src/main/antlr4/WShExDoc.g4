@@ -65,23 +65,30 @@ inlineShapeOrRef: inlineShapeDefinition | shapeRef;
 shapeRef: ATPNAME_LN | ATPNAME_NS | '@' shapeExprLabel;
 
 inlineLitNodeConstraint:
-	KW_LITERAL xsFacet*				# nodeConstraintLiteral
-	| nonLiteralKind stringFacet*	# nodeConstraintNonLiteral
-	| datatype xsFacet*				# nodeConstraintDatatype
-	| valueSet xsFacet*				# nodeConstraintValueSet
-	| numericFacet+					# nodeConstraintNumericFacet;
+//W	KW_LITERAL xsFacet*				# nodeConstraintLiteral
+//W	| nonLiteralKind stringFacet*	# nodeConstraintNonLiteral
+//W	| datatype xsFacet*				# nodeConstraintDatatype
+	| valueSet //W xsFacet*				# nodeConstraintValueSet
+//W	| numericFacet+					# nodeConstraintNumericFacet
+    ;
 
 litNodeConstraint:
-	inlineLitNodeConstraint annotation* semanticAction*;
+	inlineLitNodeConstraint //W annotation* semanticAction*
+	;
 
 inlineNonLitNodeConstraint:
-	nonLiteralKind stringFacet*	# litNodeConstraintLiteral
-	| stringFacet+				# litNodeConstraintStringFacet;
+//W	nonLiteralKind stringFacet*	# litNodeConstraintLiteral
+//W	| 
+	  stringFacet+				# litNodeConstraintStringFacet
+	;
 
 nonLitNodeConstraint:
-	inlineNonLitNodeConstraint annotation* semanticAction*;
+	inlineNonLitNodeConstraint //W annotation* semanticAction*
+	;
 
-nonLiteralKind: KW_IRI | KW_BNODE | KW_NONLITERAL;
+//W nonLiteralKind: 
+//    KW_IRI | KW_BNODE | KW_NONLITERAL
+//    ;
 
 xsFacet: stringFacet | numericFacet;
 
@@ -103,7 +110,8 @@ numericLength: KW_TOTALDIGITS | KW_FRACTIONDIGITS;
 rawNumeric: INTEGER | DECIMAL | DOUBLE;
 
 shapeDefinition:
-	inlineShapeDefinition annotation* semanticAction*;
+	inlineShapeDefinition //W annotation* semanticAction*
+	;
 
 inlineShapeDefinition: qualifier* '{' tripleExpression? '}';
 
@@ -134,18 +142,23 @@ singleElementGroup: unaryTripleExpr ';'?;
 
 multiElementGroup: unaryTripleExpr (';' unaryTripleExpr)+ ';'?;
 
-unaryTripleExpr: ('$' tripleExprLabel)? (
-		tripleConstraint
-		| bracketedTripleExpr
-	)
-	| include
-	| expr;
+unaryTripleExpr: 
+ //W ('$' tripleExprLabel)? 
+    (
+      tripleConstraint
+ 	| bracketedTripleExpr
+ 	)
+//W 	| include
+//W 	| expr
+	;
 
 bracketedTripleExpr:
-	'(' tripleExpression ')' cardinality? annotation* semanticAction*;
+	'(' tripleExpression ')' cardinality? //W annotation* semanticAction*
+	;
 
 tripleConstraint:
-	senseFlags? predicate inlineShapeExpression cardinality? annotation* semanticAction* /* variableDecl? */
+	//W senseFlags? 
+	predicate inlineShapeExpression cardinality? qualifierSpec? //W annotation* semanticAction* /* variableDecl? */
 		;
 
 cardinality:
@@ -162,6 +175,9 @@ min_range: INTEGER;
 
 max_range: INTEGER | '*';
 
+qualifierSpec:
+   '{|' predicate shapeAtom cardinality? '|}' 
+   ;
 /*
  variableDecl
  : KW_AS varName
@@ -174,9 +190,9 @@ max_range: INTEGER | '*';
  ;
  */
 
-expr: expr binOp expr | basicExpr;
+//W expr: expr binOp expr | basicExpr;
 
-binOp:
+/* binOp:
 	'='		# equals
 	| '!='	# notEquals
 	| '>'	# gt
@@ -186,7 +202,8 @@ binOp:
 	| '*'	# mult
 	| '/'	# div
 	| '+'	# add
-	| '-'	# minus;
+	| '-'	# minus
+	; */
 
 basicExpr:
 	/* varName
@@ -202,33 +219,35 @@ valueSet: '[' valueSetValue* ']';
 
 valueSetValue:
 	iriRange
-	| literalRange
-	| languageRange
-	| '.' (
-		iriExclusion+
-		| literalExclusion+
-		| languageExclusion+
-	);
+//W	| literalRange
+//W	| languageRange
+//W	| '.' (
+//W		iriExclusion+
+//W		| literalExclusion+
+//W		| languageExclusion+
+//W	)
+    ;
 
-iriRange: iri (STEM_MARK iriExclusion*)?;
+iriRange: iri //W (STEM_MARK iriExclusion*)?
+    ;
 
-iriExclusion: '-' iri STEM_MARK?;
+//W iriExclusion: '-' iri STEM_MARK?;
 
-literalRange: literal (STEM_MARK literalExclusion*)?;
+//W literalRange: literal (STEM_MARK literalExclusion*)?;
 
-literalExclusion: '-' literal STEM_MARK?;
+//W literalExclusion: '-' literal STEM_MARK?;
 
-languageRange:
-	LANGTAG (STEM_MARK languageExclusion*)?	# languageRangeFull
-	| '@' STEM_MARK languageExclusion*		# languageRangeAt;
+//W languageRange:
+//	LANGTAG (STEM_MARK languageExclusion*)?	# languageRangeFull
+//	| '@' STEM_MARK languageExclusion*		# languageRangeAt;
 
-languageExclusion: '-' LANGTAG STEM_MARK?;
+//W languageExclusion: '-' LANGTAG STEM_MARK?;
 
-include: '&' tripleExprLabel;
+//W include: '&' tripleExprLabel;
 
-annotation: '//' predicate (iri | literal);
+//W annotation: '//' predicate (iri | literal);
 
-semanticAction: '%' iri (CODE | '%');
+//W semanticAction: '%' iri (CODE | '%');
 
 literal: rdfLiteral | numericLiteral | booleanLiteral;
 
@@ -238,7 +257,10 @@ literal: rdfLiteral | numericLiteral | booleanLiteral;
  | rdfType
  ;
  */
-predicate: PROPERTY;
+predicate
+ : iri
+ // Removed RDF_TYPE as predicate (not allowed in WShEx)
+ ;
 
 rdfType: RDF_TYPE;
 
@@ -388,13 +410,7 @@ BLANK_NODE_LABEL:
 
 LANGTAG: '@' [a-zA-Z]+ ('-' [a-zA-Z0-9]+)*;
 
-PROPERTY: [Pp] UNSIGNEDINT;
-
-ITEM: [Qq] UNSIGNEDINT;
-
 INTEGER: [+-]? [0-9]+;
-
-UNSIGNEDINT: [0-9]+;
 
 DECIMAL: [+-]? [0-9]* '.' [0-9]+;
 
