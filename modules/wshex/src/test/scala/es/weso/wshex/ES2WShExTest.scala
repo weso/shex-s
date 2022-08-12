@@ -57,7 +57,7 @@ class ES2WShExTest extends CatsEffectSuite {
         |}
         |""".stripMargin,
     WSchema(
-      shapesMap =Map(
+      shapesMap = Map(
         s ->
           WShape(
             Some(s),
@@ -203,7 +203,7 @@ class ES2WShExTest extends CatsEffectSuite {
       List(),
       Some(
         EachOf(
-          List(
+          exprs = List(
             TripleConstraintLocal(
               PropertyId.fromIRI(wd + "P856"),
               EmptyExpr,

@@ -7,7 +7,7 @@ import cats._
 import cats.implicits._
 import es.weso.wbmodel._
 import es.weso.rdf.nodes._
-import es.weso.shex.{XsFacet}
+import es.weso.shex.XsFacet
 
 sealed abstract class WShapeExpr extends Product with Serializable {
 
@@ -278,7 +278,6 @@ object WShapeOr {
     WShapeOr(None, es)
 }
 
-
 case class WShapeNot(id: Option[ShapeLabel], shapeExpr: WShapeExpr) extends WShapeExpr
 
 case class WShapeRef(
@@ -301,7 +300,7 @@ object WShape {
     expression = None,
     termConstraints = List()
   )
-}  
+}
 
 sealed abstract class WNodeConstraint extends WShapeExpr {
   def matchLocal(value: Value): Either[Reason, Unit]
@@ -310,9 +309,9 @@ sealed abstract class WNodeConstraint extends WShapeExpr {
 }
 
 object WNodeConstraint {
-  def valueSet(vs: List[ValueSetValue]) //W, facets: List[XsFacet])
-   : WNodeConstraint =
-    ValueSet(id = None, values = vs) //W , xsFacets = facets)
+  def valueSet(vs: List[ValueSetValue]) // W, facets: List[XsFacet])
+      : WNodeConstraint =
+    ValueSet(id = None, values = vs) // W , xsFacets = facets)
 
   def xsFacets(sfs: List[XsFacet]): WNodeConstraint = ???
 
@@ -393,7 +392,7 @@ object WShapeExpr {
   def shapeRef(iri: String): WShapeRef = WShapeRef(label(iri))
 
   def shape(ls: List[TripleConstraint]): WShapeExpr =
-    WShape(None, false, List(), Some(EachOf(ls)), List())
+    WShape(None, false, List(), Some(EachOf(exprs = ls)), List())
 
   def valueSet(ls: List[ValueSetValue]): WShapeExpr =
     ValueSet(None, ls)
