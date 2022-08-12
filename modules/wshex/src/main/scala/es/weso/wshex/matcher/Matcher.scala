@@ -135,15 +135,17 @@ case class Matcher(
       case tc: TripleConstraint =>
         matchTripleConstraint(tc, entity, se, current)
 
-      case EachOf(es) if es.forall(_.isInstanceOf[TripleConstraint]) =>
-        val tcs: LazyList[TripleConstraint] = es.map(_.asInstanceOf[TripleConstraint]).toLazyList
+      case eo: EachOf if eo.exprs.forall(_.isInstanceOf[TripleConstraint]) =>
+        val tcs: LazyList[TripleConstraint] =
+          eo.exprs.map(_.asInstanceOf[TripleConstraint]).toLazyList
         MatchingStatus.combineAnds(
           current,
           tcs
             .map(tc => matchTripleConstraint(tc, entity, se, current))
         )
-      case OneOf(es) if es.forall(_.isInstanceOf[TripleConstraint]) =>
-        val tcs: LazyList[TripleConstraint] = es.map(_.asInstanceOf[TripleConstraint]).toLazyList
+      case oo: OneOf if oo.exprs.forall(_.isInstanceOf[TripleConstraint]) =>
+        val tcs: LazyList[TripleConstraint] =
+          oo.exprs.map(_.asInstanceOf[TripleConstraint]).toLazyList
         MatchingStatus.combineOrs(
           current,
           tcs.map(tc => matchTripleConstraint(tc, entity, se, current))
@@ -347,9 +349,14 @@ object Matcher {
   def unsafeFromString(
       str: String,
       verbose: VerboseLevel = VerboseLevel.Nothing,
+      base: Option[IRI] = None,
+      entityIRI: IRI = defaultIRI,
       format: WShExFormat = WShExFormat.CompactWShExFormat
   ): Either[ParseError, Matcher] =
     WSchema
-      .unsafeFromString(str, format, verbose)
+      .unsafeFromString(str, format, base, entityIRI, verbose)
       .map(s => Matcher(wShEx = s, verbose = verbose))
+
+  val defaultIRI = es.weso.wbmodel.Value.defaultIRI
+
 }

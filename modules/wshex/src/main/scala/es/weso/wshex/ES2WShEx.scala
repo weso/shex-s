@@ -66,11 +66,12 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
         case None     => none.asRight
         case Some(se) => convertShapeExpr(se, shexSchema).flatMap(se => Right(Some(se)))
       }
-    } yield WSchema(shapesMap = shapes.toMap, 
-                    start = start, 
-                    prefixes = shexSchema.prefixes,
-                    base = shexSchema.base
-                    )
+    } yield WSchema(
+      shapesMap = shapes.toMap,
+      start = start,
+      prefixes = shexSchema.prefixes,
+      base = shexSchema.base
+    )
 
   private def convertLabelShapeExpr(
       label: shex.ShapeLabel,
@@ -142,9 +143,12 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
               |base1: $base1
               |""".stripMargin)
         if (IRI(base1) == convertOptions.entityIri) {
-          Right(EntityIdValueSetValue(EntityId.fromIri(i)))
+          EntityId
+            .fromIri(i)
+            .leftMap(ErrorConvertingIRI(_))
+            .map(EntityIdValueSetValue(_))
         } else {
-          Right(IRIValueSetValue(i))
+          IRIValueSetValue(i).asRight
         }
       case _ => UnsupportedValueSetValue(value).asLeft
     }
@@ -217,29 +221,21 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
         eo.expressions
           .map(convertTripleExpr(schema))
           .sequence
-          .flatMap { ls =>
-            ls.map(castToTripleConstraint(_))
-              .sequence
-              .map(_.flatten)
-              .map(_ match {
-                case Nil => none[TripleExpr]
-                case tcs => EachOf(tcs).some
-              })
-          }
+          .map(_.flatten)
+          .map(_ match {
+            case Nil => none[TripleExpr]
+            case tes => EachOf(exprs = tes).some
+          })
 
       case oo: shex.OneOf =>
         oo.expressions
           .map(convertTripleExpr(schema))
           .sequence
-          .flatMap { ls =>
-            ls.map(castToTripleConstraint(_))
-              .sequence
-              .map(_.flatten)
-              .map(_ match {
-                case Nil => none[TripleExpr]
-                case tcs => OneOf(tcs).some
-              })
-          }
+          .map(_.flatten)
+          .map(_ match {
+            case Nil => none[TripleExpr]
+            case tes => OneOf(exprs = tes).some
+           })
       case tc: shex.TripleConstraint =>
         convertTripleConstraint(tc, schema)
       case _ =>
@@ -247,7 +243,7 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
         Left(UnsupportedTripleExpr(te))
     }
 
-  private def castToTripleConstraint(
+  /*  private def castToTripleConstraint(
       maybeTe: Option[TripleExpr]
   ): Either[ConvertError, Option[TripleConstraint]] = maybeTe match {
     case None => none.asRight
@@ -257,7 +253,7 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
           tc.some.asRight
         case _ => Left(CastTripleConstraintError(te))
       }
-  }
+  } */
 
   private def makeTripleConstraint(
       pred: PropertyId,

@@ -194,8 +194,9 @@ object EntityDoc {
 
   lazy val defaultSite = "http://www.wikidata.org/entity/"
 
-  def QId(num: Long, site: String = defaultSite): EntityDoc =
+  def QId(num: Long, site: String = defaultSite): EntityDoc = {
     val id: ItemIdValue = new ItemIdValueImpl(s"Q$num", site)
     EntityDoc(ItemDocumentBuilder.forItemId(id).build())
+  }
 
 }
