@@ -37,7 +37,7 @@ lazy val scalaLoggingVersion = "3.9.4"
 lazy val typesafeConfigVersion = "1.4.2"
 lazy val wikidataToolkitVersion = "0.14.0"
 lazy val xercesVersion = "2.12.2"
-lazy val slf4jVersion = "1.7.36"
+lazy val slf4jVersion = "2.0.0"
 
 // Dependency modules
 // lazy val antlr4            = "org.antlr"                  % "antlr4"               % antlrVersion
