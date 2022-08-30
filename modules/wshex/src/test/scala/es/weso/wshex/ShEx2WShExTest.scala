@@ -26,7 +26,7 @@ class ShEx2WShExTest extends CatsEffectSuite {
       Some(
         TripleConstraintLocal(
           PropertyId.fromIRI(wdt + "P31"),
-          ValueSet(None, List(EntityIdValueSetValue(ItemId("Q5",wd + "Q5")))),
+          ValueSet(None, List(EntityIdValueSetValue(ItemId("Q5", wd + "Q5")))),
           1,
           IntLimit(1)
         )

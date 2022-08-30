@@ -201,7 +201,7 @@ class ShapeMapTest extends CatsEffectSuite {
     ): Unit =
       test(s"should parse $str and obtain $expected") {
         Parser.parse(str, Some(IRI("")), nodesPrefixMap, shapesPrefixMap) match {
-          case Left(msg) => fail(s"Failed to parse $str: $msg")
+          case Left(msg)       => fail(s"Failed to parse $str: $msg")
           case Right(shapeMap) =>
             // println(s"$str parsed!!")
             // println(shapeMap)
