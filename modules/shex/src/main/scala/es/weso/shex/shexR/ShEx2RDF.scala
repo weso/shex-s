@@ -281,7 +281,7 @@ trait ShEx2RDF extends RDFSaver {
           _ <- maybeAddStarContent(annotations, node, sx_annotation, annotation)
         } yield node
       case Inclusion(lbl) => label(lbl)
-      case e: Expr        =>
+      case e: Expr =>
         // TODO
         val msg = s"Expr serialization to RDF not implemented yet. Expr = $e"
         println(msg)
