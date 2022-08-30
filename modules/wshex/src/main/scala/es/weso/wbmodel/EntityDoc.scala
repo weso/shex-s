@@ -20,6 +20,8 @@ import org.wikidata.wdtk.datamodel.helpers.ItemDocumentBuilder
 import org.wikidata.wdtk.datamodel.helpers.PropertyDocumentBuilder
 import org.wikidata.wdtk.datamodel.implementation.ItemIdValueImpl
 import org.wikidata.wdtk.datamodel.helpers.StatementBuilder
+import org.wikidata.wdtk.datamodel.helpers.Datamodel
+import EntityDocError._
 
 /** EntityDoc is a Scala wrapper for WDTK EntityDocuments
   */
@@ -137,6 +139,12 @@ case class EntityDoc(entityDocument: EntityDocument) extends Serializable {
       case pd: PropertyDocument => pd.withStatement(st)
     })
   }
+
+  def withLabel(langCode: String, label: String): EntityDoc =
+    entityDocument match {
+      case td: TermedDocument => EntityDoc(td.withLabel(Datamodel.makeMonolingualTextValue(label, langCode)))
+      case _ => throw NotTermedDocument(entityDocument)
+    }
 
   def mergeStatements(ss: List[WDTKStatement]): EntityDoc = {
     val ed = ss.foldLeft(entityDocument) { case (c, s) =>
