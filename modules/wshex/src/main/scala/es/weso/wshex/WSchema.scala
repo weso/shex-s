@@ -200,8 +200,6 @@ object WSchema {
   ): Either[ParseError, WSchema] = {
     import cats.effect.unsafe.implicits.global
     try
-      /*      val schema = es.weso.shex.Schema.fromString(str, cnvFormat(format)).unsafeRunSync()
-      val wShEx = ShEx2WShEx().convertSchema(schema) */
       fromString(str, format, base, entityIRI, verbose).unsafeRunSync().asRight
     catch {
       case e: Exception => ParseException(e).asLeft

@@ -43,8 +43,13 @@ object TermConstraint {
     ): Either[MatchingError, EntityDoc] = {
       val labelsMap = ed.getLabels()
       labelsMap.get(lang.lang) match {
-        case None        => LabelConstraintNoLang(lang, ed).asLeft
-        case Some(value) => optMatchConstraint(strConstraint, value).map(_ => current)
+        case None        => {
+        LabelConstraintNoLang(lang, ed).asLeft
+        }
+        case Some(value) => 
+          optMatchConstraint(strConstraint, value)
+          .map(_ => 
+            current.withLabel(value.getLanguageCode(), value.getText()))
       }
     }
 
@@ -96,11 +101,7 @@ object TermConstraint {
     override def matchTerm(
         ed: EntityDoc,
         current: EntityDoc
-    ): Either[MatchingError, EntityDoc] = ??? /* {
-      val vs = ts.map(_.matchTerm(ed))
-      if (vs.exists(_.isRight)) ().asRight
-      else s"OrTerms failed: all terms failed matchTerm for term $ed\nTerms: $ts".asLeft
-    } */
+    ): Either[MatchingError, EntityDoc] = ??? 
   }
 
   case class NotTerm(t: TermConstraint) extends TermConstraint {

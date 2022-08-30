@@ -53,7 +53,7 @@ case class NoExprForTripleConstraintProperty(n: Int, s: shex.Shape) extends Conv
 }
 
 case class UnsupportedExtraProperty(iri: IRI) extends ConvertError {
-  override def toString() = s"Unsupported EXTRA property: $IRI"
+  override def toString() = s"Unsupported EXTRA property: $iri"
 }
 
 case class ConvertErrors(es: List[ConvertError]) extends ConvertError {

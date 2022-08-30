@@ -108,9 +108,15 @@ case class Matcher(
       case Some(te) => matchTripleExpr(te, entity, s, current)
       case None     => MatchingStatus.matchEmpty(current)
     }
-    val ms =
-      s.termConstraints.map(tc => matchTermConstraint(tc, entity, s, current))
-    ms.foldLeft(matchExpr) { case (c, ms) => c.and(ms) }
+    // val ms =
+    //  s.termConstraints.map(tc => matchTermConstraint(tc, entity, s, current))
+    // ms.foldLeft(matchExpr) { case (c, current) => c.and(current) }
+    s.termConstraints.foldLeft(matchExpr) { case (current, tc) => {
+      current match {
+        case nm: NoMatching => nm // TODO: Maybe we could provide more info...
+        case m: Matching => matchTermConstraint(tc, entity, s, m.entity)
+      }
+    }}
   }
 
   private def matchTermConstraint(
@@ -173,6 +179,9 @@ case class Matcher(
           case None     => matchPid
           case Some(qs) => matchPid.and(matchQs(qs, e, current))
         }
+      case tcg: TripleConstraintGeneral =>
+        val notImplemented: MatchingError = NotImplemented(s"tripleConstraintGeneral: $tcg")
+        NoMatching(List(notImplemented))
     }
 
   // TODO...add matching on qualifiers
