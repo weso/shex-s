@@ -73,11 +73,10 @@ sealed abstract class Entity extends Value {
 
   def withStatement(s: WDStatement): Entity
 
-  def mergeStatements(ls: List[WDStatement]): Entity = {
-    ls.foldLeft(this) { 
-      case (current, st) => current.withStatement(st) 
+  def mergeStatements(ls: List[WDStatement]): Entity =
+    ls.foldLeft(this) { case (current, st) =>
+      current.withStatement(st)
     }
-  }
 
   def merge(other: Entity): Entity = {
     println(s"merge for entity: $entityId not implemented yet")
@@ -295,11 +294,10 @@ case class SiteLink(
     badges: List[ItemId]
 )
 
-
 object Value {
 
   lazy val siteDefault = "http://www.wikidata.org/entity/"
-  lazy val defaultIRI  = IRI(siteDefault)
+  lazy val defaultIRI = IRI(siteDefault)
 
   def triple(
       subj: Entity,
@@ -345,7 +343,7 @@ object Value {
     Item(
       ItemId(qid, iri = mkSite(site, qid)),
       VertexId(id),
-      label.fold(Map[Lang,String]())(lbl => Map(Lang("en") -> lbl)),
+      label.fold(Map[Lang, String]())(lbl => Map(Lang("en") -> lbl)),
       Map(),
       Map(),
       site,

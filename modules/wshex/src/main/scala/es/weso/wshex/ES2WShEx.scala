@@ -235,7 +235,7 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
           .map(_ match {
             case Nil => none[TripleExpr]
             case tes => OneOf(exprs = tes).some
-           })
+          })
       case tc: shex.TripleConstraint =>
         convertTripleConstraint(tc, schema)
       case _ =>
