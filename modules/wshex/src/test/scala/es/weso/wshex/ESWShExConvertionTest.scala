@@ -43,7 +43,10 @@ class ESWShExConversionTest extends CatsEffectSuite {
           _ <- if (wshex1 != wshex2) {
             IO.println(s"Schemas are different\nschema1 = ${wshex1.toString}\nschema2 = ${wshex2.toString}")
           } else IO.pure(())
-        } yield (wshex1 == wshex2), true
+        } yield { 
+          assertEquals(wshex1, wshex2) 
+          wshex1 == wshex2
+        }, true
       )
     }
 }
