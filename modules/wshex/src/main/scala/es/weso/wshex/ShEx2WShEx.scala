@@ -120,7 +120,7 @@ case class ShEx2WShEx(convertOptions: ConvertOptions) extends LazyLogging {
     } yield WShape(
       id = convertId(s.id),
       closed = s.closed.getOrElse(false),
-      extra = s.extra.getOrElse(List()).map(PropertyId.fromIRI(_)),
+      extras = s.extra.getOrElse(List()).map(PropertyId.fromIRI(_)),
       expression = te,
       List()
     )

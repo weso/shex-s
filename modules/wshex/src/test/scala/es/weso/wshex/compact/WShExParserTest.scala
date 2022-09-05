@@ -1,11 +1,13 @@
-package es.weso.wshex
+package es.weso.wshex.compact
 import munit._
+import es.weso.wshex._
 import io.circe.Json
-import es.weso.rdf.nodes.IRI
+import es.weso.rdf.nodes._
 import es.weso.rdf.PrefixMap
 import es.weso.rbe.interval.IntLimit
-import es.weso.wbmodel._
+import es.weso.wbmodel.{Lang => WLang, _}
 import es.weso.utils.VerboseLevel._
+import es.weso.wshex.TermConstraint._
 
 class WShExParserTest extends CatsEffectSuite {
 
@@ -76,7 +78,7 @@ class WShExParserTest extends CatsEffectSuite {
       s"""|prefix :    <${wd.str}>
           |<S> {
           | :P31 [ :Q5 ] ;
-          | :P279 .      
+          | :P279 .
           |}
           |""".stripMargin,
       WSchema(shapesMap = Map(s -> se), prefixes = Some(pm))
@@ -209,6 +211,57 @@ class WShExParserTest extends CatsEffectSuite {
       WSchema(shapesMap = Map(s -> se), prefixes = Some(pm))
     )
   }
+
+  checkSchema(
+    "Label any en",
+    s"""|prefix :    <${wd.str}>
+          |<S> Label [ @en -> . ] {
+          |}
+          |""".stripMargin,
+    WSchema(
+      shapesMap = Map(
+        s ->
+          WShape(
+            None,
+            false,
+            List(),
+            None,
+            List(LabelConstraint(Lang("en"), None))
+          )
+      ),
+      prefixes = Some(pm)
+    )
+  )
+
+  checkSchema(
+    "Label any en with Extra",
+    s"""|prefix :    <${wd.str}>
+          |<S> EXTRA :P31 Label [ @en -> . ] {
+          | :P31 [ :Q5 ]
+          |}
+          |""".stripMargin,
+    WSchema(
+      shapesMap = Map(
+        s ->
+          WShape(
+            None,
+            false,
+            List(PropertyId.fromIRI(wdt + "P31")),
+            Some(
+              TripleConstraintLocal(
+                PropertyId.fromIRI(wdt + "P31"),
+                ValueSet(None, List(EntityIdValueSetValue(ItemId("Q5", wd + "Q5")))),
+                1,
+                IntLimit(1),
+                None
+              )
+            ),
+            List(LabelConstraint(Lang("en"), None))
+          )
+      ),
+      prefixes = Some(pm)
+    )
+  )
 
   def checkSchema(
       name: String,

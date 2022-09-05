@@ -23,13 +23,8 @@ import es.weso.wshex.WSchema
 
 class ESWShExConversionTest extends CatsEffectSuite {
 
-  def getResourceInputStream(fileName: String): InputStream =
-    getClass().getClassLoader().getResourceAsStream(fileName)
-
-  def getResourcePath(fileName: String): Path =
-    Paths.get(getClass().getClassLoader().getResource(fileName).toURI().getPath())
-
   checkConversion("humans")
+  checkConversion("humans2")
 
   def checkConversion(
       name: String,
@@ -37,16 +32,36 @@ class ESWShExConversionTest extends CatsEffectSuite {
   )(implicit loc: munit.Location): Unit =
     test(name) {
       assertIO(
-        for { 
-          wshex1 <- WSchema.fromPath(getResourcePath(name + ".shex"), WShExFormat.ESCompactFormat, verboseLevel)
-          wshex2 <- WSchema.fromPath(getResourcePath(name + ".wshex"), WShExFormat.CompactWShExFormat, verboseLevel)
-          _ <- if (wshex1 != wshex2) {
-            IO.println(s"Schemas are different\nschema1 = ${wshex1.toString}\nschema2 = ${wshex2.toString}")
-          } else IO.pure(())
-        } yield { 
-          assertEquals(wshex1, wshex2) 
-          wshex1 == wshex2
-        }, true
+        for {
+          wshex1 <- WSchema.fromPath(
+            getResourcePath(name + ".shex"),
+            WShExFormat.ESCompactFormat,
+            verboseLevel
+          )
+          wshex2 <- WSchema.fromPath(
+            getResourcePath(name + ".wshex"),
+            WShExFormat.CompactWShExFormat,
+            verboseLevel
+          )
+          _ <-
+            if (wshex1.shapes != wshex2.shapes) {
+              IO.println(
+                s"Schemas are different\nschema1 = ${wshex1.shapes.toString}\nschema2 = ${wshex2.shapes.toString}"
+              )
+            } else IO.pure(())
+        } yield {
+          assertEquals(wshex1.shapes, wshex2.shapes)
+          wshex1.shapes == wshex2.shapes
+        },
+        true
       )
     }
-}
+
+  def getResourceInputStream(fileName: String): InputStream =
+    getClass().getClassLoader().getResourceAsStream(fileName)
+
+  def getResourcePath(fileName: String): Path =
+    Paths.get(getClass().getClassLoader().getResource(fileName).toURI().getPath())
+
+
+  }

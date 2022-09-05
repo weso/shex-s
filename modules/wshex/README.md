@@ -34,6 +34,16 @@ PREFIX : <http://www.wikidata.org/entity/>
 }
 ```
 
+## Labels, descriptions and aliases
+
+`<Douglases>` has label that starts with `"Douglas"` 
+ 
+```
+PREFIX : <http://www.wikidata.org/entity/>
+
+<Douglasses> label /^Douglas/ {}
+```
+
 # Entity Schemas to WShEx
 
 ## Example with a direct property
