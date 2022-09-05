@@ -142,7 +142,8 @@ case class EntityDoc(entityDocument: EntityDocument) extends Serializable {
 
   def withLabel(langCode: String, label: String): EntityDoc =
     entityDocument match {
-      case td: TermedDocument => EntityDoc(td.withLabel(Datamodel.makeMonolingualTextValue(label, langCode)))
+      case td: TermedDocument =>
+        EntityDoc(td.withLabel(Datamodel.makeMonolingualTextValue(label, langCode)))
       case _ => throw NotTermedDocument(entityDocument)
     }
 

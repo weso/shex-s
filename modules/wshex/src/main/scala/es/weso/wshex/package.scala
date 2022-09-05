@@ -1,12 +1,12 @@
 package es.weso
 
-import es.weso.rbe.interval.{ IntOrUnbounded, IntLimit}
+import es.weso.rbe.interval.{IntLimit, IntOrUnbounded}
 package object wshex {
 
-    type Min = Int 
-    type Max = IntOrUnbounded
-    
-    lazy val defaultMin = 1
-    lazy val defaultMax = IntLimit(1)
-  
+  type Min = Int
+  type Max = IntOrUnbounded
+
+  lazy val defaultMin = 1
+  lazy val defaultMax = IntLimit(1)
+
 }
