@@ -83,7 +83,7 @@ sealed abstract class WShapeExpr extends Product with Serializable {
           case Left(es) => Left(NoMatch(bag, rbe, es))
           case Right(_) =>
             // check that all failed properties are in Extra
-            val failedPropsNotExtra = failed.filter { case (p, _) => !s.extra.contains(p) }
+            val failedPropsNotExtra = failed.filter { case (p, _) => !s.extras.contains(p) }
             if (failedPropsNotExtra.nonEmpty) {
               Left(FailedPropsNotExtra(failedPropsNotExtra))
             } else Right(())
@@ -123,7 +123,7 @@ sealed abstract class WShapeExpr extends Product with Serializable {
           case Left(es) => Left(Reason.noMatch)
           case Right(_) =>
             // check that all failed properties are in Extra
-            val failedPropsNotExtra = failed.filter { case (p, _) => !s.extra.contains(p) }
+            val failedPropsNotExtra = failed.filter { case (p, _) => !s.extras.contains(p) }
             if (failedPropsNotExtra.nonEmpty) {
               Left(Reason.failedPropsNotExtra)
             } else Right(())
@@ -171,7 +171,7 @@ sealed abstract class WShapeExpr extends Product with Serializable {
             /* println(s"""|CheckLocal................
                       |TripleExpr: $te
                       |""".stripMargin)   */
-            te.checkLocal(entity, fromLabel, s.closed, s.extra)
+            te.checkLocal(entity, fromLabel, s.closed, s.extras)
 
         }
       case vs: ValueSet => vs.matchLocal(entity).map(_ => Set())
@@ -226,7 +226,7 @@ sealed abstract class WShapeExpr extends Product with Serializable {
             /* println(s"""|CheckLocal................
                       |TripleExpr: $te
                       |""".stripMargin)   */
-            te.checkLocalCoded(entity, fromLabel, s.closed, s.extra)
+            te.checkLocalCoded(entity, fromLabel, s.closed, s.extras)
 
         }
       case vs: ValueSet => vs.matchLocalCoded(entity).map(_ => Set())
@@ -287,16 +287,24 @@ case class WShapeRef(
 case class WShape(
     id: Option[ShapeLabel],
     closed: Boolean,
-    extra: List[PropertyId],
+    extras: List[PropertyId],
     expression: Option[TripleExpr],
     termConstraints: List[TermConstraint]
-) extends WShapeExpr
+) extends WShapeExpr {
+
+  def withTermConstraints(tcs: List[TermConstraint]): WShape =
+    this.copy(termConstraints = tcs)
+
+  def withClosed(closed: Boolean): WShape = this.copy(closed = closed)
+  def withExtras(es: List[PropertyId]): WShape = this.copy(extras = es)
+  def withExpression(e: Option[TripleExpr]): WShape = this.copy(expression = e)
+}
 
 object WShape {
   def empty: WShape = WShape(
     id = None,
     closed = false,
-    extra = List(),
+    extras = List(),
     expression = None,
     termConstraints = List()
   )

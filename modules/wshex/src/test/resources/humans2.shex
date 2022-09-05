@@ -4,7 +4,7 @@ prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 start = @<Human>
 
-<Human> EXTRA wdt:P31 {
+<Human> {
   rdfs:label [ @en ] ;
   wdt:P31    [ wd:Q5 ]  ;
   wdt:P19    .

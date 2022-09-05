@@ -170,7 +170,7 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
     } yield WShape(
       id = convertId(s.id),
       closed = s.closed.getOrElse(false),
-      extra = extras,
+      extras = extras,
       expression = te,
       ls
     )
