@@ -37,28 +37,16 @@ class ESWShExConversionTest extends CatsEffectSuite {
   )(implicit loc: munit.Location): Unit =
     test(name) {
       assertIO(
-        for {
-          wshex1 <- WSchema.fromPath(
-            getResourcePath(name + ".shex"),
-            WShExFormat.ESCompactFormat,
-            verboseLevel
-          )
-          wshex2 <- WSchema.fromPath(
-            getResourcePath(name + ".wshex"),
-            WShExFormat.CompactWShExFormat,
-            verboseLevel
-          )
-          _ <-
-            if (wshex1 != wshex2) {
-              IO.println(
-                s"Schemas are different\nschema1 = ${wshex1.toString}\nschema2 = ${wshex2.toString}"
-              )
-            } else IO.pure(())
-        } yield {
-          assertEquals(wshex1, wshex2)
+        for { 
+          wshex1 <- WSchema.fromPath(getResourcePath(name + ".shex"), WShExFormat.ESCompactFormat, verboseLevel)
+          wshex2 <- WSchema.fromPath(getResourcePath(name + ".wshex"), WShExFormat.CompactWShExFormat, verboseLevel)
+          _ <- if (wshex1 != wshex2) {
+            IO.println(s"Schemas are different\nschema1 = ${wshex1.toString}\nschema2 = ${wshex2.toString}")
+          } else IO.pure(())
+        } yield { 
+          assertEquals(wshex1, wshex2) 
           wshex1 == wshex2
-        },
-        true
+        }, true
       )
     }
 }

@@ -100,6 +100,7 @@ case class WSchema(
   lazy val startShapeExpr: Option[WShapeExpr] =
     getShape(Start).orElse(shapes.headOption)
 
+
 }
 
 object WSchema {
@@ -136,8 +137,7 @@ object WSchema {
       } yield wschema
   }
 
-  case class WShExErrorReadingString(msg: String, inputStr: String, format: WShExFormat)
-      extends RuntimeException(msg)
+  case class WShExErrorReadingString(msg: String, inputStr: String, format: WShExFormat) extends RuntimeException(msg)
 
   def fromString(
       schemaString: String,
@@ -146,14 +146,12 @@ object WSchema {
       entityIRI: IRI = defaultEntityIRI,
       verbose: VerboseLevel
   ): IO[WSchema] = format match {
-    case WShExFormat.CompactWShExFormat =>
+    case WShExFormat.CompactWShExFormat => {
       val is = new ByteArrayInputStream(schemaString.getBytes())
       val reader = new InputStreamReader(is)
       val parserOptions = ParserOptions(entityIRI)
-      parseSchemaReader(reader, base, parserOptions).fold(
-        e => IO.raiseError(WShExErrorReadingString(e, schemaString, format)),
-        _.pure[IO]
-      )
+      parseSchemaReader(reader, base, parserOptions).fold(e => IO.raiseError(WShExErrorReadingString(e, schemaString, format)), _.pure[IO])
+    }
     case WShExFormat.JsonWShExFormat =>
       for {
         schema <- es.weso.shex.Schema.fromString(schemaString, cnvFormat(format))
@@ -197,7 +195,7 @@ object WSchema {
       str: String,
       format: WShExFormat,
       base: Option[IRI] = None,
-      entityIRI: IRI = defaultEntityIRI,
+      entityIRI: IRI = defaultEntityIRI, 
       verbose: VerboseLevel
   ): Either[ParseError, WSchema] = {
     import cats.effect.unsafe.implicits.global
