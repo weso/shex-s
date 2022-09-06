@@ -19,10 +19,11 @@ class WShExParserTest extends CatsEffectSuite {
   val pm: PrefixMap =
     PrefixMap.fromMap(Map("" -> wd))
   val s: ShapeLabel = IRILabel(IRI("S"))
+  val labelS = Some(s)
 
   {
     val se: WShapeExpr = WShape(
-      None,
+      labelS,
       false,
       List(),
       Some(
@@ -49,7 +50,7 @@ class WShExParserTest extends CatsEffectSuite {
 
   {
     val se: WShapeExpr = WShape(
-      None,
+      labelS,
       false,
       List(),
       Some(
@@ -87,7 +88,7 @@ class WShExParserTest extends CatsEffectSuite {
 
   {
     val se: WShapeExpr = WShape(
-      None,
+      labelS,
       false,
       List(),
       Some(
@@ -125,7 +126,7 @@ class WShExParserTest extends CatsEffectSuite {
 
   {
     val se: WShapeExpr = WShape(
-      None,
+      labelS,
       false,
       List(),
       Some(
@@ -164,7 +165,7 @@ class WShExParserTest extends CatsEffectSuite {
   {
     val se: WShapeExpr =
       WShapeOr(
-        None,
+        labelS,
         List(
           WShape(
             None,
@@ -222,7 +223,7 @@ class WShExParserTest extends CatsEffectSuite {
       shapesMap = Map(
         s ->
           WShape(
-            None,
+            labelS,
             false,
             List(),
             None,
@@ -244,7 +245,7 @@ class WShExParserTest extends CatsEffectSuite {
       shapesMap = Map(
         s ->
           WShape(
-            None,
+            labelS,
             false,
             List(PropertyId.fromIRI(wdt + "P31")),
             Some(
