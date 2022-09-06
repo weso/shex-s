@@ -11,6 +11,8 @@ import es.weso.shex.XsFacet
 
 sealed abstract class WShapeExpr extends Product with Serializable {
 
+  def withLabel(label: ShapeLabel): WShapeExpr
+
   def dependsOn(): Set[ShapeLabel] = this match {
     case s: WShapeRef => Set(s.label)
     case s: WShape =>
@@ -158,9 +160,9 @@ sealed abstract class WShapeExpr extends Product with Serializable {
       schema: WSchema
   ): Either[Reason, Set[ShapeLabel]] = {
     val result: Either[Reason, Set[ShapeLabel]] = this match {
-      case WShapeRef(label) =>
-        schema.get(label) match {
-          case None => Left(ShapeNotFound(label, schema))
+      case sr: WShapeRef =>
+        schema.get(sr.label) match {
+          case None => Left(ShapeNotFound(sr.label, schema))
           case Some(se) =>
             se.checkLocal(entity, fromLabel, schema)
         }
@@ -175,12 +177,12 @@ sealed abstract class WShapeExpr extends Product with Serializable {
 
         }
       case vs: ValueSet => vs.matchLocal(entity).map(_ => Set())
-      case StringDatatype =>
+      case sd: StringDatatype =>
         entity match {
           //        case _: StringValue => Right(Set())
           case _ => Left(NoStringDatatype(entity))
         }
-      case EmptyExpr => Right(Set())
+      case e: EmptyExpr => Right(Set())
       case WShapeAnd(_, ls) =>
         val vs = ls.map(_.checkLocal(entity, fromLabel, schema)).sequence.map(_.toSet.flatten)
         vs
@@ -213,8 +215,8 @@ sealed abstract class WShapeExpr extends Product with Serializable {
       schema: WSchema
   ): Either[ReasonCode, Set[ShapeLabel]] = {
     val result: Either[ReasonCode, Set[ShapeLabel]] = this match {
-      case WShapeRef(label) =>
-        schema.get(label) match {
+      case sr: WShapeRef =>
+        schema.get(sr.label) match {
           case None => Left(Reason.shapeNotFound)
           case Some(se) =>
             se.checkLocalCoded(entity, fromLabel, schema)
@@ -230,12 +232,12 @@ sealed abstract class WShapeExpr extends Product with Serializable {
 
         }
       case vs: ValueSet => vs.matchLocalCoded(entity).map(_ => Set())
-      case StringDatatype =>
+      case sd: StringDatatype =>
         entity match {
           //        case _: StringValue => Right(Set())
           case _ => Left(Reason.noStringDatatype)
         }
-      case EmptyExpr => Right(Set())
+      case e: EmptyExpr => Right(Set())
       case WShapeAnd(_, ls) =>
         val vs = ls.map(_.checkLocalCoded(entity, fromLabel, schema)).sequence.map(_.toSet.flatten)
         vs
@@ -264,25 +266,34 @@ sealed abstract class WShapeExpr extends Product with Serializable {
 
 }
 
-case class WShapeAnd(id: Option[ShapeLabel], exprs: List[WShapeExpr]) extends WShapeExpr
+case class WShapeAnd(id: Option[ShapeLabel], exprs: List[WShapeExpr]) extends WShapeExpr {
+  override def withLabel(label: ShapeLabel): WShapeExpr = this.copy(id = Some(label))
+}
 
 object WShapeAnd {
   def fromShapeExprs(es: List[WShapeExpr]): WShapeAnd =
     WShapeAnd(None, es)
 }
 
-case class WShapeOr(id: Option[ShapeLabel], exprs: List[WShapeExpr]) extends WShapeExpr
+case class WShapeOr(id: Option[ShapeLabel], exprs: List[WShapeExpr]) extends WShapeExpr {
+  override def withLabel(label: ShapeLabel): WShapeExpr = this.copy(id = Some(label))
+}
 
 object WShapeOr {
   def fromShapeExprs(es: List[WShapeExpr]): WShapeOr =
     WShapeOr(None, es)
 }
 
-case class WShapeNot(id: Option[ShapeLabel], shapeExpr: WShapeExpr) extends WShapeExpr
+case class WShapeNot(id: Option[ShapeLabel], shapeExpr: WShapeExpr) extends WShapeExpr {
+  override def withLabel(label: ShapeLabel): WShapeExpr = this.copy(id = Some(label))
+}
 
 case class WShapeRef(
-    label: ShapeLabel
-) extends WShapeExpr
+  id: Option[ShapeLabel], 
+  label: ShapeLabel
+) extends WShapeExpr {
+  override def withLabel(label: ShapeLabel): WShapeExpr = this.copy(id = Some(label))
+}
 
 case class WShape(
     id: Option[ShapeLabel],
@@ -291,6 +302,8 @@ case class WShape(
     expression: Option[TripleExpr],
     termConstraints: List[TermConstraint]
 ) extends WShapeExpr {
+
+  override def withLabel(label: ShapeLabel): WShapeExpr = this.copy(id = Some(label))
 
   def withTermConstraints(tcs: List[TermConstraint]): WShape =
     this.copy(termConstraints = tcs)
@@ -325,13 +338,21 @@ object WNodeConstraint {
 
 }
 
-case object EmptyExpr extends WNodeConstraint {
+case class EmptyExpr(id: Option[ShapeLabel]) extends WNodeConstraint {
+
+  override def withLabel(label: ShapeLabel): WShapeExpr = 
+    this.copy(id = Some(label))
+
   override def matchLocal(
       value: Value
   ): Either[Reason, Unit] = Right(())
 }
 
 case class ValueSet(id: Option[ShapeLabel], values: List[ValueSetValue]) extends WNodeConstraint {
+
+  override def withLabel(label: ShapeLabel): WShapeExpr = 
+    this.copy(id = Some(label))
+
   override def matchLocal(value: Value) = {
     val found = value match {
       case e: Entity =>
@@ -359,7 +380,10 @@ case class ValueSet(id: Option[ShapeLabel], values: List[ValueSetValue]) extends
   }
 }
 
-case object StringDatatype extends WNodeConstraint {
+case class StringDatatype(id: Option[ShapeLabel]) extends WNodeConstraint {
+  override def withLabel(label: ShapeLabel): WShapeExpr = 
+    this.copy(id = Some(label))
+
   override def matchLocal(value: Value) = {
     val result = value match {
       case _: StringValue => ().asRight
@@ -375,7 +399,11 @@ case object StringDatatype extends WNodeConstraint {
   }
 }
 
-case object DateDatatype extends WNodeConstraint {
+case class DateDatatype(id: Option[ShapeLabel]) extends WNodeConstraint {
+
+  override def withLabel(label: ShapeLabel): WShapeExpr = 
+    this.copy(id = Some(label))
+
   override def matchLocal(value: Value) = {
     val result = value match {
       case _: DateValue => ().asRight
@@ -397,7 +425,7 @@ object WShapeExpr {
 
   def label(iri: String): ShapeLabel = IRILabel(IRI(iri))
 
-  def shapeRef(iri: String): WShapeRef = WShapeRef(label(iri))
+  def shapeRef(iri: String): WShapeRef = WShapeRef(None, label(iri))
 
   def shape(ls: List[TripleConstraint]): WShapeExpr =
     WShape(None, false, List(), Some(EachOf(exprs = ls)), List())

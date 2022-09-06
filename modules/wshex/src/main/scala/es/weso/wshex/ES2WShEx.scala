@@ -101,7 +101,7 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
         convertShapeExpr(snot.shapeExpr, schema)
           .map(se => WShapeNot(id = convertId(snot.id), shapeExpr = se))
       case sref: shex.ShapeRef =>
-        WShapeRef(convertShapeLabel(sref.reference)).asRight
+        WShapeRef(convertId(sref.id), convertShapeLabel(sref.reference)).asRight
       case _ => UnsupportedShapeExpr(se).asLeft
     }
 
@@ -265,11 +265,11 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
     println(s"Making tripleConstraint with $pred")
     se match {
       case None =>
-        TripleConstraintLocal(pred, EmptyExpr, min, max).asRight
+        TripleConstraintLocal(pred, EmptyExpr(None), min, max).asRight
       case Some(se) =>
         convertShapeExpr(se, schema).flatMap(s =>
           s match {
-            case s @ WShapeRef(lbl) =>
+            case s @ WShapeRef(_, lbl) =>
               TripleConstraintRef(pred, s, min, max, None).asRight
             case v @ ValueSet(id, vs) =>
               TripleConstraintLocal(pred, v, min, max).asRight
@@ -445,11 +445,11 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
             val pq = PropertyId.fromNumber(nq, convertOptions.propQualifierIri)
             val (min, max) = convertMinMax(tc)
             tc.valueExpr match {
-              case None => QualifierLocal(pq, EmptyExpr, min, max).some.asRight
+              case None => QualifierLocal(pq, EmptyExpr(None), min, max).some.asRight
               case Some(se) =>
                 convertShapeExpr(se, schema).flatMap(s =>
                   s match {
-                    case s @ WShapeRef(lbl)   => QualifierRef(pq, s, min, max).some.asRight
+                    case s @ WShapeRef(_, lbl)   => QualifierRef(pq, s, min, max).some.asRight
                     case v @ ValueSet(id, vs) => QualifierLocal(pq, v, min, max).some.asRight
                     case _ =>
                       UnsupportedShapeExpr(se, s"Parsing qualifiers for property $n").asLeft

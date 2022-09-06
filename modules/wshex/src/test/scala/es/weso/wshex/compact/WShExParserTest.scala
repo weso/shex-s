@@ -63,7 +63,7 @@ class WShExParserTest extends CatsEffectSuite {
             ),
             TripleConstraintLocal(
               PropertyId.fromIRI(wdt + "P279"),
-              EmptyExpr,
+              EmptyExpr(None),
               1,
               IntLimit(1)
             )
@@ -101,7 +101,7 @@ class WShExParserTest extends CatsEffectSuite {
             ),
             TripleConstraintLocal(
               PropertyId.fromIRI(wdt + "P279"),
-              EmptyExpr,
+              EmptyExpr(None),
               1,
               IntLimit(1)
             )
@@ -138,7 +138,7 @@ class WShExParserTest extends CatsEffectSuite {
             QualifierSpec(
               QualifierLocal(
                 PropertyId.fromIRI(wdt + "P580"),
-                EmptyExpr,
+                EmptyExpr(None),
                 1,
                 IntLimit(1)
               ),

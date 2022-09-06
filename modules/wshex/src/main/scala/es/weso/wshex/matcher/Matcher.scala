@@ -218,7 +218,7 @@ case class Matcher(
             vs.toLazyList
               .map(matchPredicateValueSetValue(predicate, _, e, se, current))
           )
-      case Some(EmptyExpr) =>
+      case Some(EmptyExpr(_)) =>
         if (values.isEmpty) NoMatching(List(NoValuesProperty(predicate, e)))
         else
           Matching(
@@ -321,6 +321,9 @@ case class Matcher(
 
 object Matcher {
 
+  val defaultEntityIRI = es.weso.wbmodel.Value.defaultIRI
+
+
   /** Read a WShEx from a path
     *
     * @param schemaPath: Path where the WShEx schema can be found
@@ -331,10 +334,12 @@ object Matcher {
   def fromPath(
       schemaPath: Path,
       format: WShExFormat = WShExFormat.ESCompactFormat,
+      base: Option[IRI] = None,
+      entityIRI: IRI = defaultEntityIRI,
       verbose: VerboseLevel = VerboseLevel.Nothing
   ): IO[Matcher] =
     WSchema
-      .fromPath(schemaPath, format, verbose)
+      .fromPath(schemaPath, format, base, entityIRI, verbose)
       .map(s => Matcher(wShEx = s, verbose = verbose))
 
   /** Read a WShEx from a path
@@ -349,10 +354,12 @@ object Matcher {
   def unsafeFromPath(
       schemaPath: Path,
       format: WShExFormat = WShExFormat.CompactWShExFormat,
+      base: Option[IRI] = None,
+      entityIRI: IRI = defaultEntityIRI,
       verbose: VerboseLevel = VerboseLevel.Nothing
   ): Matcher = {
     import cats.effect.unsafe.implicits.global
-    fromPath(schemaPath, format, verbose).unsafeRunSync()
+    fromPath(schemaPath, format, base, entityIRI, verbose).unsafeRunSync()
   }
 
   def unsafeFromString(

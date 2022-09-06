@@ -13,6 +13,8 @@ import java.io.InputStreamReader
 import java.io.ByteArrayInputStream
 import es.weso.wshex.compact.Parser._
 import es.weso.wshex.compact.ParserOptions
+import java.io.FileInputStream
+import java.nio.file.Files
 
 case class WSchema(
     shapesMap: Map[ShapeLabel, WShapeExpr] = Map(),
@@ -117,27 +119,66 @@ object WSchema {
     case WShExFormat.JsonWShExFormat    => "ShExJ"
   }
 
-  // Technical debt: Unify common code in this method and the next one
+  def fromInputStream(
+    is: InputStream,
+    format: WShExFormat = WShExFormat.CompactWShExFormat,
+    base: Option[IRI] = None,
+    entityIRI: IRI = defaultEntityIRI,      
+    verbose: VerboseLevel
+  ): IO[WSchema] = format match {
+    case WShExFormat.CompactWShExFormat => {
+      val reader = new InputStreamReader(is)
+      val parserOptions = ParserOptions(entityIRI)
+      parseSchemaReader(reader, base, parserOptions)
+      .fold(e => 
+        IO.raiseError(WShExErrorReading(e, format)
+      ), 
+      _.pure[IO]
+      )
+    }
+    case _ => ???
+  }
+
   def fromPath(
       path: Path,
       format: WShExFormat = WShExFormat.CompactWShExFormat,
+      base: Option[IRI] = None,
+      entityIRI: IRI = defaultEntityIRI,      
       verbose: VerboseLevel
   ): IO[WSchema] = format match {
-    case WShExFormat.CompactWShExFormat | WShExFormat.JsonWShExFormat =>
-      for {
-        schema <- es.weso.shex.Schema.fromFile(path.toFile().getAbsolutePath(), cnvFormat(format))
-        resolvedSchema <- es.weso.shex.ResolvedSchema.resolve(schema, None, verbose)
-        schema <- IO.fromEither(ShEx2WShEx().convertSchema(resolvedSchema))
-      } yield schema
+    case WShExFormat.CompactWShExFormat => {
+      val is: InputStream = Files.newInputStream(path)
+      fromInputStream(is,format,base,entityIRI,verbose)
+    }
     case WShExFormat.ESCompactFormat | WShExFormat.ESJsonFormat =>
       for {
         schema <- es.weso.shex.Schema.fromFile(path.toFile().getAbsolutePath(), cnvFormat(format))
         resolvedSchema <- es.weso.shex.ResolvedSchema.resolve(schema, None, verbose)
         wschema <- IO.fromEither(ES2WShEx(ESConvertOptions.default).convertSchema(resolvedSchema))
       } yield wschema
+    case _ => IO.raiseError(WShExUnsupportedFormat(path,format))  
   }
 
-  case class WShExErrorReadingString(msg: String, inputStr: String, format: WShExFormat) extends RuntimeException(msg)
+  case class WShExErrorReadingString(msg: String, inputStr: String, format: WShExFormat) extends 
+    RuntimeException(s"""|Error reading WSchema from String
+                         |Error: $msg
+                         |String: ${inputStr}
+                         |""".stripMargin)
+  case class WShExErrorReadingPath(msg: String, inputPath: Path, format: WShExFormat) extends 
+    RuntimeException(s"""|Error reading WSchema from path
+                         |Error: $msg
+                         |Path: $inputPath
+                         |""".stripMargin)
+  case class WShExErrorReading(msg: String, format: WShExFormat) extends 
+    RuntimeException(s"""|Error reading WSchema from path
+                         |Error: $msg
+                         |""".stripMargin)
+  case class WShExUnsupportedFormat(path: Path, format: WShExFormat) extends 
+    RuntimeException(s"""|Error reading WSchema.
+                         |Unsupported format yet: $format
+                         |Path: $path
+                         |""".stripMargin)
+
 
   def fromString(
       schemaString: String,
@@ -148,9 +189,7 @@ object WSchema {
   ): IO[WSchema] = format match {
     case WShExFormat.CompactWShExFormat => {
       val is = new ByteArrayInputStream(schemaString.getBytes())
-      val reader = new InputStreamReader(is)
-      val parserOptions = ParserOptions(entityIRI)
-      parseSchemaReader(reader, base, parserOptions).fold(e => IO.raiseError(WShExErrorReadingString(e, schemaString, format)), _.pure[IO])
+      fromInputStream(is,format,base,entityIRI,verbose)
     }
     case WShExFormat.JsonWShExFormat =>
       for {
@@ -177,10 +216,12 @@ object WSchema {
   def unsafeFromPath(
       path: Path,
       format: WShExFormat = WShExFormat.CompactWShExFormat,
+      base: Option[IRI] = None,
+      entityIRI: IRI = defaultEntityIRI,
       verbose: VerboseLevel
   ): WSchema = {
     import cats.effect.unsafe.implicits.global
-    fromPath(path, format, verbose).unsafeRunSync()
+    fromPath(path, format, base, entityIRI, verbose).unsafeRunSync()
   }
 
   /** Read a Schema from a file

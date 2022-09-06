@@ -34,14 +34,14 @@ class ESWShExConversionTest extends CatsEffectSuite {
       assertIO(
         for {
           wshex1 <- WSchema.fromPath(
-            getResourcePath(name + ".shex"),
-            WShExFormat.ESCompactFormat,
-            verboseLevel
+            path = getResourcePath(name + ".shex"),
+            format = WShExFormat.ESCompactFormat,
+            verbose = verboseLevel
           )
           wshex2 <- WSchema.fromPath(
-            getResourcePath(name + ".wshex"),
-            WShExFormat.CompactWShExFormat,
-            verboseLevel
+            path = getResourcePath(name + ".wshex"),
+            format = WShExFormat.CompactWShExFormat,
+            verbose = verboseLevel
           )
           _ <-
             if (wshex1.shapes != wshex2.shapes) {

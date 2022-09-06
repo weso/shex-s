@@ -125,7 +125,7 @@ class ES2WShExTest extends CatsEffectSuite {
       Some(
         TripleConstraintLocal(
           PropertyId.fromIRI(wd + "P856"),
-          EmptyExpr,
+          EmptyExpr(None),
           1,
           IntOrUnbounded.fromInt(1),
           Some(
@@ -173,7 +173,7 @@ class ES2WShExTest extends CatsEffectSuite {
       Some(
         TripleConstraintLocal(
           PropertyId.fromIRI(wd + "P856"),
-          EmptyExpr,
+          EmptyExpr(None),
           1,
           IntOrUnbounded.fromInt(1),
           Some(
@@ -206,7 +206,7 @@ class ES2WShExTest extends CatsEffectSuite {
           exprs = List(
             TripleConstraintLocal(
               PropertyId.fromIRI(wd + "P856"),
-              EmptyExpr,
+              EmptyExpr(None),
               1,
               IntOrUnbounded.fromInt(1),
               None
@@ -241,7 +241,7 @@ class ES2WShExTest extends CatsEffectSuite {
     WSchema(
       shapesMap = Map(
         s ->
-          WShapeOr(Some(s), List(WShapeRef(t), WShapeRef(u))),
+          WShapeOr(Some(s), List(WShapeRef(None,t), WShapeRef(None,u))),
         t -> WShape(Some(t), false, List(), None, List()),
         u -> WShape(Some(u), false, List(), None, List())
       ),

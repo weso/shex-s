@@ -39,7 +39,7 @@ import cats.implicits._
 
 /** Visits the AST and builds the corresponding ShEx abstract syntax
   */
-class SchemaMaker extends WShExDocBaseVisitor[Any] {
+class WSchemaMaker extends WShExDocBaseVisitor[Any] {
 
   type Start = Option[WShapeExpr]
   type NotStartAction = Either[Start, (ShapeLabel, WShapeExpr)]
@@ -188,10 +188,11 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
       _ <- addLabelLocation(label, location)
       shapeExpr <- obtainShapeExpr(ctx)
       // _ <- info(s"Visited shapeExpr: $shapeExpr")
-      se <-
+      /*W se <-
         /*if (isDefined(ctx.KW_ABSTRACT()))
           ok(ShapeDecl(label, shapeExpr))
-        else */ ok(shapeExpr)
+        else */ ok(shapeExpr) */
+      se = shapeExpr.withLabel(label)  
       _ <- addShape(label, se)
     } yield (label, se)
 
@@ -309,7 +310,7 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
       case s: ShapeAtomShapeExpressionContext =>
         visitShapeExpression(s.shapeExpression())
       case _: ShapeAtomAnyContext =>
-        ok(EmptyExpr)
+        ok(EmptyExpr(None))
       case _ => err(s"Internal error visitShapeAtom: unknown ctx $ctx")
     }
 
@@ -913,7 +914,7 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
       case _ if isDefined(ctx.inlineShapeDefinition()) =>
         visitInlineShapeDefinition(ctx.inlineShapeDefinition())
       case _ if isDefined(ctx.shapeRef()) =>
-        visitShapeRef(ctx.shapeRef()).map(WShapeRef(_)) // , None, None))
+        visitShapeRef(ctx.shapeRef()).map(WShapeRef(None, _)) // , None, None))
       case _ => err(s"internal Error: visitShapeOrRef. Unknown $ctx")
     }
 
@@ -934,7 +935,8 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
     case _ if isDefined(ctx.shapeDefinition()) =>
       visitShapeDefinition(ctx.shapeDefinition())
     case _ if isDefined(ctx.shapeRef()) =>
-      visitShapeRef(ctx.shapeRef()).map(lbl => WShapeRef(lbl)) // , None, None))
+      visitShapeRef(ctx.shapeRef())
+      .map(lbl => WShapeRef(None, lbl)) // , None, None))
     case _ => err(s"internal Error: visitShapeOrRef. Unknown $ctx")
   }
 
@@ -1176,7 +1178,7 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
         case nc: WNodeConstraint =>
           ok(tripleConstraintLocal(propertyId, nc, min, max).withQs(qualifierSpec))
         case WShape(None, false, Nil, None, Nil) =>
-          ok(tripleConstraintLocal(propertyId, EmptyExpr, min, max).withQs(qualifierSpec))
+          ok(tripleConstraintLocal(propertyId, EmptyExpr(None), min, max).withQs(qualifierSpec))
         case se: WShapeExpr =>
           ok(TripleConstraintGeneral(propertyId, se, min, max).withQs(qualifierSpec))
         // case _ => err(s"visitTripleConstraint. Error matching shapeExpr: $shapeExpr")
@@ -1228,7 +1230,7 @@ class SchemaMaker extends WShExDocBaseVisitor[Any] {
                   ok(
                     Some(
                       QualifierSpec(
-                        QualifierLocal(propId, EmptyExpr, cardinality._1, cardinality._2),
+                        QualifierLocal(propId, EmptyExpr(None), cardinality._1, cardinality._2),
                         false
                       )
                     )
