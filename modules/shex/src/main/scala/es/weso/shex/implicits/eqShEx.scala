@@ -141,7 +141,7 @@ object eqShEx {
         n1.datatype === n2.datatype &&
         n1.xsFacets.toSet === n2.xsFacets.toSet &&
         n1.values.getOrElse(List()).toSet ===
-        n2.values.getOrElse(List()).toSet
+          n2.values.getOrElse(List()).toSet
   }
 
   implicit lazy val eqObjectLiteral: Eq[ObjectLiteral] = new Eq[ObjectLiteral] {
