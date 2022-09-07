@@ -289,8 +289,8 @@ case class WShapeNot(id: Option[ShapeLabel], shapeExpr: WShapeExpr) extends WSha
 }
 
 case class WShapeRef(
-  id: Option[ShapeLabel], 
-  label: ShapeLabel
+    id: Option[ShapeLabel],
+    label: ShapeLabel
 ) extends WShapeExpr {
   override def withLabel(label: ShapeLabel): WShapeExpr = this.copy(id = Some(label))
 }
@@ -340,7 +340,7 @@ object WNodeConstraint {
 
 case class EmptyExpr(id: Option[ShapeLabel]) extends WNodeConstraint {
 
-  override def withLabel(label: ShapeLabel): WShapeExpr = 
+  override def withLabel(label: ShapeLabel): WShapeExpr =
     this.copy(id = Some(label))
 
   override def matchLocal(
@@ -350,7 +350,7 @@ case class EmptyExpr(id: Option[ShapeLabel]) extends WNodeConstraint {
 
 case class ValueSet(id: Option[ShapeLabel], values: List[ValueSetValue]) extends WNodeConstraint {
 
-  override def withLabel(label: ShapeLabel): WShapeExpr = 
+  override def withLabel(label: ShapeLabel): WShapeExpr =
     this.copy(id = Some(label))
 
   override def matchLocal(value: Value) = {
@@ -381,7 +381,7 @@ case class ValueSet(id: Option[ShapeLabel], values: List[ValueSetValue]) extends
 }
 
 case class StringDatatype(id: Option[ShapeLabel]) extends WNodeConstraint {
-  override def withLabel(label: ShapeLabel): WShapeExpr = 
+  override def withLabel(label: ShapeLabel): WShapeExpr =
     this.copy(id = Some(label))
 
   override def matchLocal(value: Value) = {
@@ -401,7 +401,7 @@ case class StringDatatype(id: Option[ShapeLabel]) extends WNodeConstraint {
 
 case class DateDatatype(id: Option[ShapeLabel]) extends WNodeConstraint {
 
-  override def withLabel(label: ShapeLabel): WShapeExpr = 
+  override def withLabel(label: ShapeLabel): WShapeExpr =
     this.copy(id = Some(label))
 
   override def matchLocal(value: Value) = {

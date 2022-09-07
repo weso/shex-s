@@ -55,7 +55,4 @@ class HumansMatcherTest extends CatsEffectSuite {
     )
   }
 
-  
-
-
 }

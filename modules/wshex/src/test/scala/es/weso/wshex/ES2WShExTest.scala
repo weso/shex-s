@@ -241,7 +241,7 @@ class ES2WShExTest extends CatsEffectSuite {
     WSchema(
       shapesMap = Map(
         s ->
-          WShapeOr(Some(s), List(WShapeRef(None,t), WShapeRef(None,u))),
+          WShapeOr(Some(s), List(WShapeRef(None, t), WShapeRef(None, u))),
         t -> WShape(Some(t), false, List(), None, List()),
         u -> WShape(Some(u), false, List(), None, List())
       ),

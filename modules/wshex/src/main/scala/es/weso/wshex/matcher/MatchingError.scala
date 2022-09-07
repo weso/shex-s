@@ -86,11 +86,14 @@ object MatchingError {
                               |msg: $msg
                               |""".stripMargin)
 
-  case class StringConstraintError(err: StringConstraintMatchError, tc: StringConstraint, value: MonolingualTextValue)
-      extends MatchingError(s"""|TermConstraint MatchError
+  case class StringConstraintError(
+      err: StringConstraintMatchError,
+      tc: StringConstraint,
+      value: MonolingualTextValue
+  ) extends MatchingError(s"""|TermConstraint MatchError
                                 |StringConstraint: $tc
                                 |value: $value
                                 |err: ${err}
-                              |""".stripMargin)                              
+                              |""".stripMargin)
 
 }
