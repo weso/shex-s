@@ -61,7 +61,10 @@ case class ShEx2WShEx(convertOptions: ConvertOptions) extends LazyLogging {
         convertShapeExpr(snot.shapeExpr)
           .map(se => WShapeNot(id = convertId(snot.id), shapeExpr = se))
       case sref: shex.ShapeRef =>
-        WShapeRef(convertShapeLabel(sref.reference)).asRight
+        WShapeRef(
+         convertId(sref.id), 
+         convertShapeLabel(sref.reference)
+         ).asRight
       case _ => UnsupportedShapeExpr(se).asLeft
     }
 
@@ -178,9 +181,9 @@ case class ShEx2WShEx(convertOptions: ConvertOptions) extends LazyLogging {
       }
       pred = PropertyId.fromIRI(tc.predicate)
       tc <- se match {
-        case None => Right(TripleConstraintLocal(pred, EmptyExpr, min, max))
-        case Some(WShapeRef(lbl)) =>
-          Right(TripleConstraintRef(pred, WShapeRef(lbl), min, max, None))
+        case None => Right(TripleConstraintLocal(pred, EmptyExpr(None), min, max))
+        case Some(WShapeRef(id, lbl)) =>
+          Right(TripleConstraintRef(pred, WShapeRef(id, lbl), min, max, None))
         case Some(ValueSet(id, vs)) =>
           Right(TripleConstraintLocal(pred, ValueSet(id, vs), min, max))
         case _ =>

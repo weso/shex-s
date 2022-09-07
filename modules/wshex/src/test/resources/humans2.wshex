@@ -3,7 +3,7 @@ prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 start = @<Human>
 
-<Human> EXTRA :P31 Label [ @en -> . ] {
+<Human> EXTRA :P31 Label ( en -> . ) {
   :P31    [ :Q5 ]  ;
   :P19    .
 }

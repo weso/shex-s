@@ -19,10 +19,11 @@ class WShExParserTest extends CatsEffectSuite {
   val pm: PrefixMap =
     PrefixMap.fromMap(Map("" -> wd))
   val s: ShapeLabel = IRILabel(IRI("S"))
+  val labelS = Some(s)
 
   {
     val se: WShapeExpr = WShape(
-      None,
+      labelS,
       false,
       List(),
       Some(
@@ -49,7 +50,7 @@ class WShExParserTest extends CatsEffectSuite {
 
   {
     val se: WShapeExpr = WShape(
-      None,
+      labelS,
       false,
       List(),
       Some(
@@ -63,7 +64,7 @@ class WShExParserTest extends CatsEffectSuite {
             ),
             TripleConstraintLocal(
               PropertyId.fromIRI(wdt + "P279"),
-              EmptyExpr,
+              EmptyExpr(None),
               1,
               IntLimit(1)
             )
@@ -87,7 +88,7 @@ class WShExParserTest extends CatsEffectSuite {
 
   {
     val se: WShapeExpr = WShape(
-      None,
+      labelS,
       false,
       List(),
       Some(
@@ -101,7 +102,7 @@ class WShExParserTest extends CatsEffectSuite {
             ),
             TripleConstraintLocal(
               PropertyId.fromIRI(wdt + "P279"),
-              EmptyExpr,
+              EmptyExpr(None),
               1,
               IntLimit(1)
             )
@@ -125,7 +126,7 @@ class WShExParserTest extends CatsEffectSuite {
 
   {
     val se: WShapeExpr = WShape(
-      None,
+      labelS,
       false,
       List(),
       Some(
@@ -138,7 +139,7 @@ class WShExParserTest extends CatsEffectSuite {
             QualifierSpec(
               QualifierLocal(
                 PropertyId.fromIRI(wdt + "P580"),
-                EmptyExpr,
+                EmptyExpr(None),
                 1,
                 IntLimit(1)
               ),
@@ -164,7 +165,7 @@ class WShExParserTest extends CatsEffectSuite {
   {
     val se: WShapeExpr =
       WShapeOr(
-        None,
+        labelS,
         List(
           WShape(
             None,
@@ -215,14 +216,14 @@ class WShExParserTest extends CatsEffectSuite {
   checkSchema(
     "Label any en",
     s"""|prefix :    <${wd.str}>
-          |<S> Label [ @en -> . ] {
+          |<S> Label ( en -> . ) {
           |}
           |""".stripMargin,
     WSchema(
       shapesMap = Map(
         s ->
           WShape(
-            None,
+            labelS,
             false,
             List(),
             None,
@@ -236,7 +237,7 @@ class WShExParserTest extends CatsEffectSuite {
   checkSchema(
     "Label any en with Extra",
     s"""|prefix :    <${wd.str}>
-          |<S> EXTRA :P31 Label [ @en -> . ] {
+          |<S> EXTRA :P31 Label ( en -> . ) {
           | :P31 [ :Q5 ]
           |}
           |""".stripMargin,
@@ -244,7 +245,7 @@ class WShExParserTest extends CatsEffectSuite {
       shapesMap = Map(
         s ->
           WShape(
-            None,
+            labelS,
             false,
             List(PropertyId.fromIRI(wdt + "P31")),
             Some(
