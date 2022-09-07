@@ -73,7 +73,9 @@ nonLitNodeConstraint:
 
 xsFacet: stringFacet | numericFacet;
 
-stringFacet: stringLength INTEGER | REGEXP REGEXP_FLAGS?;
+stringFacet: stringLength INTEGER 
+           | REGEXP REGEXP_FLAGS?
+		   ;
 
 stringLength: KW_LENGTH | KW_MINLENGTH | KW_MAXLENGTH;
 
@@ -100,22 +102,33 @@ qualifier:
 	| restriction
 	| extraPropertySet
 	| labelConstraint
-	//W | descriptionConstraint W | aliasConstraint
+	| descriptionConstraint 
+	| aliasConstraint
 	| KW_CLOSED;
 
 extraPropertySet: KW_EXTRA predicate+;
 
 labelConstraint: KW_LABEL langConstraints;
 
-langConstraints: '[' langConstraint* ']';
+langConstraints: '(' (singleLangConstraint | multiLangConstraint) ')'
+	;
+
+singleLangConstraint : langConstraint ','? 
+                     ;
+
+multiLangConstraint : langConstraint (',' langConstraint)+ ','? 
+                    ;
 
 descriptionConstraint: KW_DESCRIPTION langConstraints;
 
-aliasConstraint: KW_ALIAS stringConstraint?;
+aliasConstraint: KW_ALIAS langConstraints;
 
-langConstraint: LANGTAG '->' stringConstraint;
+langConstraint: LANGLABEL '->' stringConstraint;
 
-stringConstraint: any ; // | stringSet | stringFacet;
+stringConstraint: any  
+                | stringSet 
+                | stringFacet
+				;
 
 tripleExpression: oneOfTripleExpr;
 
@@ -208,10 +221,11 @@ qualifierSpec: '{|' predicate shapeAtom cardinality? '|}';
 	senseFlags: '!' '^'? | '^' '!'?;
 	// inverse not
 
-	valueSet: '[' valueSetValue* ']';
+valueSet: '[' valueSetValue* ']';
 
-	// WShEx
-	stringSet: '[' stringLiteral* ']';
+// WShEx
+stringSet: string* 
+         ;
 
 valueSetValue:
 		iriRange
@@ -289,82 +303,82 @@ KW_ABSTRACT: A B S T R A C T;
 
 KW_AS: A S;
 
-		KW_BASE: B A S E;
+KW_BASE: B A S E;
 
-		KW_EXTENDS: E X T E N D S;
+KW_EXTENDS: E X T E N D S;
 
-		KW_IMPORT: I M P O R T;
+KW_IMPORT: I M P O R T;
 
-		KW_RESTRICTS: R E S T R I C T S;
+KW_RESTRICTS: R E S T R I C T S;
 
-		KW_EXTERNAL: E X T E R N A L;
+KW_EXTERNAL: E X T E R N A L;
 
-		KW_PREFIX: P R E F I X;
+KW_PREFIX: P R E F I X;
 
-		KW_START: S T A R T;
+KW_START: S T A R T;
 
-		KW_VIRTUAL: V I R T U A L;
+KW_VIRTUAL: V I R T U A L;
 
-		KW_CLOSED: C L O S E D;
+KW_CLOSED: C L O S E D;
 
-		KW_EXTRA: E X T R A;
+KW_EXTRA: E X T R A;
 
-		KW_LABEL: L A B E L;
+KW_LABEL: L A B E L;
 
-		KW_DESCRIPTION: D E S C R I P T I O N;
+KW_DESCRIPTION: D E S C R I P T I O N;
 
-		KW_ALIAS: A L I A S;
+KW_ALIAS: A L I A S;
 
-		KW_LITERAL: L I T E R A L;
+KW_LITERAL: L I T E R A L;
 
-		KW_IRI: I R I;
+KW_IRI: I R I;
 
-		KW_NONLITERAL: N O N L I T E R A L;
+KW_NONLITERAL: N O N L I T E R A L;
 
-		KW_BNODE: B N O D E;
+KW_BNODE: B N O D E;
 
-		KW_AND: A N D;
+KW_AND: A N D;
 
-		KW_OR: O R;
+KW_OR: O R;
 
-		KW_MININCLUSIVE: M I N I N C L U S I V E;
+KW_MININCLUSIVE: M I N I N C L U S I V E;
 
-		KW_MINEXCLUSIVE: M I N E X C L U S I V E;
+KW_MINEXCLUSIVE: M I N E X C L U S I V E;
 
-		KW_MAXINCLUSIVE: M A X I N C L U S I V E;
+KW_MAXINCLUSIVE: M A X I N C L U S I V E;
 
-		KW_MAXEXCLUSIVE: M A X E X C L U S I V E;
+KW_MAXEXCLUSIVE: M A X E X C L U S I V E;
 
-		KW_LENGTH: L E N G T H;
+KW_LENGTH: L E N G T H;
 
-		KW_MINLENGTH: M I N L E N G T H;
+KW_MINLENGTH: M I N L E N G T H;
 
-		KW_MAXLENGTH: M A X L E N G T H;
+KW_MAXLENGTH: M A X L E N G T H;
 
-		KW_TOTALDIGITS: T O T A L D I G I T S;
+KW_TOTALDIGITS: T O T A L D I G I T S;
 
-		KW_FRACTIONDIGITS: F R A C T I O N D I G I T S;
+KW_FRACTIONDIGITS: F R A C T I O N D I G I T S;
 
-		KW_NOT: N O T;
+KW_NOT: N O T;
 
-		KW_TRUE: 'true';
+KW_TRUE: 'true';
 
-		KW_FALSE: 'false';
+KW_FALSE: 'false';
 
-		// -------------------------- TERMINALS --------------------------
+// -------------------------- TERMINALS --------------------------
 
-		// Skip white spaces in the shEx and comments.
-		SKIP_: (WHITE_SPACE | COMMENT) -> skip;
+// Skip white spaces in the shEx and comments.
+SKIP_: (WHITE_SPACE | COMMENT) -> skip;
 
-		fragment COMMENT: (
-				'#' ~[\r\n]*
-				| '/*' (~[*] | '*' ('\\/' | ~[/]))* '*/'
-			);
+fragment COMMENT: (
+		'#' ~[\r\n]*
+		| '/*' (~[*] | '*' ('\\/' | ~[/]))* '*/'
+	);
 
-		// A white space is defined as '\t' or '\r' or '\n'.
-		fragment WHITE_SPACE: [ \t\r\n]+;
+// A white space is defined as '\t' or '\r' or '\n'.
+fragment WHITE_SPACE: [ \t\r\n]+;
 
-		CODE: '{' (~[%\\] | '\\' [%\\] | UCHAR)* '%' '}';
+CODE: '{' (~[%\\] | '\\' [%\\] | UCHAR)* '%' '}';
 
 		/*
 		 VAR
@@ -385,72 +399,75 @@ KW_AS: A S;
  ;
 		 */
 
-		RDF_TYPE: 'a';
+RDF_TYPE: 'a';
 
-		IRIREF: '<' (~[\u0000-\u0020=<>"{}|^`\\] | UCHAR)* '>';
+IRIREF: '<' (~[\u0000-\u0020=<>"{}|^`\\] | UCHAR)* '>';
 		/* #x00=NULL #01-#x1F=control codes #x20=space */
 
-		PNAME_NS: PN_PREFIX? ':';
+PNAME_NS: PN_PREFIX? ':';
 
-		PNAME_LN: PNAME_NS PN_LOCAL;
+PNAME_LN: PNAME_NS PN_LOCAL;
 
-		ATPNAME_NS: '@' PN_PREFIX? ':';
+ATPNAME_NS: '@' PN_PREFIX? ':';
 
-		ATPNAME_LN: '@' PNAME_NS PN_LOCAL;
+ATPNAME_LN: '@' PNAME_NS PN_LOCAL;
 
-		REGEXP:
+REGEXP:
 			'/' (
 				~[/\n\r\\]
 				| '\\' [/nrt\\|.?*+(){}[\]$^-]
 				| UCHAR
 			)+ '/';
 
-		REGEXP_FLAGS: [smix]+;
+REGEXP_FLAGS: [smix]+;
 
-		BLANK_NODE_LABEL:
+BLANK_NODE_LABEL:
 			'_:' (PN_CHARS_U | [0-9]) (
 				(PN_CHARS | '.')* PN_CHARS
 			)?;
 
-		LANGTAG: '@' [a-zA-Z]+ ('-' [a-zA-Z0-9]+)*;
+LANGTAG: '@' LANGLABEL
+       ;
 
-		INTEGER: [+-]? [0-9]+;
+LANGLABEL: [a-zA-Z]+ ('-' [a-zA-Z0-9]+)* 
+         ;
 
-		DECIMAL: [+-]? [0-9]* '.' [0-9]+;
+INTEGER: [+-]? [0-9]+;
 
-		DOUBLE:
-			[+-]? (
+DECIMAL: [+-]? [0-9]* '.' [0-9]+;
+
+DOUBLE:	[+-]? (
 				[0-9]+ '.' [0-9]* EXPONENT
 				| '.'? [0-9]+ EXPONENT
 			);
 
-		STEM_MARK: '~';
+STEM_MARK: '~';
 
-		UNBOUNDED: '*';
+UNBOUNDED: '*';
 
-		fragment EXPONENT: [eE] [+-]? [0-9]+;
+fragment EXPONENT: [eE] [+-]? [0-9]+;
 
-		STRING_LITERAL1:
+STRING_LITERAL1:
 			'\'' (~[\u0027\u005C\u000A\u000D] | ECHAR | UCHAR)* '\'';
 		/* #x27=' #x5C=\ #xA=new line #xD=carriage return */
 
-		STRING_LITERAL2:
+STRING_LITERAL2:
 			'"' (~[\u0022\u005C\u000A\u000D] | ECHAR | UCHAR)* '"';
 		/* #x22=" #x5C=\ #xA=new line #xD=carriage return */
 
-		STRING_LITERAL_LONG1:
+STRING_LITERAL_LONG1:
 			'\'\'\'' (('\'' | '\'\'')? (~['\\] | ECHAR | UCHAR))* '\'\'\'';
 
-		STRING_LITERAL_LONG2:
+STRING_LITERAL_LONG2:
 			'"""' (('"' | '""')? (~["\\] | ECHAR | UCHAR))* '"""';
 
-		fragment UCHAR:
+fragment UCHAR:
 			'\\u' HEX HEX HEX HEX
 			| '\\U' HEX HEX HEX HEX HEX HEX HEX HEX;
 
-		fragment ECHAR: '\\' [tbnrf\\"'];
+fragment ECHAR: '\\' [tbnrf\\"'];
 
-		fragment PN_CHARS_BASE:
+fragment PN_CHARS_BASE:
 			[A-Z]
 			| [a-z]
 			| [\u00C0-\u00D6]
@@ -467,9 +484,9 @@ KW_AS: A S;
 			| [\u{10000}-\u{EFFFD}];
 		// | [\uD800-\uDB7F] [\uDC00-\uDFFF]
 
-		fragment PN_CHARS_U: PN_CHARS_BASE | '_';
+fragment PN_CHARS_U: PN_CHARS_BASE | '_';
 
-		fragment PN_CHARS:
+fragment PN_CHARS:
 			PN_CHARS_U
 			| '-'
 			| [0-9]
@@ -477,10 +494,10 @@ KW_AS: A S;
 			| [\u0300-\u036F]
 			| [\u203F-\u2040];
 
-		fragment PN_PREFIX:
+fragment PN_PREFIX:
 			PN_CHARS_BASE ((PN_CHARS | '.')* PN_CHARS)?;
 
-		fragment PN_LOCAL: (PN_CHARS_U | ':' | [0-9] | PLX) (
+fragment PN_LOCAL: (PN_CHARS_U | ':' | [0-9] | PLX) (
 				(PN_CHARS | '.' | ':' | PLX)* (
 					PN_CHARS
 					| ':'
@@ -488,13 +505,13 @@ KW_AS: A S;
 				)
 			)?;
 
-		fragment PLX: PERCENT | PN_LOCAL_ESC;
+fragment PLX: PERCENT | PN_LOCAL_ESC;
 
-		fragment PERCENT: '%' HEX HEX;
+fragment PERCENT: '%' HEX HEX;
 
-		fragment HEX: [0-9] | [A-F] | [a-f];
+fragment HEX: [0-9] | [A-F] | [a-f];
 
-		fragment PN_LOCAL_ESC:
+fragment PN_LOCAL_ESC:
 			'\\' (
 				'_'
 				| '~'
@@ -525,31 +542,30 @@ KW_AS: A S;
  ;
 		 */
 
-		/* fragment DIGIT: '0'..'9' ; */
-		fragment A: ('a' | 'A');
-		fragment B: ('b' | 'B');
-		fragment C: ('c' | 'C');
-		fragment D: ('d' | 'D');
-		fragment E: ('e' | 'E');
-		fragment F: ('f' | 'F');
-		fragment G: ('g' | 'G');
-		fragment H: ('h' | 'H');
-		fragment I: ('i' | 'I');
-		fragment J: ('j' | 'J');
-		fragment K: ('k' | 'K');
-		fragment L: ('l' | 'L');
-		fragment M: ('m' | 'M');
-		fragment N: ('n' | 'N');
-		fragment O: ('o' | 'O');
-		fragment P: ('p' | 'P');
-		fragment Q: ('q' | 'Q');
-		fragment R: ('r' | 'R');
-		fragment S: ('s' | 'S');
-		fragment T: ('t' | 'T');
-		fragment U: ('u' | 'U');
-		fragment V: ('v' | 'V');
-		fragment W: ('w' | 'W');
-		fragment X: ('x' | 'X');
-		fragment Y: ('y' | 'Y');
-		fragment Z: ('z' | 'Z');
-		
+/* fragment DIGIT: '0'..'9' ; */
+fragment A: ('a' | 'A');
+fragment B: ('b' | 'B');
+fragment C: ('c' | 'C');
+fragment D: ('d' | 'D');
+fragment E: ('e' | 'E');
+fragment F: ('f' | 'F');
+fragment G: ('g' | 'G');
+fragment H: ('h' | 'H');
+fragment I: ('i' | 'I');
+fragment J: ('j' | 'J');
+fragment K: ('k' | 'K');
+fragment L: ('l' | 'L');
+fragment M: ('m' | 'M');
+fragment N: ('n' | 'N');
+fragment O: ('o' | 'O');
+fragment P: ('p' | 'P');
+fragment Q: ('q' | 'Q');
+fragment R: ('r' | 'R');
+fragment S: ('s' | 'S');
+fragment T: ('t' | 'T');
+fragment U: ('u' | 'U');
+fragment V: ('v' | 'V');
+fragment W: ('w' | 'W');
+fragment X: ('x' | 'X');
+fragment Y: ('y' | 'Y');
+fragment Z: ('z' | 'Z');

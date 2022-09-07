@@ -740,7 +740,13 @@ class WSchemaMaker extends WShExDocBaseVisitor[Any] {
       case _ => err(s"visitXsFacet: Unsupported ${ctx.getClass.getName}")
     }
    */
-  override def visitStringFacet(ctx: StringFacetContext): Builder[XsFacet] = ctx match {
+
+  override def visitStringSet(ctx: StringSetContext): Builder[StringSet] = 
+    visitList(visitString, ctx.string()).map(ss => StringSet(ss))
+
+     
+
+  override def visitStringFacet(ctx: StringFacetContext): Builder[StringFacet] = ctx match {
     case _ if isDefined(ctx.stringLength()) =>
       for {
         n <- getInteger(ctx.INTEGER().getText())
@@ -1010,6 +1016,10 @@ class WSchemaMaker extends WShExDocBaseVisitor[Any] {
         visitExtraPropertySet(ctx.extraPropertySet())
       case _ if isDefined(ctx.labelConstraint()) =>
         visitLabelConstraint(ctx.labelConstraint())
+      case _ if isDefined(ctx.descriptionConstraint()) =>
+        visitDescriptionConstraint(ctx.descriptionConstraint())
+      case _ if isDefined(ctx.aliasConstraint()) =>
+        visitAliasConstraint(ctx.aliasConstraint())
     }
 
   override def visitExtension(ctx: ExtensionContext): Builder[Qualifier] = for {
@@ -1025,14 +1035,36 @@ class WSchemaMaker extends WShExDocBaseVisitor[Any] {
     ps <- preds.map(predicate2PropertyId(_)).sequence
   } yield Extra(ps)
 
-  override def visitLabelConstraint(ctx: LabelConstraintContext): Builder[Qualifier] =
-    visitLangConstraints(ctx.langConstraints()).flatMap { cs =>
+  override def visitLabelConstraint(ctx: LabelConstraintContext): Builder[Qualifier] = 
+    visitLangConstraints(ctx.langConstraints()).flatMap{ cs => 
       ok(TermConstraintQ(cs.map { case (lang, cs) => LabelConstraint(lang, cs) }))
     }
+
+  override def visitDescriptionConstraint(ctx: DescriptionConstraintContext): Builder[Qualifier] =
+    visitLangConstraints(ctx.langConstraints()).flatMap { cs =>
+      ok(TermConstraintQ(cs.map { case (lang, cs) => DescriptionConstraint(lang, cs) }))
+    }
+
+  override def visitAliasConstraint(ctx: AliasConstraintContext): Builder[Qualifier] =
+    visitLangConstraints(ctx.langConstraints()).flatMap { cs =>
+      ok(TermConstraintQ(cs.map { case (lang, cs) => DescriptionConstraint(lang, cs) }))
+    }    
 
   override def visitLangConstraints(
       ctx: LangConstraintsContext
   ): Builder[List[(Lang, Option[StringConstraint])]] =
+    ctx match {
+    case _ if isDefined(ctx.singleLangConstraint()) => 
+      visitSingleLangConstraint(ctx.singleLangConstraint())
+      .map(List(_))
+    case _ if isDefined(ctx.multiLangConstraint()) => 
+      visitMultiLangConstraint(ctx.multiLangConstraint())
+  }
+
+  override def visitSingleLangConstraint(ctx: SingleLangConstraintContext): Builder[(Lang,Option[StringConstraint])] =
+    visitLangConstraint(ctx.langConstraint())
+
+  override def visitMultiLangConstraint(ctx: MultiLangConstraintContext): Builder[List[(Lang,Option[StringConstraint])]] = 
     visitList(visitLangConstraint, ctx.langConstraint())
 
   override def visitLangConstraint(
@@ -1040,14 +1072,21 @@ class WSchemaMaker extends WShExDocBaseVisitor[Any] {
   ): Builder[(Lang, Option[StringConstraint])] = for {
     sc <- visitStringConstraint(ctx.stringConstraint())
   } yield {
-    val lang = getLanguage(ctx.LANGTAG().getText())
+    val lang = getLanguage(ctx.LANGLABEL().getText())
     (lang, sc)
   }
 
   override def visitStringConstraint(
       ctx: StringConstraintContext
   ): Builder[Option[StringConstraint]] = ctx match {
-    case _ if isDefined(ctx.any()) => ok(None)
+    case _ if isDefined(ctx.any()) => 
+      ok(None)
+    case _ if isDefined(ctx.stringSet()) => 
+      visitStringSet(ctx.stringSet())
+      .map(_.some)
+    case _ if isDefined(ctx.stringFacet()) => 
+      visitStringFacet(ctx.stringFacet())
+      .map(Facet(_).some)
   }
 
   override def visitOneOfTripleExpr(ctx: OneOfTripleExprContext): Builder[TripleExpr] = ctx match {
@@ -1495,9 +1534,8 @@ class WSchemaMaker extends WShExDocBaseVisitor[Any] {
     if (isDefined(v)) visitFn(v).map(Some(_))
     else ok(None)
 
-  /* Remove @ from language tag */
   private def getLanguage(str: String): Lang =
-    Lang(str.tail)
+    Lang(str)
 }
 
 sealed trait Qualifier {

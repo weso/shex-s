@@ -10,6 +10,7 @@ import collection.JavaConverters._
 import es.weso.wshex.matcher.MatchingError
 import es.weso.wshex.matcher.MatchingError._
 import es.weso.wbmodel.EntityDoc
+import es.weso.shex.StringFacet
 
 /** TermConstraint describes constraints on terms: labels, descriptions or aliases
   */
@@ -131,6 +132,29 @@ object TermConstraint {
   }
    */
 
+  case class Facet(facet: StringFacet) extends StringConstraint {
+    import es.weso.shex.validator.FacetChecker
+    import StringConstraintMatchError._
+
+    def matchMonolingualTextValue(value: MonolingualTextValue): Either[MatchingError, Unit] = {
+      val s = value.getText()
+      FacetChecker.stringFacetChecker(s, facet).leftMap(err => 
+        StringConstraintError(StringFacetMatchError(err), this, value)
+      )
+    }
+  }   
+
+  case class StringSet(ss: List[String]) extends StringConstraint {
+    import StringConstraintMatchError._
+
+    def matchMonolingualTextValue(value: MonolingualTextValue): Either[MatchingError, Unit] = {
+      val s = value.getText()
+      if (ss.contains(s)) ().asRight
+      else StringConstraintError(StringSetMatchError(s, ss), this, value).asLeft
+    }
+  }   
+
+
   case class Constant(str: String) extends StringConstraint {
     def matchMonolingualTextValue(value: MonolingualTextValue): Either[MatchingError, Unit] = {
       val s = value.getText()
@@ -138,5 +162,13 @@ object TermConstraint {
       else StringConstantMatchingError(s, str).asLeft
     }
   }
+
+  sealed abstract class StringConstraintMatchError 
+  object StringConstraintMatchError {
+    import es.weso.shex.validator.FacetChecker.StringFacetError
+    case class StringFacetMatchError(err: StringFacetError) extends StringConstraintMatchError
+    case class StringSetMatchError(value: String, ss: List[String]) extends StringConstraintMatchError
+  }
+
 
 }

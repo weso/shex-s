@@ -5,6 +5,8 @@ import org.wikidata.wdtk.datamodel.implementation._
 import org.wikidata.wdtk.datamodel.interfaces._
 import es.weso.rdf.nodes._
 import es.weso.wshex._
+import es.weso.wshex.TermConstraint.StringConstraint
+import es.weso.wshex.TermConstraint.StringConstraintMatchError
 
 sealed abstract class MatchingError(msg: String) extends Product with Serializable
 
@@ -83,5 +85,12 @@ object MatchingError {
                               |flags: ${flags}
                               |msg: $msg
                               |""".stripMargin)
+
+  case class StringConstraintError(err: StringConstraintMatchError, tc: StringConstraint, value: MonolingualTextValue)
+      extends MatchingError(s"""|TermConstraint MatchError
+                                |StringConstraint: $tc
+                                |value: $value
+                                |err: ${err}
+                              |""".stripMargin)                              
 
 }

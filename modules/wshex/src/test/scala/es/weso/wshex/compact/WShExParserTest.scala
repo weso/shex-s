@@ -216,7 +216,7 @@ class WShExParserTest extends CatsEffectSuite {
   checkSchema(
     "Label any en",
     s"""|prefix :    <${wd.str}>
-          |<S> Label [ @en -> . ] {
+          |<S> Label ( en -> . ) {
           |}
           |""".stripMargin,
     WSchema(
@@ -237,7 +237,7 @@ class WShExParserTest extends CatsEffectSuite {
   checkSchema(
     "Label any en with Extra",
     s"""|prefix :    <${wd.str}>
-          |<S> EXTRA :P31 Label [ @en -> . ] {
+          |<S> EXTRA :P31 Label ( en -> . ) {
           | :P31 [ :Q5 ]
           |}
           |""".stripMargin,

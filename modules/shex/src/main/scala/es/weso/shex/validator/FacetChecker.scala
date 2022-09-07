@@ -50,6 +50,7 @@ case class FacetChecker(
     EitherT.apply(v)
   }
 
+  // TODO: Refactor to reuse stringFacetChecker in companion object
   private def facetChecker(node: RDFNode, facet: XsFacet): EitherT[IO, String, String] =
     facet match {
       case Length(n) =>
@@ -181,4 +182,37 @@ case class FacetChecker(
     if (cond) EitherT.fromEither[IO](msgTrue.asRight[String])
     else EitherT.fromEither[IO](msgFalse.asLeft[String])
 
+}
+
+object FacetChecker {
+
+  import StringFacetError._
+
+  def stringFacetChecker(str: String, facet: StringFacet): Either[StringFacetError, Unit] = 
+   facet match {
+    case Pattern(p, flags) => RegEx(p, flags).matches(str) match {
+          case Right(b) =>
+            if (b) ().asRight
+            else PatternMatchFalse(str,p,flags).asLeft
+          case Left(msg) => PatternMatchError(str,p,flags,msg).asLeft
+        }
+    case MinLength(n) => 
+      if (str.length() >= n) ().asRight
+      else MinLengthFails(str, n).asLeft
+    case MaxLength(n) => 
+      if (str.length() <= n) ().asRight 
+      else MaxLengthFails(str,n).asLeft
+    case Length(n) => 
+      if  (str.length() == n) ().asRight 
+      else LengthFails(str, n).asLeft
+   }
+
+  sealed abstract class StringFacetError   
+  object StringFacetError {
+   case class PatternMatchFalse(str: String, p: String, flags: Option[String]) extends StringFacetError
+   case class PatternMatchError(str: String, p: String, flags: Option[String], msg: String) extends StringFacetError
+   case class MinLengthFails(str: String, n: Int) extends StringFacetError
+   case class MaxLengthFails(str: String, n: Int) extends StringFacetError
+   case class LengthFails(str: String, n: Int) extends StringFacetError
+  }
 }
