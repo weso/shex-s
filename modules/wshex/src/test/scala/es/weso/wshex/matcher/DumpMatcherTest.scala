@@ -105,8 +105,7 @@ class DumpMatcherTest extends CatsEffectSuite {
             format = format, 
             verbose = verboseLevel)
           .flatMap(matcher =>
-            IO.println(s"Matcher obtained...${matcher.wShEx}") >>
-              DumpReader.read(getResourceInputStream(dumpFileName), entityMatch(matcher))
+            DumpReader.read(getResourceInputStream(dumpFileName), entityMatch(matcher))
           ),
         expected
       )
