@@ -36,6 +36,7 @@ import es.weso.rbe.interval._
 import TripleConstraint._
 import TermConstraint._
 import cats.implicits._
+import WNodeConstraint._
 
 /** Visits the AST and builds the corresponding ShEx abstract syntax
   */
@@ -310,7 +311,7 @@ class WSchemaMaker extends WShExDocBaseVisitor[Any] {
       case s: ShapeAtomShapeExpressionContext =>
         visitShapeExpression(s.shapeExpression())
       case _: ShapeAtomAnyContext =>
-        ok(EmptyExpr(None))
+        ok(emptyExpr)
       case _ => err(s"Internal error visitShapeAtom: unknown ctx $ctx")
     }
 
@@ -1217,7 +1218,7 @@ class WSchemaMaker extends WShExDocBaseVisitor[Any] {
         case nc: WNodeConstraint =>
           ok(tripleConstraintLocal(propertyId, nc, min, max).withQs(qualifierSpec))
         case WShape(None, false, Nil, None, Nil) =>
-          ok(tripleConstraintLocal(propertyId, EmptyExpr(None), min, max).withQs(qualifierSpec))
+          ok(tripleConstraintLocal(propertyId, emptyExpr, min, max).withQs(qualifierSpec))
         case se: WShapeExpr =>
           ok(TripleConstraintGeneral(propertyId, se, min, max).withQs(qualifierSpec))
         // case _ => err(s"visitTripleConstraint. Error matching shapeExpr: $shapeExpr")
@@ -1269,7 +1270,7 @@ class WSchemaMaker extends WShExDocBaseVisitor[Any] {
                   ok(
                     Some(
                       QualifierSpec(
-                        QualifierLocal(propId, EmptyExpr(None), cardinality._1, cardinality._2),
+                        QualifierLocal(propId, emptyExpr, cardinality._1, cardinality._2),
                         false
                       )
                     )
@@ -1373,6 +1374,14 @@ class WSchemaMaker extends WShExDocBaseVisitor[Any] {
         )
       case tc: TripleConstraintRef =>
         tc.copy(
+          min = cardinality._1,
+          max = cardinality._2
+          // W annotations = optListCombine(tc.annotations, anns),
+          // W semActs = optListCombine(tc.semActs, sActs)
+        )
+      //case et: EmptyTripleExpr => ???  
+      case tg: TripleConstraintGeneral =>   
+        tg.copy(
           min = cardinality._1,
           max = cardinality._2
           // W annotations = optListCombine(tc.annotations, anns),

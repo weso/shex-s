@@ -11,7 +11,6 @@ import org.wikidata.wdtk.datamodel.interfaces.{
   StringValue => WDTKStringValue,
   _
 }
-
 import java.nio.file.Path
 import cats.effect._
 import org.wikidata.wdtk.datamodel.helpers.JsonDeserializer
@@ -210,25 +209,28 @@ case class Matcher(
             shapeExprs = List(se),
             entity = current.addPropertyValues(pidValue, values)
           )
-
-      case Some(ValueSet(_, vs)) =>
-        MatchingStatus
-          .combineOrs(
-            current,
-            vs.toLazyList
+      case Some(se) => se match {
+        case wnc: WNodeConstraint => wnc.values match {
+          case Some(vs) => 
+            MatchingStatus.combineOrs(current,vs.toLazyList
               .map(matchPredicateValueSetValue(predicate, _, e, se, current))
-          )
-      case Some(EmptyExpr(_)) =>
-        if (values.isEmpty) NoMatching(List(NoValuesProperty(predicate, e)))
-        else
-          Matching(
-            shapeExprs = List(se),
-            entity = current.addPropertyValues(pidValue, values)
-          )
-      case _ =>
+            )
+          case None => 
+            // TODO: Check this case with an empty node constraint...
+            // It assumes an empty node constraint but it could have different values...
+           /*       case Some(EmptyExpr(_)) => */
+           if (values.isEmpty) NoMatching(List(NoValuesProperty(predicate, e)))
+           else
+             Matching(
+               shapeExprs = List(se),
+               entity = current.addPropertyValues(pidValue, values)
+             ) 
+        }
+        case _ =>
         NoMatching(
           List(NotImplemented(s"matchPropertyIdValueExpr: ${predicate}, valueExpr: ${valueExpr}"))
         )
+      }    
     }
   }
 

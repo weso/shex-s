@@ -121,9 +121,9 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
   private def convertValueSet(
       id: Option[ShapeLabel],
       values: List[shex.ValueSetValue]
-  ): Either[ConvertError, ValueSet] =
+  ): Either[ConvertError, WNodeConstraint] =
     convertValueSetValues(values)
-      .map(vs => ValueSet(id, vs))
+      .map(vs => WNodeConstraint(id = id, values = vs.some))
 
   private def convertValueSetValues(
       values: List[shex.ValueSetValue]
@@ -264,14 +264,14 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
   ): Either[ConvertError, TripleConstraint] = {
     se match {
       case None =>
-        TripleConstraintLocal(pred, EmptyExpr(None), min, max).asRight
+        TripleConstraintLocal(pred, WNodeConstraint.emptyExpr, min, max).asRight
       case Some(se) =>
         convertShapeExpr(se, schema).flatMap(s =>
           s match {
             case s @ WShapeRef(_, lbl) =>
               TripleConstraintRef(pred, s, min, max, None).asRight
-            case v @ ValueSet(id, vs) =>
-              TripleConstraintLocal(pred, v, min, max).asRight
+            case wnc: WNodeConstraint =>
+              TripleConstraintLocal(pred, wnc, min, max).asRight
             case _ =>
               UnsupportedShapeExpr(se, s"Making tripleConstraint for pred: $pred").asLeft
           }
@@ -443,12 +443,12 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
             val pq = PropertyId.fromNumber(nq, convertOptions.propQualifierIri)
             val (min, max) = convertMinMax(tc)
             tc.valueExpr match {
-              case None => QualifierLocal(pq, EmptyExpr(None), min, max).some.asRight
+              case None => QualifierLocal(pq, WNodeConstraint.emptyExpr, min, max).some.asRight
               case Some(se) =>
                 convertShapeExpr(se, schema).flatMap(s =>
                   s match {
                     case s @ WShapeRef(_, lbl)   => QualifierRef(pq, s, min, max).some.asRight
-                    case v @ ValueSet(id, vs) => QualifierLocal(pq, v, min, max).some.asRight
+                    case wnc: WNodeConstraint => QualifierLocal(pq, wnc, min, max).some.asRight
                     case _ =>
                       UnsupportedShapeExpr(se, s"Parsing qualifiers for property $n").asLeft
                   }

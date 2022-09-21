@@ -10,6 +10,7 @@ import es.weso.shex.{Schema => ShExSchema}
 import TermConstraint._
 import es.weso.rbe.interval._
 import es.weso.rdf.nodes._
+import WNodeConstraint._
 
 class ES2WShExTest extends CatsEffectSuite {
 
@@ -66,7 +67,7 @@ class ES2WShExTest extends CatsEffectSuite {
             Some(
               TripleConstraintLocal(
                 PropertyId.fromIRI(wd + "P31"),
-                ValueSet(None, List(EntityIdValueSetValue(ItemId("Q5", wd + "Q5")))),
+                valueSet(List(EntityIdValueSetValue(ItemId("Q5", wd + "Q5")))),
                 1,
                 IntOrUnbounded.fromInt(1)
               )
@@ -96,7 +97,7 @@ class ES2WShExTest extends CatsEffectSuite {
           Some(
             TripleConstraintLocal(
               PropertyId.fromIRI(wd + "P31"),
-              ValueSet(None, List(EntityIdValueSetValue(ItemId("Q5", wd + "Q5")))),
+              valueSet(List(EntityIdValueSetValue(ItemId("Q5", wd + "Q5")))),
               1,
               IntLimit(1)
             )
@@ -125,7 +126,7 @@ class ES2WShExTest extends CatsEffectSuite {
       Some(
         TripleConstraintLocal(
           PropertyId.fromIRI(wd + "P856"),
-          EmptyExpr(None),
+          emptyExpr,
           1,
           IntOrUnbounded.fromInt(1),
           Some(
@@ -134,7 +135,7 @@ class ES2WShExTest extends CatsEffectSuite {
                 List(
                   QualifierLocal(
                     PropertyId.fromIRI(wd + "P407"),
-                    ValueSet(None, List(EntityIdValueSetValue(ItemId("Q1860", wd + "Q1860")))),
+                    valueSet(List(EntityIdValueSetValue(ItemId("Q1860", wd + "Q1860")))),
                     1,
                     IntOrUnbounded.fromInt(1)
                   )
@@ -173,7 +174,7 @@ class ES2WShExTest extends CatsEffectSuite {
       Some(
         TripleConstraintLocal(
           PropertyId.fromIRI(wd + "P856"),
-          EmptyExpr(None),
+          emptyExpr,
           1,
           IntOrUnbounded.fromInt(1),
           Some(
@@ -182,7 +183,7 @@ class ES2WShExTest extends CatsEffectSuite {
                 List(
                   QualifierLocal(
                     PropertyId.fromIRI(wd + "P407"),
-                    ValueSet(None, List(EntityIdValueSetValue(ItemId("Q1860", wd + "Q1860")))),
+                    valueSet(List(EntityIdValueSetValue(ItemId("Q1860", wd + "Q1860")))),
                     1,
                     IntOrUnbounded.fromInt(1)
                   )
@@ -206,14 +207,14 @@ class ES2WShExTest extends CatsEffectSuite {
           exprs = List(
             TripleConstraintLocal(
               PropertyId.fromIRI(wd + "P856"),
-              EmptyExpr(None),
+              emptyExpr,
               1,
               IntOrUnbounded.fromInt(1),
               None
             ),
             TripleConstraintLocal(
               PropertyId.fromIRI(wd + "P407"),
-              ValueSet(None, List(EntityIdValueSetValue(ItemId("Q1860", wd + "Q1860")))),
+              valueSet(List(EntityIdValueSetValue(ItemId("Q1860", wd + "Q1860")))),
               1,
               IntOrUnbounded.fromInt(1),
               None

@@ -6,7 +6,7 @@ import es.weso.utils.VerboseLevel
 import org.wikidata.wdtk.datamodel.interfaces._
 import org.wikidata.wdtk.datamodel.helpers._
 import org.wikidata.wdtk.datamodel.helpers.ItemDocumentBuilder._
-import org.wikidata.wdtk.datamodel.implementation.ItemIdValueImpl
+import org.wikidata.wdtk.datamodel.implementation._
 import es.weso.wbmodel._
 import cats.implicits._
 
@@ -23,7 +23,6 @@ class WShExMatcherFullTest extends FunSuite {
     ItemDocumentBuilder.forItemId(id)
   }
 
-  
   {
     val q42 = Q(42).build()
 
@@ -36,6 +35,56 @@ class WShExMatcherFullTest extends FunSuite {
     val expected: Option[EntityDoc] = EntityDoc(Q(42).build()).some
     checkMatch("Label en with exact value and human", schemaStr, q42, expected)                       
   }
+
+    {
+    val q42_raw = Q(42).build()
+    val q5 = Q(5).build()
+    val p31_q5 = 
+      StatementBuilder.forSubjectAndProperty(q42_raw.getEntityId(), 
+        PropertyIdValueImpl("P31", defaultSite)).withValue(q5.getEntityId()).build()
+    val p19_q6 = 
+      StatementBuilder.forSubjectAndProperty(q42_raw.getEntityId(), 
+        PropertyIdValueImpl("P19", defaultSite)).withValue(Q(6).build().getEntityId()).build()
+    val q42_p31_q5 = q42_raw.withStatement(p31_q5)
+    val q42_full = q42_p31_q5.withStatement(p19_q6)
+
+
+    val schemaStr = """|prefix :  <http://www.wikidata.org/entity/>
+                       |
+                       |start = @<Human>
+                       |
+                       |<Human> { 
+                       |  :P31 [ :Q5 ]
+                       |}""".stripMargin
+    val expected: Option[EntityDoc] = EntityDoc(q42_p31_q5).some
+    checkMatch("Label en with exact value and human", schemaStr, q42_full, expected)
+  }
+
+  {
+    val q42_raw = Q(42).build()
+    val q5 = Q(5).build()
+    val douglas = StringValueImpl("Douglas Adams")
+    val p31_q5 = 
+      StatementBuilder.forSubjectAndProperty(q42_raw.getEntityId(), 
+        PropertyIdValueImpl("P31", defaultSite)).withValue(q5.getEntityId()).build()
+    val p734_adams = 
+      StatementBuilder.forSubjectAndProperty(q42_raw.getEntityId(), 
+        PropertyIdValueImpl("P734", defaultSite)).withValue(StringValueImpl("Adams")).build()
+    val q42_p734_adams = q42_raw.withStatement(p734_adams)
+    val q42_full = q42_p734_adams.withStatement(p31_q5)
+
+
+    val schemaStr = """|prefix :  <http://www.wikidata.org/entity/>
+                       |
+                       |start = @<Human>
+                       |
+                       |<Douglas> { 
+                       |  :P734 /Ad*/ ;
+                       |}""".stripMargin
+    val expected: Option[EntityDoc] = EntityDoc(q42_p734_adams).some
+    checkMatch("Label en with exact value and human", schemaStr, q42_full, expected)
+  }
+
 
  
   def checkMatch(

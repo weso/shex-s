@@ -176,13 +176,14 @@ sealed abstract class WShapeExpr extends Product with Serializable {
             te.checkLocal(entity, fromLabel, s.closed, s.extras)
 
         }
-      case vs: ValueSet => vs.matchLocal(entity).map(_ => Set())
+/*      case vs: ValueSet => vs.matchLocal(entity).map(_ => Set())
       case sd: StringDatatype =>
         entity match {
           //        case _: StringValue => Right(Set())
           case _ => Left(NoStringDatatype(entity))
         }
-      case e: EmptyExpr => Right(Set())
+      case e: EmptyExpr => Right(Set()) */
+      case nc: WNodeConstraint => nc.matchLocal(entity).map(_ => Set())
       case WShapeAnd(_, ls) =>
         val vs = ls.map(_.checkLocal(entity, fromLabel, schema)).sequence.map(_.toSet.flatten)
         vs
@@ -231,13 +232,14 @@ sealed abstract class WShapeExpr extends Product with Serializable {
             te.checkLocalCoded(entity, fromLabel, s.closed, s.extras)
 
         }
-      case vs: ValueSet => vs.matchLocalCoded(entity).map(_ => Set())
+/*      case vs: ValueSet => vs.matchLocalCoded(entity).map(_ => Set())
       case sd: StringDatatype =>
         entity match {
           //        case _: StringValue => Right(Set())
           case _ => Left(Reason.noStringDatatype)
         }
-      case e: EmptyExpr => Right(Set())
+      case e: EmptyExpr => Right(Set()) */
+      case nc: WNodeConstraint => nc.matchLocalCoded(entity).map(_ => Set())
       case WShapeAnd(_, ls) =>
         val vs = ls.map(_.checkLocalCoded(entity, fromLabel, schema)).sequence.map(_.toSet.flatten)
         vs
@@ -323,22 +325,45 @@ object WShape {
   )
 }
 
-sealed abstract class WNodeConstraint extends WShapeExpr {
-  def matchLocal(value: Value): Either[Reason, Unit]
+case class WNodeConstraint(
+  id: Option[ShapeLabel] = None,
+  datatype: Option[IRI] = None,
+  xsFacets: List[XsFacet] = List(),
+  values: Option[List[ValueSetValue]] = None
+) extends WShapeExpr {
+  override def withLabel(label: ShapeLabel): WShapeExpr = 
+    this.copy(id = Some(label))
+  def matchLocal(value: Value): Either[Reason, Unit] = ???
   def matchLocalCoded(value: Value): Either[ReasonCode, Unit] =
     matchLocal(value).leftMap(r => r.errCode)
 }
 
+/* case class XSFacets(
+  id: Option[ShapeLabel], 
+  xsFacets: List[XsFacet],
+) extends WNodeConstraint {
+  override def matchLocal(value: Value): Either[Reason, Unit] = value match {
+    case s: StringValue => ???
+    case _ => ???
+  }
+  override def withLabel(label: ShapeLabel): WShapeExpr = 
+    this.copy(id = Some(label))
+
+} */
+
 object WNodeConstraint {
   def valueSet(vs: List[ValueSetValue]) // W, facets: List[XsFacet])
       : WNodeConstraint =
-    ValueSet(id = None, values = vs) // W , xsFacets = facets)
+    WNodeConstraint(id = None, values = vs.some) // W , xsFacets = facets)
 
-  def xsFacets(sfs: List[XsFacet]): WNodeConstraint = ???
 
+  def xsFacets(fs: List[XsFacet]): WNodeConstraint = 
+    WNodeConstraint(xsFacets =fs)
+
+  def emptyExpr: WNodeConstraint = WNodeConstraint()
 }
 
-case class EmptyExpr(id: Option[ShapeLabel]) extends WNodeConstraint {
+/* case class EmptyExpr(id: Option[ShapeLabel]) extends WNodeConstraint {
 
   override def withLabel(label: ShapeLabel): WShapeExpr = 
     this.copy(id = Some(label))
@@ -417,7 +442,7 @@ case class DateDatatype(id: Option[ShapeLabel]) extends WNodeConstraint {
                  |""".stripMargin) */
     result
   }
-}
+} */
 
 object WShapeExpr {
 
@@ -431,7 +456,7 @@ object WShapeExpr {
     WShape(None, false, List(), Some(EachOf(exprs = ls)), List())
 
   def valueSet(ls: List[ValueSetValue]): WShapeExpr =
-    ValueSet(None, ls)
+    WNodeConstraint.valueSet(ls)
 
   def qid(num: Int): ValueSetValue = {
     val name = "Q" + num
