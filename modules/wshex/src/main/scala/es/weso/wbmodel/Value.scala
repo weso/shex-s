@@ -229,6 +229,13 @@ case class DateValue(
   override def toString = s"$date"
 }
 
+case class IntegerValue(
+    num: Integer
+) extends LiteralValue {
+  override def toString = s"$num"
+}
+
+
 case class IRIValue(
     iri: IRI
 ) extends LiteralValue {

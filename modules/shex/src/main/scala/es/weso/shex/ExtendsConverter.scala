@@ -162,13 +162,13 @@ object ExtendsConverter {
 
   private def embedShape(schema: ResolvedSchema)(shape1: Shape, shape2: Shape): Cnv[Shape] =
     for {
-      _ <- info(s"before embedShape(shape1=${shape1.showQualified(schema.prefixMap)},shape2=${shape2
-          .showQualified(schema.prefixMap)})")
+      // _ <- info(s"before embedShape(shape1=${shape1.showQualified(schema.prefixMap)},shape2=${shape2
+      //    .showQualified(schema.prefixMap)})")
       newShape1 <- shape2.id match {
         case Some(s2lbl) => withVisited(s2lbl, transShape(schema, shape1))
         case None        => ok(shape1)
       }
-      _ <- info(s"expr1 = ${newShape1.expression}, expr2=${shape2.expression}")
+      // _ <- info(s"expr1 = ${newShape1.expression}, expr2=${shape2.expression}")
       r <- ok(
         shape2.copy(
           expression = embedOptTe(schema)(newShape1.expression, shape2.expression),

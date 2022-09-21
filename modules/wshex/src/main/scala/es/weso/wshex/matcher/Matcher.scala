@@ -107,9 +107,6 @@ case class Matcher(
       case Some(te) => matchTripleExpr(te, entity, s, current)
       case None     => MatchingStatus.matchEmpty(current)
     }
-    // val ms =
-    //  s.termConstraints.map(tc => matchTermConstraint(tc, entity, s, current))
-    // ms.foldLeft(matchExpr) { case (c, current) => c.and(current) }
     s.termConstraints.foldLeft(matchExpr) { case (current, tc) => {
       current match {
         case nm: NoMatching => nm // TODO: Maybe we could provide more info...
@@ -210,7 +207,9 @@ case class Matcher(
             entity = current.addPropertyValues(pidValue, values)
           )
       case Some(se) => se match {
-        case wnc: WNodeConstraint => wnc.values match {
+        case wnc: WNodeConstraint => {
+          println(s"Matching WNodeConstraint: $wnc")
+          wnc.values match {
           case Some(vs) => 
             MatchingStatus.combineOrs(current,vs.toLazyList
               .map(matchPredicateValueSetValue(predicate, _, e, se, current))
@@ -225,6 +224,7 @@ case class Matcher(
                shapeExprs = List(se),
                entity = current.addPropertyValues(pidValue, values)
              ) 
+          }
         }
         case _ =>
         NoMatching(

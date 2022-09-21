@@ -34,7 +34,7 @@ class WShExMatcherFullTest extends FunSuite {
                        |}""".stripMargin
     val expected: Option[EntityDoc] = EntityDoc(Q(42).build()).some
     checkMatch("Label en with exact value and human", schemaStr, q42, expected)                       
-  }
+  } 
 
     {
     val q42_raw = Q(42).build()
@@ -80,11 +80,35 @@ class WShExMatcherFullTest extends FunSuite {
                        |
                        |<Douglas> { 
                        |  :P734 /Ad*/ ;
-                       |}""".stripMargin
+                       |}
+                       |""".stripMargin
     val expected: Option[EntityDoc] = EntityDoc(q42_p734_adams).some
     checkMatch("Label en with exact value and human", schemaStr, q42_full, expected)
   }
 
+  {
+    val q42_raw = Q(42).build()
+    val q5 = Q(5).build()
+    val douglas = StringValueImpl("Douglas Adams")
+    val p31_q5 = 
+      StatementBuilder.forSubjectAndProperty(q42_raw.getEntityId(), 
+        PropertyIdValueImpl("P31", defaultSite)).withValue(q5.getEntityId()).build()
+    val p734_adams = 
+      StatementBuilder.forSubjectAndProperty(q42_raw.getEntityId(), 
+        PropertyIdValueImpl("P734", defaultSite)).withValue(StringValueImpl("Adams")).build()
+    val q42_p734_adams = q42_raw.withStatement(p734_adams)
+    val q42_full = q42_p734_adams.withStatement(p31_q5)
+
+    val schemaStr = """|prefix :  <http://www.wikidata.org/entity/>
+                       |
+                       |start = @<Human>
+                       |
+                       |<Douglas> { 
+                       |  :P734 /Foo/ ;
+                       |}""".stripMargin
+    val expected: Option[EntityDoc] = EntityDoc(q42_p734_adams).some
+    checkMatch("Label en with exact value and human", schemaStr, q42_full, expected)
+  }
 
  
   def checkMatch(

@@ -50,46 +50,13 @@ case class FacetChecker(
     EitherT.apply(v)
   }
 
-  // TODO: Refactor to reuse stringFacetChecker in companion object
   private def facetChecker(node: RDFNode, facet: XsFacet): EitherT[IO, String, String] =
     facet match {
-      case Length(n) =>
-        val l = NodeInfo.length(node)
-        checkCond(
-          l == n,
-          s"${node.show} does not satisfy facet Length($n) with length $l",
-          s"${node.show} satisfies Length($n) with length $l"
-        )
-      case MinLength(n) =>
-        val l = NodeInfo.length(node)
-        checkCond(
-          l >= n,
-          s"${node.show} does not satisfy facet MinLength($n) with length $l",
-          s"${node.show} satisfies MinLength($n) with length $l"
-        )
-      case MaxLength(n) =>
-        val l = NodeInfo.length(node)
-        checkCond(
-          l <= n,
-          s"${node.show} does not satisfy facet MaxLength($n) with length $l",
-          s"${node.show} satisfies MaxLength($n) with length $l"
-        )
-      case Pattern(p, flags) =>
-        val str = node.getLexicalForm
-        // pprint.log(str, tag = "str")
-        // pprint.log(p, tag = "p")
-        // pprint.log(flags, tag = "flags")
-        RegEx(p, flags).matches(str) match {
-          case Right(b) =>
-            // pprint.log(b, tag = "b")
-            checkCond(
-              b,
-              s"${node.show} does not match Pattern($p) with lexical form $str",
-              s"${node.show} satisfies Pattern($p) with lexical form $str"
-            )
-          case Left(msg) => EitherT.left(IO(msg))
-        }
-      case MinInclusive(m) =>
+      case sf: StringFacet => {
+        val e = FacetChecker.stringFacetChecker(node.getLexicalForm, sf)
+        EitherT.fromEither[IO](e).bimap(_.toString, _ => s"${node.show} satisfies facet $sf")
+      }
+      /*case MinInclusive(m) =>
         for {
           d <- EitherT.fromEither[IO](minInclusive(m, node))
           r <- checkCond(
@@ -124,7 +91,7 @@ case class FacetChecker(
             s"${node.show} does not match MaxExclusive($m) with $node",
             s"${node.show} satisfies MaxExclusive($m)"
           )
-        } yield r
+        } yield r */
       case FractionDigits(m) =>
         for {
           fd <- io2es(NodeInfo.fractionDigits(node, rdf))
@@ -143,6 +110,11 @@ case class FacetChecker(
             s"${node.show} satisfies TotalDigits($m) with total digits = $td"
           )
         } yield b
+      case nf: NumericFacet => {
+        val e = numericValue(node).flatMap(n => FacetChecker.numericFacetChecker(n, nf))
+        EitherT.fromEither[IO](e).bimap(_.toString, _ => s"${node.show} satisfies facet $nf")
+      }
+
       // case _ => EitherT.fromEither[IO](s"Not implemented checkFacet: $facet".asLeft[String])
     }
 
@@ -187,32 +159,86 @@ case class FacetChecker(
 object FacetChecker {
 
   import StringFacetError._
+  import NumericFacetError._
 
-  def stringFacetChecker(str: String, facet: StringFacet): Either[StringFacetError, Unit] = 
+  def stringFacetChecker(
+   str: String, 
+   facet: StringFacet
+   ): Either[StringFacetError, Unit] = 
    facet match {
     case Pattern(p, flags) => RegEx(p, flags).matches(str) match {
           case Right(b) =>
-            if (b) ().asRight
+            if (b) ok
             else PatternMatchFalse(str,p,flags).asLeft
           case Left(msg) => PatternMatchError(str,p,flags,msg).asLeft
         }
     case MinLength(n) => 
-      if (str.length() >= n) ().asRight
+      if (str.length() >= n) ok
       else MinLengthFails(str, n).asLeft
     case MaxLength(n) => 
-      if (str.length() <= n) ().asRight 
+      if (str.length() <= n) ok
       else MaxLengthFails(str,n).asLeft
     case Length(n) => 
-      if  (str.length() == n) ().asRight 
+      if  (str.length() == n) ok 
       else LengthFails(str, n).asLeft
    }
 
-  sealed abstract class StringFacetError   
+  def ok = ().asRight 
+
+  def numericFacetChecker(
+    nl: NumericLiteral, 
+    facet: NumericFacet): Either[NumericFacetError, Unit] = facet match {
+      case MinInclusive(n) => 
+        if (lessThanOrEquals(n, nl)) ok
+        else MinInclusiveFails(nl,n).asLeft
+      case MaxInclusive(n) => 
+        if (lessThanOrEquals(nl, n)) ok
+        else MaxInclusiveFails(nl,n).asLeft
+      case MinExclusive(n) => 
+        if (lessThan(n, nl)) ok
+        else MinExclusiveFails(nl,n).asLeft
+      case MaxExclusive(n) => 
+        if (lessThan(nl, n)) ok
+        else MaxExclusiveFails(nl,n).asLeft
+      case TotalDigits(n) => ???
+      case FractionDigits(n) => ???
+    }
+
+
+
+  sealed abstract class StringFacetError 
   object StringFacetError {
-   case class PatternMatchFalse(str: String, p: String, flags: Option[String]) extends StringFacetError
-   case class PatternMatchError(str: String, p: String, flags: Option[String], msg: String) extends StringFacetError
-   case class MinLengthFails(str: String, n: Int) extends StringFacetError
-   case class MaxLengthFails(str: String, n: Int) extends StringFacetError
-   case class LengthFails(str: String, n: Int) extends StringFacetError
+   case class PatternMatchFalse(str: String, p: String, flags: Option[String]) extends StringFacetError {
+     override def toString = s"$str doesn't satisfy pattern $p ${flags.fold("")(fs => s"with flags $fs")}"
+   }
+   case class PatternMatchError(str: String, p: String, flags: Option[String], msg: String) extends StringFacetError {
+    override def toString = s"Error applying pattern match $p ${flags.fold("")(fs => s"with flags $fs")} to string: $str"
+   }
+   case class MinLengthFails(str: String, n: Int) extends StringFacetError {
+    override def toString = s"$str does not satisfy minLengh $n"
+   }
+   case class MaxLengthFails(str: String, n: Int) extends StringFacetError {
+    override def toString = s"$str does not satisfy maxLength $n"
+   }
+   case class LengthFails(str: String, n: Int) extends StringFacetError {
+    override def toString = s"$str does not satisfy length $n"
+   }
+  }
+
+  sealed abstract class NumericFacetError   
+  object NumericFacetError {
+    case class MinInclusiveFails(nl: NumericLiteral, n: NumericLiteral) extends NumericFacetError {
+     override def toString = s"$nl does not satisfy MinInclusive($n)"
+    }
+    case class MinExclusiveFails(nl: NumericLiteral, n: NumericLiteral) extends NumericFacetError {
+     override def toString = s"$nl does not satisfy MinExclusive($n)"
+    }
+    case class MaxInclusiveFails(nl: NumericLiteral, n: NumericLiteral) extends NumericFacetError {
+     override def toString = s"$nl does not satisfy MaxInclusive($n)"
+    }
+    case class MaxExclusiveFails(nl: NumericLiteral, n: NumericLiteral) extends NumericFacetError {
+     override def toString = s"$nl does not satisfy MaxExclusive($n)"
+    }
+
   }
 }

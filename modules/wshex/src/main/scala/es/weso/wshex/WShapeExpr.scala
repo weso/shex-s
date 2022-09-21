@@ -1,6 +1,7 @@
 package es.weso.wshex
 
 import es.weso.rbe.{Schema => _, _}
+import es.weso.rdf.PREFIXES._
 import es.weso.rbe.interval.IntervalChecker
 import es.weso.collection.Bag
 import cats._
@@ -8,6 +9,9 @@ import cats.implicits._
 import es.weso.wbmodel._
 import es.weso.rdf.nodes._
 import es.weso.shex.XsFacet
+import es.weso.shex.StringFacet
+import es.weso.shex.NumericFacet
+import es.weso.shex.validator.FacetChecker
 
 sealed abstract class WShapeExpr extends Product with Serializable {
 
@@ -333,23 +337,51 @@ case class WNodeConstraint(
 ) extends WShapeExpr {
   override def withLabel(label: ShapeLabel): WShapeExpr = 
     this.copy(id = Some(label))
-  def matchLocal(value: Value): Either[Reason, Unit] = ???
+  def matchLocal(value: Value): Either[Reason, Unit] = 
+    List(
+      datatype.fold(().asRight)(d => matchDatatype(value,d)),
+      matchFacets(value, xsFacets),
+      values.fold(().asRight)(vs => matchValueSet(value, vs))
+      ).sequence.map(_ => ())
+
+
   def matchLocalCoded(value: Value): Either[ReasonCode, Unit] =
     matchLocal(value).leftMap(r => r.errCode)
+
+  private def matchDatatype(value: Value, d: IRI): Either[Reason,Unit] =
+    d match {
+      case `xsd:string`   => value match {
+        case _: StringValue => ().asRight
+        case _ => NoStringDatatype(value).asLeft
+      }
+      case `xsd:integer`   => value match {
+        case _: IntegerValue => ().asRight
+        case _ => NoStringDatatype(value).asLeft
+      }
+      case `xsd:dateTime` => value match {
+        case _: DateValue => ().asRight
+        case _            => NoDateDatatype(value).asLeft
+      }
+    } 
+
+  private def matchFacets(value: Value, facets: List[XsFacet]): Either[Reason, Unit] = 
+    facets.foldRight(().asRight) { case (facet, current) => current.combine(matchFacet(value,facet)) }
+
+  private def matchFacet(value: Value, facet: XsFacet): Either[Reason, Unit] = 
+    facet match {
+      case sf: StringFacet => value match {
+        case v: StringValue => FacetChecker.stringFacetChecker(v.str, sf).leftMap(StringFacetErr(_))
+        case _ => StringFacetNoStringValue(sf, value).asLeft
+      }
+/*      case nf: NumericFacet => value match {
+        case v: IntegerValue => FacetChecker.numericFacetChecker(v, sf).leftMap(NumericFacetErr(_))
+        case _ => NumericFacetNoNumericValue(nf,value).asLeft
+      } */
+    }
+
+  private def matchValueSet(value: Value, vs: List[ValueSetValue]): Either[Reason, Unit] = ???
 }
 
-/* case class XSFacets(
-  id: Option[ShapeLabel], 
-  xsFacets: List[XsFacet],
-) extends WNodeConstraint {
-  override def matchLocal(value: Value): Either[Reason, Unit] = value match {
-    case s: StringValue => ???
-    case _ => ???
-  }
-  override def withLabel(label: ShapeLabel): WShapeExpr = 
-    this.copy(id = Some(label))
-
-} */
 
 object WNodeConstraint {
   def valueSet(vs: List[ValueSetValue]) // W, facets: List[XsFacet])
