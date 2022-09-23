@@ -7,9 +7,9 @@ lazy val supportedScalaVersions = List(
   scala212
 )
 
-val Java11 = JavaSpec.temurin("11") // "adopt@1.11"
+val Java11 = JavaSpec.temurin("11") 
 
-lazy val srdfVersion = "0.1.114"
+lazy val srdfVersion = "0.1.122"
 lazy val utilsVersion = "0.2.25"
 lazy val documentVersion = "0.0.34"
 
@@ -36,7 +36,6 @@ lazy val scalacheckVersion = "1.15.4"
 lazy val scalaLoggingVersion = "3.9.4"
 lazy val typesafeConfigVersion = "1.4.2"
 lazy val wikidataToolkitVersion = "0.14.0"
-lazy val xercesVersion = "2.12.2"
 lazy val slf4jVersion = "1.7.36"
 
 // Dependency modules
@@ -73,7 +72,7 @@ lazy val wdtkUtil = "org.wikidata.wdtk" % "wdtk-util" % wikidataToolkitVersion
 
 lazy val scalacheck = "org.scalacheck" %% "scalacheck" % scalacheckVersion
 lazy val typesafeConfig = "com.typesafe" % "config" % typesafeConfigVersion
-lazy val xercesImpl = "xerces" % "xercesImpl" % xercesVersion
+
 
 lazy val logbackClassic = "ch.qos.logback" % "logback-classic" % logbackVersion
 lazy val scalaLogging =
@@ -211,7 +210,6 @@ lazy val shex = project
       utilsTest % Test,
       validating,
       srdf,
-      xercesImpl,
       srdfJena % Test,
       srdf4j % Test,
       junit % Test,

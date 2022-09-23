@@ -120,7 +120,7 @@ case class FacetChecker(
 
   // TODO: I'd like to refactor the following code to avoid DRY...
   // Problem, how to do it in a compatible way with type safety
-  private type Comparator = (NumericLiteral, RDFNode) => Either[String, Boolean]
+  private type Comparator = (NumericLiteral, RDFNode) => Either[Throwable, Boolean]
 
   private def minInclusive: Comparator =
     (nl, node) =>

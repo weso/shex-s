@@ -57,7 +57,7 @@ class WShExMatcherFullTest extends FunSuite {
                        |  :P31 [ :Q5 ]
                        |}""".stripMargin
     val expected: Option[EntityDoc] = EntityDoc(q42_p31_q5).some
-    checkMatch("Label en with exact value and human", schemaStr, q42_full, expected)
+    checkMatch("Shape with exact value human", schemaStr, q42_full, expected)
   }
 
   {
@@ -83,7 +83,7 @@ class WShExMatcherFullTest extends FunSuite {
                        |}
                        |""".stripMargin
     val expected: Option[EntityDoc] = EntityDoc(q42_p734_adams).some
-    checkMatch("Label en with exact value and human", schemaStr, q42_full, expected)
+    checkMatch("check property with regex that passes", schemaStr, q42_full, expected)
   }
 
   {
@@ -107,7 +107,7 @@ class WShExMatcherFullTest extends FunSuite {
                        |  :P734 /Foo/ ;
                        |}""".stripMargin
     val expected: Option[EntityDoc] = EntityDoc(q42_p734_adams).some
-    checkMatch("Label en with exact value and human", schemaStr, q42_full, expected)
+    checkMatch("Check property with a regex patter that fails", schemaStr, q42_full, expected)
   }
 
  
