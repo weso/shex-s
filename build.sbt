@@ -419,13 +419,15 @@ lazy val shexsjena = project
 
 lazy val docs = project
   .in(file("shexs-docs"))
+  .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin)
+  .dependsOn(shex, shapemap, rbe, shexTest, wikibaserdf, shapepath, depGraphs, wshex, shexsjena)
   .settings(
+    scalaVersion := scala3,
+    crossScalaVersions := List(scala3),
     noPublishSettings,
     mdocSettings,
     ScalaUnidoc / unidoc / unidocProjectFilter := inAnyProject -- inProjects(noDocProjects: _*)
   )
-  .dependsOn(shex, shapemap, rbe, shexTest, wikibaserdf, shapepath, depGraphs, wshex, shexsjena)
-  .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin)
   .settings(
     // This is based on this question: https://issueexplorer.com/issue/scalameta/mdoc/545
     // mdoc (transitively) depends on sourcecode_2.13,
