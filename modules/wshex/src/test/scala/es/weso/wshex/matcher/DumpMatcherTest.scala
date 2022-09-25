@@ -57,8 +57,8 @@ class DumpMatcherTest extends CatsEffectSuite {
       val s2 = StatementBuilder
         .forSubjectAndProperty(edValue, p106)
         .withValue(q639669)
-        .withReference(ref1)
-        .withId("Q633$D1BFFBD6-E8B6-45DC-8CC6-154F8D0AD815")
+        // .withReference(ref1)
+        // .withId("Q633$D1BFFBD6-E8B6-45DC-8CC6-154F8D0AD815")
         .build()
       ed.mergeStatements(List(s2, s1))
     }
