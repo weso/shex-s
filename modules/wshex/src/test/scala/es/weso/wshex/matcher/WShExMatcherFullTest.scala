@@ -158,6 +158,30 @@ class WShExMatcherFullTest extends FunSuite {
     checkMatch(":Q42 :P31 :Q5, :Q6 . # <S> { :P31 [ :Q5 :Q6 :Q7 ] }", schemaStr, q42_full, expected)
   }
 
+    /*{ // :Q42 :P31 :Q5, :Q6 . # <S> { :p31 [ :Q5 :Q6 :Q7 ] }
+    val q42_raw = Q(42).build()
+    val q5 = Q(5).build()
+    val q6 = Q(6).build()
+    val p31_q5 = 
+      StatementBuilder.forSubjectAndProperty(q42_raw.getEntityId(), 
+        PropertyIdValueImpl("P31", defaultSite)).withValue(q5.getEntityId()).build()
+    val p31_q6 = 
+      StatementBuilder.forSubjectAndProperty(q42_raw.getEntityId(), 
+        PropertyIdValueImpl("P31", defaultSite)).withValue(q6.getEntityId()).build()
+    val q42_full = q42_raw.withStatement(p31_q5).withStatement(p31_q6)
+
+    val schemaStr = """|prefix :  <http://www.wikidata.org/entity/>
+                       |
+                       |start = @<S>
+                       |
+                       |<S> { 
+                       |  :P31 [ :Q5 :Q6 :Q7 ] + ;
+                       |}""".stripMargin
+    val expected: Option[EntityDoc] = EntityDoc(q42_full).some
+    checkMatch(":Q42 :P31 :Q5, :Q6 . # <S> { :P31 [ :Q5 :Q6 :Q7 ] }", schemaStr, q42_full, expected)
+  } */
+
+
  
   def checkMatch(
       name: String,
