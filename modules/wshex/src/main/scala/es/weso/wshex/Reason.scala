@@ -6,7 +6,7 @@ import cats.data._
 import es.weso.rbe.RbeError
 import es.weso.rbe.interval.IntOrUnbounded
 import es.weso.wbmodel._
-import es.weso.shex.validator.FacetChecker.StringFacetError
+import es.weso.shex.validator.FacetChecker._
 import es.weso.shex.StringFacet
 import es.weso.shex.NumericFacet
 
@@ -28,6 +28,7 @@ case class NoStringDatatype(value: Value) extends Reason(errCode = Reason.noStri
 case class NoDateDatatype(value: Value) extends Reason(errCode = Reason.noDateDatype)
 case class ErrorsMatching(es: List[Reason]) extends Reason(errCode = Reason.errorsMatching)
 case class StringFacetErr(err: StringFacetError) extends Reason(errCode = Reason.stringFacetErr)
+case class NumericFacetErr(err: NumericFacetError) extends Reason(errCode = Reason.numericFacetErr)
 case class CardinalityError(p: PropertyId, count: Int, min: Int, max: IntOrUnbounded)
     extends Reason(errCode = Reason.cardinalityError)
 case class WaitingForFailed(es: Set[(Value, PropertyId, ShapeLabel)])
@@ -68,4 +69,5 @@ object Reason {
   val stringFacetErr = ReasonCode(17)
   val stringFacetNoStringValue = ReasonCode(18)
   val numericFacetNoNumericValue = ReasonCode(19)
+  val numericFacetErr = ReasonCode(20)
 }

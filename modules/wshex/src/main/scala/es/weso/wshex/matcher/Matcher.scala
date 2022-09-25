@@ -1,14 +1,13 @@
 package es.weso.wshex.matcher
 
 import es.weso.rdf.nodes._
-import org.wikidata.wdtk.datamodel.interfaces._
-
 import scala.collection.JavaConverters._
 import org.wikidata.wdtk.datamodel.implementation._
 import org.slf4j.LoggerFactory
 import org.wikidata.wdtk.datamodel.interfaces.{
   Statement => WDTKStatement,
   StringValue => WDTKStringValue,
+  Value => WDTKValue,
   _
 }
 import java.nio.file.Path
@@ -22,6 +21,7 @@ import es.weso.wshex.{NotImplemented => _, _}
 import es.weso.utils.VerboseLevel
 import TermConstraint._
 import MatchingError._
+import es.weso.rbe.interval.IntOrUnbounded
 
 /** Matcher contains methods to match a WShEx schema with Wikibase entities
   *
@@ -87,7 +87,7 @@ case class Matcher(
       case sor: WShapeOr =>
         val ls: LazyList[MatchingStatus] =
           sor.exprs.toLazyList.map(matchShapeExpr(_, entity, current))
-        MatchingStatus.combineOrs(current, ls)
+        MatchingStatus.combineOrs(ls)
 
       case snot: WShapeNot =>
         val ms = matchShapeExpr(snot.shapeExpr, entity, current)
@@ -130,7 +130,7 @@ case class Matcher(
   private def matchTripleExpr(
       te: TripleExpr,
       entity: EntityDoc,
-      se: WShapeExpr,
+      se: WShape,
       current: EntityDoc
   ): MatchingStatus =
     te match {
@@ -149,7 +149,6 @@ case class Matcher(
         val tcs: LazyList[TripleConstraint] =
           oo.exprs.map(_.asInstanceOf[TripleConstraint]).toLazyList
         MatchingStatus.combineOrs(
-          current,
           tcs.map(tc => matchTripleConstraint(tc, entity, se, current))
         )
       case _ =>
@@ -159,18 +158,22 @@ case class Matcher(
   private def matchTripleConstraint(
       tc: TripleConstraint,
       e: EntityDoc,
-      se: WShapeExpr,
+      se: WShape,
       current: EntityDoc
   ): MatchingStatus =
     tc match {
       case tcr: TripleConstraintRef =>
-        val matchPid = matchPropertyIdValueExpr(tc.property, Some(tcr.value), e, se, current)
+        val allowExtras = se.extras.contains(tc.property)
+        val matchPid = 
+           matchPropertyIdValueExpr(tc.property, Some(tcr.value), e, se, current, tcr.min, tcr.max, allowExtras)
         tcr.qs match {
           case None     => matchPid
           case Some(qs) => matchPid.and(matchQs(qs, e, current))
         }
       case tcl: TripleConstraintLocal =>
-        val matchPid = matchPropertyIdValueExpr(tc.property, Some(tcl.value), e, se, current)
+        val allowExtras = se.extras.contains(tc.property)
+        val matchPid = 
+           matchPropertyIdValueExpr(tc.property, Some(tcl.value), e, se, current, tcl.min, tcl.max, allowExtras)
         tcl.qs match {
           case None     => matchPid
           case Some(qs) => matchPid.and(matchQs(qs, e, current))
@@ -193,67 +196,106 @@ case class Matcher(
       valueExpr: Option[WShapeExpr],
       e: EntityDoc,
       se: WShapeExpr,
-      current: EntityDoc
+      current: EntityDoc,
+      min: Int,
+      max: IntOrUnbounded,
+      allowExtras: Boolean
   ): MatchingStatus = {
     val predicate = propertyId.iri
     val pidValue: PropertyIdValue = predicate2propertyIdValue(predicate)
     val values = e.getValues(pidValue)
     valueExpr match {
-      case None =>
-        if (values.isEmpty) NoMatching(List(NoValuesProperty(predicate, e)))
-        else
-          Matching(
+      case None => {
+        val valuesCounter = values.length
+        if (min > valuesCounter) {
+          NoMatching(List(ValuesPropertyFailMin(predicate, e, valuesCounter, min)))
+        } else if (max < valuesCounter) {
+           NoMatching(List(ValuesPropertyFailMax(predicate, e, valuesCounter, max)))
+        } else Matching(
             shapeExprs = List(se),
             entity = current.addPropertyValues(pidValue, values)
           )
-      case Some(se) => se match {
+      }
+          
+      case Some(nse) => nse match {
         case wnc: WNodeConstraint => {
-          println(s"Matching WNodeConstraint: $wnc")
-          wnc.values match {
-          case Some(vs) => 
-            MatchingStatus.combineOrs(current,vs.toLazyList
-              .map(matchPredicateValueSetValue(predicate, _, e, se, current))
-            )
-          case None => 
-            // TODO: Check this case with an empty node constraint...
-            // It assumes an empty node constraint but it could have different values...
-           /*       case Some(EmptyExpr(_)) => */
-           if (values.isEmpty) NoMatching(List(NoValuesProperty(predicate, e)))
-           else
-             Matching(
-               shapeExprs = List(se),
-               entity = current.addPropertyValues(pidValue, values)
-             ) 
-          }
+          println(s"Matching WNodeConstraint: $wnc with predicate $predicate")
+          matchPredicateWNodeConstraintValues(wnc, values, current, se, pidValue, min, max, allowExtras)
         }
         case _ =>
-        NoMatching(
+         NoMatching(
           List(NotImplemented(s"matchPropertyIdValueExpr: ${predicate}, valueExpr: ${valueExpr}"))
         )
       }    
     }
   }
 
-  private def matchPredicateValueSetValue(
-      predicate: IRI,
-      value: ValueSetValue,
-      e: EntityDoc,
-      se: WShapeExpr,
-      current: EntityDoc
-  ) =
-    value match {
-      case IRIValueSetValue(iri) => matchPredicateIri(predicate, iri, e.entityDocument, se, current)
-      case EntityIdValueSetValue(id) =>
-        matchPredicateIri(predicate, id.iri, e.entityDocument, se, current)
-      case _ =>
-        NoMatching(List(NotImplemented(s"matchPredicateValueSetValue different from IRI: $value")))
+  private def matchPredicateWNodeConstraintValues(
+    wnc: WNodeConstraint, 
+    values: LazyList[WDTKValue], 
+    current: EntityDoc, 
+    se: WShapeExpr,
+    pidValue: PropertyIdValue, 
+    min: Int,
+    max: IntOrUnbounded,
+    allowExtras: Boolean
+    ): MatchingStatus = {
+    val (matched, noMatched) = 
+      values.map(matchPredicateWNodeConstraintValue(wnc,_, current, se, pidValue)).partition(_.matches)
+    val matchedCount = matched.length
+    if (matchedCount < min) {
+        NoMatching(List(ValuesPropertyFailNodeConstraintMin(pidValue, matchedCount, min, wnc, matched)))
+    } else 
+    if (max < matchedCount) {
+       NoMatching(List(ValuesPropertyFailNodeConstraintMax(pidValue, matchedCount, max, wnc, matched)))
+     } else {
+      if (noMatched.nonEmpty) { 
+       if (!allowExtras) 
+        NoMatching(List(ValuesPropertyFailNodeConstraint(pidValue, wnc, noMatched)))
+       else 
+        // TODO. noMatched contains values but EXTRA is allowed...should we add those extra values?
+        MatchingStatus.combineAnds(current, matched)
+      } else { 
+        MatchingStatus.combineAnds(current, matched)
+     }
     }
+  }
+
+  private def matchPredicateWNodeConstraintValue(
+    wnc: WNodeConstraint, 
+    value: WDTKValue, 
+    current: EntityDoc,
+    se: WShapeExpr,
+    pidValue: PropertyIdValue
+    ): MatchingStatus = {
+    val wbValue = Value.fromWDTKValue(value)
+    wnc.matchLocal(wbValue).fold(
+      reason => NoMatching(List(WNodeConstraintError(reason, value, wbValue))),
+      _ => Matching(List(se), current.addPropertyValues(pidValue,LazyList(value)))
+    ) 
+  }
 
   private def predicate2propertyIdValue(predicate: IRI): PropertyIdValue = {
     val (localName, base) = splitIri(predicate)
     val propertyId = new PropertyIdValueImpl(localName, base)
     propertyId
   }
+
+
+/*  private def matchPredicateValueSetValue(
+      predicate: IRI,
+      vsvalue: ValueSetValue,
+      e: EntityDoc,
+      se: WShapeExpr,
+      current: EntityDoc
+  ) =
+    vsvalue match {
+      case IRIValueSetValue(iri) => matchPredicateIri(predicate, iri, e.entityDocument, se, current)
+      case EntityIdValueSetValue(id) =>
+        matchPredicateIri(predicate, id.iri, e.entityDocument, se, current)
+      case _ =>
+        NoMatching(List(NotImplemented(s"matchPredicateValueSetValue different from IRI: $vsvalue")))
+    }
 
   private def matchPredicateIri(
       predicate: IRI,
@@ -318,7 +360,7 @@ case class Matcher(
     override def visit(v: TimeValue): Boolean = false
     override def visit(v: UnsupportedValue): Boolean = false
   }
-
+*/
 }
 
 object Matcher {

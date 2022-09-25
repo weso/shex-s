@@ -12,6 +12,7 @@ import es.weso.shex.XsFacet
 import es.weso.shex.StringFacet
 import es.weso.shex.NumericFacet
 import es.weso.shex.validator.FacetChecker
+import es.weso.rdf.operations.Comparisons._
 
 sealed abstract class WShapeExpr extends Product with Serializable {
 
@@ -64,6 +65,7 @@ sealed abstract class WShapeExpr extends Product with Serializable {
             te match {
               case t: TripleConstraintRef   => List(t)
               case t: TripleConstraintLocal => List()
+              case t: TripleConstraintGeneral => List()
               case eo: EachOf               => eo.exprs.map(_.tripleConstraints).flatten
               case oo: OneOf                => oo.exprs.map(_.tripleConstraints).flatten
               case EmptyTripleExpr          => List()
@@ -373,13 +375,16 @@ case class WNodeConstraint(
         case v: StringValue => FacetChecker.stringFacetChecker(v.str, sf).leftMap(StringFacetErr(_))
         case _ => StringFacetNoStringValue(sf, value).asLeft
       }
-/*      case nf: NumericFacet => value match {
-        case v: IntegerValue => FacetChecker.numericFacetChecker(v, sf).leftMap(NumericFacetErr(_))
+      case nf: NumericFacet => value match {
+        case v: IntegerValue => FacetChecker.numericFacetChecker(NumericInt(v.num, v.num.toString), nf).leftMap(NumericFacetErr(_))
         case _ => NumericFacetNoNumericValue(nf,value).asLeft
-      } */
+      } 
     }
 
-  private def matchValueSet(value: Value, vs: List[ValueSetValue]): Either[Reason, Unit] = ???
+  private def matchValueSet(value: Value, vs: List[ValueSetValue]): Either[Reason, Unit] = 
+    val es = vs.map(_.matchValue(value)).filter(_.isRight)
+    if (es.nonEmpty) ().asRight
+    else NoValueValueSet(value, vs).asLeft
 }
 
 

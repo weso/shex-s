@@ -7,7 +7,9 @@ import es.weso.wshex.ShapeLabel
 import org.wikidata.wdtk.datamodel.interfaces.{
   DatatypeIdValue,
   Statement => WDStatement,
-  Value => WDValue
+  StringValue => WDStringValue,
+  Value => WDValue,
+  _
 }
 import org.wikidata.wdtk.datamodel.interfaces.EntityDocument
 import org.wikidata.wdtk.datamodel.interfaces.ItemDocument
@@ -242,6 +244,8 @@ case class IRIValue(
   override def toString = s"${iri.getLexicalForm}"
 }
 
+case class NotImplementedWDTKValue(v: WDValue, name: String) extends Value
+
 sealed abstract class Qualifier extends Product with Serializable {
   val propertyId: PropertyId
   val value: Value
@@ -302,7 +306,6 @@ case class SiteLink(
     badges: List[ItemId]
 )
 
-
 object Value {
 
   lazy val siteDefault = "http://www.wikidata.org/entity/"
@@ -314,12 +317,6 @@ object Value {
       value: Entity
   ): (Entity, PropertyRecord, Entity, List[Qualifier]) =
     (subj, prop.prec, value, List())
-
-  /*  def triple(
-      subj: Entity, prop: PropertyRecord, value: Entity
-      ): (Entity, PropertyRecord, Entity, List[Qualifier]) = {
-      (subj, prop, value, List())
-    } */
 
   def tripleq(
       subj: Entity,
@@ -360,5 +357,26 @@ object Value {
       List()
     )
   }
+
+  def fromWDTKValue(v: WDValue): Value = {
+    val convertVisitor = ConvertValueVisitor()
+    v.accept(convertVisitor)
+  }
+
+  private case class ConvertValueVisitor() extends ValueVisitor[Value] {
+
+    override def visit(v: EntityIdValue): Value = v match {
+      case iv: ItemIdValue => ItemId(iv.getId(), IRI(iv.getIri()))
+      case pv: PropertyIdValue => PropertyId(pv.getId(), IRI(pv.getIri()))
+      case other => NotImplementedWDTKValue(v, other.getEntityType())
+    }
+    override def visit(v: GlobeCoordinatesValue): Value = NotImplementedWDTKValue(v, "Quantity")
+    override def visit(v: MonolingualTextValue): Value = NotImplementedWDTKValue(v, "MonolingualText")
+    override def visit(v: QuantityValue): Value = NotImplementedWDTKValue(v, "Quantity")
+    override def visit(v: WDStringValue): Value = StringValue(v.getString())
+    override def visit(v: TimeValue): Value = NotImplementedWDTKValue(v, "Time")
+    override def visit(v: UnsupportedValue): Value = NotImplementedWDTKValue(v, "Unsupported")
+  }
+
 
 }

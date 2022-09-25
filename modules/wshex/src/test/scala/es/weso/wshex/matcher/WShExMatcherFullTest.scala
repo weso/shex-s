@@ -28,15 +28,15 @@ class WShExMatcherFullTest extends FunSuite {
 
     val schemaStr = """|prefix :  <http://www.wikidata.org/entity/>
                        |
-                       |start = @<Human>
+                       |start = @<S>
                        |
-                       |<Human> { 
+                       |<S> { 
                        |}""".stripMargin
     val expected: Option[EntityDoc] = EntityDoc(Q(42).build()).some
-    checkMatch("Label en with exact value and human", schemaStr, q42, expected)                       
+    checkMatch(":Q42 == <S> {}", schemaStr, q42, expected)                       
   } 
 
-    {
+  {
     val q42_raw = Q(42).build()
     val q5 = Q(5).build()
     val p31_q5 = 
@@ -57,7 +57,7 @@ class WShExMatcherFullTest extends FunSuite {
                        |  :P31 [ :Q5 ]
                        |}""".stripMargin
     val expected: Option[EntityDoc] = EntityDoc(q42_p31_q5).some
-    checkMatch("Shape with exact value human", schemaStr, q42_full, expected)
+    checkMatch(":Q42 :P31 :Q5 . != <S> { :P31 [ :Q5 ] }", schemaStr, q42_full, expected)
   }
 
   {
@@ -76,15 +76,16 @@ class WShExMatcherFullTest extends FunSuite {
 
     val schemaStr = """|prefix :  <http://www.wikidata.org/entity/>
                        |
-                       |start = @<Human>
+                       |start = @<S>
                        |
-                       |<Douglas> { 
-                       |  :P734 /Ad*/ ;
+                       |<S> { 
+                       |  :P734 /Ad/ ;
                        |}
                        |""".stripMargin
     val expected: Option[EntityDoc] = EntityDoc(q42_p734_adams).some
-    checkMatch("check property with regex that passes", schemaStr, q42_full, expected)
+    checkMatch(":Q42 :P31 :Q5; :P734 \"Douglas Adams\" . != <S> { :P734 /Ad/ }", schemaStr, q42_full, expected)
   }
+  
 
   {
     val q42_raw = Q(42).build()
@@ -106,8 +107,55 @@ class WShExMatcherFullTest extends FunSuite {
                        |<Douglas> { 
                        |  :P734 /Foo/ ;
                        |}""".stripMargin
-    val expected: Option[EntityDoc] = EntityDoc(q42_p734_adams).some
-    checkMatch("Check property with a regex patter that fails", schemaStr, q42_full, expected)
+    val expected: Option[EntityDoc] = None
+    checkMatch(":Q42 :P31 :Q5; :P734 \"Douglas Adams\" . != <S> { :P734 /Foo/ }", schemaStr, q42_full, expected)
+  }
+
+  {
+    val q42_raw = Q(42).build()
+    val q5 = Q(5).build()
+    val q6 = Q(6).build()
+    val p31_q5 = 
+      StatementBuilder.forSubjectAndProperty(q42_raw.getEntityId(), 
+        PropertyIdValueImpl("P31", defaultSite)).withValue(q5.getEntityId()).build()
+    val p31_q6 = 
+      StatementBuilder.forSubjectAndProperty(q42_raw.getEntityId(), 
+        PropertyIdValueImpl("P31", defaultSite)).withValue(q6.getEntityId()).build()
+    val q42_full = q42_raw.withStatement(p31_q5).withStatement(p31_q6)
+    val q42_p31q5 = q42_raw.withStatement(p31_q5)
+
+    val schemaStr = """|prefix :  <http://www.wikidata.org/entity/>
+                       |
+                       |start = @<S>
+                       |
+                       |<S> EXTRA :P31 { 
+                       |  :P31 [ :Q5 ] ;
+                       |}""".stripMargin
+    val expected: Option[EntityDoc] = EntityDoc(q42_p31q5).some
+    checkMatch(":Q42 :P31 :Q5, :Q6 . == <S> EXTRA :P31 { :P31 [ :Q5 ] }", schemaStr, q42_full, expected)
+  }
+
+  { // :Q42 :P31 :Q5, :Q6 . # <S> { :p31 [ :Q5 :Q6 :Q7 ] }
+    val q42_raw = Q(42).build()
+    val q5 = Q(5).build()
+    val q6 = Q(6).build()
+    val p31_q5 = 
+      StatementBuilder.forSubjectAndProperty(q42_raw.getEntityId(), 
+        PropertyIdValueImpl("P31", defaultSite)).withValue(q5.getEntityId()).build()
+    val p31_q6 = 
+      StatementBuilder.forSubjectAndProperty(q42_raw.getEntityId(), 
+        PropertyIdValueImpl("P31", defaultSite)).withValue(q6.getEntityId()).build()
+    val q42_full = q42_raw.withStatement(p31_q5).withStatement(p31_q6)
+
+    val schemaStr = """|prefix :  <http://www.wikidata.org/entity/>
+                       |
+                       |start = @<S>
+                       |
+                       |<S> { 
+                       |  :P31 [ :Q5 :Q6 :Q7 ] + ;
+                       |}""".stripMargin
+    val expected: Option[EntityDoc] = EntityDoc(q42_full).some
+    checkMatch(":Q42 :P31 :Q5, :Q6 . # <S> { :P31 [ :Q5 :Q6 :Q7 ] }", schemaStr, q42_full, expected)
   }
 
  

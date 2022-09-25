@@ -73,12 +73,12 @@ class DumpMatcherTest extends CatsEffectSuite {
   }
 
   private def entityMatch(matcher: Matcher)(e: EntityDoc): IO[Entities] =
-    // IO.print(s"Trying to match...${e.getID()}...") >>
-    matcher.matchStart(e.entityDocument) match {
+    IO.println(s"Trying to match...${e.getID()}...") >>
+    (matcher.matchStart(e.entityDocument) match {
       case nm: NoMatching =>
         if (e.getID() == "Q633")
           IO.println(
-            s"Error with Neil\n${nm.matchingErrors.map(_.toString.take(300)).mkString("\n")}"
+            s"### Error with Neil\n${nm.matchingErrors.map(_.toString.take(300)).mkString("\n")}"
           ) >>
             Entities(List()).pure[IO]
         else
@@ -87,7 +87,7 @@ class DumpMatcherTest extends CatsEffectSuite {
       case m: Matching =>
         IO.println(s"Matches: ${m.entity}!") >>
           Entities(List(m.entity)).pure[IO]
-    }
+    })
 
   def checkMatch(
       name: String,
