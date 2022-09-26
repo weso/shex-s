@@ -422,8 +422,8 @@ lazy val docs = project
   .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin)
   .dependsOn(shex, shapemap, rbe, shexTest, wikibaserdf, shapepath, depGraphs, wshex, shexsjena)
   .settings(
-    scalaVersion := scala3,
-    crossScalaVersions := List(scala3),
+//    scalaVersion := scala213,
+    crossScalaVersions := supportedScalaVersions,
     noPublishSettings,
     mdocSettings,
     ScalaUnidoc / unidoc / unidocProjectFilter := inAnyProject -- inProjects(noDocProjects: _*)
