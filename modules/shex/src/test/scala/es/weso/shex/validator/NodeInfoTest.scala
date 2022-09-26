@@ -9,7 +9,7 @@ import cats.effect.IO
 // import cats.data._
 // import es.weso.utils.IOUtils._
 
-class NodeInfoTest extends CatsEffectSuite {
+class NodeInfoTest extends FunSuite {
   // val rdf = RDFAsJenaModel.empty
 
   test("Should calculate total digits of 3.14") {

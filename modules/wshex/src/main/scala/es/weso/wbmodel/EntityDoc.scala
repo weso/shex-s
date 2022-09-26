@@ -3,6 +3,7 @@ package es.weso.wbmodel
 import org.wikidata.wdtk.datamodel.interfaces.{
   Statement => WDTKStatement,
   StringValue => WDTKStringValue,
+  QuantityValue => WDTKQuantityValue,
   Value => WDTKValue,
   _
 }
@@ -92,7 +93,7 @@ case class EntityDoc(entityDocument: EntityDocument) extends Serializable {
     case e: EntityIdValue         => e.getId()
     case i: IriIdentifiedValue    => i.getIri()
     case m: MonolingualTextValue  => m.getText()
-    case q: QuantityValue         => q.getNumericValue().toString()
+    case q: WDTKQuantityValue     => q.getNumericValue().toString()
     case s: WDTKStringValue       => s.getString()
     case t: TimeValue             => t.toString()
     case u: UnsupportedValue      => u.toString()
