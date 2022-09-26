@@ -15,6 +15,8 @@ import cats.implicits._
   */
 class WShExMatcherFullTest extends FunSuite {
 
+  val dataObjectFactory = new DataObjectFactoryImpl();
+
   val defaultSite = "http://www.wikidata.org/entity/"
   val emptyDoc = forItemId(ItemIdValue.NULL)
 
@@ -41,10 +43,10 @@ class WShExMatcherFullTest extends FunSuite {
     val q5 = Q(5).build()
     val p31_q5 = 
       StatementBuilder.forSubjectAndProperty(q42_raw.getEntityId(), 
-        PropertyIdValueImpl("P31", defaultSite)).withValue(q5.getEntityId()).build()
+        new PropertyIdValueImpl("P31", defaultSite)).withValue(q5.getEntityId()).build()
     val p19_q6 = 
       StatementBuilder.forSubjectAndProperty(q42_raw.getEntityId(), 
-        PropertyIdValueImpl("P19", defaultSite)).withValue(Q(6).build().getEntityId()).build()
+        new PropertyIdValueImpl("P19", defaultSite)).withValue(Q(6).build().getEntityId()).build()
     val q42_p31_q5 = q42_raw.withStatement(p31_q5)
     val q42_full = q42_p31_q5.withStatement(p19_q6)
 
@@ -63,13 +65,13 @@ class WShExMatcherFullTest extends FunSuite {
   {
     val q42_raw = Q(42).build()
     val q5 = Q(5).build()
-    val douglas = StringValueImpl("Douglas Adams")
+    val douglas = new StringValueImpl("Douglas Adams")
     val p31_q5 = 
       StatementBuilder.forSubjectAndProperty(q42_raw.getEntityId(), 
-        PropertyIdValueImpl("P31", defaultSite)).withValue(q5.getEntityId()).build()
+        new PropertyIdValueImpl("P31", defaultSite)).withValue(q5.getEntityId()).build()
     val p734_adams = 
       StatementBuilder.forSubjectAndProperty(q42_raw.getEntityId(), 
-        PropertyIdValueImpl("P734", defaultSite)).withValue(StringValueImpl("Adams")).build()
+        new PropertyIdValueImpl("P734", defaultSite)).withValue(new StringValueImpl("Adams")).build()
     val q42_p734_adams = q42_raw.withStatement(p734_adams)
     val q42_full = q42_p734_adams.withStatement(p31_q5)
 
@@ -90,13 +92,13 @@ class WShExMatcherFullTest extends FunSuite {
   {
     val q42_raw = Q(42).build()
     val q5 = Q(5).build()
-    val douglas = StringValueImpl("Douglas Adams")
+    val douglas = new StringValueImpl("Douglas Adams")
     val p31_q5 = 
       StatementBuilder.forSubjectAndProperty(q42_raw.getEntityId(), 
-        PropertyIdValueImpl("P31", defaultSite)).withValue(q5.getEntityId()).build()
+        new PropertyIdValueImpl("P31", defaultSite)).withValue(q5.getEntityId()).build()
     val p734_adams = 
       StatementBuilder.forSubjectAndProperty(q42_raw.getEntityId(), 
-        PropertyIdValueImpl("P734", defaultSite)).withValue(StringValueImpl("Adams")).build()
+        new PropertyIdValueImpl("P734", defaultSite)).withValue(new StringValueImpl("Adams")).build()
     val q42_p734_adams = q42_raw.withStatement(p734_adams)
     val q42_full = q42_p734_adams.withStatement(p31_q5)
 
@@ -117,10 +119,10 @@ class WShExMatcherFullTest extends FunSuite {
     val q6 = Q(6).build()
     val p31_q5 = 
       StatementBuilder.forSubjectAndProperty(q42_raw.getEntityId(), 
-        PropertyIdValueImpl("P31", defaultSite)).withValue(q5.getEntityId()).build()
+        new PropertyIdValueImpl("P31", defaultSite)).withValue(q5.getEntityId()).build()
     val p31_q6 = 
       StatementBuilder.forSubjectAndProperty(q42_raw.getEntityId(), 
-        PropertyIdValueImpl("P31", defaultSite)).withValue(q6.getEntityId()).build()
+        new PropertyIdValueImpl("P31", defaultSite)).withValue(q6.getEntityId()).build()
     val q42_full = q42_raw.withStatement(p31_q5).withStatement(p31_q6)
     val q42_p31q5 = q42_raw.withStatement(p31_q5)
 
@@ -141,10 +143,10 @@ class WShExMatcherFullTest extends FunSuite {
     val q6 = Q(6).build()
     val p31_q5 = 
       StatementBuilder.forSubjectAndProperty(q42_raw.getEntityId(), 
-        PropertyIdValueImpl("P31", defaultSite)).withValue(q5.getEntityId()).build()
+        new PropertyIdValueImpl("P31", defaultSite)).withValue(q5.getEntityId()).build()
     val p31_q6 = 
       StatementBuilder.forSubjectAndProperty(q42_raw.getEntityId(), 
-        PropertyIdValueImpl("P31", defaultSite)).withValue(q6.getEntityId()).build()
+        new PropertyIdValueImpl("P31", defaultSite)).withValue(q6.getEntityId()).build()
     val q42_full = q42_raw.withStatement(p31_q5).withStatement(p31_q6)
 
     val schemaStr = """|prefix :  <http://www.wikidata.org/entity/>
@@ -157,6 +159,46 @@ class WShExMatcherFullTest extends FunSuite {
     val expected: Option[EntityDoc] = EntityDoc(q42_full).some
     checkMatch(":Q42 :P31 :Q5, :Q6 . # <S> { :P31 [ :Q5 :Q6 :Q7 ] }", schemaStr, q42_full, expected)
   }
+
+  {
+    val q42_raw = Q(42).build()
+    val ten = dataObjectFactory.getQuantityValue(BigDecimal.valueOf(10.0).bigDecimal)
+    val p1_ten = 
+      StatementBuilder.forSubjectAndProperty(q42_raw.getEntityId(), 
+        new PropertyIdValueImpl("P1", defaultSite)).withValue(ten).build()
+    val q42_p1_ten = q42_raw.withStatement(p1_ten)
+
+    val schemaStr = """|prefix :  <http://www.wikidata.org/entity/>
+                       |
+                       |start = @<Human>
+                       |
+                       |<Douglas> { 
+                       |  :P1 MinInclusive 5 ;
+                       |}""".stripMargin
+    val expected: Option[EntityDoc] = EntityDoc(q42_p1_ten).some
+    checkMatch(":Q42 :P1 10 . == <S> { :P1 MinInclusive 5 }", schemaStr, q42_p1_ten, expected)
+  }
+
+    {
+    val q42_raw = Q(42).build()
+    val ten = dataObjectFactory.getQuantityValue(BigDecimal.valueOf(10.0).bigDecimal)
+    val p1_ten = 
+      StatementBuilder.forSubjectAndProperty(q42_raw.getEntityId(), 
+        new PropertyIdValueImpl("P1", defaultSite)).withValue(ten).build()
+    val q42_p1_ten = q42_raw.withStatement(p1_ten)
+
+    val schemaStr = """|prefix :  <http://www.wikidata.org/entity/>
+                       |
+                       |start = @<Human>
+                       |
+                       |<Douglas> { 
+                       |  :P1 MinInclusive 20 ;
+                       |}""".stripMargin
+    val expected: Option[EntityDoc] = None
+    checkMatch(":Q42 :P1 10 . != <S> { :P1 MinInclusive 20 }", schemaStr, q42_p1_ten, expected)
+  }
+
+
 
     /*{ // :Q42 :P31 :Q5, :Q6 . # <S> { :p31 [ :Q5 :Q6 :Q7 ] }
     val q42_raw = Q(42).build()

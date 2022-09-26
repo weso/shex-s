@@ -315,40 +315,56 @@ class WSchemaMaker extends WShExDocBaseVisitor[Any] {
       case _ => err(s"Internal error visitShapeAtom: unknown ctx $ctx")
     }
 
-  override def visitInlineLitNodeConstraint(
+  def visitInlineLitNodeConstraint(
       ctx: InlineLitNodeConstraintContext
   ): Builder[WNodeConstraint] =
     ctx match {
-      /*W      case s: NodeConstraintLiteralContext =>
+      case s: NodeConstraintLiteralContext =>
         for {
+          literalKind <- visitLiteralKind(s.literalKind())
           xsFacets <- visitList(visitXsFacet, s.xsFacet())
           _ <- checkFacets(xsFacets)
-        } yield NodeConstraint.nodeKind(LiteralKind, xsFacets) */
+        } yield WNodeConstraint.nodeKind(WNodeKind.LiteralKind, xsFacets) 
       /*W      case s: NodeConstraintNonLiteralContext =>
         for {
           nodeKind <- visitNonLiteralKind(s.nonLiteralKind())
           stringFacets <- visitList(visitStringFacet, s.stringFacet())
           _ <- checkFacets(stringFacets)
         } yield NodeConstraint.nodeKind(nodeKind, stringFacets) */
-      /*W      case s: NodeConstraintDatatypeContext =>
+      case s: NodeConstraintDatatypeContext =>
         for {
           datatype <- visitDatatype(s.datatype())
           xsFacets <- visitList(visitXsFacet, s.xsFacet())
           _ <- checkFacets(xsFacets)
-        } yield NodeConstraint.datatype(datatype, xsFacets) */
-      case c => // W c: NodeConstraintValueSetContext =>
+        } yield WNodeConstraint.datatype(datatype, xsFacets)
+      case c: NodeConstraintValueSetContext =>
         for {
           vs <- visitValueSet(c.valueSet())
-//W          xsFacets <- visitList(visitXsFacet, c.xsFacet())
-//W          _ <- checkFacets(xsFacets)
-        } yield WNodeConstraint.valueSet(vs) // W, xsFacets)
+          xsFacets <- visitList(visitXsFacet, c.xsFacet())
+          _ <- checkFacets(xsFacets)
+        } yield WNodeConstraint.valueSet(vs, xsFacets)
 
-      /*W      case c: NodeConstraintNumericFacetContext =>
+      case c: NodeConstraintNumericFacetContext =>
         for {
           facets <- visitList(visitNumericFacet, c.numericFacet)
           _ <- checkFacets(facets)
-        } yield NodeConstraint.empty.copy(xsFacets = facets) */
+        } yield WNodeConstraint.xsFacets(facets)
     }
+
+  override def visitLiteralKind(ctx: LiteralKindContext): Builder[WNodeKind] = 
+    ctx match {
+      case _ if isDefined(ctx.KW_LITERAL()) => ok(WNodeKind.LiteralKind)
+      case _ if isDefined(ctx.KW_TIME())      => ok(WNodeKind.TimeKind)
+      case _ if isDefined(ctx.KW_QUANTITY()) => ok(WNodeKind.QuantityKind)
+      case _ if isDefined(ctx.KW_STRING()) => ok(WNodeKind.StringKind)
+      case _ if isDefined(ctx.KW_MONOLINGUALTEXT()) => ok(WNodeKind.MonolingualTextKind)
+      case _ if isDefined(ctx.KW_MULTILINGUALTEXT()) => ok(WNodeKind.MultilingualTextKind)
+      case _ if isDefined(ctx.KW_GEOCOORDINATES()) => ok(WNodeKind.GeoCoodrinatesKind)
+      case _ if isDefined(ctx.KW_GEOSHAPE()) => ok(WNodeKind.GeoShapeKind)
+      case _ if isDefined(ctx.KW_MEDIA()) => ok(WNodeKind.MediaKind)
+    }
+
+  override def visitXsFacet(ctx: XsFacetContext): Builder[XsFacet] = ???
 
   override def visitLitNodeConstraint(ctx: LitNodeConstraintContext): Builder[WNodeConstraint] =
     for {
@@ -699,7 +715,7 @@ class WSchemaMaker extends WShExDocBaseVisitor[Any] {
     try
       ok(BigInt(str))
     catch {
-      case _ => err(s"Cannot get BigInt from $str")
+      case _: Throwable => err(s"Cannot get BigInt from $str")
     }
 
   def getInteger(str: String): Builder[Int] =
@@ -1407,6 +1423,9 @@ class WSchemaMaker extends WShExDocBaseVisitor[Any] {
       /*W      case e: Expr =>
         // TODO: Check how to extend include
         e */
+      case EmptyTripleExpr => 
+        throw new RuntimeException(s"Cannot extend emptyTripleExpr with cardinality $cardinality")
+
     }
 
   def optListCombine[A](maybeAs: Option[List[A]], as: List[A]): Option[List[A]] =

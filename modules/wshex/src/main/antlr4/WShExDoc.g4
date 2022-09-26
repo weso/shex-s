@@ -54,22 +54,42 @@ inlineShapeOrRef: inlineShapeDefinition | shapeRef;
 
 shapeRef: ATPNAME_LN | ATPNAME_NS | '@' shapeExprLabel;
 
-inlineLitNodeConstraint:
-	//W KW_LITERAL xsFacet* # nodeConstraintLiteral W | nonLiteralKind stringFacet* #
-	// nodeConstraintNonLiteral W | datatype xsFacet* # nodeConstraintDatatype
-	| valueSet; //W	| numericFacet+					# nodeConstraintNumericFacet
+inlineLitNodeConstraint
+	: literalKind xsFacet* # nodeConstraintLiteral 
+	//W | nonLiteralKind stringFacet* # nodeConstraintNonLiteral 
+	| datatype xsFacet*   # nodeConstraintDatatype
+	| valueSet xsFacet*   # nodeConstraintValueSet  
+	| numericFacet+		  # nodeConstraintNumericFacet
+	;
 
 litNodeConstraint:
-	inlineLitNodeConstraint; //W annotation* semanticAction*
+ 	inlineLitNodeConstraint; //W annotation* semanticAction*
 
 inlineNonLitNodeConstraint:
-	//W nonLiteralKind stringFacet* # litNodeConstraintLiteral W |
-	stringFacet+ # litNodeConstraintStringFacet;
+	//W  nonLiteralKind stringFacet* # litNodeConstraintLiteral |
+	 stringFacet+ # litNodeConstraintStringFacet
+	;
 
 nonLitNodeConstraint:
 	inlineNonLitNodeConstraint; //W annotation* semanticAction*
 
-//W nonLiteralKind: KW_IRI | KW_BNODE | KW_NONLITERAL ;
+nonLiteralKind
+    : KW_IRI 
+    //W | KW_BNODE 
+	| KW_NONLITERAL 
+	;
+
+literalKind
+    : KW_LITERAL
+	| KW_TIME	
+	| KW_QUANTITY
+	| KW_STRING
+	| KW_MONOLINGUALTEXT
+	| KW_MULTILINGUALTEXT
+	| KW_GEOCOORDINATES
+	| KW_GEOSHAPE
+	| KW_MEDIA
+	;
 
 xsFacet: stringFacet | numericFacet;
 
@@ -364,6 +384,22 @@ KW_NOT: N O T;
 KW_TRUE: 'true';
 
 KW_FALSE: 'false';
+
+KW_TIME: T I M E ;
+
+KW_QUANTITY: Q U A N T I T Y ;
+
+KW_STRING: S T R I N G ;
+
+KW_MONOLINGUALTEXT: M O N O L I N G U A L T E X T ;
+
+KW_MULTILINGUALTEXT: M U L T I L I N G U A L T E X T ;
+
+KW_GEOCOORDINATES: G E O C O O R D I N A T E S ;
+
+KW_GEOSHAPE: G E O S H A P E ;
+
+KW_MEDIA: M E D I A ;
 
 // -------------------------- TERMINALS --------------------------
 

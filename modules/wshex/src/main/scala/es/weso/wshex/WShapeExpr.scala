@@ -333,6 +333,7 @@ object WShape {
 
 case class WNodeConstraint(
   id: Option[ShapeLabel] = None,
+  kind: Option[WNodeKind] = None, 
   datatype: Option[IRI] = None,
   xsFacets: List[XsFacet] = List(),
   values: Option[List[ValueSetValue]] = None
@@ -341,14 +342,37 @@ case class WNodeConstraint(
     this.copy(id = Some(label))
   def matchLocal(value: Value): Either[Reason, Unit] = 
     List(
-      datatype.fold(().asRight)(d => matchDatatype(value,d)),
+      datatype.fold(().asRight[Reason])(d => matchDatatype(value,d)),
       matchFacets(value, xsFacets),
-      values.fold(().asRight)(vs => matchValueSet(value, vs))
+      values.fold(().asRight[Reason])(vs => matchValueSet(value, vs))
       ).sequence.map(_ => ())
 
 
   def matchLocalCoded(value: Value): Either[ReasonCode, Unit] =
     matchLocal(value).leftMap(r => r.errCode)
+
+  private def matchKind(value: Value, kind: WNodeKind): Either[Reason,Unit] =
+    kind match {
+      case WNodeKind.LiteralKind => value match {
+        case _: StringValue | 
+             _: DateValue => ().asRight
+        case _ => NotImplemented(s"LiteralKind. Failed for value: $value").asLeft
+      }
+      case WNodeKind.StringKind => value match {
+        case _: StringValue => ().asRight
+        case _ => NoStringDatatype(value).asLeft
+      }
+      case WNodeKind.QuantityKind   => value match {
+        case _: QuantityValue => ().asRight
+        case _ => NoStringDatatype(value).asLeft
+      }
+      case WNodeKind.TimeKind => value match {
+        case _: DateValue => ().asRight
+        case _            => NoDateDatatype(value).asLeft
+      }
+      case _ => NotImplemented(s"matchKind. Not implemented yet: $kind for value: $value").asLeft
+    } 
+
 
   private def matchDatatype(value: Value, d: IRI): Either[Reason,Unit] =
     d match {
@@ -356,18 +380,19 @@ case class WNodeConstraint(
         case _: StringValue => ().asRight
         case _ => NoStringDatatype(value).asLeft
       }
-      case `xsd:integer`   => value match {
-        case _: IntegerValue => ().asRight
+/*      case `xsd:integer`   => value match {
+        case _: QuantityValue => ().asRight
         case _ => NoStringDatatype(value).asLeft
-      }
+      } */
       case `xsd:dateTime` => value match {
         case _: DateValue => ().asRight
         case _            => NoDateDatatype(value).asLeft
       }
+      case _ => UnknownDatatypeMatch(d, value).asLeft
     } 
 
   private def matchFacets(value: Value, facets: List[XsFacet]): Either[Reason, Unit] = 
-    facets.foldRight(().asRight) { case (facet, current) => current.combine(matchFacet(value,facet)) }
+    facets.foldRight(().asRight[Reason]) { case (facet, current) => current.combine(matchFacet(value,facet)) }
 
   private def matchFacet(value: Value, facet: XsFacet): Either[Reason, Unit] = 
     facet match {
@@ -376,110 +401,40 @@ case class WNodeConstraint(
         case _ => StringFacetNoStringValue(sf, value).asLeft
       }
       case nf: NumericFacet => value match {
-        case v: IntegerValue => FacetChecker.numericFacetChecker(NumericInt(v.num, v.num.toString), nf).leftMap(NumericFacetErr(_))
+        case v: QuantityValue => 
+          val numericValue = NumericDecimal(v.numericValue, v.numericValue.toString)
+          FacetChecker.numericFacetChecker(numericValue, nf).leftMap(NumericFacetErr(_))
         case _ => NumericFacetNoNumericValue(nf,value).asLeft
       } 
     }
 
-  private def matchValueSet(value: Value, vs: List[ValueSetValue]): Either[Reason, Unit] = 
+  private def matchValueSet(value: Value, vs: List[ValueSetValue]): Either[Reason, Unit] = {
     val es = vs.map(_.matchValue(value)).filter(_.isRight)
     if (es.nonEmpty) ().asRight
     else NoValueValueSet(value, vs).asLeft
+  }
 }
 
 
 object WNodeConstraint {
-  def valueSet(vs: List[ValueSetValue]) // W, facets: List[XsFacet])
-      : WNodeConstraint =
-    WNodeConstraint(id = None, values = vs.some) // W , xsFacets = facets)
-
+  def valueSet(
+    vs: List[ValueSetValue], 
+    facets: List[XsFacet] = List()
+    ): WNodeConstraint =
+    WNodeConstraint(id = None, values = vs.some, xsFacets = facets)
 
   def xsFacets(fs: List[XsFacet]): WNodeConstraint = 
-    WNodeConstraint(xsFacets =fs)
+    WNodeConstraint(xsFacets = fs)
 
   def emptyExpr: WNodeConstraint = WNodeConstraint()
+
+  def datatype(datatype: IRI, facets: List[XsFacet] = List()): WNodeConstraint =
+    WNodeConstraint(id = None, datatype = datatype.some, xsFacets = facets)
+
+  def nodeKind(kind: WNodeKind, facets: List[XsFacet] = List()): WNodeConstraint =
+    WNodeConstraint(id = None, kind = kind.some, xsFacets = facets)
+
 }
-
-/* case class EmptyExpr(id: Option[ShapeLabel]) extends WNodeConstraint {
-
-  override def withLabel(label: ShapeLabel): WShapeExpr = 
-    this.copy(id = Some(label))
-
-  override def matchLocal(
-      value: Value
-  ): Either[Reason, Unit] = Right(())
-}
-
-case class ValueSet(id: Option[ShapeLabel], values: List[ValueSetValue]) extends WNodeConstraint {
-
-  override def withLabel(label: ShapeLabel): WShapeExpr = 
-    this.copy(id = Some(label))
-
-  override def matchLocal(value: Value) = {
-    val found = value match {
-      case e: Entity =>
-        values.collect { case ve: EntityIdValueSetValue => ve.id }.contains(e.entityId)
-      case e: EntityId    => values.collect { case ve: EntityIdValueSetValue => ve.id }.contains(e)
-      case i: IRIValue    => values.collect { case iv: IRIValueSetValue => iv.iri }.contains(i.iri)
-      case s: StringValue => values.collect { case s: StringValueSetValue => s.str }.contains(s.str)
-      case _              => false
-    }
-    if (found) Right(())
-    else Left(NoValueValueSet(value, values))
-  }
-
-  override def matchLocalCoded(value: Value) = {
-    val found = value match {
-      case e: Entity =>
-        values.collect { case ve: EntityIdValueSetValue => ve.id }.contains(e.entityId)
-      case e: EntityId    => values.collect { case ve: EntityIdValueSetValue => ve.id }.contains(e)
-      case i: IRIValue    => values.collect { case iv: IRIValueSetValue => iv.iri }.contains(i.iri)
-      case s: StringValue => values.collect { case s: StringValueSetValue => s.str }.contains(s.str)
-      case _              => false
-    }
-    if (found) Right(())
-    else Left(Reason.noValueValueSet)
-  }
-}
-
-case class StringDatatype(id: Option[ShapeLabel]) extends WNodeConstraint {
-  override def withLabel(label: ShapeLabel): WShapeExpr = 
-    this.copy(id = Some(label))
-
-  override def matchLocal(value: Value) = {
-    val result = value match {
-      case _: StringValue => ().asRight
-      case _              => NoStringDatatype(value).asLeft
-    }
-    /* println(s"""|matchLocal
-                 |nodeConstraint: $this
-                 |Value: $value
-                 |Valuetype: ${value.getClass().getCanonicalName()}
-                 |Result: $result
-                 |""".stripMargin) */
-    result
-  }
-}
-
-case class DateDatatype(id: Option[ShapeLabel]) extends WNodeConstraint {
-
-  override def withLabel(label: ShapeLabel): WShapeExpr = 
-    this.copy(id = Some(label))
-
-  override def matchLocal(value: Value) = {
-    val result = value match {
-      case _: DateValue => ().asRight
-      case _            => NoDateDatatype(value).asLeft
-    }
-    /* println(s"""|matchLocal
-                 |nodeConstraint: $this
-                 |Value: $value
-                 |Valuetype: ${value.getClass().getCanonicalName()}
-                 |Result: $result
-                 |""".stripMargin) */
-    result
-  }
-} */
 
 object WShapeExpr {
 
@@ -493,7 +448,7 @@ object WShapeExpr {
     WShape(None, false, List(), Some(EachOf(exprs = ls)), List())
 
   def valueSet(ls: List[ValueSetValue]): WShapeExpr =
-    WNodeConstraint.valueSet(ls)
+    WNodeConstraint.valueSet(ls, List())
 
   def qid(num: Int): ValueSetValue = {
     val name = "Q" + num

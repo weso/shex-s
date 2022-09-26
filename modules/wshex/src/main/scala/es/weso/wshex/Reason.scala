@@ -9,6 +9,7 @@ import es.weso.wbmodel._
 import es.weso.shex.validator.FacetChecker._
 import es.weso.shex.StringFacet
 import es.weso.shex.NumericFacet
+import es.weso.rdf.nodes.IRI
 
 case class ReasonCode(code: Int) extends AnyVal
 
@@ -26,6 +27,7 @@ case class NoValueValueSet(value: Value, valueSet: List[ValueSetValue])
     extends Reason(errCode = Reason.noValueValueSet)
 case class NoStringDatatype(value: Value) extends Reason(errCode = Reason.noStringDatatype)
 case class NoDateDatatype(value: Value) extends Reason(errCode = Reason.noDateDatype)
+case class UnknownDatatypeMatch(datatypeIri: IRI, value: Value) extends Reason(errCode = Reason.unknownDatatypeMatch)
 case class ErrorsMatching(es: List[Reason]) extends Reason(errCode = Reason.errorsMatching)
 case class StringFacetErr(err: StringFacetError) extends Reason(errCode = Reason.stringFacetErr)
 case class NumericFacetErr(err: NumericFacetError) extends Reason(errCode = Reason.numericFacetErr)
@@ -70,4 +72,5 @@ object Reason {
   val stringFacetNoStringValue = ReasonCode(18)
   val numericFacetNoNumericValue = ReasonCode(19)
   val numericFacetErr = ReasonCode(20)
+  val unknownDatatypeMatch = ReasonCode(21)
 }

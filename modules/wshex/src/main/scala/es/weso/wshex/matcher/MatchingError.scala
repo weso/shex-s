@@ -8,6 +8,7 @@ import es.weso.wshex._
 import es.weso.wshex.TermConstraint.StringConstraint
 import es.weso.wshex.TermConstraint.StringConstraintMatchError
 import es.weso.rbe.interval.IntOrUnbounded
+import es.weso.utils.internal.CollectionCompat._
 
 sealed abstract class MatchingError(msg: String) extends Product with Serializable
 
@@ -77,11 +78,13 @@ object MatchingError {
     matchedCount: Int, 
     min: Int,
     wnc: WNodeConstraint,
+    noMatched: LazyList[MatchingStatus],
     matched: LazyList[MatchingStatus],
-    )
-      extends MatchingError(s"""|#values that match node constraint = $matchedCount < $min
-                                |Values that match: ${matched.toList.map(_.toString).mkString("\n")}
-                                |""".stripMargin)
+    ) extends 
+     MatchingError(s"""|#values that match node constraint = $matchedCount < $min
+                       |${noMatched.length} values that fail to match: ${noMatched.toList.map(_.toString.mkString("\n"))}
+                       |${matched.length} values that match: ${matched.toList.map(_.toString).mkString("\n")}
+                       |""".stripMargin)
 
 case class ValuesPropertyFailNodeConstraintMax(
     property: PropertyIdValue, 

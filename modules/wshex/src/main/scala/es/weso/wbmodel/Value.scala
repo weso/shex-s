@@ -9,6 +9,7 @@ import org.wikidata.wdtk.datamodel.interfaces.{
   Statement => WDStatement,
   StringValue => WDStringValue,
   Value => WDValue,
+  QuantityValue => WDQuantityValue,
   _
 }
 import org.wikidata.wdtk.datamodel.interfaces.EntityDocument
@@ -231,11 +232,18 @@ case class DateValue(
   override def toString = s"$date"
 }
 
-case class IntegerValue(
+/* case class IntegerValue(
     num: Integer
 ) extends LiteralValue {
   override def toString = s"$num"
-}
+} */
+
+case class QuantityValue(
+  numericValue: java.math.BigDecimal,
+  lowerBound: java.math.BigDecimal,
+  upperBould: java.math.BigDecimal,
+  unit: ItemIdValue
+) extends Value
 
 
 case class IRIValue(
@@ -372,7 +380,9 @@ object Value {
     }
     override def visit(v: GlobeCoordinatesValue): Value = NotImplementedWDTKValue(v, "Quantity")
     override def visit(v: MonolingualTextValue): Value = NotImplementedWDTKValue(v, "MonolingualText")
-    override def visit(v: QuantityValue): Value = NotImplementedWDTKValue(v, "Quantity")
+    override def visit(v: WDQuantityValue): Value = 
+      QuantityValue(v.getNumericValue(), v.getLowerBound(), v.getUpperBound(), v.getUnitItemId()
+      )
     override def visit(v: WDStringValue): Value = StringValue(v.getString())
     override def visit(v: TimeValue): Value = NotImplementedWDTKValue(v, "Time")
     override def visit(v: UnsupportedValue): Value = NotImplementedWDTKValue(v, "Unsupported")

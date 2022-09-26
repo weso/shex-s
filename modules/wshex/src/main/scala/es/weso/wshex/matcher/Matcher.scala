@@ -219,7 +219,7 @@ case class Matcher(
           
       case Some(nse) => nse match {
         case wnc: WNodeConstraint => {
-          println(s"Matching WNodeConstraint: $wnc with predicate $predicate")
+          // println(s"Matching WNodeConstraint: $wnc with predicate $predicate")
           matchPredicateWNodeConstraintValues(wnc, values, current, se, pidValue, min, max, allowExtras)
         }
         case _ =>
@@ -244,7 +244,7 @@ case class Matcher(
       values.map(matchPredicateWNodeConstraintValue(wnc,_, current, se, pidValue)).partition(_.matches)
     val matchedCount = matched.length
     if (matchedCount < min) {
-        NoMatching(List(ValuesPropertyFailNodeConstraintMin(pidValue, matchedCount, min, wnc, matched)))
+        NoMatching(List(ValuesPropertyFailNodeConstraintMin(pidValue, matchedCount, min, wnc, noMatched, matched)))
     } else 
     if (max < matchedCount) {
        NoMatching(List(ValuesPropertyFailNodeConstraintMax(pidValue, matchedCount, max, wnc, matched)))

@@ -10,7 +10,6 @@ import cats.effect.IO
 import cats._
 import cats.implicits._
 import java.io.InputStream
-import es.weso.wshex.WShExFormat
 import es.weso.utils.VerboseLevel
 import es.weso.wbmodel.Value
 import org.wikidata.wdtk.datamodel.helpers.StatementBuilder
@@ -19,7 +18,6 @@ import org.wikidata.wdtk.datamodel.implementation.ItemIdValueImpl
 import org.wikidata.wdtk.datamodel.interfaces.Reference
 import org.wikidata.wdtk.datamodel.implementation.ReferenceImpl
 import org.wikidata.wdtk.datamodel.helpers.ReferenceBuilder
-import es.weso.wshex.WSchema
 
 class ESWShExConversionTest extends CatsEffectSuite {
 

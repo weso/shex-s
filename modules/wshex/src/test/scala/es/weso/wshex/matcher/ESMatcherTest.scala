@@ -47,7 +47,7 @@ class ESMatcherTest extends FunSuite {
                        |  rdfs:label [ @es ] ;
                        |  wdt:P31 [ wd:Q5 ]
                        |}""".stripMargin
-    checkMatch("Q42 with label", schemaStr, q42Str, true, VerboseLevel.Debug)                   
+    checkMatch("Q42 with label", schemaStr, q42Str, true, VerboseLevel.Nothing)                   
   }
 
   def checkMatch(
