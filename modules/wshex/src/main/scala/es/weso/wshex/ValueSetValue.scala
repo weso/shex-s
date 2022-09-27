@@ -18,6 +18,8 @@ case class EntityIdValueSetValue(id: EntityId) extends LocalValueSetValue {
       value match {
         case eid: EntityId => if (eid.iri == id.iri) ().asRight 
           else NoMatchValueSetValue_EntityIdDifferent(value, this).asLeft
+        case e: Entity => if (e.entityId == id)   ().asRight
+          else NoMatchValueSetValue_EntityIdDifferent(value, this).asLeft  
         case _ => NoMatchValueSetValue_NotImplemented(value, this).asLeft  
       }
 }
