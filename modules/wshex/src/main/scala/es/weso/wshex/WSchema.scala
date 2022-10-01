@@ -15,6 +15,7 @@ import es.weso.wshex.compact.Parser._
 import es.weso.wshex.compact.ParserOptions
 import java.io.FileInputStream
 import java.nio.file.Files
+import es2wshex._
 
 case class WSchema(
     shapesMap: Map[ShapeLabel, WShapeExpr] = Map(),
@@ -140,7 +141,7 @@ object WSchema {
       for {
         schema <- es.weso.shex.Schema.fromInputStream(is, cnvFormat(format), base)
         resolvedSchema <- es.weso.shex.ResolvedSchema.resolve(schema, base, verbose)
-        wschema <- IO.fromEither(ES2WShEx(ESConvertOptions.default).convertSchema(resolvedSchema))
+        wschema <- IO.fromEither(ES2WShEx(ES2WShExConvertOptions.default).convertSchema(resolvedSchema))
       } yield wschema
     case _ => IO.raiseError(WShExUnsupportedFormat(format))  
   }

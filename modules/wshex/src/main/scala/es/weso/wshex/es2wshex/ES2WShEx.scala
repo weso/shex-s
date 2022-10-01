@@ -1,4 +1,4 @@
-package es.weso.wshex
+package es.weso.wshex.es2wshex
 
 import cats._
 import cats.implicits._
@@ -7,31 +7,14 @@ import es.weso._
 import es.weso.rbe.interval.{IntLimit, Unbounded}
 import es.weso.rdf.nodes._
 import es.weso.wbmodel.{Lang => _, Property => _, _}
-import es.weso.wshex.esconvert._
 import es.weso.rbe.interval.IntOrUnbounded
 import scala.collection.compat._ // Required for partitionMap
 import es.weso.rdf.nodes._
+import es.weso.wshex._
 import es.weso.wshex.TermConstraint._
 
-case class ESConvertOptions(
-    entityIri: IRI,
-    directPropertyIri: IRI,
-    propIri: IRI,
-    propStatementIri: IRI,
-    propQualifierIri: IRI
-)
 
-object ESConvertOptions {
-  val default = ESConvertOptions(
-    entityIri = IRI("http://www.wikidata.org/entity/"),
-    directPropertyIri = IRI("http://www.wikidata.org/prop/direct/"),
-    propIri = IRI("http://www.wikidata.org/prop/"),
-    propStatementIri = IRI("http://www.wikidata.org/prop/statement/"),
-    propQualifierIri = IRI("http://www.wikidata.org/prop/qualifier/")
-  )
-}
-
-case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
+case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging {
 
   // Properties for labels
   private lazy val rdfsLabel = IRI("http://www.w3.org/2000/01/rdf-schema#label")
@@ -462,9 +445,9 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
 
 object ES2WShEx {
   def apply(
-      convertOptions: ConvertOptions = ConvertOptions.default
-  ): ShEx2WShEx =
+      convertOptions: ES2WShExConvertOptions = ES2WShExConvertOptions.default
+  ): ES2WShEx =
     // Note: 'new' is needed to avoid infinite loop
-    new ShEx2WShEx(convertOptions)
+    new ES2WShEx(convertOptions)
 
 }

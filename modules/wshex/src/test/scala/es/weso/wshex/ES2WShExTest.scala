@@ -11,6 +11,7 @@ import TermConstraint._
 import es.weso.rbe.interval._
 import es.weso.rdf.nodes._
 import WNodeConstraint._
+import es.weso.wshex.es2wshex._
 
 class ES2WShExTest extends CatsEffectSuite {
 
@@ -298,7 +299,7 @@ class ES2WShExTest extends CatsEffectSuite {
       expected: WSchema,
       format: String = "ShExC"
   )(implicit loc: munit.Location): Unit = {
-    val convertOptions = ESConvertOptions.default
+    val convertOptions = ES2WShExConvertOptions.default
     test(name) {
       ShExSchema
         .fromString(shexStr, format, None)

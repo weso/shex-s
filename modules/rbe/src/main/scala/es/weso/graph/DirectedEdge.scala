@@ -1,4 +1,4 @@
-package es.weso.rbe
+package es.weso.graph
 
 /** Represents directed edges
   *

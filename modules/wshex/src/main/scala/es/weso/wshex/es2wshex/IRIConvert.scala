@@ -1,18 +1,10 @@
-package es.weso.wshex.esconvert
-
+package es.weso.wshex.es2wshex
 import es.weso.rdf.nodes.IRI
-import es.weso.wshex.ESConvertOptions
 import es.weso.wbmodel.Utils
-
-sealed abstract class IRIParsed
-case class DirectProperty(value: Int) extends IRIParsed
-case class Property(value: Int) extends IRIParsed
-case class PropertyStatement(value: Int) extends IRIParsed
-case class PropertyQualifier(value: Int) extends IRIParsed
 
 object IRIConvert {
 
-  private def parseDirect(pred: IRI, convertOptions: ESConvertOptions): Option[DirectProperty] = {
+  private def parseDirect(pred: IRI, convertOptions: ES2WShExConvertOptions): Option[DirectProperty] = {
     val (name, base) = Utils.splitIri(pred)
     val expr = "P(\\d*)".r
     if (IRI(base) == convertOptions.directPropertyIri) {
@@ -26,7 +18,7 @@ object IRIConvert {
 
   private def parsePropertyStatement(
       pred: IRI,
-      convertOptions: ESConvertOptions
+      convertOptions: ES2WShExConvertOptions
   ): Option[PropertyStatement] = {
     val (name, base) = Utils.splitIri(pred)
     val expr = "P(\\d*)".r
@@ -40,7 +32,7 @@ object IRIConvert {
 
   private def parsePropertyQualifier(
       pred: IRI,
-      convertOptions: ESConvertOptions
+      convertOptions: ES2WShExConvertOptions
   ): Option[PropertyQualifier] = {
     val (name, base) = Utils.splitIri(pred)
     val expr = "P(\\d*)".r
@@ -52,7 +44,7 @@ object IRIConvert {
     else None
   }
 
-  private def parseProperty(pred: IRI, convertOptions: ESConvertOptions): Option[Property] = {
+  private def parseProperty(pred: IRI, convertOptions: ES2WShExConvertOptions): Option[Property] = {
     val (name, base) = Utils.splitIri(pred)
     val expr = "P(\\d*)".r
     if (IRI(base) == convertOptions.propIri)
@@ -63,7 +55,7 @@ object IRIConvert {
     else None
   }
 
-  def parseIRI(iri: IRI, convertOptions: ESConvertOptions): Option[IRIParsed] =
+  def parseIRI(iri: IRI, convertOptions: ES2WShExConvertOptions): Option[IRIParsed] =
     parseDirect(iri, convertOptions)
       .orElse(parsePropertyStatement(iri, convertOptions))
       .orElse(parseProperty(iri, convertOptions))

@@ -455,7 +455,8 @@ lazy val mdocSettings = Seq(
     shapemap,
     shapepath,
     depGraphs,
-    wikibaserdf
+    wikibaserdf,
+    wshex
   ),
   ScalaUnidoc / unidoc / target := (LocalRootProject / baseDirectory).value / "website" / "static" / "api",
   cleanFiles += (ScalaUnidoc / unidoc / target).value,
@@ -561,13 +562,13 @@ lazy val commonSettings = compilationSettings ++ sharedDependencies ++ Seq(
   coverageHighlighting := priorTo2_13(scalaVersion.value),
   organization := "es.weso",
   sonatypeProfileName := "es.weso",
-  homepage := Some(url("https://github.com/weso/shaclex")),
+  homepage := Some(url("https://github.com/weso/shex-s")),
   licenses := Seq("MIT" -> url("http://opensource.org/licenses/MIT")),
   scmInfo := Some(
-    ScmInfo(url("https://github.com/weso/shaclex"), "scm:git:git@github.com:weso/shaclex.git")
+    ScmInfo(url("https://github.com/weso/shex-s"), "scm:git:git@github.com:weso/shex-s.git")
   ),
   autoAPIMappings := true,
-  apiURL := Some(url("http://weso.github.io/shaclex/latest/api/")),
+  apiURL := Some(url("http://weso.github.io/shex-s/latest/api/")),
   autoAPIMappings := true,
   developers := List(
     Developer(

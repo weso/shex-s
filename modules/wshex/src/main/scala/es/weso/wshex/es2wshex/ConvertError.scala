@@ -1,10 +1,10 @@
-package es.weso.wshex
-
+package es.weso.wshex.es2wshex
 import es.weso._
 import es.weso.rdf.nodes.IRI
 import es.weso.shex.implicits.showShEx._
 import cats._
 import cats.implicits._
+import es.weso.wshex._
 
 sealed abstract class ConvertError extends Exception {
   final override def fillInStackTrace(): Throwable = this
@@ -27,7 +27,7 @@ case class UnsupportedTripleConstraint(tc: shex.TripleConstraint) extends Conver
 case class UnsupportedTripleExpr(te: shex.TripleExpr, msg: String = "") extends ConvertError {
   override def toString() = s"Unsupported tripleExpr: ${te.show}\n$msg"
 }
-case class CastTripleConstraintError(te: TripleExpr) extends ConvertError {
+case class CastTripleConstraintError(te: shex.TripleExpr) extends ConvertError {
   override def toString() = s"Cast tripleConstraintError: ${te}"
 }
 case class UnsupportedPredicate(pred: IRI, msg: String = "") extends ConvertError {
