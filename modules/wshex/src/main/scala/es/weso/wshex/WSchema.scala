@@ -120,6 +120,9 @@ object WSchema {
     case WShExFormat.JsonWShExFormat    => "ShExJ"
   }
 
+  def parseFormat(formatStr: String): IO[WShExFormat] = 
+   IO.fromEither(WShExFormat.fromString(formatStr))
+
   def fromInputStream(
     is: InputStream,
     format: WShExFormat = WShExFormat.CompactWShExFormat,

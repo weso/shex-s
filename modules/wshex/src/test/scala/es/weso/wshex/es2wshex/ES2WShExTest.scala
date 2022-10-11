@@ -1,4 +1,4 @@
-package es.weso.wshex
+package es.weso.wshex.es2wshex
 import munit._
 import io.circe.Json
 import es.weso.rdf.nodes.IRI
@@ -7,11 +7,11 @@ import es.weso.rbe.interval.IntLimit
 import es.weso.wbmodel.{Lang => WBLang, _}
 import es.weso.utils.VerboseLevel._
 import es.weso.shex.{Schema => ShExSchema}
-import TermConstraint._
+import es.weso.wshex._
+import es.weso.wshex.TermConstraint._
+import es.weso.wshex.WNodeConstraint._
 import es.weso.rbe.interval._
 import es.weso.rdf.nodes._
-import WNodeConstraint._
-import es.weso.wshex.es2wshex._
 
 class ES2WShExTest extends CatsEffectSuite {
 

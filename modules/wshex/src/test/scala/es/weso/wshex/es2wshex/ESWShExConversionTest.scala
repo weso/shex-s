@@ -1,4 +1,4 @@
-package es.weso.wshex
+package es.weso.wshex.es2wshex
 import es.weso.utils.FileUtils._
 import munit._
 import java.nio.file.Path
@@ -18,6 +18,7 @@ import org.wikidata.wdtk.datamodel.implementation.ItemIdValueImpl
 import org.wikidata.wdtk.datamodel.interfaces.Reference
 import org.wikidata.wdtk.datamodel.implementation.ReferenceImpl
 import org.wikidata.wdtk.datamodel.helpers.ReferenceBuilder
+import es.weso.wshex._
 
 class ESWShExConversionTest extends CatsEffectSuite {
 

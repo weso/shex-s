@@ -38,7 +38,7 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
     */
   def convertSchema(
       shexSchema: shex.AbstractSchema
-  ): Either[ConvertError, WSchema] =
+  ): Either[ES2WShExConvertError, WSchema] =
     for {
       shapes <-
         shexSchema.shapesMap.toList.map { case (l, se) =>
@@ -60,7 +60,7 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
       label: shex.ShapeLabel,
       se: shex.ShapeExpr,
       shexSchema: shex.AbstractSchema
-  ): Either[ConvertError, (ShapeLabel, WShapeExpr)] = for {
+  ): Either[ES2WShExConvertError, (ShapeLabel, WShapeExpr)] = for {
     cse <- convertShapeExpr(se, shexSchema)
     lbl = convertShapeLabel(label)
   } yield (lbl, cse)
@@ -68,7 +68,7 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
   private def convertShapeExpr(
       se: shex.ShapeExpr,
       schema: shex.AbstractSchema
-  ): Either[ConvertError, WShapeExpr] =
+  ): Either[ES2WShExConvertError, WShapeExpr] =
     se match {
       case nc: shex.NodeConstraint => convertNodeConstraint(nc)
       case s: shex.Shape           => convertShape(s, schema)
@@ -93,7 +93,7 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
 
   private def convertNodeConstraint(
       nc: shex.NodeConstraint
-  ): Either[ConvertError, WNodeConstraint] =
+  ): Either[ES2WShExConvertError, WNodeConstraint] =
     nc match {
       case shex.NodeConstraint(id, None, None, List(), Some(values), None, None) =>
         convertValueSet(convertId(id), values)
@@ -104,20 +104,20 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
   private def convertValueSet(
       id: Option[ShapeLabel],
       values: List[shex.ValueSetValue]
-  ): Either[ConvertError, WNodeConstraint] =
+  ): Either[ES2WShExConvertError, WNodeConstraint] =
     convertValueSetValues(values)
       .map(vs => WNodeConstraint(id = id, values = vs.some))
 
   private def convertValueSetValues(
       values: List[shex.ValueSetValue]
-  ): Either[ConvertError, List[ValueSetValue]] =
+  ): Either[ES2WShExConvertError, List[ValueSetValue]] =
     values
       .map(convertValueSetValue)
       .sequence
 
   private def convertValueSetValue(
       value: shex.ValueSetValue
-  ): Either[ConvertError, ValueSetValue] =
+  ): Either[ES2WShExConvertError, ValueSetValue] =
     value match {
       case shex.IRIValue(i) =>
         val (name1, base1) = Utils.splitIri(i)
@@ -139,7 +139,7 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
   private def convertShape(
       s: shex.Shape,
       schema: shex.AbstractSchema
-  ): Either[ConvertError, WShape] =
+  ): Either[ES2WShExConvertError, WShape] =
     for {
       te <- optConvert(s.expression, convertTripleExpr(schema))
       ls <- s.expression match {
@@ -158,7 +158,7 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
       ls
     )
 
-  private def convertPropertyIRIExtra(iri: IRI): Either[ConvertError, PropertyId] = {
+  private def convertPropertyIRIExtra(iri: IRI): Either[ES2WShExConvertError, PropertyId] = {
     val iriParsed = IRIConvert.parseIRI(iri, convertOptions)
     iriParsed match {
       case Some(DirectProperty(n)) => PropertyId.fromNumber(n, convertOptions.entityIri).asRight
@@ -169,7 +169,7 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
 
   private def parseTermsExpr(
       te: shex.TripleExpr
-  ): Either[ConvertError, List[TermConstraint]] =
+  ): Either[ES2WShExConvertError, List[TermConstraint]] =
     te match {
       case eo: shex.EachOf =>
         eo.expressions.map(parseTermsExpr(_)).sequence.map(_.flatten)
@@ -182,7 +182,7 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
 
   private def parseTermTripleConstraint(
       tc: shex.TripleConstraint
-  ): Either[ConvertError, List[TermConstraint]] = tc.predicate match {
+  ): Either[ES2WShExConvertError, List[TermConstraint]] = tc.predicate match {
     case `rdfsLabel` =>
       List(LabelConstraint(Lang("en"), None)).asRight
     case `skosAltLabel` =>
@@ -192,13 +192,13 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
 
   private def optConvert[A, B](
       v: Option[A],
-      cnv: A => Either[ConvertError, Option[B]]
-  ): Either[ConvertError, Option[B]] =
-    v.fold(none[B].asRight[ConvertError])(cnv(_))
+      cnv: A => Either[ES2WShExConvertError, Option[B]]
+  ): Either[ES2WShExConvertError, Option[B]] =
+    v.fold(none[B].asRight[ES2WShExConvertError])(cnv(_))
 
   private def convertTripleExpr(
       schema: shex.AbstractSchema
-  )(te: shex.TripleExpr): Either[ConvertError, Option[TripleExpr]] =
+  )(te: shex.TripleExpr): Either[ES2WShExConvertError, Option[TripleExpr]] =
     te match {
       case eo: shex.EachOf =>
         eo.expressions
@@ -244,7 +244,7 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
       max: IntOrUnbounded,
       se: Option[shex.ShapeExpr],
       schema: shex.AbstractSchema
-  ): Either[ConvertError, TripleConstraint] = {
+  ): Either[ES2WShExConvertError, TripleConstraint] = {
     se match {
       case None =>
         TripleConstraintLocal(pred, WNodeConstraint.emptyExpr, min, max).asRight
@@ -265,7 +265,7 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
   private def convertTripleConstraint(
       tc: shex.TripleConstraint,
       schema: shex.AbstractSchema
-  ): Either[ConvertError, Option[TripleConstraint]] = {
+  ): Either[ES2WShExConvertError, Option[TripleConstraint]] = {
     val iriParsed = IRIConvert.parseIRI(tc.predicate, convertOptions)
     iriParsed match {
       case Some(DirectProperty(n)) =>
@@ -304,7 +304,7 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
       n: Int,
       t: shex.ShapeExpr,
       schema: shex.AbstractSchema
-  ): Either[ConvertError, TripleConstraint] =
+  ): Either[ES2WShExConvertError, TripleConstraint] =
     t match {
       case s: shex.Shape => convertTripleConstraintPropertyShape(n, s, schema)
       case ref: shex.ShapeRef =>
@@ -326,7 +326,7 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
       n: Int,
       s: shex.Shape,
       schema: shex.AbstractSchema
-  ): Either[ConvertError, TripleConstraint] =
+  ): Either[ES2WShExConvertError, TripleConstraint] =
     s.expression match {
       case None => NoExprForTripleConstraintProperty(n, s).asLeft
       case Some(te) =>
@@ -363,7 +363,7 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
       n: Int,
       s: shex.EachOf,
       schema: shex.AbstractSchema
-  ): Either[ConvertError, TripleConstraint] =
+  ): Either[ES2WShExConvertError, TripleConstraint] =
     getPropertyStatement(n, s.expressions, schema).flatMap(tc =>
       getQualifiers(s.expressions, n, schema).flatMap(qs => tc.withQs(qs).asRight)
     )
@@ -372,7 +372,7 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
       n: Int,
       es: List[shex.TripleExpr],
       schema: shex.AbstractSchema
-  ): Either[ConvertError, TripleConstraint] =
+  ): Either[ES2WShExConvertError, TripleConstraint] =
     es.collectFirstSome(checkPropertyStatement(n, schema)) match {
       case None     => NoValueForPropertyStatementExprs(n, es).asLeft
       case Some(tc) => tc.asRight
@@ -400,7 +400,7 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
       es: List[shex.TripleExpr],
       n: Int,
       schema: shex.AbstractSchema
-  ): Either[ConvertError, Option[QualifierSpec]] = {
+  ): Either[ES2WShExConvertError, Option[QualifierSpec]] = {
     val (errs, oks) = es.map(getQualifier(n, schema)).partitionMap(x => x)
     if (errs.isEmpty) {
       val vs = oks.flatten
@@ -414,7 +414,7 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
 
   private def getQualifier(n: Int, schema: shex.AbstractSchema)(
       te: shex.TripleExpr
-  ): Either[ConvertError, Option[QualifierS]] =
+  ): Either[ES2WShExConvertError, Option[QualifierS]] =
     te match {
       case tc: shex.TripleConstraint =>
         val iriParsed = IRIConvert.parseIRI(tc.predicate, convertOptions)

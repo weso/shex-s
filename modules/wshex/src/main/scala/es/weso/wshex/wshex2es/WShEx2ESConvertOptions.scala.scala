@@ -1,4 +1,4 @@
-package es.weso.wshex.es2wshex
+package es.weso.wshex.wshex2es
 
 import cats._
 import cats.implicits._
@@ -13,7 +13,7 @@ import es.weso.rdf.nodes._
 import es.weso.wshex._
 import es.weso.wshex.TermConstraint._
 
-case class ConvertOptions(
+case class WShEx2ESConvertOptions(
     entityIri: IRI,
     directPropertyIri: IRI,
     propIri: IRI,
@@ -21,8 +21,8 @@ case class ConvertOptions(
     propQualifierIri: IRI
 )
 
-object ConvertOptions {
-  val default = ConvertOptions(
+object WShEx2ESConvertOptions {
+  val default = WShEx2ESConvertOptions(
     entityIri = IRI("http://www.wikidata.org/entity/"),
     directPropertyIri = IRI("http://www.wikidata.org/prop/direct/"),
     propIri = IRI("http://www.wikidata.org/prop/"),
