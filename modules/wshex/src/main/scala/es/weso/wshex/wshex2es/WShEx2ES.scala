@@ -38,7 +38,13 @@ case class WShEx2ES(convertOptions: WShEx2ESConvertOptions) extends LazyLogging 
       }.sequence.map(_.some)
 
   private def convertPrefixMap(prefixes: Option[PrefixMap]): Convert[Option[PrefixMap]] = 
-    prefixes.asRight
+    ok(PrefixMap.fromMap(Map(
+      convertOptions.entityAlias -> convertOptions.entityIri, 
+      convertOptions.directPropertyAlias -> convertOptions.directPropertyIri,
+      convertOptions.propAlias -> convertOptions.propIri,
+      convertOptions.propStatementAlias -> convertOptions.propStatementIri,
+      convertOptions.propQualifierAlias -> convertOptions.propQualifierIri
+    )).some)
   
   private def convertLabeledShapeExpr(lbl: ShapeLabel, se: WShapeExpr): Convert[shex.ShapeExpr] = 
     convertShapeLabel(lbl).flatMap(l => 
@@ -97,9 +103,9 @@ case class WShEx2ES(convertOptions: WShEx2ESConvertOptions) extends LazyLogging 
     vs.map(convertValue(_)).sequence
 
   private def convertValue(v: ValueSetValue): Convert[shex.ValueSetValue] = v match {
-    case eid: EntityIdValueSetValue => ???
-    case iv: IRIValueSetValue => ???
-    case sv: StringValueSetValue => ???
+    case eid: EntityIdValueSetValue => ok(shex.IRIValue(eid.id.iri))
+    case iv: IRIValueSetValue => ok(shex.IRIValue(iv.iri))
+    case sv: StringValueSetValue => ok(shex.StringValue(sv.str))
   }
 
   private def convertShape(s: WShape): Convert[shex.Shape] = for {
@@ -162,13 +168,15 @@ case class WShEx2ES(convertOptions: WShEx2ESConvertOptions) extends LazyLogging 
   private def convertTripleConstraint(tc: TripleConstraint): Convert[shex.TripleExpr] = tc match {
     case tcl: TripleConstraintLocal => for {
       pred <- convertProperty(tcl.property)
-      value <- convertNodeConstraint(tcl.value)
+      value <- if (tcl.value == WNodeConstraint.emptyExpr) ok(none) 
+               else convertNodeConstraint(tcl.value).map(_.some)
       max <- convertMax(tcl.max)
       // TODO: Convert qualifiers...
     } yield shex.TripleConstraint(
        id = None, 
        optInverse = None, optNegated = None, 
-       predicate = pred, valueExpr = value.some, 
+       predicate = pred, 
+       valueExpr = value, 
        optMin = tcl.min.some, optMax = max.some,
        optVariableDecl = None,
        semActs = None,
@@ -202,7 +210,7 @@ case class WShEx2ES(convertOptions: WShEx2ESConvertOptions) extends LazyLogging 
   }
   
   private def convertProperty(prop: PropertyId): Convert[IRI] =
-    ok(prop.iri)
+    ok(convertOptions.directPropertyIri + prop.id)
 
 }
 

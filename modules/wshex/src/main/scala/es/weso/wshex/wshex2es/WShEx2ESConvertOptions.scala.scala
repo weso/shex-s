@@ -18,7 +18,12 @@ case class WShEx2ESConvertOptions(
     directPropertyIri: IRI,
     propIri: IRI,
     propStatementIri: IRI,
-    propQualifierIri: IRI
+    propQualifierIri: IRI,
+    entityAlias: String, 
+    directPropertyAlias: String, 
+    propAlias: String,
+    propStatementAlias: String, 
+    propQualifierAlias: String
 )
 
 object WShEx2ESConvertOptions {
@@ -27,7 +32,12 @@ object WShEx2ESConvertOptions {
     directPropertyIri = IRI("http://www.wikidata.org/prop/direct/"),
     propIri = IRI("http://www.wikidata.org/prop/"),
     propStatementIri = IRI("http://www.wikidata.org/prop/statement/"),
-    propQualifierIri = IRI("http://www.wikidata.org/prop/qualifier/")
+    propQualifierIri = IRI("http://www.wikidata.org/prop/qualifier/"),
+    entityAlias = "wd",
+    directPropertyAlias = "wdt",
+    propAlias = "p",
+    propStatementAlias = "ps",
+    propQualifierAlias = "pq"
   )
 }
 

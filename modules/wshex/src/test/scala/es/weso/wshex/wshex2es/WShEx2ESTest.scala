@@ -8,15 +8,118 @@ import es.weso.utils.VerboseLevel
 
 class WShEx2ESTest extends CatsEffectSuite {
 
+   sealed abstract class ShouldIgnoreOption
+   case object Ignore extends ShouldIgnoreOption
+   case object DontIgnore extends ShouldIgnoreOption
+
+
    checkConversion(
-    "Simple example",
+    "P31_Q5",
+    """|PREFIX :  <http://www.wikidata.org/entity/>
+       |
+       |<Human> {
+       |  :P31 [ :Q5 ]  
+       |}""".stripMargin,
+    "WShExC",
+    """|PREFIX wd:  <http://www.wikidata.org/entity/>
+       |PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+       |    
+       |<Human> {
+       | wdt:P31 [ wd:Q5 ]  
+       |}""".stripMargin,
+    "ShExC",
+    VerboseLevel.Nothing
+   ) 
+
+    checkConversion(
+    "P31_dot",
+    """|PREFIX :  <http://www.wikidata.org/entity/>
+       |
+       |<Human> {
+       |  :P31 . 
+       |}""".stripMargin,
+    "WShExC",
+    """|PREFIX wd:  <http://www.wikidata.org/entity/>
+       |PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+       |    
+       |<Human> {
+       | wdt:P31 .
+       |}""".stripMargin,
+    "ShExC",
+    VerboseLevel.Nothing
+   ) 
+
+   checkConversion(
+    "EachOf_P31_dot",
+    """|PREFIX :  <http://www.wikidata.org/entity/>
+       |
+       |<S> {
+       |  :P31 . ;
+       |  :P23 . 
+       |}""".stripMargin,
+    "WShExC",
+    """|PREFIX wd:  <http://www.wikidata.org/entity/>
+       |PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+       |    
+       |<S> {
+       | wdt:P31 . ;
+       | wdt:P23 . 
+       |}""".stripMargin,
+    "ShExC",
+    VerboseLevel.Nothing
+   ) 
+
+   checkConversion(
+    "OneOf_P31_dot",
+    """|PREFIX :  <http://www.wikidata.org/entity/>
+       |
+       |<S> {
+       |  :P31 . |
+       |  :P23 . 
+       |}""".stripMargin,
+    "WShExC",
+    """|PREFIX wd:  <http://www.wikidata.org/entity/>
+       |PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+       |    
+       |<S> {
+       | wdt:P31 . |
+       | wdt:P23 . 
+       |}""".stripMargin,
+    "ShExC",
+    VerboseLevel.Nothing
+   )
+
+   checkConversion(
+    "Qualifiers",
+    """|PREFIX :  <http://www.wikidata.org/entity/>
+       |
+       |<S> {
+       |  :P31 [ :Q5 ] {| :P585 . |}
+       |}""".stripMargin,
+    "WShExC",
+    """|PREFIX wd:  <http://www.wikidata.org/entity/>
+       |PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+       |PREFIX p:   <http://www.wikidata.org/prop/>
+       |PREFIX ps:  <http://www.wikidata.org/prop/statement/>
+       |PREFIX pq:  <http://www.wikidata.org/prop/qualifier/>
+       |    
+       |<S> {
+       | wdt:P31 . ;
+       | p:P31 { ps:P31 [ wd:Q5 ] ; pq:P585 . }
+       |}""".stripMargin,
+    "ShExC",
+    VerboseLevel.Nothing,
+    Ignore
+   )   
+
+   checkConversion(
+    "Empty",
     """|""".stripMargin,
     "WShExC",
     """|""".stripMargin,
     "ShExC",
     VerboseLevel.Nothing
-   ) 
-
+   )
 
    
    def checkConversion(
@@ -25,8 +128,11 @@ class WShEx2ESTest extends CatsEffectSuite {
       formatWShEx: String = "WShExC",
       expectedShExStr: String,
       expectedFormatShEx: String = "ShExC",
-      verboseLevel: VerboseLevel
-  )(implicit loc: munit.Location): Unit = {
+      verboseLevel: VerboseLevel, 
+      ignore: ShouldIgnoreOption = DontIgnore
+  )(implicit loc: munit.Location): Unit = if (ignore == Ignore) {
+   println(s"Ignored test: $name")
+  } else {
     val convertOptions = WShEx2ESConvertOptions.default
     val entityIri = es.weso.wbmodel.Value.defaultIRI
 
@@ -42,7 +148,25 @@ class WShEx2ESTest extends CatsEffectSuite {
             .fold(
                 err => fail(s"Error converting WShEx -> ShEx: $err"),
                 shexSchemaConverted => 
-                    assertEquals(
+                  if (shexSchemaConverted.toString != shexSchemaExpected.toString) {
+                    println(s"""|Schemas are different
+                                |wschema
+                                |${wschema.shapes}
+                                |converted: 
+                                |${shexSchemaConverted.shapes.get}
+                                |-----------endConverted
+                                |expected: 
+                                |${shexSchemaExpected.shapes.get}
+                                |----------endExpected
+                                |convertedString
+                                |${shexSchemaConverted.toString}
+                                |----------endConvertedString
+                                |expectedString
+                                |${shexSchemaExpected.toString}
+                                |----------endExpectedString
+                                |""".stripMargin)
+                  }
+                  assertEquals(
                         shexSchemaConverted.toString, 
                         shexSchemaExpected.toString)
             ))))
