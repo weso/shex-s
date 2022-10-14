@@ -5,12 +5,9 @@ import cats.implicits._
 import es.weso.shex._
 import es.weso.wshex._
 import es.weso.utils.VerboseLevel
+import es.weso.utils.test._
 
 class WShEx2ESTest extends CatsEffectSuite {
-
-   sealed abstract class ShouldIgnoreOption
-   case object Ignore extends ShouldIgnoreOption
-   case object DontIgnore extends ShouldIgnoreOption
 
 
    checkConversion(
@@ -109,7 +106,7 @@ class WShEx2ESTest extends CatsEffectSuite {
        |}""".stripMargin,
     "ShExC",
     VerboseLevel.Nothing,
-    Ignore
+    IgnoreTest
    )   
 
    checkConversion(
@@ -130,7 +127,7 @@ class WShEx2ESTest extends CatsEffectSuite {
       expectedFormatShEx: String = "ShExC",
       verboseLevel: VerboseLevel, 
       ignore: ShouldIgnoreOption = DontIgnore
-  )(implicit loc: munit.Location): Unit = if (ignore == Ignore) {
+  )(implicit loc: munit.Location): Unit = if (ignore == IgnoreTest) {
    println(s"Ignored test: $name")
   } else {
     val convertOptions = WShEx2ESConvertOptions.default

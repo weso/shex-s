@@ -190,8 +190,10 @@ sealed abstract class TripleConstraint extends TripleExpr with Serializable with
   def max: IntOrUnbounded
   def property: PropertyId
   def qs: Option[QualifierSpec]
+  def refs: Option[ListSpec[ReferenceSpec]]
 
   def withQs(qs: Option[QualifierSpec]): TripleConstraint
+  def withRefs(refs: Option[ListSpec[ReferenceSpec]]): TripleConstraint
   def withMin(min: Int): TripleConstraint
   def withMax(max: IntOrUnbounded): TripleConstraint
 
@@ -256,9 +258,13 @@ case class TripleConstraintRef(
     value: WShapeRef,
     min: Int,
     max: IntOrUnbounded,
-    qs: Option[QualifierSpec] = None
+    qs: Option[QualifierSpec] = None,
+    refs: Option[ListSpec[ReferenceSpec]] = None
 ) extends TripleConstraint {
+
   override def withQs(qs: Option[QualifierSpec]): TripleConstraint = this.copy(qs = qs)
+
+  override def withRefs(refs: Option[ListSpec[ReferenceSpec]]): TripleConstraint = this.copy(refs = refs)
 
   override def withMin(min: Int) = this.copy(min = min)
 
@@ -270,10 +276,13 @@ case class TripleConstraintLocal(
     value: WNodeConstraint,
     min: Int,
     max: IntOrUnbounded,
-    qs: Option[QualifierSpec] = None
+    qs: Option[QualifierSpec] = None,
+    refs: Option[ListSpec[ReferenceSpec]] = None
 ) extends TripleConstraint {
 
   override def withQs(qs: Option[QualifierSpec]): TripleConstraint = this.copy(qs = qs)
+
+  override def withRefs(refs: Option[ListSpec[ReferenceSpec]]): TripleConstraint = this.copy(refs = refs)
 
   override def withMin(min: Int) = this.copy(min = min)
 
@@ -285,10 +294,13 @@ case class TripleConstraintGeneral(
     value: WShapeExpr,
     min: Int,
     max: IntOrUnbounded,
-    qs: Option[QualifierSpec] = None
+    qs: Option[QualifierSpec] = None,
+    refs: Option[ListSpec[ReferenceSpec]] = None
 ) extends TripleConstraint {
 
   override def withQs(qs: Option[QualifierSpec]): TripleConstraint = this.copy(qs = qs)
+
+  override def withRefs(refs: Option[ListSpec[ReferenceSpec]]): TripleConstraint = this.copy(refs = refs)
 
   override def withMin(min: Int) = this.copy(min = min)
 

@@ -144,7 +144,9 @@ object WSchema {
       for {
         schema <- es.weso.shex.Schema.fromInputStream(is, cnvFormat(format), base)
         resolvedSchema <- es.weso.shex.ResolvedSchema.resolve(schema, base, verbose)
-        wschema <- IO.fromEither(ES2WShEx(ES2WShExConvertOptions.default).convertSchema(resolvedSchema))
+        wschema <- IO.fromEither(
+          ES2WShEx(ES2WShExConvertOptions.default).convert(resolvedSchema)
+          )
       } yield wschema
     case _ => IO.raiseError(WShExUnsupportedFormat(format))  
   }

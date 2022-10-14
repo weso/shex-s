@@ -12,9 +12,125 @@ import es.weso.wshex.TermConstraint._
 import es.weso.wshex.WNodeConstraint._
 import es.weso.rbe.interval._
 import es.weso.rdf.nodes._
+import es.weso.utils.test._
+import es.weso.utils.VerboseLevel
 
 class ES2WShExTest extends CatsEffectSuite {
 
+/*    checkConversion(
+    "P31 .",
+    """|PREFIX wd:  <http://www.wikidata.org/entity/>
+       |PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+       |PREFIX p:   <http://www.wikidata.org/prop/>
+       |PREFIX ps:  <http://www.wikidata.org/prop/statement/>
+       |PREFIX pq:  <http://www.wikidata.org/prop/qualifier/>
+       |    
+       |<S> {
+       | wdt:P31 . ;
+       |}""".stripMargin,
+    "ShExC",
+    """|PREFIX :  <http://www.wikidata.org/entity/>
+       |
+       |<S> {
+       | :P31 .
+       |}""".stripMargin,
+    "WShExC",
+    VerboseLevel.Nothing
+   ) */
+
+
+  checkConversion(
+    "p:P31 . provenance",
+    """|PREFIX wd:  <http://www.wikidata.org/entity/>
+       |PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+       |PREFIX p:   <http://www.wikidata.org/prop/>
+       |PREFIX pr:  <http://www.wikidata.org/prop/reference/>
+       |PREFIX prov: <http://www.w3.org/ns/prov#>
+       |PREFIX ps:  <http://www.wikidata.org/prop/statement/>
+       |PREFIX pq:  <http://www.wikidata.org/prop/qualifier/>
+       |    
+       |<S> {
+       | p:P31 @<S1> 
+       |}
+       |
+       |<S1> {
+       | ps:P31 . ;
+       | prov:wasDerivedFrom @<T>
+       |}
+       |
+       |<T> {
+       | pr:P248 [ wd:Q5 ]
+       |}""".stripMargin,
+    "ShExC",
+    """|PREFIX :  <http://www.wikidata.org/entity/>
+       |
+       |<S> {
+       | :P31 .
+       |}
+       |<S1> {}
+       |<T> { 
+       | :P248 [ :Q5 ]
+       |} """.stripMargin,
+    "WShExC",
+    VerboseLevel.Nothing
+   )
+
+/*  checkConversion(
+    "Empty",
+    """|""".stripMargin,
+    "ShExC",
+    """|""".stripMargin,
+    "WShExC",
+    VerboseLevel.Nothing
+   ) */
+
+  def checkConversion(
+      name: String,
+      shExStr: String,
+      formatShEx: String = "ShExC",
+      expectedWShExStr: String,
+      expectedFormatWShEx: String = "WShExC",
+      verboseLevel: VerboseLevel, 
+      ignore: ShouldIgnoreOption = DontIgnore
+  )(implicit loc: munit.Location): Unit = if (ignore == Ignore) {
+   println(s"Ignored test: $name")
+  } else {
+    val convertOptions = ES2WShExConvertOptions.default
+    val entityIri = es.weso.wbmodel.Value.defaultIRI
+
+    test(name) {
+      WSchema.parseFormat(expectedFormatWShEx).flatMap(wshexFormat =>
+      WSchema.fromString(expectedWShExStr, wshexFormat, None, entityIri, verboseLevel).flatMap(wshexSchemaExpected =>
+      ShExSchema.fromString(shExStr, formatShEx, None).map(schema => 
+      ES2WShEx(convertOptions).convert(schema).fold(
+        err => fail(s"Error converting ShEx -> WShEx: $err"),
+        wshexSchemaConverted => 
+          if (wshexSchemaConverted.toString != wshexSchemaExpected.toString) {
+                    println(s"""|Schemas are different
+                                |schema
+                                |${schema.shapes}
+                                |converted: 
+                                |${wshexSchemaConverted.shapes}
+                                |-----------endConverted
+                                |expected: 
+                                |${wshexSchemaExpected.shapes}
+                                |----------endExpected
+                                |convertedString
+                                |${wshexSchemaConverted.toString}
+                                |----------endConvertedString
+                                |expectedString
+                                |${wshexSchemaExpected.toString}
+                                |----------endExpectedString
+                                |""".stripMargin)
+                  }
+                  assertEquals(
+                        wshexSchemaConverted.toString, 
+                        wshexSchemaExpected.toString)
+            ))))
+    }
+  }
+
+/*
   val ex = IRI("http://example.org/")
   val p = IRI("http://www.wikidata.org/prop/")
   val ps = IRI("http://www.wikidata.org/prop/statement/")
@@ -134,7 +250,7 @@ class ES2WShExTest extends CatsEffectSuite {
             QualifierSpec(
               EachOfPs(
                 List(
-                  QualifierLocal(
+                  PropertyLocal(
                     PropertyId.fromIRI(wd + "P407"),
                     valueSet(List(EntityIdValueSetValue(ItemId("Q1860", wd + "Q1860")))),
                     1,
@@ -182,7 +298,7 @@ class ES2WShExTest extends CatsEffectSuite {
             QualifierSpec(
               EachOfPs(
                 List(
-                  QualifierLocal(
+                  PropertyLocal(
                     PropertyId.fromIRI(wd + "P407"),
                     valueSet(List(EntityIdValueSetValue(ItemId("Q1860", wd + "Q1860")))),
                     1,
@@ -226,7 +342,7 @@ class ES2WShExTest extends CatsEffectSuite {
       List()
     )
 
-    checkSchema(
+  checkSchema(
       "Qualifiers with reference",
       schemaStr,
       WSchema(shapesMap = Map(s -> se, psr -> pse), prefixes = Some(pm))
@@ -305,12 +421,12 @@ class ES2WShExTest extends CatsEffectSuite {
         .fromString(shexStr, format, None)
         .map(schema =>
           ES2WShEx(convertOptions)
-            .convertSchema(schema)
+            .convert(schema)
             .fold(
               err => fail(s"Error converting ShEx -> WShEx: ${err}"),
               wshexSchema => assertEquals(wshexSchema.toString, expected.toString)
             )
         )
     }
-  }
+  } */
 }

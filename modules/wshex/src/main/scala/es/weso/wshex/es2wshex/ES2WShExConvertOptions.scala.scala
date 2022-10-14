@@ -18,7 +18,8 @@ case class ES2WShExConvertOptions(
     directPropertyIri: IRI,
     propIri: IRI,
     propStatementIri: IRI,
-    propQualifierIri: IRI
+    propQualifierIri: IRI,
+    propReferenceIri: IRI
 )
 
 object ES2WShExConvertOptions {
@@ -27,7 +28,8 @@ object ES2WShExConvertOptions {
     directPropertyIri = IRI("http://www.wikidata.org/prop/direct/"),
     propIri = IRI("http://www.wikidata.org/prop/"),
     propStatementIri = IRI("http://www.wikidata.org/prop/statement/"),
-    propQualifierIri = IRI("http://www.wikidata.org/prop/qualifier/")
+    propQualifierIri = IRI("http://www.wikidata.org/prop/qualifier/"),
+    propReferenceIri = IRI("http://www.wikidata.org/prop/reference/")
   )
 }
 

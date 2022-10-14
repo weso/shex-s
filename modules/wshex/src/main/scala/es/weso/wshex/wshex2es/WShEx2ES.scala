@@ -106,6 +106,7 @@ case class WShEx2ES(convertOptions: WShEx2ESConvertOptions) extends LazyLogging 
     case eid: EntityIdValueSetValue => ok(shex.IRIValue(eid.id.iri))
     case iv: IRIValueSetValue => ok(shex.IRIValue(iv.iri))
     case sv: StringValueSetValue => ok(shex.StringValue(sv.str))
+    case is: IRIStem => ok (shex.IRIStem(is.stem))
   }
 
   private def convertShape(s: WShape): Convert[shex.Shape] = for {

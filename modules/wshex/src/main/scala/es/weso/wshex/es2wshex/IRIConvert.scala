@@ -1,6 +1,8 @@
 package es.weso.wshex.es2wshex
+
 import es.weso.rdf.nodes.IRI
 import es.weso.wbmodel.Utils
+import cats.implicits._
 
 object IRIConvert {
 
@@ -44,6 +46,21 @@ object IRIConvert {
     else None
   }
 
+  private def parsePropertyReference(
+      pred: IRI,
+      convertOptions: ES2WShExConvertOptions
+  ): Option[PropertyReference] = {
+    val (name, base) = Utils.splitIri(pred)
+    val expr = "P(\\d*)".r
+    if (IRI(base) == convertOptions.propReferenceIri)
+      name match {
+        case expr(num) => Some(PropertyReference(Integer.parseInt(num)))
+        case _         => None
+      }
+    else None
+  }
+
+
   private def parseProperty(pred: IRI, convertOptions: ES2WShExConvertOptions): Option[Property] = {
     val (name, base) = Utils.splitIri(pred)
     val expr = "P(\\d*)".r
@@ -57,8 +74,18 @@ object IRIConvert {
 
   def parseIRI(iri: IRI, convertOptions: ES2WShExConvertOptions): Option[IRIParsed] =
     parseDirect(iri, convertOptions)
-      .orElse(parsePropertyStatement(iri, convertOptions))
-      .orElse(parseProperty(iri, convertOptions))
-      .orElse(parsePropertyQualifier(iri, convertOptions))
+    .orElse(parseProperty(iri, convertOptions))
+    .orElse(parsePropertyStatement(iri, convertOptions))
+    .orElse(parsePropertyQualifier(iri, convertOptions))
+    .orElse(parsePropertyReference(iri, convertOptions))
+    .orElse(parseWasDerivedFrom(iri))
+
+  def parseWasDerivedFrom(iri: IRI): Option[IRIParsed] = {
+    val `prov:wasDerivedFrom` = IRI("http://www.w3.org/ns/prov#wasDerivedFrom")
+    val r = if (iri == `prov:wasDerivedFrom`) WasDerivedFrom.some
+    else None
+    println(s"Parsing wasDerivedFrom: $iri, result: $r")
+    r 
+  }
 
 }

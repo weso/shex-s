@@ -138,7 +138,7 @@ class WShExParserTest extends CatsEffectSuite {
           IntLimit(1),
           Some(
             QualifierSpec(
-              QualifierLocal(
+              PropertyLocal(
                 PropertyId.fromIRI(wdt + "P580"),
                 emptyExpr,
                 1,

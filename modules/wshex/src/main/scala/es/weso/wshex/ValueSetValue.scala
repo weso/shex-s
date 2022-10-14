@@ -32,11 +32,15 @@ case class StringValueSetValue(str: String) extends LocalValueSetValue {
       NoMatchValueSetValue_NotImplemented(value, this).asLeft        
 }
 
-sealed trait NoMatchValueSetValue {
-    val value: Value
-    val vsvalue: ValueSetValue
+case class IRIStem(stem: IRI) extends LocalValueSetValue {
+  override def matchValue(value: Value): Either[NoMatchValueSetValue, Unit] = 
+    value match {
+      case eid: EntityId => 
+        if (eid.iri.getLexicalForm.startsWith(stem.getLexicalForm)) ().asRight
+        else NoMatchValueSetValue_IRIStem(value, this).asLeft
+      case e: Entity => 
+        if (e.entityId.iri.getLexicalForm.startsWith(stem.getLexicalForm)) ().asRight
+        else NoMatchValueSetValue_IRIStem(value, this).asLeft
+      case _ => NoMatchValueSetValue_IRIStem(value, this).asLeft
+    }
 }
-
-case class NoMatchValueSetValue_NonLocal(value: Value, vsvalue: NonLocalValueSetValue) extends NoMatchValueSetValue
-case class NoMatchValueSetValue_EntityIdDifferent(value: Value, vsvalue: LocalValueSetValue) extends NoMatchValueSetValue
-case class NoMatchValueSetValue_NotImplemented(value: Value, vsvalue: LocalValueSetValue) extends NoMatchValueSetValue

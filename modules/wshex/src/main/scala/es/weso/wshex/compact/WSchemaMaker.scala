@@ -1268,7 +1268,7 @@ class WSchemaMaker extends WShExDocBaseVisitor[Any] {
                   ok(
                     Some(
                       QualifierSpec(
-                        QualifierLocal(propId, nc, cardinality._1, cardinality._2),
+                        PropertyLocal(propId, nc, cardinality._1, cardinality._2),
                         false
                       )
                     )
@@ -1277,7 +1277,7 @@ class WSchemaMaker extends WShExDocBaseVisitor[Any] {
                   ok(
                     Some(
                       QualifierSpec(
-                        QualifierRef(propId, sref, cardinality._1, cardinality._2),
+                        PropertyRef(propId, sref, cardinality._1, cardinality._2),
                         false
                       )
                     )
@@ -1286,7 +1286,7 @@ class WSchemaMaker extends WShExDocBaseVisitor[Any] {
                   ok(
                     Some(
                       QualifierSpec(
-                        QualifierLocal(propId, emptyExpr, cardinality._1, cardinality._2),
+                        PropertyLocal(propId, emptyExpr, cardinality._1, cardinality._2),
                         false
                       )
                     )
