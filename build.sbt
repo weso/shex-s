@@ -1,5 +1,5 @@
 lazy val scala212 = "2.12.16"
-lazy val scala213 = "2.13.8"
+lazy val scala213 = "2.13.10"
 lazy val scala3 = "3.2.0"
 lazy val supportedScalaVersions = List(
   scala3,
@@ -7,7 +7,7 @@ lazy val supportedScalaVersions = List(
   scala212
 )
 
-val Java11 = JavaSpec.temurin("11") 
+val Java11 = JavaSpec.temurin("11")
 
 lazy val srdfVersion = "0.1.122"
 lazy val utilsVersion = "0.2.25"
@@ -72,7 +72,6 @@ lazy val wdtkUtil = "org.wikidata.wdtk" % "wdtk-util" % wikidataToolkitVersion
 
 lazy val scalacheck = "org.scalacheck" %% "scalacheck" % scalacheckVersion
 lazy val typesafeConfig = "com.typesafe" % "config" % typesafeConfigVersion
-
 
 lazy val logbackClassic = "ch.qos.logback" % "logback-classic" % logbackVersion
 lazy val scalaLogging =
