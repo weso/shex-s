@@ -7,7 +7,7 @@ lazy val supportedScalaVersions = List(
   scala212
 )
 
-val Java11 = JavaSpec.temurin("11") 
+val Java11 = JavaSpec.temurin("11")
 
 lazy val srdfVersion = "0.1.122"
 lazy val utilsVersion = "0.2.25"
@@ -29,7 +29,7 @@ lazy val jgraphtVersion = "1.4.0"
 lazy val logbackVersion = "1.2.11"
 lazy val munitVersion = "0.7.29" // "1.0.0-M6"
 lazy val munitEffectVersion = "1.0.7"
-lazy val pprintVersion = "0.7.3"
+lazy val pprintVersion = "0.8.0"
 lazy val rdf4jVersion = "3.4.2"
 lazy val scalaCollCompatVersion = "2.8.1"
 lazy val scalacheckVersion = "1.15.4"
@@ -72,7 +72,6 @@ lazy val wdtkUtil = "org.wikidata.wdtk" % "wdtk-util" % wikidataToolkitVersion
 
 lazy val scalacheck = "org.scalacheck" %% "scalacheck" % scalacheckVersion
 lazy val typesafeConfig = "com.typesafe" % "config" % typesafeConfigVersion
-
 
 lazy val logbackClassic = "ch.qos.logback" % "logback-classic" % logbackVersion
 lazy val scalaLogging =
