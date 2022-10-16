@@ -22,6 +22,7 @@ import es.weso.utils.VerboseLevel
 import TermConstraint._
 import MatchingError._
 import es.weso.rbe.interval.IntOrUnbounded
+import cats.implicits._
 
 /** Matcher contains methods to match a WShEx schema with Wikibase entities
   *
@@ -164,24 +165,28 @@ case class Matcher(
     tc match {
       case tcr: TripleConstraintRef =>
         val allowExtras = se.extras.contains(tc.property)
-        val matchPid = 
-           matchPropertyIdValueExpr(tc.property, Some(tcr.value), e, se, current, tcr.min, tcr.max, allowExtras)
-        tcr.qs match {
-          case None     => matchPid
-          case Some(qs) => matchPid.and(matchQs(qs, e, current))
-        }
+        val resultMatchPid = matchPropertyIdValueExpr(tc.property, tcr.value.some, e, se, current, tcr.min, tcr.max, allowExtras)
+        val resultMatchQs = tcr.qs.fold(resultMatchPid)(qs => resultMatchPid.and(matchQs(qs, e, current)))
+        val resultMatchRefs = tcr.refs.fold(resultMatchQs)(rs => resultMatchQs.and(matchRefs(rs,e,current))) 
+        resultMatchRefs
       case tcl: TripleConstraintLocal =>
         val allowExtras = se.extras.contains(tc.property)
-        val matchPid = 
-           matchPropertyIdValueExpr(tc.property, Some(tcl.value), e, se, current, tcl.min, tcl.max, allowExtras)
-        tcl.qs match {
-          case None     => matchPid
-          case Some(qs) => matchPid.and(matchQs(qs, e, current))
-        }
+        val resultMatchPid = matchPropertyIdValueExpr(tc.property, tcl.value.some, e, se, current, tcl.min, tcl.max, allowExtras)
+        val resultMatchQs = tcl.qs.fold(resultMatchPid)(qs => resultMatchPid.and(matchQs(qs, e, current)))
+        val resultMatchRefs = tcl.refs.fold(resultMatchQs)(rs => resultMatchQs.and(matchRefs(rs,e,current))) 
+        resultMatchRefs
       case tcg: TripleConstraintGeneral =>
         val notImplemented: MatchingError = NotImplemented(s"tripleConstraintGeneral: $tcg")
         NoMatching(List(notImplemented))
     }
+
+  private def matchRefs(
+      refs: ReferencesSpec,
+      e: EntityDoc,
+      current: EntityDoc
+  ): MatchingStatus =
+    MatchingStatus.matchEmpty(current)
+
 
   // TODO...add matching on qualifiers
   private def matchQs(

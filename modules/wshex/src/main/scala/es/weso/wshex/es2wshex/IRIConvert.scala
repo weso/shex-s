@@ -82,10 +82,8 @@ object IRIConvert {
 
   def parseWasDerivedFrom(iri: IRI): Option[IRIParsed] = {
     val `prov:wasDerivedFrom` = IRI("http://www.w3.org/ns/prov#wasDerivedFrom")
-    val r = if (iri == `prov:wasDerivedFrom`) WasDerivedFrom.some
-    else None
-    println(s"Parsing wasDerivedFrom: $iri, result: $r")
-    r 
+    if (iri == `prov:wasDerivedFrom`) WasDerivedFrom.some
+    else none
   }
 
 }

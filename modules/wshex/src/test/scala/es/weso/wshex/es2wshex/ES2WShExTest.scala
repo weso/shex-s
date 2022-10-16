@@ -17,7 +17,7 @@ import es.weso.utils.VerboseLevel
 
 class ES2WShExTest extends CatsEffectSuite {
 
-/*    checkConversion(
+  checkConversion(
     "P31 .",
     """|PREFIX wd:  <http://www.wikidata.org/entity/>
        |PREFIX wdt: <http://www.wikidata.org/prop/direct/>
@@ -36,7 +36,34 @@ class ES2WShExTest extends CatsEffectSuite {
        |}""".stripMargin,
     "WShExC",
     VerboseLevel.Nothing
-   ) */
+   ) 
+
+  checkConversion(
+    "Ignore wasDerivedFrom",
+    """|PREFIX wd:  <http://www.wikidata.org/entity/>
+       |PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+       |PREFIX p:   <http://www.wikidata.org/prop/>
+       |PREFIX pr:  <http://www.wikidata.org/prop/reference/>
+       |PREFIX prov: <http://www.w3.org/ns/prov#>
+       |PREFIX ps:  <http://www.wikidata.org/prop/statement/>
+       |PREFIX pq:  <http://www.wikidata.org/prop/qualifier/>
+       |    
+       |<S> {
+       | prov:wasDerivedFrom @<T>
+       |}
+       |<T> {
+       | pr:P248 .
+       |}""".stripMargin,
+    "ShExC",
+    """|PREFIX prov: <http://www.w3.org/ns/prov#>
+       |PREFIX :  <http://www.wikidata.org/entity/>
+       |<S> {
+       |}
+       |<T> {
+       |}""".stripMargin,
+    "WShExC",
+    VerboseLevel.Nothing
+   )
 
 
   checkConversion(
@@ -62,27 +89,28 @@ class ES2WShExTest extends CatsEffectSuite {
        | pr:P248 [ wd:Q5 ]
        |}""".stripMargin,
     "ShExC",
-    """|PREFIX :  <http://www.wikidata.org/entity/>
+    """|PREFIX prov: <http://www.w3.org/ns/prov#>
+       |PREFIX :  <http://www.wikidata.org/entity/>
        |
        |<S> {
-       | :P31 .
+       | :P31 . References {| :P248 [ :Q5 ] |}
        |}
-       |<S1> {}
+       |<S1> {
+       |}
        |<T> { 
-       | :P248 [ :Q5 ]
        |} """.stripMargin,
     "WShExC",
     VerboseLevel.Nothing
    )
 
-/*  checkConversion(
+  checkConversion(
     "Empty",
     """|""".stripMargin,
     "ShExC",
     """|""".stripMargin,
     "WShExC",
     VerboseLevel.Nothing
-   ) */
+   ) 
 
   def checkConversion(
       name: String,
