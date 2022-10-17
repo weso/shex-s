@@ -23,6 +23,8 @@ import TermConstraint._
 import MatchingError._
 import es.weso.rbe.interval.IntOrUnbounded
 import cats.implicits._
+import ReferencesSpec._
+import scala.collection.JavaConverters._
 
 /** Matcher contains methods to match a WShEx schema with Wikibase entities
   *
@@ -165,34 +167,63 @@ case class Matcher(
     tc match {
       case tcr: TripleConstraintRef =>
         val allowExtras = se.extras.contains(tc.property)
-        val resultMatchPid = matchPropertyIdValueExpr(tc.property, tcr.value.some, e, se, current, tcr.min, tcr.max, allowExtras)
-        val resultMatchQs = tcr.qs.fold(resultMatchPid)(qs => resultMatchPid.and(matchQs(qs, e, current)))
-        val resultMatchRefs = tcr.refs.fold(resultMatchQs)(rs => resultMatchQs.and(matchRefs(rs,e,current))) 
-        resultMatchRefs
+        val result = matchPropertyIdValueExpr(tc.property, tcr.value.some, e, se, current, tcr.min, tcr.max, allowExtras, tcr.qs, tcr.refs)
+        result
       case tcl: TripleConstraintLocal =>
         val allowExtras = se.extras.contains(tc.property)
-        val resultMatchPid = matchPropertyIdValueExpr(tc.property, tcl.value.some, e, se, current, tcl.min, tcl.max, allowExtras)
-        val resultMatchQs = tcl.qs.fold(resultMatchPid)(qs => resultMatchPid.and(matchQs(qs, e, current)))
-        val resultMatchRefs = tcl.refs.fold(resultMatchQs)(rs => resultMatchQs.and(matchRefs(rs,e,current))) 
-        resultMatchRefs
+        val result = matchPropertyIdValueExpr(tc.property, tcl.value.some, e, se, current, tcl.min, tcl.max, allowExtras, tcl.qs, tcl.refs)
+        result
       case tcg: TripleConstraintGeneral =>
         val notImplemented: MatchingError = NotImplemented(s"tripleConstraintGeneral: $tcg")
         NoMatching(List(notImplemented))
     }
 
   private def matchRefs(
-      refs: ReferencesSpec,
+      refSpec: ReferencesSpec,
       e: EntityDoc,
-      current: EntityDoc
-  ): MatchingStatus =
-    MatchingStatus.matchEmpty(current)
+      current: EntityDoc,
+      property: PropertyId
+  ): MatchingStatus = { 
+    refSpec match {
+    case rs: ReferencesSpecSingle => {
+      println(s"matchRefs: $rs with $property")
+      val filteredStatements = e.getStatements().filter(withPropertyId(property))
+      val res = 
+        filteredStatements.map{ case s => 
+          (getReferences(s), s) 
+        }.map { case (refs, s) => 
+          matchReferencesSingle(refs, rs, s)
+      }
+      println(s"References filtered = ${filteredStatements}")
+      MatchingStatus.matchEmpty(current)
+    }
+    case roo: ReferencesOneOf => NoMatching(List(NotImplemented(s"ReferencesOneOf: $roo")))
+    case reo: ReferencesEachOf => NoMatching(List(NotImplemented(s"ReferencesEachOf: $reo")))
+   }
+  }
+
+  def getReferences(st: WDTKStatement): LazyList[Reference] =
+    st.getReferences().asScala.toLazyList
+
+  def matchReferencesSingle(rs: LazyList[Reference], refSingle: ReferencesSpecSingle, st: WDTKStatement): MatchingStatus = {
+    val (oks,errs) = rs.map(matchReferencePropertySpec(_, refSingle.ps, st)).partition(_.matches)
+    ???
+  }
+
+  def matchReferencePropertySpec(ref: Reference, ps: PropertySpec, st: WDTKStatement): MatchingStatus = ???
+
+  def withPropertyId(property: PropertyId)(st: WDTKStatement): Boolean = {
+    // println(s"WithPropertyId: propId = ${property.id}, statementId = ${st.getMainSnak().getPropertyId().getId()}")
+    st.getMainSnak().getPropertyId().getId() == property.id
+  }
 
 
   // TODO...add matching on qualifiers
   private def matchQs(
       qs: QualifierSpec,
       e: EntityDoc,
-      current: EntityDoc
+      current: EntityDoc,
+      propertyId: PropertyId
   ): MatchingStatus =
     MatchingStatus.matchEmpty(current)
 
@@ -204,12 +235,15 @@ case class Matcher(
       current: EntityDoc,
       min: Int,
       max: IntOrUnbounded,
-      allowExtras: Boolean
+      allowExtras: Boolean,
+      qs: Option[QualifierSpec],
+      refs: Option[ReferencesSpec]
   ): MatchingStatus = {
     val predicate = propertyId.iri
     val pidValue: PropertyIdValue = predicate2propertyIdValue(predicate)
     val values = e.getValues(pidValue)
-    valueExpr match {
+    println(s"## MatchPropertyIdValueExpr: $predicate value: $pidValue")
+    val resValueExpr = valueExpr match {
       case None => {
         val valuesCounter = values.length
         if (min > valuesCounter) {
@@ -233,6 +267,10 @@ case class Matcher(
         )
       }    
     }
+    val resQs = qs.fold(resValueExpr)(quals => resValueExpr.and(matchQs(quals, e, current, propertyId)))
+    val resRefs = refs.fold(resQs)(refs => resQs.and(matchRefs(refs,e,current, propertyId)))
+    println(s"After checking references: $resRefs")
+    resRefs
   }
 
   private def matchPredicateWNodeConstraintValues(

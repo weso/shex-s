@@ -68,3 +68,8 @@ case class NotFoundShape(ref: shex.ShapeLabel, msg: String) extends ES2WShExConv
 case class ErrorConvertingIRI(msg: String) extends ES2WShExConvertError {
   override def toString() = s"Error obtaining EntityId from IRI: $msg"
 }
+
+case class UnsupportedShapeExprWasDerivedFrom(n: Int, se: shex.ShapeExpr) extends ES2WShExConvertError {
+  override def toString() = s"Unsupported shape expr as value for wasDerivedFrom: $se. Property: $n"
+}
+

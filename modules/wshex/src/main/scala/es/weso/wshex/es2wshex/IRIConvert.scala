@@ -1,5 +1,6 @@
 package es.weso.wshex.es2wshex
 
+import es.weso.wshex.`prov:wasDerivedFrom`
 import es.weso.rdf.nodes.IRI
 import es.weso.wbmodel.Utils
 import cats.implicits._
@@ -81,7 +82,6 @@ object IRIConvert {
     .orElse(parseWasDerivedFrom(iri))
 
   def parseWasDerivedFrom(iri: IRI): Option[IRIParsed] = {
-    val `prov:wasDerivedFrom` = IRI("http://www.w3.org/ns/prov#wasDerivedFrom")
     if (iri == `prov:wasDerivedFrom`) WasDerivedFrom.some
     else none
   }

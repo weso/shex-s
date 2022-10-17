@@ -38,6 +38,8 @@ import TermConstraint._
 import cats.implicits._
 import WNodeConstraint._
 import ReferencesSpec._
+import PropertySpec._
+import PropertyS._
 
 /** Visits the AST and builds the corresponding ShEx abstract syntax
   */

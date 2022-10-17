@@ -65,8 +65,7 @@ class ES2WShExTest extends CatsEffectSuite {
     VerboseLevel.Nothing
    )
 
-
-  checkConversion(
+checkConversion(
     "p:P31 . provenance",
     """|PREFIX wd:  <http://www.wikidata.org/entity/>
        |PREFIX wdt: <http://www.wikidata.org/prop/direct/>
@@ -82,18 +81,19 @@ class ES2WShExTest extends CatsEffectSuite {
        |
        |<S1> {
        | ps:P31 . ;
-       | prov:wasDerivedFrom @<T>
+       | prov:wasDerivedFrom @<T> {2} ;
        |}
        |
        |<T> {
-       | pr:P248 [ wd:Q5 ]
-       |}""".stripMargin,
+       | pr:P248 . 
+       |}
+       |""".stripMargin,
     "ShExC",
     """|PREFIX prov: <http://www.w3.org/ns/prov#>
        |PREFIX :  <http://www.wikidata.org/entity/>
        |
        |<S> {
-       | :P31 . References {| :P248 [ :Q5 ] |}
+       | :P31 . References {| :P248 . |} {2} ;
        |}
        |<S1> {
        |}
@@ -101,7 +101,52 @@ class ES2WShExTest extends CatsEffectSuite {
        |} """.stripMargin,
     "WShExC",
     VerboseLevel.Nothing
-   )
+   )   
+
+/*  checkConversion(
+    "p:P31 . provenance with EachOf",
+    """|PREFIX wd:  <http://www.wikidata.org/entity/>
+       |PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+       |PREFIX p:   <http://www.wikidata.org/prop/>
+       |PREFIX pr:  <http://www.wikidata.org/prop/reference/>
+       |PREFIX prov: <http://www.w3.org/ns/prov#>
+       |PREFIX ps:  <http://www.wikidata.org/prop/statement/>
+       |PREFIX pq:  <http://www.wikidata.org/prop/qualifier/>
+       |    
+       |<S> {
+       | p:P31 @<S1> 
+       |}
+       |
+       |<S1> {
+       | ps:P31 . ;
+       | prov:wasDerivedFrom @<T> {2} ;
+       | prov:wasDerivedFrom @<U> 
+       |}
+       |
+       |<T> {
+       | pr:P248 [ wd:Q5 ] 
+       |}
+       |
+       |<U> {
+       | pr:P251 .
+       |}""".stripMargin,
+    "ShExC",
+    """|PREFIX prov: <http://www.w3.org/ns/prov#>
+       |PREFIX :  <http://www.wikidata.org/entity/>
+       |
+       |<S> {
+       | :P31 . References (
+       |          {| :P248 [ :Q5 ] |} {2} ;
+       |          {| :P251 .       |}
+       |        )
+       |}
+       |<S1> {
+       |}
+       |<T> { 
+       |} """.stripMargin,
+    "WShExC",
+    VerboseLevel.Nothing
+   ) */
 
   checkConversion(
     "Empty",
