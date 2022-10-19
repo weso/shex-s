@@ -1,9 +1,9 @@
 package es.weso.wbmodel
 
 import org.wikidata.wdtk.datamodel.interfaces.{
+  QuantityValue => WDTKQuantityValue,
   Statement => WDTKStatement,
   StringValue => WDTKStringValue,
-  QuantityValue => WDTKQuantityValue,
   Value => WDTKValue,
   _
 }
@@ -41,22 +41,19 @@ case class EntityDoc(entityDocument: EntityDocument) extends Serializable {
         .getStatementGroups()
         .asScala
         .toList
-        .map(sg => (sg.getProperty(), 
-                    sg.getStatements().asScala.toLazyList.map(_.getValue())))
+        .map(sg => (sg.getProperty(), sg.getStatements().asScala.toLazyList.map(_.getValue())))
       r.toMap
 
     case _ => Map()
   }
 
-/*  def convertValue(s: WDTKStatement): Value = {
+  lazy val valueMapFull: Map[PropertyIdValue, LazyList[FullValue]] = ???
+
+  /*  def convertValue(s: WDTKStatement): Value = {
     val wdtkValue = s.getClaim().getValue()
     if (wdtkValue == null) throw new RuntimeException(s"Cannot obtain value for statement: $s")
     else wdtkValue.accept(ConvertValueVisitor())
   } */
-
-
-  
-
 
   def getStatements(): List[WDTKStatement] = entityDocument match {
     case s: StatementDocument =>
@@ -142,7 +139,8 @@ case class EntityDoc(entityDocument: EntityDocument) extends Serializable {
   def addPropertyValues(pidValue: PropertyIdValue, values: LazyList[WDTKValue]): EntityDoc = {
     val sb: StatementBuilder =
       StatementBuilder.forSubjectAndProperty(entityDocument.getEntityId(), pidValue)
-    val st: WDTKStatement = values.foldLeft(sb) { case (c, value) =>
+    val st: WDTKStatement = values
+      .foldLeft(sb) { case (c, value) =>
         c.withValue(value)
       }
       .build()
@@ -154,7 +152,8 @@ case class EntityDoc(entityDocument: EntityDocument) extends Serializable {
 
   def withLabel(langCode: String, label: String): EntityDoc =
     entityDocument match {
-      case td: TermedDocument => EntityDoc(td.withLabel(Datamodel.makeMonolingualTextValue(label, langCode)))
+      case td: TermedDocument =>
+        EntityDoc(td.withLabel(Datamodel.makeMonolingualTextValue(label, langCode)))
       case _ => throw NotTermedDocument(entityDocument)
     }
 

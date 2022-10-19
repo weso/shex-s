@@ -252,6 +252,7 @@ lazy val wshex = project
   .settings(
     crossScalaVersions := supportedScalaVersions,
     libraryDependencies ++= Seq(
+      utils, 
       catsCore,
       catsKernel,
       circeCore,
@@ -266,8 +267,9 @@ lazy val wshex = project
       wdtkStorage,
       wdtkUtil,
       scalaCollCompat,
+      srdfJena,
       munit % Test,
-      munitEffect % Test
+      munitEffect % Test,
     ),
     testFrameworks += new TestFramework("munit.Framework")
   )
