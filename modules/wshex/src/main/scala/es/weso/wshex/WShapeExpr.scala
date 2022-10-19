@@ -340,8 +340,19 @@ case class WNodeConstraint(
 ) extends WShapeExpr {
   override def withLabel(label: ShapeLabel): WShapeExpr = 
     this.copy(id = Some(label))
+
+  def matchLocal(snak: Snak): Either[Reason,Unit] = 
+    List(
+      kind.fold(().asRight[Reason])(k => k.matchSnak(snak)), 
+      datatype.fold(().asRight[Reason])(d => matchDatatypeSnak(snak,d)),
+      matchFacetsSnak(snak, xsFacets),
+      values.fold(().asRight[Reason])(vs => matchValueSetSnak(snak, vs))
+      ).sequence.map(_ => ())
+
+
   def matchLocal(value: Value): Either[Reason, Unit] = 
     List(
+      kind.fold(().asRight[Reason])(k => k.matchValue(value)), 
       datatype.fold(().asRight[Reason])(d => matchDatatype(value,d)),
       matchFacets(value, xsFacets),
       values.fold(().asRight[Reason])(vs => matchValueSet(value, vs))
@@ -351,7 +362,7 @@ case class WNodeConstraint(
   def matchLocalCoded(value: Value): Either[ReasonCode, Unit] =
     matchLocal(value).leftMap(r => r.errCode)
 
-  private def matchKind(value: Value, kind: WNodeKind): Either[Reason,Unit] =
+/*  private def matchKind(value: Value, kind: WNodeKind): Either[Reason,Unit] =
     kind match {
       case WNodeKind.LiteralKind => value match {
         case _: StringValue | 
@@ -372,8 +383,21 @@ case class WNodeConstraint(
       }
       case _ => NotImplemented(s"matchKind. Not implemented yet: $kind for value: $value").asLeft
     } 
+*/
+  private def matchDatatypeSnak(snak: Snak, d: IRI): Either[Reason,Unit] = snak match {
+    case Snak.ValueSnak(value) => matchDatatype(value,d)
+    case _ => MatchDatatypeError_NoValue(snak).asLeft
+  }
 
+  private def matchFacetsSnak(snak: Snak, xsFacets: List[XsFacet]): Either[Reason,Unit] = snak match {
+    case Snak.ValueSnak(value) => matchFacets(value,xsFacets)
+    case _ => MatchFacetsError_NoValue(snak).asLeft
+  }
 
+  private def matchValueSetSnak(snak: Snak, vs: List[ValueSetValue]): Either[Reason,Unit] = snak match {
+    case Snak.ValueSnak(value) => matchValueSet(value,vs)
+    case _ => MatchValueSetError_NoValue(snak).asLeft
+  }  
   private def matchDatatype(value: Value, d: IRI): Either[Reason,Unit] =
     d match {
       case `xsd:string`   => value match {

@@ -1272,11 +1272,14 @@ class WSchemaMaker extends WShExDocBaseVisitor[Any] {
             getCardinality(ctx.cardinality()).flatMap(cardinality =>
               se match {
                 case nc: WNodeConstraint =>
-                  ok(PropertyLocal(propId, nc, cardinality._1, cardinality._2))
+                  ok(PropertyLocal(propId, nc, 
+                      cardinality.min, cardinality.max))
                 case sref: WShapeRef =>
-                  ok(PropertyRef(propId, sref, cardinality._1, cardinality._2))
+                  ok(PropertyRef(propId, sref, 
+                   cardinality.min, cardinality.max))
                 case WShape(None, false, Nil, None, Nil) =>
-                  ok(PropertyLocal(propId, emptyExpr, cardinality._1, cardinality._2))
+                  ok(PropertyLocal(propId, emptyExpr, 
+                     cardinality.min, cardinality.max))
                 case _ => err(s"getQualifierSpec. Error matching shapeExpr: $se")
               }
             )
@@ -1370,23 +1373,23 @@ class WSchemaMaker extends WShExDocBaseVisitor[Any] {
     te match {
       case tc: TripleConstraintLocal =>
         tc.copy(
-          min = cardinality._1,
-          max = cardinality._2
+          min = cardinality.min,
+          max = cardinality.max
           // W annotations = optListCombine(tc.annotations, anns),
           // W semActs = optListCombine(tc.semActs, sActs)
         )
       case tc: TripleConstraintRef =>
         tc.copy(
-          min = cardinality._1,
-          max = cardinality._2
+          min = cardinality.min,
+          max = cardinality.max
           // W annotations = optListCombine(tc.annotations, anns),
           // W semActs = optListCombine(tc.semActs, sActs)
         )
       //case et: EmptyTripleExpr => ???  
       case tg: TripleConstraintGeneral =>   
         tg.copy(
-          min = cardinality._1,
-          max = cardinality._2
+          min = cardinality.min,
+          max = cardinality.max
           // W annotations = optListCombine(tc.annotations, anns),
           // W semActs = optListCombine(tc.semActs, sActs)
         )

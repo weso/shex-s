@@ -70,7 +70,7 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
     )
 
   private def convertPrefixes(maybePm: Option[PrefixMap]): Convert[Option[PrefixMap]] =
-    maybePm.fold(ok(none))(pm => ok(removeKnownPrefixes(pm).some))
+    maybePm.fold(ok(none[PrefixMap]))(pm => ok(removeKnownPrefixes(pm).some))
 
   private def removeKnownPrefixes(pm: PrefixMap): PrefixMap = {
     def knownIris = List(

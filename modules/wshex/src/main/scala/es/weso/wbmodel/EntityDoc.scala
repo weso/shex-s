@@ -24,6 +24,7 @@ import org.wikidata.wdtk.datamodel.helpers.StatementBuilder
 import org.wikidata.wdtk.datamodel.helpers.Datamodel
 import EntityDocError._
 import es.weso.rdf.nodes._
+import es.weso.utils.internal.CollectionCompat._
 
 /** EntityDoc is a Scala wrapper for WDTK EntityDocuments
   */
@@ -47,7 +48,7 @@ case class EntityDoc(entityDocument: EntityDocument) extends Serializable {
     case _ => Map()
   }
 
-  lazy val valueMapFull: Map[PropertyIdValue, LazyList[FullValue]] = ???
+//  lazy val valueMapFull: Map[PropertyIdValue, LazyList[FullValue]] = ???
 
   /*  def convertValue(s: WDTKStatement): Value = {
     val wdtkValue = s.getClaim().getValue()
@@ -136,7 +137,10 @@ case class EntityDoc(entityDocument: EntityDocument) extends Serializable {
   def merge(other: EntityDoc): EntityDoc =
     mergeStatements(other.getStatements())
 
-  def addPropertyValues(pidValue: PropertyIdValue, values: LazyList[WDTKValue]): EntityDoc = {
+  def addPropertyValues(
+     pidValue: PropertyIdValue, 
+     values: LazyList[WDTKValue]
+  ): EntityDoc = {
     val sb: StatementBuilder =
       StatementBuilder.forSubjectAndProperty(entityDocument.getEntityId(), pidValue)
     val st: WDTKStatement = values

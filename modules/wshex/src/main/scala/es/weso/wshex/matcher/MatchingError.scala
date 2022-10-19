@@ -2,7 +2,12 @@ package es.weso.wshex.matcher
 
 import es.weso.wbmodel.{Lang => WBLang, _}
 import org.wikidata.wdtk.datamodel.implementation._
-import org.wikidata.wdtk.datamodel.interfaces.{Statement => WDTKStatement, Value => WDTKValue, _}
+import org.wikidata.wdtk.datamodel.interfaces.{
+    Statement => WDTKStatement, 
+    Value => WDTKValue, 
+    Snak => WDTKSnak,
+    _
+}
 import es.weso.rdf.nodes._
 import es.weso.wshex._
 import es.weso.wshex.TermConstraint.StringConstraint
@@ -10,6 +15,8 @@ import es.weso.wshex.TermConstraint.StringConstraintMatchError
 import es.weso.rbe.interval.IntOrUnbounded
 import es.weso.utils.internal.CollectionCompat._
 import es.weso.wshex.ReferencesSpec._
+import es.weso.wshex.PropertySpec._
+import es.weso.wshex.PropertySpec.PropertyS._
 
 sealed abstract class MatchingError(msg: String) extends Product with Serializable
 
@@ -180,10 +187,29 @@ object MatchingError {
                               |""".stripMargin)
 
   case class NoMatchingEmptyPropertySpec(
-      snaks: List[Snak],
+      snaks: List[WDTKSnak],
       st: WDTKStatement
   ) extends MatchingError(s"""|Empty PropertySpec does not match non empty list of snaks
                               |Snaks: $snaks
                               |statement: $st
                               |""".stripMargin)
+
+  case class PropertySpecLocalNumLessMin(oksNum: Int, min: Int, pl: PropertyLocal, snaks: List[WDTKSnak], oks: LazyList[MatchingStatus])
+      extends MatchingError(s"""|Num properties match less than min
+                                |Num passed: $oksNum
+                                |Min: $min
+                                |PropertyLocal: $pl
+                                |snaks: ${snaks}
+                                |oks: ${oks}
+                              |""".stripMargin)
+ 
+  case class PropertySpecLocalNumGreaterMax(oksNum: Int, max: IntOrUnbounded, pl: PropertyLocal, snaks: List[WDTKSnak], oks: LazyList[MatchingStatus])
+    extends MatchingError(s"""|Num references match greater than max
+                                |Num passed: $oksNum
+                                |Max: $max
+                                |PropertyLocal: $pl
+                                |snaks: ${snaks}
+                                |oks: ${oks}
+                              |""".stripMargin)
+                              
 }
