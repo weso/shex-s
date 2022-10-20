@@ -62,66 +62,71 @@ case class RDFSerializer(format: RDFFormat) extends Serializer {
     so we decided to replicate those definitions using SRDF
    */
 
-  val wd       = IRI("http://www.wikidata.org/entity/")
-  val geo      = IRI(Vocabulary.PREFIX_GEO)
-  val wdt      = IRI(Vocabulary.PREFIX_PROPERTY_DIRECT)
-  val rdf      = IRI(Vocabulary.PREFIX_RDF)
-  val p        = IRI(Vocabulary.PREFIX_PROPERTY)
-  val ps       = IRI(Vocabulary.PREFIX_PROPERTY_STATEMENT)
-  val pq       = IRI(Vocabulary.PREFIX_PROPERTY_QUALIFIER)
-  val pr       = IRI(Vocabulary.PREFIX_PROPERTY_REFERENCE)
-  val prov     = IRI(Vocabulary.PREFIX_PROV)
-  val rdfs     = IRI(Vocabulary.PREFIX_RDFS)
-  val wds      = IRI(Vocabulary.PREFIX_WIKIDATA_STATEMENT)
-  val skos     = IRI(Vocabulary.PREFIX_SKOS)
-  val schema   = IRI(Vocabulary.PREFIX_SCHEMA)
+  val wd = IRI("http://www.wikidata.org/entity/")
+  val geo = IRI(Vocabulary.PREFIX_GEO)
+  val wdt = IRI(Vocabulary.PREFIX_PROPERTY_DIRECT)
+  val rdf = IRI(Vocabulary.PREFIX_RDF)
+  val p = IRI(Vocabulary.PREFIX_PROPERTY)
+  val ps = IRI(Vocabulary.PREFIX_PROPERTY_STATEMENT)
+  val pq = IRI(Vocabulary.PREFIX_PROPERTY_QUALIFIER)
+  val pr = IRI(Vocabulary.PREFIX_PROPERTY_REFERENCE)
+  val prov = IRI(Vocabulary.PREFIX_PROV)
+  val rdfs = IRI(Vocabulary.PREFIX_RDFS)
+  val wds = IRI(Vocabulary.PREFIX_WIKIDATA_STATEMENT)
+  val skos = IRI(Vocabulary.PREFIX_SKOS)
+  val schema = IRI(Vocabulary.PREFIX_SCHEMA)
   val wikibase = IRI(Vocabulary.PREFIX_WBONTO)
-  val owl      = IRI(Vocabulary.PREFIX_OWL)
-  val xsd      = IRI(Vocabulary.PREFIX_XSD)
+  val owl = IRI(Vocabulary.PREFIX_OWL)
+  val xsd = IRI(Vocabulary.PREFIX_XSD)
 
-  val rdfs_label         = rdfs + "label"
-  val skos_prefLabel     = skos + "prefLabel"
-  val skos_altLabel      = skos + "altLabel"
-  val wikibase_Item      = wikibase + "Item"
+  val rdfs_label = rdfs + "label"
+  val skos_prefLabel = skos + "prefLabel"
+  val skos_altLabel = skos + "altLabel"
+  val wikibase_Item = wikibase + "Item"
   val schema_description = schema + "description"
-  val xsd_string         = xsd + "string"
+  val xsd_string = xsd + "string"
 
   val wikibasePrefixMap = PrefixMap(
     Map(
-      Prefix("geo")      -> geo,
-      Prefix("p")        -> p,
-      Prefix("ps")       -> ps,
-      Prefix("pq")       -> pq,
-      Prefix("pr")       -> pr,
-      Prefix("prov")     -> prov,
-      Prefix("rdf")      -> rdf,
-      Prefix("rdfs")     -> rdfs,
-      Prefix("wds")      -> wds,
-      Prefix("skos")     -> skos,
-      Prefix("schema")   -> schema,
-      Prefix("wd")       -> wd,
-      Prefix("wdt")      -> wdt,
+      Prefix("geo") -> geo,
+      Prefix("p") -> p,
+      Prefix("ps") -> ps,
+      Prefix("pq") -> pq,
+      Prefix("pr") -> pr,
+      Prefix("prov") -> prov,
+      Prefix("rdf") -> rdf,
+      Prefix("rdfs") -> rdfs,
+      Prefix("wds") -> wds,
+      Prefix("skos") -> skos,
+      Prefix("schema") -> schema,
+      Prefix("wd") -> wd,
+      Prefix("wdt") -> wdt,
       Prefix("wikibase") -> wikibase,
-      Prefix("xsd")      -> xsd
+      Prefix("xsd") -> xsd
     )
   )
 
   def prefixDecls: IO[String] =
     RDFAsJenaModel.empty.flatMap(
-      _.use(
-        rdf =>
-          for {
-            _   <- rdf.addPrefixMap(wikibasePrefixMap)
-            str <- rdf.serialize("TURTLE")
-          } yield str
+      _.use(rdf =>
+        for {
+          _ <- rdf.addPrefixMap(wikibasePrefixMap)
+          str <- rdf.serialize("TURTLE")
+        } yield str
       )
     )
 
-  def mkLangString(str: MonolingualTextValue): LangLiteral = LangLiteral(str.getText(), Lang(str.getLanguageCode()))
+  def mkLangString(str: MonolingualTextValue): LangLiteral =
+    LangLiteral(str.getText(), Lang(str.getLanguageCode()))
 
-  def mkTerms(subj: IRI, prop: IRI, ts: Map[String, MonolingualTextValue], rdf: RDFBuilder): IO[RDFBuilder] =
-    ts.toList.map(_._2).foldM(rdf) {
-      case (current, v) => current.addTriple(RDFTriple(subj, prop, mkLangString(v)))
+  def mkTerms(
+      subj: IRI,
+      prop: IRI,
+      ts: Map[String, MonolingualTextValue],
+      rdf: RDFBuilder
+  ): IO[RDFBuilder] =
+    ts.toList.map(_._2).foldM(rdf) { case (current, v) =>
+      current.addTriple(RDFTriple(subj, prop, mkLangString(v)))
     }
 
   def mkTermsLs(
@@ -129,11 +134,10 @@ case class RDFSerializer(format: RDFFormat) extends Serializer {
       prop: IRI,
       ts: java.util.Map[String, java.util.List[MonolingualTextValue]],
       rdf: RDFBuilder
-  ): IO[RDFBuilder] = {
+  ): IO[RDFBuilder] =
     ts.asScala.toList.map(_._2).map(_.asScala).flatten.foldM[IO, RDFBuilder](rdf) {
       case (current, v) => current.addTriple(RDFTriple(subj, prop, mkLangString(v)))
     }
-  }
 
   def mkEntityDocument(e: EntityDocument, rdf: RDFBuilder): IO[RDFBuilder] =
     e match {
@@ -164,14 +168,14 @@ case class RDFSerializer(format: RDFFormat) extends Serializer {
   }
 
   def isBest(statement: Statement, bestRank: Option[StatementRank]): Boolean = {
-    val sr      = statement.getRank()
+    val sr = statement.getRank()
     val maybeSr = if (sr == null) None else Some(sr)
     bestRank == maybeSr
   }
 
   def mkSimpleStatement(statement: Statement, rdf: RDFBuilder): IO[RDFBuilder] = {
-    val subj             = IRI(statement.getSubject().getIri())
-    val pred             = wdt + statement.getMainSnak().getPropertyId().getId()
+    val subj = IRI(statement.getSubject().getIri())
+    val pred = wdt + statement.getMainSnak().getPropertyId().getId()
     val snakRdfConverter = SnakRdfConverter(subj, pred, rdf)
     statement.getMainSnak().accept(snakRdfConverter)
   }
@@ -223,9 +227,9 @@ case class RDFSerializer(format: RDFFormat) extends Serializer {
 
   def mkFullStatement(statement: Statement, rdf: RDFBuilder): IO[RDFBuilder] = {
     val iriStatement = IRI(Vocabulary.getStatementUri(statement))
-    val subj         = IRI(statement.getSubject().getIri())
-    val propId       = statement.getMainSnak().getPropertyId().getId()
-    val pred         = p + propId
+    val subj = IRI(statement.getSubject().getIri())
+    val propId = statement.getMainSnak().getPropertyId().getId()
+    val pred = p + propId
     rdf.addTriple(RDFTriple(subj, pred, iriStatement)) *>
       rdf.addType(iriStatement, IRI(Vocabulary.WB_STATEMENT)) *>
       mkClaim(iriStatement, ps + propId, statement.getClaim(), rdf)
@@ -235,35 +239,37 @@ case class RDFSerializer(format: RDFFormat) extends Serializer {
   def mkClaim(subj: IRI, pred: IRI, claim: Claim, rdf: RDFBuilder): IO[RDFBuilder] = {
     val snakRdfConverter = SnakRdfConverter(subj, pred, rdf)
     claim.getMainSnak().accept(snakRdfConverter) *>
-      claim.getAllQualifiers().asScala.toList.foldM(rdf) {
-        case (current, snak) => {
-          val qualifierConverter = SnakRdfConverter(subj, pq + snak.getPropertyId().getId(), rdf)
-          snak.accept(qualifierConverter)
-        }
+      claim.getAllQualifiers().asScala.toList.foldM(rdf) { case (current, snak) =>
+        val qualifierConverter = SnakRdfConverter(subj, pq + snak.getPropertyId().getId(), rdf)
+        snak.accept(qualifierConverter)
       }
   }
 
-  def mkStatement(statement: Statement, rdf: RDFBuilder, bestRank: Option[StatementRank]): IO[RDFBuilder] = {
+  def mkStatement(
+      statement: Statement,
+      rdf: RDFBuilder,
+      bestRank: Option[StatementRank]
+  ): IO[RDFBuilder] =
     if (isBest(statement, bestRank)) {
       mkSimpleStatement(statement, rdf) *>
         mkFullStatement(statement, rdf)
     } else
       mkFullStatement(statement, rdf)
-  }
 
-  def mkStatementGroup(sg: StatementGroup, rdf: RDFBuilder, bestRank: Option[StatementRank]): IO[RDFBuilder] = {
-    sg.iterator().asScala.toList.foldM(rdf) {
-      case (current, statement) => mkStatement(statement, current, bestRank)
+  def mkStatementGroup(
+      sg: StatementGroup,
+      rdf: RDFBuilder,
+      bestRank: Option[StatementRank]
+  ): IO[RDFBuilder] =
+    sg.iterator().asScala.toList.foldM(rdf) { case (current, statement) =>
+      mkStatement(statement, current, bestRank)
     }
-  }
 
   def mkDocumentStatements(sd: StatementDocument, rdf: RDFBuilder): IO[RDFBuilder] = {
     val statementGroup = sd.getStatementGroups().asScala.toList
-    statementGroup.foldM(rdf) {
-      case (current, sg) => {
-        val bestRank = getBestRank(sg)
-        mkStatementGroup(sg, current, bestRank)
-      }
+    statementGroup.foldM(rdf) { case (current, sg) =>
+      val bestRank = getBestRank(sg)
+      mkStatementGroup(sg, current, bestRank)
     }
   }
 
@@ -282,18 +288,16 @@ case class RDFSerializer(format: RDFFormat) extends Serializer {
   def mkEntity(e: EntityDocument): IRI =
     IRI(e.getEntityId().getIri)
 
-  def serialize(entityDocument: EntityDocument): IO[String] = {
+  def serialize(entityDocument: EntityDocument): IO[String] =
     RDFAsJenaModel.empty.flatMap(
-      _.use(
-        rdf =>
-          for {
-            _   <- rdf.addPrefixMap(wikibasePrefixMap)
-            _   <- mkEntityDocument(entityDocument, rdf)
-            str <- rdf.serialize("TURTLE")
-          } yield RDFSerializer.removePrefixes(str)
+      _.use(rdf =>
+        for {
+          _ <- rdf.addPrefixMap(wikibasePrefixMap)
+          _ <- mkEntityDocument(entityDocument, rdf)
+          str <- rdf.serialize("TURTLE")
+        } yield RDFSerializer.removePrefixes(str)
       )
     )
-  }
 
   def start = prefixDecls
 
@@ -309,9 +313,8 @@ object RDFSerializer {
       RDFSerializer(format)
     }
 
-    def release(r: RDFSerializer): IO[Unit] = {
+    def release(r: RDFSerializer): IO[Unit] =
       ().pure[IO]
-    }
 
     Resource.make(acquire)(release)
   }
@@ -319,16 +322,14 @@ object RDFSerializer {
   private def removeLine(str: String): String =
     str.substring(str.indexOf("\n") + 1)
 
-  private def removePrefix(str: String): Option[String] = {
+  private def removePrefix(str: String): Option[String] =
     if (str.startsWith("prefix") || str.startsWith("@prefix")) Some(removeLine(str))
     else None
-  }
 
-  def removePrefixes(str: String): String = {
+  def removePrefixes(str: String): String =
     removePrefix(str) match {
       case None          => str
       case Some(removed) => removePrefixes(removed)
     }
-  }
 
 }

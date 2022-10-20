@@ -5,10 +5,10 @@ import scala.collection.JavaConverters._
 import org.wikidata.wdtk.datamodel.implementation._
 import org.slf4j.LoggerFactory
 import org.wikidata.wdtk.datamodel.interfaces.{
+  Snak => WDTKSnak,
   Statement => WDTKStatement,
   StringValue => WDTKStringValue,
   Value => WDTKValue,
-  Snak => WDTKSnak,
   _
 }
 import java.nio.file.Path
@@ -283,14 +283,14 @@ case class Matcher(
   ): MatchingStatus = {
     val (oks, errs) =
       snaks.toLazyList
-      .filter(hasPropertyId(pl.p, _))
-      .map(matchSnakWNodeConstraint(_, pl.nc, st, se, current))
-      .partition(_.matches)
-     if (pl.min > oks.length)  
+        .filter(hasPropertyId(pl.p, _))
+        .map(matchSnakWNodeConstraint(_, pl.nc, st, se, current))
+        .partition(_.matches)
+    if (pl.min > oks.length)
       err(PropertySpecLocalNumLessMin(oks.length, pl.min, pl, snaks, oks))
-     else if (pl.max < oks.length) 
+    else if (pl.max < oks.length)
       err(PropertySpecLocalNumGreaterMax(oks.length, pl.max, pl, snaks, oks))
-     else 
+    else
       MatchingStatus.combineAnds(current, oks)
   }
 
@@ -302,10 +302,11 @@ case class Matcher(
       current: EntityDoc
   ): MatchingStatus = {
     val s = Snak.fromWDTKSnak(snak)
-    nc.matchLocal(s).fold(
-      err => ???,
-      _ => ???
-    )
+    nc.matchLocal(s)
+      .fold(
+        err => ???,
+        _ => ???
+      )
   }
 
   private def hasPropertyId(p: PropertyId, snak: WDTKSnak): Boolean =
@@ -381,11 +382,9 @@ case class Matcher(
         }
     }
     val resQs =
-      qs.fold(resValueExpr)(quals => 
-          resValueExpr.and(matchQs(quals, e, current, propertyId)))
-    val resRefs = 
-       refs.fold(resQs)(refs => 
-          resQs.and(matchRefs(refs, e, propertyId, se, current)))
+      qs.fold(resValueExpr)(quals => resValueExpr.and(matchQs(quals, e, current, propertyId)))
+    val resRefs =
+      refs.fold(resQs)(refs => resQs.and(matchRefs(refs, e, propertyId, se, current)))
     println(s"After checking references: $resRefs")
     resRefs
   }
@@ -445,8 +444,7 @@ case class Matcher(
       .matchLocal(wbValue)
       .fold(
         reason => NoMatching(List(WNodeConstraintError(reason, value, wbValue))),
-        _ => Matching(List(se), 
-        current.addPropertyValues(pidValue, LazyList(value)))
+        _ => Matching(List(se), current.addPropertyValues(pidValue, LazyList(value)))
       )
   }
 

@@ -24,7 +24,8 @@ case class UnsupportedValueSetValue(v: shex.ValueSetValue) extends ES2WShExConve
 case class UnsupportedTripleConstraint(tc: shex.TripleConstraint) extends ES2WShExConvertError {
   override def toString() = s"Unsupported tripleConstraint: ${tc.show}"
 }
-case class UnsupportedTripleExpr(te: shex.TripleExpr, msg: String = "") extends ES2WShExConvertError {
+case class UnsupportedTripleExpr(te: shex.TripleExpr, msg: String = "")
+    extends ES2WShExConvertError {
   override def toString() = s"Unsupported tripleExpr: ${te.show}\n$msg"
 }
 case class CastTripleConstraintError(te: shex.TripleExpr) extends ES2WShExConvertError {
@@ -34,7 +35,8 @@ case class UnsupportedPredicate(pred: IRI, msg: String = "") extends ES2WShExCon
   override def toString() = s"Unsupported predicate: ${pred.str}\n$msg"
 }
 
-case class NoValueForPropertyConstraint(n: Int, tc: shex.TripleConstraint) extends ES2WShExConvertError {
+case class NoValueForPropertyConstraint(n: Int, tc: shex.TripleConstraint)
+    extends ES2WShExConvertError {
   override def toString() = s"No Value for property constraint P$n\nTripleConstraint:${tc}"
 }
 
@@ -69,7 +71,7 @@ case class ErrorConvertingIRI(msg: String) extends ES2WShExConvertError {
   override def toString() = s"Error obtaining EntityId from IRI: $msg"
 }
 
-case class UnsupportedShapeExprWasDerivedFrom(n: Int, se: shex.ShapeExpr) extends ES2WShExConvertError {
+case class UnsupportedShapeExprWasDerivedFrom(n: Int, se: shex.ShapeExpr)
+    extends ES2WShExConvertError {
   override def toString() = s"Unsupported shape expr as value for wasDerivedFrom: $se. Property: $n"
 }
-

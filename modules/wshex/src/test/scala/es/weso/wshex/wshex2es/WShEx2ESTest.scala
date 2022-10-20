@@ -9,8 +9,7 @@ import es.weso.utils.test._
 
 class WShEx2ESTest extends CatsEffectSuite {
 
-
-   checkConversion(
+  checkConversion(
     "P31_Q5",
     """|PREFIX :  <http://www.wikidata.org/entity/>
        |
@@ -26,9 +25,9 @@ class WShEx2ESTest extends CatsEffectSuite {
        |}""".stripMargin,
     "ShExC",
     VerboseLevel.Nothing
-   ) 
+  )
 
-    checkConversion(
+  checkConversion(
     "P31_dot",
     """|PREFIX :  <http://www.wikidata.org/entity/>
        |
@@ -44,9 +43,9 @@ class WShEx2ESTest extends CatsEffectSuite {
        |}""".stripMargin,
     "ShExC",
     VerboseLevel.Nothing
-   ) 
+  )
 
-   checkConversion(
+  checkConversion(
     "EachOf_P31_dot",
     """|PREFIX :  <http://www.wikidata.org/entity/>
        |
@@ -64,9 +63,9 @@ class WShEx2ESTest extends CatsEffectSuite {
        |}""".stripMargin,
     "ShExC",
     VerboseLevel.Nothing
-   ) 
+  )
 
-   checkConversion(
+  checkConversion(
     "OneOf_P31_dot",
     """|PREFIX :  <http://www.wikidata.org/entity/>
        |
@@ -84,9 +83,9 @@ class WShEx2ESTest extends CatsEffectSuite {
        |}""".stripMargin,
     "ShExC",
     VerboseLevel.Nothing
-   )
+  )
 
-   checkConversion(
+  checkConversion(
     "Qualifiers",
     """|PREFIX :  <http://www.wikidata.org/entity/>
        |
@@ -107,28 +106,27 @@ class WShEx2ESTest extends CatsEffectSuite {
     "ShExC",
     VerboseLevel.Nothing,
     IgnoreTest
-   )   
+  )
 
-   checkConversion(
+  checkConversion(
     "Empty",
     """|""".stripMargin,
     "WShExC",
     """|""".stripMargin,
     "ShExC",
     VerboseLevel.Nothing
-   )
+  )
 
-   
-   def checkConversion(
+  def checkConversion(
       name: String,
       wShExStr: String,
       formatWShEx: String = "WShExC",
       expectedShExStr: String,
       expectedFormatShEx: String = "ShExC",
-      verboseLevel: VerboseLevel, 
+      verboseLevel: VerboseLevel,
       ignore: ShouldIgnoreOption = DontIgnore
   )(implicit loc: munit.Location): Unit = if (ignore == IgnoreTest) {
-   println(s"Ignored test: $name")
+    println(s"Ignored test: $name")
   } else {
     val convertOptions = WShEx2ESConvertOptions.default
     val entityIri = es.weso.wbmodel.Value.defaultIRI
@@ -137,16 +135,19 @@ class WShEx2ESTest extends CatsEffectSuite {
       Schema
         .fromString(expectedShExStr, expectedFormatShEx, None)
         .flatMap(shexSchemaExpected =>
-          WSchema.parseFormat(formatWShEx)
-          .flatMap(wshexFormat =>
-          WSchema.fromString(wShExStr, wshexFormat, None, entityIri, verboseLevel)
-          .map(wschema => 
-            WShEx2ES(convertOptions).convert(wschema)
-            .fold(
-                err => fail(s"Error converting WShEx -> ShEx: $err"),
-                shexSchemaConverted => 
-                  if (shexSchemaConverted.toString != shexSchemaExpected.toString) {
-                    println(s"""|Schemas are different
+          WSchema
+            .parseFormat(formatWShEx)
+            .flatMap(wshexFormat =>
+              WSchema
+                .fromString(wShExStr, wshexFormat, None, entityIri, verboseLevel)
+                .map(wschema =>
+                  WShEx2ES(convertOptions)
+                    .convert(wschema)
+                    .fold(
+                      err => fail(s"Error converting WShEx -> ShEx: $err"),
+                      shexSchemaConverted =>
+                        if (shexSchemaConverted.toString != shexSchemaExpected.toString) {
+                          println(s"""|Schemas are different
                                 |wschema
                                 |${wschema.shapes}
                                 |converted: 
@@ -162,11 +163,12 @@ class WShEx2ESTest extends CatsEffectSuite {
                                 |${shexSchemaExpected.toString}
                                 |----------endExpectedString
                                 |""".stripMargin)
-                  }
-                  assertEquals(
-                        shexSchemaConverted.toString, 
-                        shexSchemaExpected.toString)
-            ))))
+                        }
+                        assertEquals(shexSchemaConverted.toString, shexSchemaExpected.toString)
+                    )
+                )
+            )
+        )
     }
   }
 }

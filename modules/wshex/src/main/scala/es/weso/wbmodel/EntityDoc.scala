@@ -138,8 +138,8 @@ case class EntityDoc(entityDocument: EntityDocument) extends Serializable {
     mergeStatements(other.getStatements())
 
   def addPropertyValues(
-     pidValue: PropertyIdValue, 
-     values: LazyList[WDTKValue]
+      pidValue: PropertyIdValue,
+      values: LazyList[WDTKValue]
   ): EntityDoc = {
     val sb: StatementBuilder =
       StatementBuilder.forSubjectAndProperty(entityDocument.getEntityId(), pidValue)

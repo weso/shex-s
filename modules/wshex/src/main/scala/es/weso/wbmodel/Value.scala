@@ -7,10 +7,10 @@ import es.weso.wshex.ShapeLabel
 import org.wikidata.wdtk.datamodel.interfaces.{
   DatatypeIdValue,
   QuantityValue => WDQuantityValue,
+  SiteLink => WDTKSiteLink,
   Statement => WDStatement,
   StringValue => WDStringValue,
   Value => WDValue,
-  SiteLink => WDTKSiteLink,
   _
 }
 import org.wikidata.wdtk.datamodel.interfaces.EntityDocument
@@ -340,7 +340,6 @@ object Value {
     v.accept(convertVisitor)
   }
 
-
   private case class ConvertValueVisitor() extends ValueVisitor[Value] {
 
     override def visit(v: EntityIdValue): Value = v match {
@@ -357,7 +356,5 @@ object Value {
     override def visit(v: TimeValue): Value = NotImplementedWDTKValue(v, "Time")
     override def visit(v: UnsupportedValue): Value = NotImplementedWDTKValue(v, "Unsupported")
   }
-
-
 
 }
