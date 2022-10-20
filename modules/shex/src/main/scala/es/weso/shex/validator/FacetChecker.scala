@@ -188,34 +188,31 @@ object FacetChecker {
 
   import StringFacetError._
 
-  def stringFacetChecker(str: String, facet: StringFacet): Either[StringFacetError, Unit] =
-    facet match {
-      case Pattern(p, flags) =>
-        RegEx(p, flags).matches(str) match {
+  def stringFacetChecker(str: String, facet: StringFacet): Either[StringFacetError, Unit] = 
+   facet match {
+    case Pattern(p, flags) => RegEx(p, flags).matches(str) match {
           case Right(b) =>
             if (b) ().asRight
-            else PatternMatchFalse(str, p, flags).asLeft
-          case Left(msg) => PatternMatchError(str, p, flags, msg).asLeft
+            else PatternMatchFalse(str,p,flags).asLeft
+          case Left(msg) => PatternMatchError(str,p,flags,msg).asLeft
         }
-      case MinLength(n) =>
-        if (str.length() >= n) ().asRight
-        else MinLengthFails(str, n).asLeft
-      case MaxLength(n) =>
-        if (str.length() <= n) ().asRight
-        else MaxLengthFails(str, n).asLeft
-      case Length(n) =>
-        if (str.length() == n) ().asRight
-        else LengthFails(str, n).asLeft
-    }
+    case MinLength(n) => 
+      if (str.length() >= n) ().asRight
+      else MinLengthFails(str, n).asLeft
+    case MaxLength(n) => 
+      if (str.length() <= n) ().asRight 
+      else MaxLengthFails(str,n).asLeft
+    case Length(n) => 
+      if  (str.length() == n) ().asRight 
+      else LengthFails(str, n).asLeft
+   }
 
-  sealed abstract class StringFacetError
+  sealed abstract class StringFacetError   
   object StringFacetError {
-    case class PatternMatchFalse(str: String, p: String, flags: Option[String])
-        extends StringFacetError
-    case class PatternMatchError(str: String, p: String, flags: Option[String], msg: String)
-        extends StringFacetError
-    case class MinLengthFails(str: String, n: Int) extends StringFacetError
-    case class MaxLengthFails(str: String, n: Int) extends StringFacetError
-    case class LengthFails(str: String, n: Int) extends StringFacetError
+   case class PatternMatchFalse(str: String, p: String, flags: Option[String]) extends StringFacetError
+   case class PatternMatchError(str: String, p: String, flags: Option[String], msg: String) extends StringFacetError
+   case class MinLengthFails(str: String, n: Int) extends StringFacetError
+   case class MaxLengthFails(str: String, n: Int) extends StringFacetError
+   case class LengthFails(str: String, n: Int) extends StringFacetError
   }
 }

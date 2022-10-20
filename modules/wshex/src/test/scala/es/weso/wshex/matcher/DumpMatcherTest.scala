@@ -101,10 +101,9 @@ class DumpMatcherTest extends CatsEffectSuite {
       assertIO(
         Matcher
           .fromPath(
-            schemaPath = getResourcePath(schemaFile),
-            format = format,
-            verbose = verboseLevel
-          )
+            schemaPath = getResourcePath(schemaFile), 
+            format = format, 
+            verbose = verboseLevel)
           .flatMap(matcher =>
             IO.println(s"Matcher obtained...${matcher.wShEx}") >>
               DumpReader.read(getResourceInputStream(dumpFileName), entityMatch(matcher))

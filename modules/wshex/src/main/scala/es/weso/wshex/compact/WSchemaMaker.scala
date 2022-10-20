@@ -192,7 +192,7 @@ class WSchemaMaker extends WShExDocBaseVisitor[Any] {
         /*if (isDefined(ctx.KW_ABSTRACT()))
           ok(ShapeDecl(label, shapeExpr))
         else */ ok(shapeExpr) */
-      se = shapeExpr.withLabel(label)
+      se = shapeExpr.withLabel(label)  
       _ <- addShape(label, se)
     } yield (label, se)
 
@@ -741,8 +741,10 @@ class WSchemaMaker extends WShExDocBaseVisitor[Any] {
     }
    */
 
-  override def visitStringSet(ctx: StringSetContext): Builder[StringSet] =
+  override def visitStringSet(ctx: StringSetContext): Builder[StringSet] = 
     visitList(visitString, ctx.string()).map(ss => StringSet(ss))
+
+     
 
   override def visitStringFacet(ctx: StringFacetContext): Builder[StringFacet] = ctx match {
     case _ if isDefined(ctx.stringLength()) =>
@@ -940,7 +942,7 @@ class WSchemaMaker extends WShExDocBaseVisitor[Any] {
       visitShapeDefinition(ctx.shapeDefinition())
     case _ if isDefined(ctx.shapeRef()) =>
       visitShapeRef(ctx.shapeRef())
-        .map(lbl => WShapeRef(None, lbl)) // , None, None))
+      .map(lbl => WShapeRef(None, lbl)) // , None, None))
     case _ => err(s"internal Error: visitShapeOrRef. Unknown $ctx")
   }
 
@@ -1033,8 +1035,8 @@ class WSchemaMaker extends WShExDocBaseVisitor[Any] {
     ps <- preds.map(predicate2PropertyId(_)).sequence
   } yield Extra(ps)
 
-  override def visitLabelConstraint(ctx: LabelConstraintContext): Builder[Qualifier] =
-    visitLangConstraints(ctx.langConstraints()).flatMap { cs =>
+  override def visitLabelConstraint(ctx: LabelConstraintContext): Builder[Qualifier] = 
+    visitLangConstraints(ctx.langConstraints()).flatMap{ cs => 
       ok(TermConstraintQ(cs.map { case (lang, cs) => LabelConstraint(lang, cs) }))
     }
 
@@ -1046,27 +1048,23 @@ class WSchemaMaker extends WShExDocBaseVisitor[Any] {
   override def visitAliasConstraint(ctx: AliasConstraintContext): Builder[Qualifier] =
     visitLangConstraints(ctx.langConstraints()).flatMap { cs =>
       ok(TermConstraintQ(cs.map { case (lang, cs) => DescriptionConstraint(lang, cs) }))
-    }
+    }    
 
   override def visitLangConstraints(
       ctx: LangConstraintsContext
   ): Builder[List[(Lang, Option[StringConstraint])]] =
     ctx match {
-      case _ if isDefined(ctx.singleLangConstraint()) =>
-        visitSingleLangConstraint(ctx.singleLangConstraint())
-          .map(List(_))
-      case _ if isDefined(ctx.multiLangConstraint()) =>
-        visitMultiLangConstraint(ctx.multiLangConstraint())
-    }
+    case _ if isDefined(ctx.singleLangConstraint()) => 
+      visitSingleLangConstraint(ctx.singleLangConstraint())
+      .map(List(_))
+    case _ if isDefined(ctx.multiLangConstraint()) => 
+      visitMultiLangConstraint(ctx.multiLangConstraint())
+  }
 
-  override def visitSingleLangConstraint(
-      ctx: SingleLangConstraintContext
-  ): Builder[(Lang, Option[StringConstraint])] =
+  override def visitSingleLangConstraint(ctx: SingleLangConstraintContext): Builder[(Lang,Option[StringConstraint])] =
     visitLangConstraint(ctx.langConstraint())
 
-  override def visitMultiLangConstraint(
-      ctx: MultiLangConstraintContext
-  ): Builder[List[(Lang, Option[StringConstraint])]] =
+  override def visitMultiLangConstraint(ctx: MultiLangConstraintContext): Builder[List[(Lang,Option[StringConstraint])]] = 
     visitList(visitLangConstraint, ctx.langConstraint())
 
   override def visitLangConstraint(
@@ -1081,14 +1079,14 @@ class WSchemaMaker extends WShExDocBaseVisitor[Any] {
   override def visitStringConstraint(
       ctx: StringConstraintContext
   ): Builder[Option[StringConstraint]] = ctx match {
-    case _ if isDefined(ctx.any()) =>
+    case _ if isDefined(ctx.any()) => 
       ok(None)
-    case _ if isDefined(ctx.stringSet()) =>
+    case _ if isDefined(ctx.stringSet()) => 
       visitStringSet(ctx.stringSet())
-        .map(_.some)
-    case _ if isDefined(ctx.stringFacet()) =>
+      .map(_.some)
+    case _ if isDefined(ctx.stringFacet()) => 
       visitStringFacet(ctx.stringFacet())
-        .map(Facet(_).some)
+      .map(Facet(_).some)
   }
 
   override def visitOneOfTripleExpr(ctx: OneOfTripleExprContext): Builder[TripleExpr] = ctx match {

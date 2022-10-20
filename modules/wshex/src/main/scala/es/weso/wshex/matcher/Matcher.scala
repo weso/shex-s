@@ -111,12 +111,12 @@ case class Matcher(
     // val ms =
     //  s.termConstraints.map(tc => matchTermConstraint(tc, entity, s, current))
     // ms.foldLeft(matchExpr) { case (c, current) => c.and(current) }
-    s.termConstraints.foldLeft(matchExpr) { case (current, tc) =>
+    s.termConstraints.foldLeft(matchExpr) { case (current, tc) => {
       current match {
         case nm: NoMatching => nm // TODO: Maybe we could provide more info...
-        case m: Matching    => matchTermConstraint(tc, entity, s, m.entity)
+        case m: Matching => matchTermConstraint(tc, entity, s, m.entity)
       }
-    }
+    }}
   }
 
   private def matchTermConstraint(
@@ -322,6 +322,7 @@ case class Matcher(
 object Matcher {
 
   val defaultEntityIRI = es.weso.wbmodel.Value.defaultIRI
+
 
   /** Read a WShEx from a path
     *

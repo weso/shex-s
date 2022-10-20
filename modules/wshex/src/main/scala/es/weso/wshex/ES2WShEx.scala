@@ -235,7 +235,7 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
           .map(_ match {
             case Nil => none[TripleExpr]
             case tes => OneOf(exprs = tes).some
-          })
+           })
       case tc: shex.TripleConstraint =>
         convertTripleConstraint(tc, schema)
       case _ =>
@@ -261,7 +261,7 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
       max: IntOrUnbounded,
       se: Option[shex.ShapeExpr],
       schema: shex.AbstractSchema
-  ): Either[ConvertError, TripleConstraint] =
+  ): Either[ConvertError, TripleConstraint] = {
     se match {
       case None =>
         TripleConstraintLocal(pred, EmptyExpr(None), min, max).asRight
@@ -277,6 +277,7 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
           }
         )
     }
+  }
 
   private def convertTripleConstraint(
       tc: shex.TripleConstraint,
@@ -446,8 +447,8 @@ case class ES2WShEx(convertOptions: ESConvertOptions) extends LazyLogging {
               case Some(se) =>
                 convertShapeExpr(se, schema).flatMap(s =>
                   s match {
-                    case s @ WShapeRef(_, lbl) => QualifierRef(pq, s, min, max).some.asRight
-                    case v @ ValueSet(id, vs)  => QualifierLocal(pq, v, min, max).some.asRight
+                    case s @ WShapeRef(_, lbl)   => QualifierRef(pq, s, min, max).some.asRight
+                    case v @ ValueSet(id, vs) => QualifierLocal(pq, v, min, max).some.asRight
                     case _ =>
                       UnsupportedShapeExpr(se, s"Parsing qualifiers for property $n").asLeft
                   }

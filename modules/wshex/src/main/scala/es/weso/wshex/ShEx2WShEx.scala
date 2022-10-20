@@ -62,9 +62,9 @@ case class ShEx2WShEx(convertOptions: ConvertOptions) extends LazyLogging {
           .map(se => WShapeNot(id = convertId(snot.id), shapeExpr = se))
       case sref: shex.ShapeRef =>
         WShapeRef(
-          convertId(sref.id),
-          convertShapeLabel(sref.reference)
-        ).asRight
+         convertId(sref.id), 
+         convertShapeLabel(sref.reference)
+         ).asRight
       case _ => UnsupportedShapeExpr(se).asLeft
     }
 
