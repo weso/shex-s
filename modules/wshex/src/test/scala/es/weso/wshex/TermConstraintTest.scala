@@ -16,6 +16,9 @@ import org.wikidata.wdtk.datamodel.helpers.Datamodel
 import TermConstraint._
 import es.weso.rdf.nodes.Lang
 import es.weso.wbmodel.EntityDoc
+import es.weso.wshex.matcher.MatchingError
+import es.weso.wshex.matcher.MatchingError._
+import cats.implicits._
 
 class TermConstraintTest extends CatsEffectSuite {
 
@@ -30,7 +33,7 @@ class TermConstraintTest extends CatsEffectSuite {
       "Basic label Q42",
       itemDocument,
       LabelConstraint(Lang("en"), Some(Constant("Douglas Adams"))),
-      true
+      EntityDoc(itemDocument).asRight
     )
   }
 
@@ -42,10 +45,31 @@ class TermConstraintTest extends CatsEffectSuite {
         .withLabel(Datamodel.makeMonolingualTextValue("Douglas Adams", "en"))
         .build()
     checkTerm(
-      "Basic label Q42",
+      "Q42 with lang es should fail",
       itemDocument,
       LabelConstraint(Lang("es"), Some(Constant("Douglas Adams"))),
-      false
+      LabelConstraintNoLang(lang = Lang("es"), EntityDoc(itemDocument)).asLeft
+    )
+  }
+
+    {
+    val q5 = new ItemIdValueImpl("Q42", "http://www.wikidata.org/entity/")
+    val itemDocument =
+      ItemDocumentBuilder
+        .forItemId(q5)
+        .withLabel(Datamodel.makeMonolingualTextValue("Human", "en"))
+        .withLabel(Datamodel.makeMonolingualTextValue("Humano", "es"))
+        .build()
+    val expected = 
+      EntityDoc(ItemDocumentBuilder
+        .forItemId(q5)
+        .withLabel(Datamodel.makeMonolingualTextValue("Humano", "es"))
+        .build())   
+    checkTerm(
+      "Q5 with lang es should pass",
+      itemDocument,
+      LabelConstraint(Lang("es"), None),
+      expected.asRight
     )
   }
 
@@ -57,10 +81,10 @@ class TermConstraintTest extends CatsEffectSuite {
         .withLabel(Datamodel.makeMonolingualTextValue("Douglas Adams", "en"))
         .build()
     checkTerm(
-      "Basic label Q42",
+      "Q42 with constant string Doug should fail",
       itemDocument,
       LabelConstraint(Lang("en"), Some(Constant("Doug"))),
-      false
+      StringConstantMatchingError(s = "Douglas Adams", expected = "Doug").asLeft
     )
   }
 
@@ -68,16 +92,9 @@ class TermConstraintTest extends CatsEffectSuite {
       name: String,
       td: TermedDocument,
       tc: TermConstraint,
-      expected: Boolean
+      expected: Either[MatchingError, EntityDoc]
   )(implicit loc: munit.Location): Unit =
     test(name) {
-      tc.matchTerm(EntityDoc(td), EntityDoc(td)) match {
-        case Left(s) =>
-          if (expected) fail(s"Matching term $td with term constraint $tc: $s")
-          else ()
-        case Right(_) =>
-          if (expected) ()
-          else fail(s"Matching term $td with term constraint $tc passes but was expected to fail")
-      }
+      assertEquals(tc.matchTerm(EntityDoc(td), EntityDoc.emptyFrom(td)), expected) 
     }
 }

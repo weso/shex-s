@@ -1,4 +1,5 @@
 package es.weso.rbe
+import es.weso.graph._
 
 /** Defines a Schema which is a map from Labels to Shapes
   */

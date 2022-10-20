@@ -10,6 +10,7 @@ import collection.JavaConverters._
 import es.weso.wshex.matcher.MatchingError
 import es.weso.wshex.matcher.MatchingError._
 import es.weso.wbmodel.EntityDoc
+import es.weso.shex.StringFacet
 
 /** TermConstraint describes constraints on terms: labels, descriptions or aliases
   */
@@ -43,8 +44,13 @@ object TermConstraint {
     ): Either[MatchingError, EntityDoc] = {
       val labelsMap = ed.getLabels()
       labelsMap.get(lang.lang) match {
-        case None        => LabelConstraintNoLang(lang, ed).asLeft
-        case Some(value) => optMatchConstraint(strConstraint, value).map(_ => current)
+        case None        => {
+        LabelConstraintNoLang(lang, ed).asLeft
+        }
+        case Some(value) => 
+          optMatchConstraint(strConstraint, value)
+          .map(_ => 
+            current.withLabel(value.getLanguageCode(), value.getText()))
       }
     }
 
@@ -96,11 +102,7 @@ object TermConstraint {
     override def matchTerm(
         ed: EntityDoc,
         current: EntityDoc
-    ): Either[MatchingError, EntityDoc] = ??? /* {
-      val vs = ts.map(_.matchTerm(ed))
-      if (vs.exists(_.isRight)) ().asRight
-      else s"OrTerms failed: all terms failed matchTerm for term $ed\nTerms: $ts".asLeft
-    } */
+    ): Either[MatchingError, EntityDoc] = ??? 
   }
 
   case class NotTerm(t: TermConstraint) extends TermConstraint {
@@ -130,6 +132,29 @@ object TermConstraint {
   }
    */
 
+  case class Facet(facet: StringFacet) extends StringConstraint {
+    import es.weso.shex.validator.FacetChecker
+    import StringConstraintMatchError._
+
+    def matchMonolingualTextValue(value: MonolingualTextValue): Either[MatchingError, Unit] = {
+      val s = value.getText()
+      FacetChecker.stringFacetChecker(s, facet).leftMap(err => 
+        StringConstraintError(StringFacetMatchError(err), this, value)
+      )
+    }
+  }   
+
+  case class StringSet(ss: List[String]) extends StringConstraint {
+    import StringConstraintMatchError._
+
+    def matchMonolingualTextValue(value: MonolingualTextValue): Either[MatchingError, Unit] = {
+      val s = value.getText()
+      if (ss.contains(s)) ().asRight
+      else StringConstraintError(StringSetMatchError(s, ss), this, value).asLeft
+    }
+  }   
+
+
   case class Constant(str: String) extends StringConstraint {
     def matchMonolingualTextValue(value: MonolingualTextValue): Either[MatchingError, Unit] = {
       val s = value.getText()
@@ -137,5 +162,13 @@ object TermConstraint {
       else StringConstantMatchingError(s, str).asLeft
     }
   }
+
+  sealed abstract class StringConstraintMatchError 
+  object StringConstraintMatchError {
+    import es.weso.shex.validator.FacetChecker.StringFacetError
+    case class StringFacetMatchError(err: StringFacetError) extends StringConstraintMatchError
+    case class StringSetMatchError(value: String, ss: List[String]) extends StringConstraintMatchError
+  }
+
 
 }

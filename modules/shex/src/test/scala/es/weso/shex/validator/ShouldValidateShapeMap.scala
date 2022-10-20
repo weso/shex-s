@@ -34,7 +34,7 @@ trait ShouldValidateShapeMap extends CatsEffectSuite {
         verbose.info(msg)
 
       val validate: IO[Boolean] = for {
-        _ <- info(s"Before all validate...")
+        //_ <- info(s"Before all validate...")
         res1 <- RDFAsJenaModel.fromString(rdfStr, "Turtle", None)
         res2 <- RDFAsJenaModel.empty
         vv <- (res1, res2).tupled.use { case (rdf, builder) =>
@@ -50,16 +50,16 @@ trait ShouldValidateShapeMap extends CatsEffectSuite {
             resolved <- ResolvedSchema.resolve(shex, Some(IRI("")), verbose)
             result <- Validator.validate(resolved, fixedShapeMap, rdf, builder, verbose)
             resultShapeMap <- result.toResultShapeMap
-            _ <- info(s"Result shapeMap: ${resultShapeMap}")
+            // _ <- info(s"Result shapeMap: ${resultShapeMap}")
             expectedShapeMap <- ShapeMap.parseResultMap(expected, shex.base, rdf, shex.prefixMap)
-            _ <- info(s"Expected shapeMap parsed: $expectedShapeMap")
+            // _ <- info(s"Expected shapeMap parsed: $expectedShapeMap")
             compare <- resultShapeMap.compareWith(expectedShapeMap) match {
               case Left(str) =>
                 info(str) *>
                   IO(false)
               case Right(b) => IO(b)
             }
-            _ <- info(s"Value of compared: $compare")
+            // _ <- info(s"Value of compared: $compare")
           } yield compare
         }
       } yield vv

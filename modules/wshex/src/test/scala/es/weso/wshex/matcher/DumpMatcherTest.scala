@@ -57,8 +57,8 @@ class DumpMatcherTest extends CatsEffectSuite {
       val s2 = StatementBuilder
         .forSubjectAndProperty(edValue, p106)
         .withValue(q639669)
-        .withReference(ref1)
-        .withId("Q633$D1BFFBD6-E8B6-45DC-8CC6-154F8D0AD815")
+        // .withReference(ref1)
+        // .withId("Q633$D1BFFBD6-E8B6-45DC-8CC6-154F8D0AD815")
         .build()
       ed.mergeStatements(List(s2, s1))
     }
@@ -73,19 +73,19 @@ class DumpMatcherTest extends CatsEffectSuite {
   }
 
   private def entityMatch(matcher: Matcher)(e: EntityDoc): IO[Entities] =
-    // IO.print(s"Trying to match...${e.getID()}...") >>
+    // IO.println(s"Trying to match...${e.getID()}...") >>
     matcher.matchStart(e.entityDocument) match {
       case nm: NoMatching =>
         if (e.getID() == "Q633")
-          IO.println(
-            s"Error with Neil\n${nm.matchingErrors.map(_.toString.take(300)).mkString("\n")}"
-          ) >>
+          /* IO.println(
+            s"### Error with Neil\n${nm.matchingErrors.map(_.toString.take(300)).mkString("\n")}"
+          ) >> */
             Entities(List()).pure[IO]
         else
-          IO.println(s"No matching for ${e.getID()}") >>
+          // IO.println(s"No matching for ${e.getID()}") >>
             Entities(List()).pure[IO]
       case m: Matching =>
-        IO.println(s"Matches: ${m.entity}!") >>
+        // IO.println(s"Matches: ${m.entity}!") >>
           Entities(List(m.entity)).pure[IO]
     }
 
@@ -100,10 +100,12 @@ class DumpMatcherTest extends CatsEffectSuite {
     test(name) {
       assertIO(
         Matcher
-          .fromPath(getResourcePath(schemaFile), format, verboseLevel)
+          .fromPath(
+            schemaPath = getResourcePath(schemaFile), 
+            format = format, 
+            verbose = verboseLevel)
           .flatMap(matcher =>
-            IO.println(s"Matcher obtained...${matcher.wShEx}") >>
-              DumpReader.read(getResourceInputStream(dumpFileName), entityMatch(matcher))
+            DumpReader.read(getResourceInputStream(dumpFileName), entityMatch(matcher))
           ),
         expected
       )

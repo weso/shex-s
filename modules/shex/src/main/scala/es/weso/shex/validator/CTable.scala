@@ -3,7 +3,8 @@ package es.weso.shex.validator
 import cats._
 // import com.typesafe.scalalogging.LazyLogging
 import es.weso.rbe.interval.{IntLimit, IntOrUnbounded, Unbounded}
-import es.weso.rbe.{Direct => _, Schema => _, Star => _, _}
+import es.weso.rbe.{Schema => _, Star => _, _}
+import es.weso.graph.{Direct => _, _}
 import es.weso.rdf.nodes.IRI
 import es.weso.shex._
 import es.weso.shex.compact.Parser.TripleExprMap

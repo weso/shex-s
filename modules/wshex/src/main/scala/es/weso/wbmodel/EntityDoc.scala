@@ -1,6 +1,7 @@
 package es.weso.wbmodel
 
 import org.wikidata.wdtk.datamodel.interfaces.{
+  QuantityValue => WDTKQuantityValue,
   Statement => WDTKStatement,
   StringValue => WDTKStringValue,
   Value => WDTKValue,
@@ -13,13 +14,17 @@ import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.exc._
 import cats.effect._
 import collection.JavaConverters._
-import _root_.java.io.ByteArrayOutputStream
+// import _root_.java.io.ByteArrayOutputStream
 import es.weso.utils.internal.CollectionCompat._
 import org.wikidata.wdtk.wikibaseapi.WikibaseDataFetcher
 import org.wikidata.wdtk.datamodel.helpers.ItemDocumentBuilder
 import org.wikidata.wdtk.datamodel.helpers.PropertyDocumentBuilder
 import org.wikidata.wdtk.datamodel.implementation.ItemIdValueImpl
 import org.wikidata.wdtk.datamodel.helpers.StatementBuilder
+import org.wikidata.wdtk.datamodel.helpers.Datamodel
+import EntityDocError._
+import es.weso.rdf.nodes._
+import es.weso.utils.internal.CollectionCompat._
 
 /** EntityDoc is a Scala wrapper for WDTK EntityDocuments
   */
@@ -31,17 +36,25 @@ case class EntityDoc(entityDocument: EntityDocument) extends Serializable {
   def getID(): String = entityDocument.getEntityId().getId()
   def getType(): String = entityDocument.getEntityId().getEntityType()
 
-  lazy val valueMap: Map[PropertyIdValue, List[WDTKValue]] = entityDocument match {
+  lazy val valueMap: Map[PropertyIdValue, LazyList[WDTKValue]] = entityDocument match {
     case s: StatementDocument =>
       val r = s
         .getStatementGroups()
         .asScala
         .toList
-        .map(sg => (sg.getProperty(), sg.getStatements().asScala.toList.map(_.getValue())))
+        .map(sg => (sg.getProperty(), sg.getStatements().asScala.toLazyList.map(_.getValue())))
       r.toMap
 
     case _ => Map()
   }
+
+//  lazy val valueMapFull: Map[PropertyIdValue, LazyList[FullValue]] = ???
+
+  /*  def convertValue(s: WDTKStatement): Value = {
+    val wdtkValue = s.getClaim().getValue()
+    if (wdtkValue == null) throw new RuntimeException(s"Cannot obtain value for statement: $s")
+    else wdtkValue.accept(ConvertValueVisitor())
+  } */
 
   def getStatements(): List[WDTKStatement] = entityDocument match {
     case s: StatementDocument =>
@@ -67,8 +80,8 @@ case class EntityDoc(entityDocument: EntityDocument) extends Serializable {
       case pd: PropertyDocument => pd.getAliases().asScala.toMap
     }
 
-  def getValues(property: PropertyIdValue): List[WDTKValue] =
-    valueMap.get(property).getOrElse(List())
+  def getValues(property: PropertyIdValue): LazyList[WDTKValue] =
+    valueMap.get(property).getOrElse(LazyList())
 
   def asJsonStr(): String =
     mapper.writeValueAsString(entityDocument)
@@ -78,7 +91,7 @@ case class EntityDoc(entityDocument: EntityDocument) extends Serializable {
     case e: EntityIdValue         => e.getId()
     case i: IriIdentifiedValue    => i.getIri()
     case m: MonolingualTextValue  => m.getText()
-    case q: QuantityValue         => q.getNumericValue().toString()
+    case q: WDTKQuantityValue     => q.getNumericValue().toString()
     case s: WDTKStringValue       => s.getString()
     case t: TimeValue             => t.toString()
     case u: UnsupportedValue      => u.toString()
@@ -124,7 +137,10 @@ case class EntityDoc(entityDocument: EntityDocument) extends Serializable {
   def merge(other: EntityDoc): EntityDoc =
     mergeStatements(other.getStatements())
 
-  def addPropertyValues(pidValue: PropertyIdValue, values: List[WDTKValue]): EntityDoc = {
+  def addPropertyValues(
+     pidValue: PropertyIdValue, 
+     values: LazyList[WDTKValue]
+  ): EntityDoc = {
     val sb: StatementBuilder =
       StatementBuilder.forSubjectAndProperty(entityDocument.getEntityId(), pidValue)
     val st: WDTKStatement = values
@@ -137,6 +153,13 @@ case class EntityDoc(entityDocument: EntityDocument) extends Serializable {
       case pd: PropertyDocument => pd.withStatement(st)
     })
   }
+
+  def withLabel(langCode: String, label: String): EntityDoc =
+    entityDocument match {
+      case td: TermedDocument =>
+        EntityDoc(td.withLabel(Datamodel.makeMonolingualTextValue(label, langCode)))
+      case _ => throw NotTermedDocument(entityDocument)
+    }
 
   def mergeStatements(ss: List[WDTKStatement]): EntityDoc = {
     val ed = ss.foldLeft(entityDocument) { case (c, s) =>

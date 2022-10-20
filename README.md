@@ -146,6 +146,10 @@ sbt:shex> test
 ```
 -->
 
+## Generating docs page
+
+
+
 ## Publishing to OSS-Sonatype
 
 This project uses [the sbt ci release](https://github.com/olafurpg/sbt-ci-release) plugin for publishing to [OSS Sonatype](https://oss.sonatype.org/).

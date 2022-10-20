@@ -1,11 +1,16 @@
-package es.weso.wshex
+package es.weso.wshex.compact
 import munit._
+import es.weso.wshex._
 import io.circe.Json
-import es.weso.rdf.nodes.IRI
+import es.weso.rdf.nodes._
 import es.weso.rdf.PrefixMap
 import es.weso.rbe.interval.IntLimit
-import es.weso.wbmodel._
+import es.weso.wbmodel.{Lang => WLang, _}
 import es.weso.utils.VerboseLevel._
+import es.weso.wshex.TermConstraint._
+import WNodeConstraint._
+import PropertySpec._ 
+import PropertyS._
 
 class WShExParserTest extends CatsEffectSuite {
 
@@ -17,16 +22,17 @@ class WShExParserTest extends CatsEffectSuite {
   val pm: PrefixMap =
     PrefixMap.fromMap(Map("" -> wd))
   val s: ShapeLabel = IRILabel(IRI("S"))
+  val labelS = Some(s)
 
   {
     val se: WShapeExpr = WShape(
-      None,
+      labelS,
       false,
       List(),
       Some(
         TripleConstraintLocal(
           PropertyId.fromIRI(wdt + "P31"),
-          ValueSet(None, List(EntityIdValueSetValue(ItemId("Q5", wd + "Q5")))),
+          valueSet(List(EntityIdValueSetValue(ItemId("Q5", wd + "Q5")))),
           1,
           IntLimit(1)
         )
@@ -47,7 +53,7 @@ class WShExParserTest extends CatsEffectSuite {
 
   {
     val se: WShapeExpr = WShape(
-      None,
+      labelS,
       false,
       List(),
       Some(
@@ -55,13 +61,13 @@ class WShExParserTest extends CatsEffectSuite {
           List(
             TripleConstraintLocal(
               PropertyId.fromIRI(wdt + "P31"),
-              ValueSet(None, List(EntityIdValueSetValue(ItemId("Q5", wd + "Q5")))),
+              valueSet(List(EntityIdValueSetValue(ItemId("Q5", wd + "Q5")))),
               1,
               IntLimit(1)
             ),
             TripleConstraintLocal(
               PropertyId.fromIRI(wdt + "P279"),
-              EmptyExpr,
+              emptyExpr,
               1,
               IntLimit(1)
             )
@@ -76,7 +82,7 @@ class WShExParserTest extends CatsEffectSuite {
       s"""|prefix :    <${wd.str}>
           |<S> {
           | :P31 [ :Q5 ] ;
-          | :P279 .      
+          | :P279 .
           |}
           |""".stripMargin,
       WSchema(shapesMap = Map(s -> se), prefixes = Some(pm))
@@ -85,7 +91,7 @@ class WShExParserTest extends CatsEffectSuite {
 
   {
     val se: WShapeExpr = WShape(
-      None,
+      labelS,
       false,
       List(),
       Some(
@@ -93,13 +99,13 @@ class WShExParserTest extends CatsEffectSuite {
           List(
             TripleConstraintLocal(
               PropertyId.fromIRI(wdt + "P31"),
-              ValueSet(None, List(EntityIdValueSetValue(ItemId("Q5", wd + "Q5")))),
+              valueSet(List(EntityIdValueSetValue(ItemId("Q5", wd + "Q5")))),
               1,
               IntLimit(1)
             ),
             TripleConstraintLocal(
               PropertyId.fromIRI(wdt + "P279"),
-              EmptyExpr,
+              emptyExpr,
               1,
               IntLimit(1)
             )
@@ -123,20 +129,20 @@ class WShExParserTest extends CatsEffectSuite {
 
   {
     val se: WShapeExpr = WShape(
-      None,
+      labelS,
       false,
       List(),
       Some(
         TripleConstraintLocal(
           PropertyId.fromIRI(wdt + "P31"),
-          ValueSet(None, List(EntityIdValueSetValue(ItemId("Q5", wd + "Q5")))),
+          valueSet(List(EntityIdValueSetValue(ItemId("Q5", wd + "Q5")))),
           1,
           IntLimit(1),
           Some(
             QualifierSpec(
-              QualifierLocal(
+              PropertyLocal(
                 PropertyId.fromIRI(wdt + "P580"),
-                EmptyExpr,
+                emptyExpr,
                 1,
                 IntLimit(1)
               ),
@@ -162,7 +168,7 @@ class WShExParserTest extends CatsEffectSuite {
   {
     val se: WShapeExpr =
       WShapeOr(
-        None,
+        labelS,
         List(
           WShape(
             None,
@@ -171,7 +177,7 @@ class WShExParserTest extends CatsEffectSuite {
             Some(
               TripleConstraintLocal(
                 PropertyId.fromIRI(wdt + "P31"),
-                ValueSet(None, List(EntityIdValueSetValue(ItemId("Q5", wd + "Q5")))),
+                valueSet(List(EntityIdValueSetValue(ItemId("Q5", wd + "Q5")))),
                 1,
                 IntLimit(1),
                 None
@@ -186,7 +192,7 @@ class WShExParserTest extends CatsEffectSuite {
             Some(
               TripleConstraintLocal(
                 PropertyId.fromIRI(wdt + "P31"),
-                ValueSet(None, List(EntityIdValueSetValue(ItemId("Q6", wd + "Q6")))),
+                valueSet(List(EntityIdValueSetValue(ItemId("Q6", wd + "Q6")))),
                 1,
                 IntLimit(1),
                 None
@@ -209,6 +215,57 @@ class WShExParserTest extends CatsEffectSuite {
       WSchema(shapesMap = Map(s -> se), prefixes = Some(pm))
     )
   }
+
+  checkSchema(
+    "Label any en",
+    s"""|prefix :    <${wd.str}>
+          |<S> Label ( en -> . ) {
+          |}
+          |""".stripMargin,
+    WSchema(
+      shapesMap = Map(
+        s ->
+          WShape(
+            labelS,
+            false,
+            List(),
+            None,
+            List(LabelConstraint(Lang("en"), None))
+          )
+      ),
+      prefixes = Some(pm)
+    )
+  )
+
+  checkSchema(
+    "Label any en with Extra",
+    s"""|prefix :    <${wd.str}>
+          |<S> EXTRA :P31 Label ( en -> . ) {
+          | :P31 [ :Q5 ]
+          |}
+          |""".stripMargin,
+    WSchema(
+      shapesMap = Map(
+        s ->
+          WShape(
+            labelS,
+            false,
+            List(PropertyId.fromIRI(wdt + "P31")),
+            Some(
+              TripleConstraintLocal(
+                PropertyId.fromIRI(wdt + "P31"),
+                valueSet(List(EntityIdValueSetValue(ItemId("Q5", wd + "Q5")))),
+                1,
+                IntLimit(1),
+                None
+              )
+            ),
+            List(LabelConstraint(Lang("en"), None))
+          )
+      ),
+      prefixes = Some(pm)
+    )
+  )
 
   def checkSchema(
       name: String,

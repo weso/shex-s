@@ -137,12 +137,10 @@ object Parser {
     val parser: WShExDocParser = new WShExDocParser(tokens)
 
     val errorListener = new ParserErrorListener
-    // lexer.removeErrorListeners()
-    // parser.removeErrorListeners()
     lexer.addErrorListener(errorListener)
     parser.addErrorListener(errorListener)
 
-    val maker = new SchemaMaker() // new DebugSchemaMaker()
+    val maker = new WSchemaMaker() 
     val builder = maker.visit(parser.wShExDoc()).asInstanceOf[Builder[WSchema]]
     val errors = errorListener.getErrors()
     if (errors.length > 0) {

@@ -13,6 +13,9 @@ import java.io.InputStreamReader
 import java.io.ByteArrayInputStream
 import es.weso.wshex.compact.Parser._
 import es.weso.wshex.compact.ParserOptions
+import java.io.FileInputStream
+import java.nio.file.Files
+import es2wshex._
 
 case class WSchema(
     shapesMap: Map[ShapeLabel, WShapeExpr] = Map(),
@@ -117,27 +120,46 @@ object WSchema {
     case WShExFormat.JsonWShExFormat    => "ShExJ"
   }
 
-  // Technical debt: Unify common code in this method and the next one
+  def parseFormat(formatStr: String): IO[WShExFormat] = 
+   IO.fromEither(WShExFormat.fromString(formatStr))
+
+  def fromInputStream(
+    is: InputStream,
+    format: WShExFormat = WShExFormat.CompactWShExFormat,
+    base: Option[IRI] = None,
+    entityIRI: IRI = defaultEntityIRI,      
+    verbose: VerboseLevel
+  ): IO[WSchema] = format match {
+    case WShExFormat.CompactWShExFormat => {
+      val reader = new InputStreamReader(is)
+      val parserOptions = ParserOptions(entityIRI)
+      parseSchemaReader(reader, base, parserOptions)
+      .fold(e => 
+        IO.raiseError(WShExErrorReading(e, format)
+      ), 
+      _.pure[IO]
+      )
+    }
+    case WShExFormat.ESCompactFormat | WShExFormat.ESJsonFormat => 
+      for {
+        schema <- es.weso.shex.Schema.fromInputStream(is, cnvFormat(format), base)
+        resolvedSchema <- es.weso.shex.ResolvedSchema.resolve(schema, base, verbose)
+        wschema <- IO.fromEither(
+          ES2WShEx(ES2WShExConvertOptions.default).convert(resolvedSchema)
+          )
+      } yield wschema
+    case _ => IO.raiseError(WShExUnsupportedFormat(format))  
+  }
+
   def fromPath(
       path: Path,
       format: WShExFormat = WShExFormat.CompactWShExFormat,
+      base: Option[IRI] = None,
+      entityIRI: IRI = defaultEntityIRI,      
       verbose: VerboseLevel
-  ): IO[WSchema] = format match {
-    case WShExFormat.CompactWShExFormat | WShExFormat.JsonWShExFormat =>
-      for {
-        schema <- es.weso.shex.Schema.fromFile(path.toFile().getAbsolutePath(), cnvFormat(format))
-        resolvedSchema <- es.weso.shex.ResolvedSchema.resolve(schema, None, verbose)
-        schema <- IO.fromEither(ShEx2WShEx().convertSchema(resolvedSchema))
-      } yield schema
-    case WShExFormat.ESCompactFormat | WShExFormat.ESJsonFormat =>
-      for {
-        schema <- es.weso.shex.Schema.fromFile(path.toFile().getAbsolutePath(), cnvFormat(format))
-        resolvedSchema <- es.weso.shex.ResolvedSchema.resolve(schema, None, verbose)
-        wschema <- IO.fromEither(ES2WShEx(ESConvertOptions.default).convertSchema(resolvedSchema))
-      } yield wschema
+  ): IO[WSchema] = {
+      fromInputStream(Files.newInputStream(path),format,base,entityIRI,verbose)
   }
-
-  case class WShExErrorReadingString(msg: String, inputStr: String, format: WShExFormat) extends RuntimeException(msg)
 
   def fromString(
       schemaString: String,
@@ -145,25 +167,9 @@ object WSchema {
       base: Option[IRI] = None,
       entityIRI: IRI = defaultEntityIRI,
       verbose: VerboseLevel
-  ): IO[WSchema] = format match {
-    case WShExFormat.CompactWShExFormat => {
+  ): IO[WSchema] = {
       val is = new ByteArrayInputStream(schemaString.getBytes())
-      val reader = new InputStreamReader(is)
-      val parserOptions = ParserOptions(entityIRI)
-      parseSchemaReader(reader, base, parserOptions).fold(e => IO.raiseError(WShExErrorReadingString(e, schemaString, format)), _.pure[IO])
-    }
-    case WShExFormat.JsonWShExFormat =>
-      for {
-        schema <- es.weso.shex.Schema.fromString(schemaString, cnvFormat(format))
-        resolvedSchema <- es.weso.shex.ResolvedSchema.resolve(schema, None, verbose)
-        wschema <- IO.fromEither(ShEx2WShEx().convertSchema(resolvedSchema))
-      } yield wschema
-    case WShExFormat.ESCompactFormat | WShExFormat.ESJsonFormat =>
-      for {
-        schema <- es.weso.shex.Schema.fromString(schemaString, cnvFormat(format))
-        resolvedSchema <- es.weso.shex.ResolvedSchema.resolve(schema, None, verbose)
-        wschema <- IO.fromEither(ES2WShEx(ESConvertOptions.default).convertSchema(resolvedSchema))
-      } yield wschema
+      fromInputStream(is,format,base,entityIRI,verbose)
   }
 
   /** Read a Schema from a file
@@ -177,10 +183,12 @@ object WSchema {
   def unsafeFromPath(
       path: Path,
       format: WShExFormat = WShExFormat.CompactWShExFormat,
+      base: Option[IRI] = None,
+      entityIRI: IRI = defaultEntityIRI,
       verbose: VerboseLevel
   ): WSchema = {
     import cats.effect.unsafe.implicits.global
-    fromPath(path, format, verbose).unsafeRunSync()
+    fromPath(path, format, base, entityIRI, verbose).unsafeRunSync()
   }
 
   /** Read a Schema from a file
@@ -200,13 +208,32 @@ object WSchema {
   ): Either[ParseError, WSchema] = {
     import cats.effect.unsafe.implicits.global
     try
-      /*      val schema = es.weso.shex.Schema.fromString(str, cnvFormat(format)).unsafeRunSync()
-      val wShEx = ShEx2WShEx().convertSchema(schema) */
       fromString(str, format, base, entityIRI, verbose).unsafeRunSync().asRight
     catch {
       case e: Exception => ParseException(e).asLeft
     }
   }
+
+  case class WShExErrorReadingString(msg: String, inputStr: String, format: WShExFormat) extends 
+    RuntimeException(s"""|Error reading WSchema from String
+                         |Error: $msg
+                         |String: ${inputStr}
+                         |""".stripMargin)
+  case class WShExErrorReadingPath(msg: String, inputPath: Path, format: WShExFormat) extends 
+    RuntimeException(s"""|Error reading WSchema from path
+                         |Error: $msg
+                         |Path: $inputPath
+                         |""".stripMargin)
+  case class WShExErrorReading(msg: String, format: WShExFormat) extends 
+    RuntimeException(s"""|Error reading WSchema from path
+                         |Error: $msg
+                         |""".stripMargin)
+  case class WShExUnsupportedFormat(format: WShExFormat) extends 
+    RuntimeException(s"""|Error reading WSchema.
+                         |Unsupported format yet: $format
+                         |""".stripMargin)
+
+
 
   /** Read a Schema from a file
     * This version is unsafe in the sense that it can throw exceptions

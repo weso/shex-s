@@ -1,24 +1,14 @@
 grammar WShExDoc;
 
-wShExDoc: directive* statement* EOF ; 
+wShExDoc: directive* statement* EOF;
 
-directive
- : baseDecl
- | prefixDecl
- | importDecl
- ;
+directive: baseDecl | prefixDecl | importDecl;
 
-baseDecl
- : KW_BASE  IRIREF
- ;
+baseDecl: KW_BASE IRIREF;
 
-prefixDecl
- : KW_PREFIX PNAME_NS IRIREF
- ;
+prefixDecl: KW_PREFIX PNAME_NS IRIREF;
 
-importDecl
- : KW_IMPORT iri
- ;
+importDecl: KW_IMPORT iri;
 
 statement: start | shapeExprDecl;
 
@@ -49,14 +39,14 @@ shapeAtom:
 	| litNodeConstraint					# shapeAtomLitNodeConstraint
 	| shapeOrRef nonLitNodeConstraint?	# shapeAtomShapeOrRef
 	| '(' shapeExpression ')'			# shapeAtomShapeExpression
-	| '.'								# shapeAtomAny; // no constraint
+	| any								# shapeAtomAny; // no constraint
 
 inlineShapeAtom:
 	inlineNonLitNodeConstraint inlineShapeOrRef?	# inlineShapeAtomNonLitNodeConstraint
 	| inlineLitNodeConstraint						# inlineShapeAtomLitNodeConstraint
 	| inlineShapeOrRef inlineNonLitNodeConstraint?	# inlineShapeAtomShapeOrRef
 	| '(' shapeExpression ')'						# inlineShapeAtomShapeExpression
-	| '.'											# inlineShapeAtomAny; // no constraint
+	| any											# inlineShapeAtomAny; // no constraint
 
 shapeOrRef: shapeDefinition | shapeRef;
 
@@ -64,35 +54,48 @@ inlineShapeOrRef: inlineShapeDefinition | shapeRef;
 
 shapeRef: ATPNAME_LN | ATPNAME_NS | '@' shapeExprLabel;
 
-inlineLitNodeConstraint:
-//W	KW_LITERAL xsFacet*				# nodeConstraintLiteral
-//W	| nonLiteralKind stringFacet*	# nodeConstraintNonLiteral
-//W	| datatype xsFacet*				# nodeConstraintDatatype
-	| valueSet //W xsFacet*				# nodeConstraintValueSet
-//W	| numericFacet+					# nodeConstraintNumericFacet
-    ;
-
-litNodeConstraint:
-	inlineLitNodeConstraint //W annotation* semanticAction*
+inlineLitNodeConstraint
+	: literalKind xsFacet* # nodeConstraintLiteral 
+	//W | nonLiteralKind stringFacet* # nodeConstraintNonLiteral 
+	| datatype xsFacet*   # nodeConstraintDatatype
+	| valueSet xsFacet*   # nodeConstraintValueSet  
+	| numericFacet+		  # nodeConstraintNumericFacet
 	;
 
+litNodeConstraint:
+ 	inlineLitNodeConstraint; //W annotation* semanticAction*
+
 inlineNonLitNodeConstraint:
-//W	nonLiteralKind stringFacet*	# litNodeConstraintLiteral
-//W	| 
-	  stringFacet+				# litNodeConstraintStringFacet
+	//W  nonLiteralKind stringFacet* # litNodeConstraintLiteral |
+	 stringFacet+ # litNodeConstraintStringFacet
 	;
 
 nonLitNodeConstraint:
-	inlineNonLitNodeConstraint //W annotation* semanticAction*
+	inlineNonLitNodeConstraint; //W annotation* semanticAction*
+
+nonLiteralKind
+    : KW_IRI 
+    //W | KW_BNODE 
+	| KW_NONLITERAL 
 	;
 
-//W nonLiteralKind: 
-//    KW_IRI | KW_BNODE | KW_NONLITERAL
-//    ;
+literalKind
+    : KW_LITERAL
+	| KW_TIME	
+	| KW_QUANTITY
+	| KW_STRING
+	| KW_MONOLINGUALTEXT
+	| KW_MULTILINGUALTEXT
+	| KW_GEOCOORDINATES
+	| KW_GEOSHAPE
+	| KW_MEDIA
+	;
 
 xsFacet: stringFacet | numericFacet;
 
-stringFacet: stringLength INTEGER | REGEXP REGEXP_FLAGS?;
+stringFacet: stringLength INTEGER 
+           | REGEXP REGEXP_FLAGS?
+		   ;
 
 stringLength: KW_LENGTH | KW_MINLENGTH | KW_MAXLENGTH;
 
@@ -110,8 +113,7 @@ numericLength: KW_TOTALDIGITS | KW_FRACTIONDIGITS;
 rawNumeric: INTEGER | DECIMAL | DOUBLE;
 
 shapeDefinition:
-	inlineShapeDefinition //W annotation* semanticAction*
-	;
+	inlineShapeDefinition; //W annotation* semanticAction*
 
 inlineShapeDefinition: qualifier* '{' tripleExpression? '}';
 
@@ -119,9 +121,34 @@ qualifier:
 	extension
 	| restriction
 	| extraPropertySet
+	| labelConstraint
+	| descriptionConstraint 
+	| aliasConstraint
 	| KW_CLOSED;
 
 extraPropertySet: KW_EXTRA predicate+;
+
+labelConstraint: KW_LABEL langConstraints;
+
+langConstraints: '(' (singleLangConstraint | multiLangConstraint) ')'
+	;
+
+singleLangConstraint : langConstraint ','? 
+                     ;
+
+multiLangConstraint : langConstraint (',' langConstraint)+ ','? 
+                    ;
+
+descriptionConstraint: KW_DESCRIPTION langConstraints;
+
+aliasConstraint: KW_ALIAS langConstraints;
+
+langConstraint: LANGLABEL '->' stringConstraint;
+
+stringConstraint: any  
+                | stringSet 
+                | stringFacet
+				;
 
 tripleExpression: oneOfTripleExpr;
 
@@ -131,137 +158,100 @@ multiElementOneOf: groupTripleExpr ( '|' groupTripleExpr)+;
 
 groupTripleExpr: singleElementGroup | multiElementGroup;
 
-/*
- innerTripleExpr
- : multiElementGroup
- | multiElementOneOf
- ;
- */
+any: '.';
+
 
 singleElementGroup: unaryTripleExpr ';'?;
 
 multiElementGroup: unaryTripleExpr (';' unaryTripleExpr)+ ';'?;
 
-unaryTripleExpr: 
- //W ('$' tripleExprLabel)? 
-    (
-      tripleConstraint
- 	| bracketedTripleExpr
- 	)
-//W 	| include
-//W 	| expr
+unaryTripleExpr:
+	//W ('$' tripleExprLabel)? 
+	(tripleConstraint | bracketedTripleExpr)
+	//W | include W | expr
 	;
 
-bracketedTripleExpr:
-	'(' tripleExpression ')' cardinality? //W annotation* semanticAction*
-	;
+bracketedTripleExpr: '(' tripleExpression ')' cardinality?;
+	//W annotation* semanticAction*
 
 tripleConstraint:
-	//W senseFlags? 
-	predicate inlineShapeExpression cardinality? qualifierSpec? //W annotation* semanticAction* /* variableDecl? */
-		;
+		//W senseFlags? 
+		predicate inlineShapeExpression cardinality? propertySpec? referencesSpec?;
+	//W annotation* semanticAction* /* variableDecl? */
 
 cardinality:
-	'*'				# starCardinality
-	| '+'			# plusCardinality
-	| '?'			# optionalCardinality
-	| repeatRange	# repeatCardinality;
+		'*'				# starCardinality
+		| '+'			# plusCardinality
+		| '?'			# optionalCardinality
+		| repeatRange	# repeatCardinality;
 
 repeatRange:
-	'{' INTEGER '}'						# exactRange
-	| '{' min_range ',' max_range? '}'	# minMaxRange;
+		'{' INTEGER '}'						# exactRange
+		| '{' min_range ',' max_range? '}'	# minMaxRange;
 
 min_range: INTEGER;
 
 max_range: INTEGER | '*';
 
-qualifierSpec:
-   '{|' predicate shapeAtom cardinality? '|}' 
-   ;
-/*
- variableDecl
- : KW_AS varName
- ;
- */
+propertySpec: '{|' predicate shapeAtom cardinality? '|}';
 
-/*
- varName
- : VAR
- ;
- */
+referencesSpec: KW_REFERENCES oneOfReferencesExpr ;
 
-//W expr: expr binOp expr | basicExpr;
+oneOfReferencesExpr: singleReferencesExpr ( '|' oneOfReferencesExpr )* ;
 
-/* binOp:
-	'='		# equals
-	| '!='	# notEquals
-	| '>'	# gt
-	| '<'	# lt
-	| '>='	# ge
-	| '<='	# le
-	| '*'	# mult
-	| '/'	# div
-	| '+'	# add
-	| '-'	# minus
-	; */
+singleReferencesExpr: propertySpec cardinality? ;
 
 basicExpr:
-	/* varName
- |
-	 */
-	literal
-	| iri
-	| blankNode;
+		literal
+		| iri
+		| blankNode;
 
-senseFlags: '!' '^'? | '^' '!'?; // inverse not
+	senseFlags: '!' '^'? | '^' '!'?;
 
 valueSet: '[' valueSetValue* ']';
 
+// WShEx
+stringSet: string* 
+         ;
+
 valueSetValue:
-	iriRange
-//W	| literalRange
-//W	| languageRange
-//W	| '.' (
-//W		iriExclusion+
-//W		| literalExclusion+
-//W		| languageExclusion+
-//W	)
-    ;
+		iriRange
+		//W | literalRange W | languageRange W | '.' ( W iriExclusion+ W | literalExclusion+ W |
+		// languageExclusion+ W )
+		;
 
-iriRange: iri //W (STEM_MARK iriExclusion*)?
-    ;
+iriRange: iri;
+		//W (STEM_MARK iriExclusion*)?
 
-//W iriExclusion: '-' iri STEM_MARK?;
+		//W iriExclusion: '-' iri STEM_MARK?;
 
-//W literalRange: literal (STEM_MARK literalExclusion*)?;
+		//W literalRange: literal (STEM_MARK literalExclusion*)?;
 
-//W literalExclusion: '-' literal STEM_MARK?;
+		//W literalExclusion: '-' literal STEM_MARK?;
 
-//W languageRange:
-//	LANGTAG (STEM_MARK languageExclusion*)?	# languageRangeFull
-//	| '@' STEM_MARK languageExclusion*		# languageRangeAt;
+		//W languageRange: LANGTAG (STEM_MARK languageExclusion*)? # languageRangeFull | '@'
+		// STEM_MARK languageExclusion* # languageRangeAt;
 
-//W languageExclusion: '-' LANGTAG STEM_MARK?;
+		//W languageExclusion: '-' LANGTAG STEM_MARK?;
 
-//W include: '&' tripleExprLabel;
+		//W include: '&' tripleExprLabel;
 
-//W annotation: '//' predicate (iri | literal);
+		//W annotation: '//' predicate (iri | literal);
 
-//W semanticAction: '%' iri (CODE | '%');
+		//W semanticAction: '%' iri (CODE | '%');
 
-literal: rdfLiteral | numericLiteral | booleanLiteral;
+		literal: rdfLiteral | numericLiteral | booleanLiteral;
 
-// BNF: predicate ::= iri | RDF_TYPE
-/* predicate
+		// BNF: predicate ::= iri | RDF_TYPE
+		/* predicate
  : iri
  | rdfType
  ;
- */
-predicate
- : iri
- // Removed RDF_TYPE as predicate (not allowed in WShEx)
- ;
+		 */
+predicate: iri;
+		// Removed RDF_TYPE as predicate (not allowed in WShEx)
 
+// This one could be removed
 rdfType: RDF_TYPE;
 
 datatype: iri;
@@ -274,13 +264,16 @@ numericLiteral: INTEGER | DECIMAL | DOUBLE;
 
 rdfLiteral: string (LANGTAG | '^^' datatype)?;
 
+// WShEx
+stringLiteral: string LANGTAG?;
+
 booleanLiteral: KW_TRUE | KW_FALSE;
 
 string:
-	STRING_LITERAL_LONG1
-	| STRING_LITERAL_LONG2
-	| STRING_LITERAL1
-	| STRING_LITERAL2;
+			STRING_LITERAL_LONG1
+			| STRING_LITERAL_LONG2
+			| STRING_LITERAL1
+			| STRING_LITERAL2;
 
 iri: IRIREF | prefixedName;
 
@@ -316,6 +309,12 @@ KW_VIRTUAL: V I R T U A L;
 KW_CLOSED: C L O S E D;
 
 KW_EXTRA: E X T R A;
+
+KW_LABEL: L A B E L;
+
+KW_DESCRIPTION: D E S C R I P T I O N;
+
+KW_ALIAS: A L I A S;
 
 KW_LITERAL: L I T E R A L;
 
@@ -353,6 +352,24 @@ KW_TRUE: 'true';
 
 KW_FALSE: 'false';
 
+KW_TIME: T I M E ;
+
+KW_QUANTITY: Q U A N T I T Y ;
+
+KW_STRING: S T R I N G ;
+
+KW_MONOLINGUALTEXT: M O N O L I N G U A L T E X T ;
+
+KW_MULTILINGUALTEXT: M U L T I L I N G U A L T E X T ;
+
+KW_GEOCOORDINATES: G E O C O O R D I N A T E S ;
+
+KW_GEOSHAPE: G E O S H A P E ;
+
+KW_MEDIA: M E D I A ;
+
+KW_REFERENCES: R E F E R E N C E S ;
+
 // -------------------------- TERMINALS --------------------------
 
 // Skip white spaces in the shEx and comments.
@@ -368,29 +385,10 @@ fragment WHITE_SPACE: [ \t\r\n]+;
 
 CODE: '{' (~[%\\] | '\\' [%\\] | UCHAR)* '%' '}';
 
-/*
- VAR
- : /* VAR1
- | VAR2
- ;
- */
-
-/*
- VAR1
- : '$' VARNAME
- ;
- */
-
-/*
- VAR2
- : '?' VARNAME
- ;
- */
 
 RDF_TYPE: 'a';
 
 IRIREF: '<' (~[\u0000-\u0020=<>"{}|^`\\] | UCHAR)* '>';
-/* #x00=NULL #01-#x1F=control codes #x20=space */
 
 PNAME_NS: PN_PREFIX? ':';
 
@@ -401,21 +399,33 @@ ATPNAME_NS: '@' PN_PREFIX? ':';
 ATPNAME_LN: '@' PNAME_NS PN_LOCAL;
 
 REGEXP:
-	'/' (~[/\n\r\\] | '\\' [/nrt\\|.?*+(){}[\]$^-] | UCHAR)+ '/';
+			'/' (
+				~[/\n\r\\]
+				| '\\' [/nrt\\|.?*+(){}[\]$^-]
+				| UCHAR
+			)+ '/';
 
 REGEXP_FLAGS: [smix]+;
 
 BLANK_NODE_LABEL:
-	'_:' (PN_CHARS_U | [0-9]) ((PN_CHARS | '.')* PN_CHARS)?;
+			'_:' (PN_CHARS_U | [0-9]) (
+				(PN_CHARS | '.')* PN_CHARS
+			)?;
 
-LANGTAG: '@' [a-zA-Z]+ ('-' [a-zA-Z0-9]+)*;
+LANGTAG: '@' LANGLABEL
+       ;
+
+LANGLABEL: [a-zA-Z]+ ('-' [a-zA-Z0-9]+)* 
+         ;
 
 INTEGER: [+-]? [0-9]+;
 
 DECIMAL: [+-]? [0-9]* '.' [0-9]+;
 
-DOUBLE:
-	[+-]? ([0-9]+ '.' [0-9]* EXPONENT | '.'? [0-9]+ EXPONENT);
+DOUBLE:	[+-]? (
+				[0-9]+ '.' [0-9]* EXPONENT
+				| '.'? [0-9]+ EXPONENT
+			);
 
 STEM_MARK: '~';
 
@@ -424,56 +434,62 @@ UNBOUNDED: '*';
 fragment EXPONENT: [eE] [+-]? [0-9]+;
 
 STRING_LITERAL1:
-	'\'' (~[\u0027\u005C\u000A\u000D] | ECHAR | UCHAR)* '\'';
-/* #x27=' #x5C=\ #xA=new line #xD=carriage return */
+			'\'' (~[\u0027\u005C\u000A\u000D] | ECHAR | UCHAR)* '\'';
+		/* #x27=' #x5C=\ #xA=new line #xD=carriage return */
 
 STRING_LITERAL2:
-	'"' (~[\u0022\u005C\u000A\u000D] | ECHAR | UCHAR)* '"';
-/* #x22=" #x5C=\ #xA=new line #xD=carriage return */
+			'"' (~[\u0022\u005C\u000A\u000D] | ECHAR | UCHAR)* '"';
+		/* #x22=" #x5C=\ #xA=new line #xD=carriage return */
 
 STRING_LITERAL_LONG1:
-	'\'\'\'' (('\'' | '\'\'')? (~['\\] | ECHAR | UCHAR))* '\'\'\'';
+			'\'\'\'' (('\'' | '\'\'')? (~['\\] | ECHAR | UCHAR))* '\'\'\'';
 
 STRING_LITERAL_LONG2:
-	'"""' (('"' | '""')? (~["\\] | ECHAR | UCHAR))* '"""';
+			'"""' (('"' | '""')? (~["\\] | ECHAR | UCHAR))* '"""';
 
 fragment UCHAR:
-	'\\u' HEX HEX HEX HEX
-	| '\\U' HEX HEX HEX HEX HEX HEX HEX HEX;
+			'\\u' HEX HEX HEX HEX
+			| '\\U' HEX HEX HEX HEX HEX HEX HEX HEX;
 
 fragment ECHAR: '\\' [tbnrf\\"'];
 
 fragment PN_CHARS_BASE:
-	[A-Z]
-	| [a-z]
-	| [\u00C0-\u00D6]
-	| [\u00D8-\u00F6]
-	| [\u00F8-\u02FF]
-	| [\u0370-\u037D]
-	| [\u037F-\u1FFF]
-	| [\u200C-\u200D]
-	| [\u2070-\u218F]
-	| [\u2C00-\u2FEF]
-	| [\u3001-\uD7FF]
-	| [\uF900-\uFDCF]
-	| [\uFDF0-\uFFFD]
-	| [\u{10000}-\u{EFFFD}]; // | [\uD800-\uDB7F] [\uDC00-\uDFFF]
+			[A-Z]
+			| [a-z]
+			| [\u00C0-\u00D6]
+			| [\u00D8-\u00F6]
+			| [\u00F8-\u02FF]
+			| [\u0370-\u037D]
+			| [\u037F-\u1FFF]
+			| [\u200C-\u200D]
+			| [\u2070-\u218F]
+			| [\u2C00-\u2FEF]
+			| [\u3001-\uD7FF]
+			| [\uF900-\uFDCF]
+			| [\uFDF0-\uFFFD]
+			| [\u{10000}-\u{EFFFD}];
+		// | [\uD800-\uDB7F] [\uDC00-\uDFFF]
 
 fragment PN_CHARS_U: PN_CHARS_BASE | '_';
 
 fragment PN_CHARS:
-	PN_CHARS_U
-	| '-'
-	| [0-9]
-	| [\u00B7]
-	| [\u0300-\u036F]
-	| [\u203F-\u2040];
+			PN_CHARS_U
+			| '-'
+			| [0-9]
+			| [\u00B7]
+			| [\u0300-\u036F]
+			| [\u203F-\u2040];
 
-fragment PN_PREFIX: PN_CHARS_BASE ((PN_CHARS | '.')* PN_CHARS)?;
+fragment PN_PREFIX:
+			PN_CHARS_BASE ((PN_CHARS | '.')* PN_CHARS)?;
 
 fragment PN_LOCAL: (PN_CHARS_U | ':' | [0-9] | PLX) (
-		(PN_CHARS | '.' | ':' | PLX)* (PN_CHARS | ':' | PLX)
-	)?;
+				(PN_CHARS | '.' | ':' | PLX)* (
+					PN_CHARS
+					| ':'
+					| PLX
+				)
+			)?;
 
 fragment PLX: PERCENT | PN_LOCAL_ESC;
 
@@ -482,35 +498,35 @@ fragment PERCENT: '%' HEX HEX;
 fragment HEX: [0-9] | [A-F] | [a-f];
 
 fragment PN_LOCAL_ESC:
-	'\\' (
-		'_'
-		| '~'
-		| '.'
-		| '-'
-		| '!'
-		| '$'
-		| '&'
-		| '\''
-		| '('
-		| ')'
-		| '*'
-		| '+'
-		| ','
-		| ';'
-		| '='
-		| '/'
-		| '?'
-		| '#'
-		| '@'
-		| '%'
-	);
+			'\\' (
+				'_'
+				| '~'
+				| '.'
+				| '-'
+				| '!'
+				| '$'
+				| '&'
+				| '\''
+				| '('
+				| ')'
+				| '*'
+				| '+'
+				| ','
+				| ';'
+				| '='
+				| '/'
+				| '?'
+				| '#'
+				| '@'
+				| '%'
+			);
 
-/*
- VARNAME
+		/*
+		 VARNAME
  : ( PN_CHARS_U | DIGIT ) ( PN_CHARS_U | DIGIT | '\u00B7' | ('\u0300'..'\u036F') |
- ('\u203F'..'\u2040') )*
+		 ('\u203F'..'\u2040') )*
  ;
- */
+		 */
 
 /* fragment DIGIT: '0'..'9' ; */
 fragment A: ('a' | 'A');

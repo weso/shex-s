@@ -1,15 +1,15 @@
 lazy val scala212 = "2.12.16"
 lazy val scala213 = "2.13.8"
-lazy val scala3 = "3.1.3"
+lazy val scala3 = "3.2.0"
 lazy val supportedScalaVersions = List(
   scala3,
   scala213,
   scala212
 )
 
-val Java11 = JavaSpec.temurin("11") // "adopt@1.11"
+val Java11 = JavaSpec.temurin("11") 
 
-lazy val srdfVersion = "0.1.112"
+lazy val srdfVersion = "0.1.122"
 lazy val utilsVersion = "0.2.25"
 lazy val documentVersion = "0.0.34"
 
@@ -36,7 +36,6 @@ lazy val scalacheckVersion = "1.15.4"
 lazy val scalaLoggingVersion = "3.9.4"
 lazy val typesafeConfigVersion = "1.4.2"
 lazy val wikidataToolkitVersion = "0.14.0"
-lazy val xercesVersion = "2.12.2"
 lazy val slf4jVersion = "1.7.36"
 
 // Dependency modules
@@ -73,7 +72,7 @@ lazy val wdtkUtil = "org.wikidata.wdtk" % "wdtk-util" % wikidataToolkitVersion
 
 lazy val scalacheck = "org.scalacheck" %% "scalacheck" % scalacheckVersion
 lazy val typesafeConfig = "com.typesafe" % "config" % typesafeConfigVersion
-lazy val xercesImpl = "xerces" % "xercesImpl" % xercesVersion
+
 
 lazy val logbackClassic = "ch.qos.logback" % "logback-classic" % logbackVersion
 lazy val scalaLogging =
@@ -211,7 +210,6 @@ lazy val shex = project
       utilsTest % Test,
       validating,
       srdf,
-      xercesImpl,
       srdfJena % Test,
       srdf4j % Test,
       junit % Test,
@@ -254,6 +252,7 @@ lazy val wshex = project
   .settings(
     crossScalaVersions := supportedScalaVersions,
     libraryDependencies ++= Seq(
+      utils, 
       catsCore,
       catsKernel,
       circeCore,
@@ -268,8 +267,9 @@ lazy val wshex = project
       wdtkStorage,
       wdtkUtil,
       scalaCollCompat,
+      srdfJena,
       munit % Test,
-      munitEffect % Test
+      munitEffect % Test,
     ),
     testFrameworks += new TestFramework("munit.Framework")
   )
@@ -421,13 +421,15 @@ lazy val shexsjena = project
 
 lazy val docs = project
   .in(file("shexs-docs"))
+  .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin)
+  .dependsOn(shex, shapemap, rbe, shexTest, wikibaserdf, shapepath, depGraphs, wshex, shexsjena)
   .settings(
+//    scalaVersion := scala213,
+    crossScalaVersions := supportedScalaVersions,
     noPublishSettings,
     mdocSettings,
     ScalaUnidoc / unidoc / unidocProjectFilter := inAnyProject -- inProjects(noDocProjects: _*)
   )
-  .dependsOn(shex, shapemap, rbe, shexTest, wikibaserdf, shapepath, depGraphs, wshex, shexsjena)
-  .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin)
   .settings(
     // This is based on this question: https://issueexplorer.com/issue/scalameta/mdoc/545
     // mdoc (transitively) depends on sourcecode_2.13,
@@ -455,7 +457,8 @@ lazy val mdocSettings = Seq(
     shapemap,
     shapepath,
     depGraphs,
-    wikibaserdf
+    wikibaserdf,
+    wshex
   ),
   ScalaUnidoc / unidoc / target := (LocalRootProject / baseDirectory).value / "website" / "static" / "api",
   cleanFiles += (ScalaUnidoc / unidoc / target).value,
@@ -561,13 +564,13 @@ lazy val commonSettings = compilationSettings ++ sharedDependencies ++ Seq(
   coverageHighlighting := priorTo2_13(scalaVersion.value),
   organization := "es.weso",
   sonatypeProfileName := "es.weso",
-  homepage := Some(url("https://github.com/weso/shaclex")),
+  homepage := Some(url("https://github.com/weso/shex-s")),
   licenses := Seq("MIT" -> url("http://opensource.org/licenses/MIT")),
   scmInfo := Some(
-    ScmInfo(url("https://github.com/weso/shaclex"), "scm:git:git@github.com:weso/shaclex.git")
+    ScmInfo(url("https://github.com/weso/shex-s"), "scm:git:git@github.com:weso/shex-s.git")
   ),
   autoAPIMappings := true,
-  apiURL := Some(url("http://weso.github.io/shaclex/latest/api/")),
+  apiURL := Some(url("http://weso.github.io/shex-s/latest/api/")),
   autoAPIMappings := true,
   developers := List(
     Developer(
