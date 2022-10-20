@@ -13,6 +13,8 @@ project/boot/
 project/plugins/project/
 .bsp/*
 
+website/build/*
+
 
 # Metals
 .metals

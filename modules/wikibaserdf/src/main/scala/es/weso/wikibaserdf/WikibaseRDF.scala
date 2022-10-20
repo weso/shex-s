@@ -20,56 +20,16 @@ import scala.util._
 import java.io.ByteArrayOutputStream
 import io.circe.Json
 import io.circe.parser.parse
-// import org.apache.jena.rdf.model.ModelFactory
-// import org.apache.jena.rdf.model.Model
 
-case class CachedState(iris: Set[IRI], rdf: RDFAsJenaModel)
-
-object CachedState {
-
-  /*  private def closeJenaModel(m: RDFAsJenaModel): IO[Unit] = for {
-    _ <- IO(pprint.log(m, s"Closing Model"))
-    model <- m.getModel
-  } yield model.close() */
-
-  def initial: IO[Resource[IO, CachedState]] = for {
-    res <- RDFAsJenaModel.empty
-    /*newModel <- IO {
-      val model = ModelFactory.createDefaultModel
-      pprint.pprintln(s"NewModel id:${System.identityHashCode(model)}")
-      model
-    }
-    newRef <- Ref.of[IO,Model](newModel)
-    newRdf = RDFAsJenaModel(newRef,None,None)
-    model <- newRdf.getModel
-    _ <- IO { pprint.pprintln(s"NewRDFID: ${System.identityHashCode(model)}")}
-    res <- IO(Resource.make(IO(newRdf))(closeJenaModel)) */
-  } yield res.evalMap(rdf =>
-    for {
-      modelRef <- rdf.getModel
-      _ <- IO {
-        pprint.pprintln(
-          s"CachedState.initial: Model: ${System.identityHashCode(modelRef)}, closed?: ${modelRef.isClosed()}}"
-        )
-      }
-    } yield CachedState(Set(), rdf)
-  )
-//    RDFAsJenaModel.empty.map(rdf => CachedState(Set(),rdf)))
-}
-
+// This class represents RDF data that can be obtained from an endpoint like the
+//  Wikibase query service
 case class WikibaseRDF(
     endpoint: IRI,
     prefixMap: PrefixMap,
     refCached: Ref[IO, CachedState]
 ) extends RDFReader {
 
-  // val reader: RDFAsJenaModel = RDFAsJenaModel(cachedModel,None,None)
-
   override def getPrefixMap: IO[PrefixMap] = IO(prefixMap)
-
-  /*override def fromString(cs: CharSequence, format: String, base: Option[IRI]): RDFRead[Rdf] = {
-    err("Cannot parse WikibaseRDF")
-  }*/
 
   private def getCachedState: IO[CachedState] = refCached.get
 
@@ -212,27 +172,14 @@ case class WikibaseRDF(
     qExec.getQuery.getQueryType match {
       case Query.QueryTypeSelect =>
         val result = qExec.execSelect()
-
-        // val prologue = qExec.getQuery.getPrologue
-        // val prefixMap: Map[String,String] = prologue.getPrefixMapping.getNsPrefixMap.asScala.toMap
-
         // TODO: Add prefixes and base to JSON result
 //        val prefixes = PrefixMap(prefixMap.map { case (k,v) => (Prefix(k), IRI(v)) })
 //        val base = prologue.getBaseURI()
         val outputStream = new ByteArrayOutputStream()
         ResultSetFormatter.outputAsJSON(outputStream, result)
         val jsonStr = new String(outputStream.toByteArray())
-        /* val result = parse(jsonStr).leftMap(f => f.getMessage)
-        val json = Json.fromFields(
-          List(
-            ("base", prologue.getBaseURI),
-            ("prefixes", jsonPrefixes),
-            ("result", result)
-        ))
-        json */
         parse(jsonStr).leftMap(f => f.getMessage)
       case Query.QueryTypeConstruct =>
-        // val result = qExec.execConstruct()
         Left(s"Unimplemented CONSTRUCT queries yet")
       case Query.QueryTypeAsk =>
         val result = qExec.execAsk()

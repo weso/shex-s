@@ -54,22 +54,42 @@ inlineShapeOrRef: inlineShapeDefinition | shapeRef;
 
 shapeRef: ATPNAME_LN | ATPNAME_NS | '@' shapeExprLabel;
 
-inlineLitNodeConstraint:
-	//W KW_LITERAL xsFacet* # nodeConstraintLiteral W | nonLiteralKind stringFacet* #
-	// nodeConstraintNonLiteral W | datatype xsFacet* # nodeConstraintDatatype
-	| valueSet; //W	| numericFacet+					# nodeConstraintNumericFacet
+inlineLitNodeConstraint
+	: literalKind xsFacet* # nodeConstraintLiteral 
+	//W | nonLiteralKind stringFacet* # nodeConstraintNonLiteral 
+	| datatype xsFacet*   # nodeConstraintDatatype
+	| valueSet xsFacet*   # nodeConstraintValueSet  
+	| numericFacet+		  # nodeConstraintNumericFacet
+	;
 
 litNodeConstraint:
-	inlineLitNodeConstraint; //W annotation* semanticAction*
+ 	inlineLitNodeConstraint; //W annotation* semanticAction*
 
 inlineNonLitNodeConstraint:
-	//W nonLiteralKind stringFacet* # litNodeConstraintLiteral W |
-	stringFacet+ # litNodeConstraintStringFacet;
+	//W  nonLiteralKind stringFacet* # litNodeConstraintLiteral |
+	 stringFacet+ # litNodeConstraintStringFacet
+	;
 
 nonLitNodeConstraint:
 	inlineNonLitNodeConstraint; //W annotation* semanticAction*
 
-//W nonLiteralKind: KW_IRI | KW_BNODE | KW_NONLITERAL ;
+nonLiteralKind
+    : KW_IRI 
+    //W | KW_BNODE 
+	| KW_NONLITERAL 
+	;
+
+literalKind
+    : KW_LITERAL
+	| KW_TIME	
+	| KW_QUANTITY
+	| KW_STRING
+	| KW_MONOLINGUALTEXT
+	| KW_MULTILINGUALTEXT
+	| KW_GEOCOORDINATES
+	| KW_GEOSHAPE
+	| KW_MEDIA
+	;
 
 xsFacet: stringFacet | numericFacet;
 
@@ -140,12 +160,6 @@ groupTripleExpr: singleElementGroup | multiElementGroup;
 
 any: '.';
 
-/*
- innerTripleExpr
- : multiElementGroup
- | multiElementOneOf
- ;
- */
 
 singleElementGroup: unaryTripleExpr ';'?;
 
@@ -162,7 +176,7 @@ bracketedTripleExpr: '(' tripleExpression ')' cardinality?;
 
 tripleConstraint:
 		//W senseFlags? 
-		predicate inlineShapeExpression cardinality? qualifierSpec?;
+		predicate inlineShapeExpression cardinality? propertySpec? referencesSpec?;
 	//W annotation* semanticAction* /* variableDecl? */
 
 cardinality:
@@ -179,47 +193,20 @@ min_range: INTEGER;
 
 max_range: INTEGER | '*';
 
-qualifierSpec: '{|' predicate shapeAtom cardinality? '|}';
-	/*
-	 variableDecl
- : KW_AS varName
- ;
-	 */
+propertySpec: '{|' predicate shapeAtom cardinality? '|}';
 
-	/*
-	 varName
- : VAR
- ;
-	 */
+referencesSpec: KW_REFERENCES oneOfReferencesExpr ;
 
-	//W expr: expr binOp expr | basicExpr;
+oneOfReferencesExpr: singleReferencesExpr ( '|' oneOfReferencesExpr )* ;
 
-	/* binOp:
- '=' # equals
- | '!=' # notEquals
- | '>' # gt
- | '<' # lt
- | '>=' # ge
- | '<=' # le
-	 |
- '*'
- # mult
- | '/' # div
- | '+' # add
- | '-' # minus
- ;
-	 */
+singleReferencesExpr: propertySpec cardinality? ;
 
-	basicExpr:
-		/* varName
- |
-		 */
+basicExpr:
 		literal
 		| iri
 		| blankNode;
 
 	senseFlags: '!' '^'? | '^' '!'?;
-	// inverse not
 
 valueSet: '[' valueSetValue* ']';
 
@@ -365,6 +352,24 @@ KW_TRUE: 'true';
 
 KW_FALSE: 'false';
 
+KW_TIME: T I M E ;
+
+KW_QUANTITY: Q U A N T I T Y ;
+
+KW_STRING: S T R I N G ;
+
+KW_MONOLINGUALTEXT: M O N O L I N G U A L T E X T ;
+
+KW_MULTILINGUALTEXT: M U L T I L I N G U A L T E X T ;
+
+KW_GEOCOORDINATES: G E O C O O R D I N A T E S ;
+
+KW_GEOSHAPE: G E O S H A P E ;
+
+KW_MEDIA: M E D I A ;
+
+KW_REFERENCES: R E F E R E N C E S ;
+
 // -------------------------- TERMINALS --------------------------
 
 // Skip white spaces in the shEx and comments.
@@ -380,29 +385,10 @@ fragment WHITE_SPACE: [ \t\r\n]+;
 
 CODE: '{' (~[%\\] | '\\' [%\\] | UCHAR)* '%' '}';
 
-		/*
-		 VAR
- : /* VAR1
- | VAR2
- ;
-		 */
-
-		/*
-		 VAR1
- : '$' VARNAME
- ;
-		 */
-
-		/*
-		 VAR2
- : '?' VARNAME
- ;
-		 */
 
 RDF_TYPE: 'a';
 
 IRIREF: '<' (~[\u0000-\u0020=<>"{}|^`\\] | UCHAR)* '>';
-		/* #x00=NULL #01-#x1F=control codes #x20=space */
 
 PNAME_NS: PN_PREFIX? ':';
 

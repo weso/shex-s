@@ -8,6 +8,9 @@ import es.weso.rbe.interval.IntLimit
 import es.weso.wbmodel.{Lang => WLang, _}
 import es.weso.utils.VerboseLevel._
 import es.weso.wshex.TermConstraint._
+import WNodeConstraint._
+import PropertySpec._ 
+import PropertyS._
 
 class WShExParserTest extends CatsEffectSuite {
 
@@ -29,7 +32,7 @@ class WShExParserTest extends CatsEffectSuite {
       Some(
         TripleConstraintLocal(
           PropertyId.fromIRI(wdt + "P31"),
-          ValueSet(None, List(EntityIdValueSetValue(ItemId("Q5", wd + "Q5")))),
+          valueSet(List(EntityIdValueSetValue(ItemId("Q5", wd + "Q5")))),
           1,
           IntLimit(1)
         )
@@ -58,13 +61,13 @@ class WShExParserTest extends CatsEffectSuite {
           List(
             TripleConstraintLocal(
               PropertyId.fromIRI(wdt + "P31"),
-              ValueSet(None, List(EntityIdValueSetValue(ItemId("Q5", wd + "Q5")))),
+              valueSet(List(EntityIdValueSetValue(ItemId("Q5", wd + "Q5")))),
               1,
               IntLimit(1)
             ),
             TripleConstraintLocal(
               PropertyId.fromIRI(wdt + "P279"),
-              EmptyExpr(None),
+              emptyExpr,
               1,
               IntLimit(1)
             )
@@ -96,13 +99,13 @@ class WShExParserTest extends CatsEffectSuite {
           List(
             TripleConstraintLocal(
               PropertyId.fromIRI(wdt + "P31"),
-              ValueSet(None, List(EntityIdValueSetValue(ItemId("Q5", wd + "Q5")))),
+              valueSet(List(EntityIdValueSetValue(ItemId("Q5", wd + "Q5")))),
               1,
               IntLimit(1)
             ),
             TripleConstraintLocal(
               PropertyId.fromIRI(wdt + "P279"),
-              EmptyExpr(None),
+              emptyExpr,
               1,
               IntLimit(1)
             )
@@ -132,14 +135,14 @@ class WShExParserTest extends CatsEffectSuite {
       Some(
         TripleConstraintLocal(
           PropertyId.fromIRI(wdt + "P31"),
-          ValueSet(None, List(EntityIdValueSetValue(ItemId("Q5", wd + "Q5")))),
+          valueSet(List(EntityIdValueSetValue(ItemId("Q5", wd + "Q5")))),
           1,
           IntLimit(1),
           Some(
             QualifierSpec(
-              QualifierLocal(
+              PropertyLocal(
                 PropertyId.fromIRI(wdt + "P580"),
-                EmptyExpr(None),
+                emptyExpr,
                 1,
                 IntLimit(1)
               ),
@@ -174,7 +177,7 @@ class WShExParserTest extends CatsEffectSuite {
             Some(
               TripleConstraintLocal(
                 PropertyId.fromIRI(wdt + "P31"),
-                ValueSet(None, List(EntityIdValueSetValue(ItemId("Q5", wd + "Q5")))),
+                valueSet(List(EntityIdValueSetValue(ItemId("Q5", wd + "Q5")))),
                 1,
                 IntLimit(1),
                 None
@@ -189,7 +192,7 @@ class WShExParserTest extends CatsEffectSuite {
             Some(
               TripleConstraintLocal(
                 PropertyId.fromIRI(wdt + "P31"),
-                ValueSet(None, List(EntityIdValueSetValue(ItemId("Q6", wd + "Q6")))),
+                valueSet(List(EntityIdValueSetValue(ItemId("Q6", wd + "Q6")))),
                 1,
                 IntLimit(1),
                 None
@@ -251,7 +254,7 @@ class WShExParserTest extends CatsEffectSuite {
             Some(
               TripleConstraintLocal(
                 PropertyId.fromIRI(wdt + "P31"),
-                ValueSet(None, List(EntityIdValueSetValue(ItemId("Q5", wd + "Q5")))),
+                valueSet(List(EntityIdValueSetValue(ItemId("Q5", wd + "Q5")))),
                 1,
                 IntLimit(1),
                 None

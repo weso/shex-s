@@ -6,6 +6,7 @@ import es.weso.rdf.PrefixMap
 import es.weso.rbe.interval.IntLimit
 import es.weso.wbmodel._
 import es.weso.utils.VerboseLevel._
+import WNodeConstraint._
 
 class ShEx2WShExTest extends CatsEffectSuite {
 
@@ -15,7 +16,7 @@ class ShEx2WShExTest extends CatsEffectSuite {
   val wd = IRI("http://www.wikidata.org/entity/")
   val wdt = IRI("http://www.wikidata.org/prop/direct/")
   val pm: PrefixMap =
-    PrefixMap.fromMap(Map("" -> ex, "wd" -> wd, "wdt" -> wdt, "p" -> p, "ps" -> ps))
+    PrefixMap.fromMap(Map("" -> wd))
   val s: ShapeLabel = IRILabel(IRI("S"))
 
   {
@@ -26,7 +27,7 @@ class ShEx2WShExTest extends CatsEffectSuite {
       Some(
         TripleConstraintLocal(
           PropertyId.fromIRI(wdt + "P31"),
-          ValueSet(None, List(EntityIdValueSetValue(ItemId("Q5",wd + "Q5")))),
+          valueSet(List(EntityIdValueSetValue(ItemId("Q5",wd + "Q5")))),
           1,
           IntLimit(1)
         )

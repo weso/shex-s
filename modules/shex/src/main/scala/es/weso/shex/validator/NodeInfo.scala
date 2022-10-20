@@ -5,16 +5,12 @@ import cats.effect.IO
 import es.weso.rdf.nodes.{Literal, RDFNode}
 import es.weso.rdf.PREFIXES._
 import es.weso.rdf.RDFReader
+import es.weso.rdf.operations.Comparisons._
 import es.weso.shex.validator.ShExError._
-import org.apache.xerces.impl.dv.{SchemaDVFactory, ValidatedInfo, XSSimpleType}
-import org.apache.xerces.impl.dv.xs.DecimalDV
-import org.apache.xerces.impl.validation.ValidationState
 import scala.util._
 
 object NodeInfo {
 
-  /* This implementation leverages Xerces internal implementation of XML Schema datatypes */
-  /* This is probably going too far and could be simplified */
   def totalDigits(node: RDFNode, rdf: RDFReader): IO[Int] =
     node match {
       case l: Literal =>
@@ -33,7 +29,7 @@ object NodeInfo {
                   if (b) IO(())
                   else IO.raiseError(CheckDatatypeError(node, l.dataType, rdf))
               )
-              td <- getTotalDigits(node.getLexicalForm)
+              td <- IO.fromEither(numericValue(node).map(_.totalDigits()))
             } yield td
           case d => IO.raiseError(TotalDigitsAppliedUnknownDatatype(node, d))
         }
@@ -54,41 +50,12 @@ object NodeInfo {
                   else IO.raiseError(CheckDatatypeError(node, l.dataType, rdf))
               )
               // _ <- { pprint.log(node.getLexicalForm); IO(()) }
-              n <- getFractionDigits(node.getLexicalForm)
+              n <- IO.fromEither(numericValue(node).map(_.fractionDigits()))
             } yield n
           case d => IO.raiseError(FractionDigitsAppliedUnknownDatatype(node, d))
         }
       case _ => IO.raiseError(FractionDigitsAppliedNonLiteral(node))
     }
-
-  // TODO Remove dependency on Xerces
-  def getTotalDigits(value: String): IO[Int] = Try {
-    val context = new ValidationState
-    val decimalDV = new DecimalDV()
-    val typeDeclaration: XSSimpleType = SchemaDVFactory.getInstance.getBuiltInType("decimal")
-    val resultInfo = new ValidatedInfo
-    typeDeclaration.validate(value, context, resultInfo)
-    decimalDV.getTotalDigits(resultInfo.actualValue)
-  }.fold(
-    e => IO.raiseError(ErrorObtainingTotalDigits(value, e)),
-    n => n.pure[IO]
-  )
-
-  // TODO replace this by a builtin implementation
-  /* This implementation leverages Xerces internal implementation of XML Schema datatypes */
-  /* This is probably going too far and could be simplified */
-  def getFractionDigits(value: String): IO[Int] =
-    Try {
-      val context = new ValidationState
-      val decimalDV = new DecimalDV()
-      val typeDeclaration: XSSimpleType = SchemaDVFactory.getInstance.getBuiltInType("decimal")
-      val resultInfo = new ValidatedInfo
-      typeDeclaration.validate(value, context, resultInfo)
-      decimalDV.getFractionDigits(resultInfo.actualValue)
-    }.fold(
-      e => IO.raiseError(ErrorObtainingFractionDigits(value, e)),
-      n => n.pure[IO]
-    )
 
   def length(node: RDFNode): Int = node.getLexicalForm.length
 

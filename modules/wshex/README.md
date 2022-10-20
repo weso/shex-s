@@ -26,7 +26,7 @@ PREFIX : <http://www.wikidata.org/entity/>
 
 `<EnglishSite>` have property `:P856` (_official website_) with any value but with the qualifier `:P407` (_language of work or name_) with the value `:Q1860` (_English_)
  
-```
+```turtle
 PREFIX : <http://www.wikidata.org/entity/>
 
 <EnglishSite> {
@@ -36,12 +36,24 @@ PREFIX : <http://www.wikidata.org/entity/>
 
 ## Labels, descriptions and aliases
 
-`<Douglases>` has label that starts with `"Douglas"` 
+WShEx adds the keywords `Label`, `Description` and `Alias` to declare constraints about the corresponding term constraint. 
+
+The language associates constraints at shape label with the following syntax:
+
+```turtle
+Label | Description | Alias (
+   lang1 -> stringConstraint1, 
+   lang2 -> stringConstraint2, 
+   ...
+)
+```
+
+For example, the shape `<Douglases>` represents the shape of entities whose English label  starts with `"Douglas"` 
  
 ```
 PREFIX : <http://www.wikidata.org/entity/>
 
-<Douglasses> label /^Douglas/ {}
+<Douglasses> label (en -> /^Douglas/) {}
 ```
 
 # Entity Schemas to WShEx

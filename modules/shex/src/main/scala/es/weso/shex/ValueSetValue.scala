@@ -32,6 +32,7 @@ case class LangString(s: String, lang: Lang) extends ObjectLiteral {
 }
 
 object ObjectValue {
+  
   def trueValue: ObjectValue = DatatypeString("true", `xsd:boolean`)
   def falseValue: ObjectValue = DatatypeString("false", `xsd:boolean`)
   def intValue(n: Int, repr: String): ObjectValue =

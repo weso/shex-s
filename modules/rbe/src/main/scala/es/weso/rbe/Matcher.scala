@@ -3,6 +3,7 @@ import es.weso.typing._
 import es.weso.checking._
 import cats._
 import implicits._
+import es.weso.graph._
 
 case class MatcherLog[Edge, Node, Label, Evidence](messages: List[(Attempt[Node, Label], String)])
 

@@ -1,4 +1,4 @@
-package es.weso.rbe
+package es.weso.graph
 
 /** Represents a neighbor of a node in a graph.
   * It can be a direct arc or an inverse arc

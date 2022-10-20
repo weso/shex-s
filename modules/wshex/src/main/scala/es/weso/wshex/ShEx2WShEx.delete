@@ -6,6 +6,7 @@ import es.weso._
 import es.weso.rbe.interval.{IntLimit, Unbounded}
 import es.weso.rdf.nodes._
 import es.weso.wbmodel._
+import WNodeConstraint._
 
 case class ConvertOptions(siteIri: IRI)
 
@@ -84,9 +85,9 @@ case class ShEx2WShEx(convertOptions: ConvertOptions) extends LazyLogging {
   private def convertValueSet(
       id: Option[ShapeLabel],
       values: List[shex.ValueSetValue]
-  ): Either[ConvertError, ValueSet] =
+  ): Either[ConvertError, WNodeConstraint] =
     convertValueSetValues(values)
-      .map(vs => ValueSet(id, vs))
+      .map(vs => WNodeConstraint(id = id, values = vs.some))
 
   private def convertValueSetValues(
       values: List[shex.ValueSetValue]
@@ -181,14 +182,14 @@ case class ShEx2WShEx(convertOptions: ConvertOptions) extends LazyLogging {
       }
       pred = PropertyId.fromIRI(tc.predicate)
       tc <- se match {
-        case None => Right(TripleConstraintLocal(pred, EmptyExpr(None), min, max))
-        case Some(WShapeRef(id, lbl)) =>
-          Right(TripleConstraintRef(pred, WShapeRef(id, lbl), min, max, None))
-        case Some(ValueSet(id, vs)) =>
-          Right(TripleConstraintLocal(pred, ValueSet(id, vs), min, max))
-        case _ =>
-          logger.warn(s"Unsupported triple constraint: $tc")
-          Left(UnsupportedTripleConstraint(tc))
+        case None => Right(TripleConstraintLocal(pred, emptyExpr, min, max))
+        case Some(se) => se match {
+          case WShapeRef(id,lbl) => Right(TripleConstraintRef(pred, WShapeRef(id, lbl), min, max, None))
+          case nc: WNodeConstraint => Right(TripleConstraintLocal(pred, nc, min, max))
+          case _ =>
+           logger.warn(s"Unsupported triple constraint: $tc")
+           Left(UnsupportedTripleConstraint(tc))
+        }
       }
     } yield tc
   }

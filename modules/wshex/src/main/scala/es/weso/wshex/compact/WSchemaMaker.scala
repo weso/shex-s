@@ -36,6 +36,10 @@ import es.weso.rbe.interval._
 import TripleConstraint._
 import TermConstraint._
 import cats.implicits._
+import WNodeConstraint._
+import ReferencesSpec._
+import PropertySpec._
+import PropertyS._
 
 /** Visits the AST and builds the corresponding ShEx abstract syntax
   */
@@ -43,7 +47,7 @@ class WSchemaMaker extends WShExDocBaseVisitor[Any] {
 
   type Start = Option[WShapeExpr]
   type NotStartAction = Either[Start, (ShapeLabel, WShapeExpr)]
-  type Cardinality = (Int, IntOrUnbounded)
+  case class Cardinality(min: Int, max: IntOrUnbounded)
   type Directive = Either[
     (Prefix, IRI), // Prefix decl
     Either[
@@ -52,10 +56,10 @@ class WSchemaMaker extends WShExDocBaseVisitor[Any] {
     ]
   ]
 
-  val star = (0, Unbounded)
-  val plus = (1, Unbounded)
-  val optional = (0, IntLimit(1))
-  val defaultCardinality = (1, IntLimit(1))
+  val star = Cardinality(0, Unbounded)
+  val plus = Cardinality(1, Unbounded)
+  val optional = Cardinality(0, IntLimit(1))
+  val defaultCardinality = Cardinality(1, IntLimit(1))
 
   override def visitWShExDoc(
       ctx: WShExDocContext
@@ -310,44 +314,60 @@ class WSchemaMaker extends WShExDocBaseVisitor[Any] {
       case s: ShapeAtomShapeExpressionContext =>
         visitShapeExpression(s.shapeExpression())
       case _: ShapeAtomAnyContext =>
-        ok(EmptyExpr(None))
+        ok(emptyExpr)
       case _ => err(s"Internal error visitShapeAtom: unknown ctx $ctx")
     }
 
-  override def visitInlineLitNodeConstraint(
+  def visitInlineLitNodeConstraint(
       ctx: InlineLitNodeConstraintContext
   ): Builder[WNodeConstraint] =
     ctx match {
-      /*W      case s: NodeConstraintLiteralContext =>
+      case s: NodeConstraintLiteralContext =>
         for {
+          literalKind <- visitLiteralKind(s.literalKind())
           xsFacets <- visitList(visitXsFacet, s.xsFacet())
           _ <- checkFacets(xsFacets)
-        } yield NodeConstraint.nodeKind(LiteralKind, xsFacets) */
+        } yield WNodeConstraint.nodeKind(WNodeKind.LiteralKind, xsFacets) 
       /*W      case s: NodeConstraintNonLiteralContext =>
         for {
           nodeKind <- visitNonLiteralKind(s.nonLiteralKind())
           stringFacets <- visitList(visitStringFacet, s.stringFacet())
           _ <- checkFacets(stringFacets)
         } yield NodeConstraint.nodeKind(nodeKind, stringFacets) */
-      /*W      case s: NodeConstraintDatatypeContext =>
+      case s: NodeConstraintDatatypeContext =>
         for {
           datatype <- visitDatatype(s.datatype())
           xsFacets <- visitList(visitXsFacet, s.xsFacet())
           _ <- checkFacets(xsFacets)
-        } yield NodeConstraint.datatype(datatype, xsFacets) */
-      case c => // W c: NodeConstraintValueSetContext =>
+        } yield WNodeConstraint.datatype(datatype, xsFacets)
+      case c: NodeConstraintValueSetContext =>
         for {
           vs <- visitValueSet(c.valueSet())
-//W          xsFacets <- visitList(visitXsFacet, c.xsFacet())
-//W          _ <- checkFacets(xsFacets)
-        } yield WNodeConstraint.valueSet(vs) // W, xsFacets)
+          xsFacets <- visitList(visitXsFacet, c.xsFacet())
+          _ <- checkFacets(xsFacets)
+        } yield WNodeConstraint.valueSet(vs, xsFacets)
 
-      /*W      case c: NodeConstraintNumericFacetContext =>
+      case c: NodeConstraintNumericFacetContext =>
         for {
           facets <- visitList(visitNumericFacet, c.numericFacet)
           _ <- checkFacets(facets)
-        } yield NodeConstraint.empty.copy(xsFacets = facets) */
+        } yield WNodeConstraint.xsFacets(facets)
     }
+
+  override def visitLiteralKind(ctx: LiteralKindContext): Builder[WNodeKind] = 
+    ctx match {
+      case _ if isDefined(ctx.KW_LITERAL()) => ok(WNodeKind.LiteralKind)
+      case _ if isDefined(ctx.KW_TIME())      => ok(WNodeKind.TimeKind)
+      case _ if isDefined(ctx.KW_QUANTITY()) => ok(WNodeKind.QuantityKind)
+      case _ if isDefined(ctx.KW_STRING()) => ok(WNodeKind.StringKind)
+      case _ if isDefined(ctx.KW_MONOLINGUALTEXT()) => ok(WNodeKind.MonolingualTextKind)
+      case _ if isDefined(ctx.KW_MULTILINGUALTEXT()) => ok(WNodeKind.MultilingualTextKind)
+      case _ if isDefined(ctx.KW_GEOCOORDINATES()) => ok(WNodeKind.GeoCoodrinatesKind)
+      case _ if isDefined(ctx.KW_GEOSHAPE()) => ok(WNodeKind.GeoShapeKind)
+      case _ if isDefined(ctx.KW_MEDIA()) => ok(WNodeKind.MediaKind)
+    }
+
+  override def visitXsFacet(ctx: XsFacetContext): Builder[XsFacet] = ???
 
   override def visitLitNodeConstraint(ctx: LitNodeConstraintContext): Builder[WNodeConstraint] =
     for {
@@ -698,7 +718,7 @@ class WSchemaMaker extends WShExDocBaseVisitor[Any] {
     try
       ok(BigInt(str))
     catch {
-      case _ => err(s"Cannot get BigInt from $str")
+      case _: Throwable => err(s"Cannot get BigInt from $str")
     }
 
   def getInteger(str: String): Builder[Int] =
@@ -1205,82 +1225,72 @@ class WSchemaMaker extends WShExDocBaseVisitor[Any] {
       predicate <- visitPredicate(ctx.predicate())
       shapeExpr <- visitInlineShapeExpression(ctx.inlineShapeExpression())
       cardinality <- getCardinality(ctx.cardinality())
-      qualifierSpec <- getQualifierSpec(ctx.qualifierSpec())
-      min = cardinality._1
-      max = cardinality._2
+      qs <- getPropertySpec(ctx.propertySpec()).map(_.map(QualifierSpec(_, false)))
+      refs <- getReferencesSpec(ctx.referencesSpec())
+      min = cardinality.min
+      max = cardinality.max
       // W anns <- visitList(visitAnnotation, ctx.annotation())
       // W semActs <- visitList(visitSemanticAction, ctx.semanticAction())
       propertyId <- predicate2PropertyId(predicate)
       tc <- shapeExpr match {
         case sref: WShapeRef =>
-          ok(tripleConstraintRef(propertyId, sref, min, max).withQs(qualifierSpec))
+          ok(tripleConstraintRef(propertyId, sref, min, max).withQs(qs).withRefs(refs))
         case nc: WNodeConstraint =>
-          ok(tripleConstraintLocal(propertyId, nc, min, max).withQs(qualifierSpec))
+          ok(tripleConstraintLocal(propertyId, nc, min, max).withQs(qs).withRefs(refs))
         case WShape(None, false, Nil, None, Nil) =>
-          ok(tripleConstraintLocal(propertyId, EmptyExpr(None), min, max).withQs(qualifierSpec))
+          ok(tripleConstraintLocal(propertyId, emptyExpr, min, max).withQs(qs).withRefs(refs))
         case se: WShapeExpr =>
-          ok(TripleConstraintGeneral(propertyId, se, min, max).withQs(qualifierSpec))
-        // case _ => err(s"visitTripleConstraint. Error matching shapeExpr: $shapeExpr")
+          ok(TripleConstraintGeneral(propertyId, se, min, max).withQs(qs).withRefs(refs))
       }
     } yield tc
-  /*W    TripleConstraint
-      .emptyPred(predicate)
-      .copy(
-        optInverse = sense.optInverse,
-        optNegated = sense.optNegated,
-        valueExpr = if (shapeExpr == ShapeExpr.any) None else Some(shapeExpr),
-        optMin = cardinality._1,
-        optMax = cardinality._2,
-        // optVariableDecl = varDecl,
-  /*W      annotations =
-          if (anns.isEmpty) None
-          else Some(anns),
-        semActs =
-          if (semActs.isEmpty) None
-          else Some(semActs)  */
-      ) */
 
-  private def getQualifierSpec(ctx: QualifierSpecContext): Builder[Option[QualifierSpec]] =
+  private def getReferencesSpec(ctx: ReferencesSpecContext): Builder[Option[ReferencesSpec]] =
     if (isDefined(ctx)) {
-      visitPredicate(ctx.predicate()).flatMap(pred =>
+      visitOneOfReferencesExpr(ctx.oneOfReferencesExpr()).map(_.some)
+    } else ok(none)
+
+  override def visitOneOfReferencesExpr(ctx: OneOfReferencesExprContext): Builder[ReferencesSpec] = 
+    visitSingleReferencesExpr(ctx.singleReferencesExpr()).flatMap(single => 
+      visitList(visitOneOfReferencesExpr, ctx.oneOfReferencesExpr()).flatMap(ls => 
+        if (ls.isEmpty) ok(single)
+        else ok(ReferencesOneOf(single +: ls))
+        )
+      )
+
+  override def visitSingleReferencesExpr(ctx: SingleReferencesExprContext): Builder[ReferencesSpec] =
+    visitPropertySpec(ctx.propertySpec()).flatMap(propertySpec => 
+      getCardinality(ctx.cardinality()).flatMap(cardinality => 
+        ok(ReferencesSpecSingle(propertySpec,cardinality.min, cardinality.max, false))
+        )
+      )
+
+
+  override def visitPropertySpec(ctx: PropertySpecContext): Builder[PropertySpec] = 
+    visitPredicate(ctx.predicate()).flatMap(pred =>
         predicate2PropertyId(pred).flatMap(propId =>
           visitShapeAtom(ctx.shapeAtom()).flatMap(se =>
             getCardinality(ctx.cardinality()).flatMap(cardinality =>
               se match {
                 case nc: WNodeConstraint =>
-                  ok(
-                    Some(
-                      QualifierSpec(
-                        QualifierLocal(propId, nc, cardinality._1, cardinality._2),
-                        false
-                      )
-                    )
-                  )
+                  ok(PropertyLocal(propId, nc, 
+                      cardinality.min, cardinality.max))
                 case sref: WShapeRef =>
-                  ok(
-                    Some(
-                      QualifierSpec(
-                        QualifierRef(propId, sref, cardinality._1, cardinality._2),
-                        false
-                      )
-                    )
-                  )
+                  ok(PropertyRef(propId, sref, 
+                   cardinality.min, cardinality.max))
                 case WShape(None, false, Nil, None, Nil) =>
-                  ok(
-                    Some(
-                      QualifierSpec(
-                        QualifierLocal(propId, EmptyExpr(None), cardinality._1, cardinality._2),
-                        false
-                      )
-                    )
-                  )
+                  ok(PropertyLocal(propId, emptyExpr, 
+                     cardinality.min, cardinality.max))
                 case _ => err(s"getQualifierSpec. Error matching shapeExpr: $se")
               }
             )
           )
         )
       )
-    } else ok(None)
+
+  private def getPropertySpec(ctx: PropertySpecContext): Builder[Option[PropertySpec]] =
+    if (isDefined(ctx)) {
+      visitPropertySpec(ctx).map(_.some)      
+    } else ok(none)
 
   /*  case class Sense(optInverse: Option[Boolean], optNegated: Option[Boolean])
 
@@ -1309,15 +1319,12 @@ class WSchemaMaker extends WShExDocBaseVisitor[Any] {
   private def visitRepeatRange(ctx: RepeatRangeContext): Builder[Cardinality] =
     ctx match {
       case s: ExactRangeContext =>
-        getInteger(s.INTEGER().getText()).map(n => (n, IntLimit(n)))
+        getInteger(s.INTEGER().getText()).map(n => Cardinality(n, IntLimit(n)))
       case s: MinMaxRangeContext =>
         for {
           min <- visitMin_range(s.min_range())
           max <- visitMax_range(s.max_range())
-        } yield (min, max) /* max match {
-          case None    => (min, Unbounded)
-          case Some(m) => (min, m)
-        } */
+        } yield Cardinality(min, max) 
       case _ => err(s"visitRepeatRange: unknown value of ctx: ${ctx.getClass().getName()}")
     }
 
@@ -1366,15 +1373,23 @@ class WSchemaMaker extends WShExDocBaseVisitor[Any] {
     te match {
       case tc: TripleConstraintLocal =>
         tc.copy(
-          min = cardinality._1,
-          max = cardinality._2
+          min = cardinality.min,
+          max = cardinality.max
           // W annotations = optListCombine(tc.annotations, anns),
           // W semActs = optListCombine(tc.semActs, sActs)
         )
       case tc: TripleConstraintRef =>
         tc.copy(
-          min = cardinality._1,
-          max = cardinality._2
+          min = cardinality.min,
+          max = cardinality.max
+          // W annotations = optListCombine(tc.annotations, anns),
+          // W semActs = optListCombine(tc.semActs, sActs)
+        )
+      //case et: EmptyTripleExpr => ???  
+      case tg: TripleConstraintGeneral =>   
+        tg.copy(
+          min = cardinality.min,
+          max = cardinality.max
           // W annotations = optListCombine(tc.annotations, anns),
           // W semActs = optListCombine(tc.semActs, sActs)
         )
@@ -1398,6 +1413,9 @@ class WSchemaMaker extends WShExDocBaseVisitor[Any] {
       /*W      case e: Expr =>
         // TODO: Check how to extend include
         e */
+      case EmptyTripleExpr => 
+        throw new RuntimeException(s"Cannot extend emptyTripleExpr with cardinality $cardinality")
+
     }
 
   def optListCombine[A](maybeAs: Option[List[A]], as: List[A]): Option[List[A]] =

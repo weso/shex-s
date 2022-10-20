@@ -77,6 +77,12 @@ sealed abstract trait IntOrUnbounded extends Product with Serializable {
       case IntLimit(m) => m <= x
     }
 
+  def < (x: Int): Boolean =
+    this match {
+      case Unbounded   => false
+      case IntLimit(m) => m < x
+    }
+
 }
 
 case object Unbounded extends IntOrUnbounded {

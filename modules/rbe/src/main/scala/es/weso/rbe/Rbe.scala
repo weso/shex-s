@@ -58,16 +58,19 @@ sealed trait Rbe[+A] extends Product with Serializable {
   /** Derivative over a bag of symbols
     * @param open allows extra symbols
     * @param controlled limits the extra symbols to those that don't appear in controlled
+    * @param matched bag of matched symbols
     */
-  def derivBag[U >: A](bag: Bag[U], open: Boolean, controlled: Seq[U])(implicit
-      r: Show[U]
-  ): Rbe[U] = {
-    val e: Rbe[U] = this
-    def f(x: U, rest: Rbe[U]): Rbe[U] = {
-      val v: Rbe[U] = rest.deriv(x, open, controlled)(r)
-      v
+  def derivBag[U >: A](
+    bag: Bag[U], 
+    open: Boolean, 
+    controlled: Seq[U]
+    )(implicit r: Show[U]): Rbe[U] = {
+    val thisBag: Rbe[U] = this
+    bag.toSeq.foldRight(thisBag){
+      case (x, rest) => { 
+        rest.deriv(x, open, controlled)(r) 
+      }
     }
-    bag.toSeq.foldRight(e)(f)
   }
 
   /** Checks if a rbe is nullable
@@ -175,7 +178,11 @@ sealed trait Rbe[+A] extends Product with Serializable {
     * @param open allows extra symbols
     * @param controlled defines the symbols that are allowed in closed expressions
     */
-  def deriv[U >: A](x: U, open: Boolean, controlled: Seq[U])(implicit r: Show[U]): Rbe[U] =
+  def deriv[U >: A](
+    x: U, 
+    open: Boolean, 
+    controlled: Seq[U]
+    )(implicit r: Show[U]): Rbe[U] =
     this match {
       case f @ Fail(_) => f
       case Empty =>
@@ -183,7 +190,7 @@ sealed trait Rbe[+A] extends Product with Serializable {
           Empty
         else
           Fail(UnexpectedEmpty(x, open)(r))
-      case s @ Symbol(_, _, _) =>
+      case s : Symbol[U] =>
         derivSymbol(x, s, open, controlled)
       case And(e1, e2) =>
         lazy val d1 = e1.deriv(x, open, controlled)

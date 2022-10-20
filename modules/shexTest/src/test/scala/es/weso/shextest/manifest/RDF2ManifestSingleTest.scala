@@ -30,7 +30,7 @@ class RDF2ManifestSingleTest extends CatsEffectSuite {
       // None,
       Only(
         // "Extend3G-pass"
-        "vitals-RESTRICTS-pass_lie-BP"
+        "1literalTotaldigits_pass-integer-equalLead"
       ),
       List(),
       Validator.apply,

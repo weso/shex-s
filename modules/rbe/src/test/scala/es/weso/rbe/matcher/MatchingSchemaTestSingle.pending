@@ -1,16 +1,17 @@
 package es.weso.rbe.matcher
 
 import es.weso.rbe.StringGraph._
-import es.weso.typing.PosNegTyping
-import org.scalatest._
+// import es.weso.typing.PosNegTyping
+import munit._
 import scala.util._
 import es.weso.rbe._
+import es.weso.graph._
 
-class MatchingSchemaTestSingle extends FunSpec with Matchers with TryValues {
+class MatchingSchemaTestSingle extends FunSuite {
   
   def noTs: Set[(String,String,String)] = Set()
 
-  describe("Schema with ref") {
+  test("Schema with ref") {
 
     val g = GraphMap(
       Map("n0" -> List(("a", "n1")),

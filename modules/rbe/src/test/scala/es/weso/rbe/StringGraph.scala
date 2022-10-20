@@ -4,6 +4,7 @@ import cats.implicits._
 import es.weso.utils._
 import es.weso.utils.Read._
 import es.weso.rbe.nodeShape._
+import es.weso.graph._
 
 /**  Simple graphs whose nodes and edges are strings
   *  They are used for testing purposes mainly

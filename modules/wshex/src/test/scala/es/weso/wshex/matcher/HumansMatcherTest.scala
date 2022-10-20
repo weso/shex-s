@@ -39,7 +39,7 @@ class HumansMatcherTest extends CatsEffectSuite {
                        |start = @<Human>
                        |
                        |<Human> {
-                       |  :P31 [ :Q5 ] ; # instance of Volcano
+                       |  :P31 [ :Q5 ] ; # instance of Human
                        |}""".stripMargin
     val eitherMatcher = Matcher.unsafeFromString(schemaStr)
     eitherMatcher.fold(

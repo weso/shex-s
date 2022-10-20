@@ -65,7 +65,7 @@ object MatchingStatus {
   def combineAnds(e: EntityDoc, ls: LazyList[MatchingStatus]): MatchingStatus =
     ls.foldLeft(matchEmpty(e))(_.and(_))
 
-  def combineOrs(e: EntityDoc, ls: LazyList[MatchingStatus]): MatchingStatus =
+  def combineOrs(ls: LazyList[MatchingStatus]): MatchingStatus =
     ls.foldLeft(noMatchingEmpty)(_.or(_))
 
 }

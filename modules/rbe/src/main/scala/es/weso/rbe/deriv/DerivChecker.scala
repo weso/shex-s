@@ -5,9 +5,9 @@ import cats._
 import cats.data._
 import cats.implicits._
 
-case class DerivChecker[A: Show](rbe: Rbe[A]) extends BagChecker[A] {
+case class DerivChecker[A: Show, Ordering](rbe: Rbe[A]) extends BagChecker[A] {
 
-  def check(bag: Bag[A], open: Boolean): Either[NonEmptyList[RbeError], Bag[A]] =
+  def check(bag: Bag[A], open: Boolean): Either[NonEmptyList[RbeError], Bag[A]] = {
     rbe.derivBag(bag, open, rbe.symbols) match {
       case f: Fail => NonEmptyList.one(f.error).asLeft
       case d =>
@@ -16,5 +16,5 @@ case class DerivChecker[A: Show](rbe: Rbe[A]) extends BagChecker[A] {
           case Left(m)  => NonEmptyList.one(NonNullableError(d, rbe, bag, open, m)).asLeft
         }
     }
-
+  }
 }

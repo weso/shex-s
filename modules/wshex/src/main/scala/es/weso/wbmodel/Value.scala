@@ -6,8 +6,12 @@ import es.weso.rdf.nodes._
 import es.weso.wshex.ShapeLabel
 import org.wikidata.wdtk.datamodel.interfaces.{
   DatatypeIdValue,
+  QuantityValue => WDQuantityValue,
   Statement => WDStatement,
-  Value => WDValue
+  StringValue => WDStringValue,
+  Value => WDValue,
+  SiteLink => WDTKSiteLink,
+  _
 }
 import org.wikidata.wdtk.datamodel.interfaces.EntityDocument
 import org.wikidata.wdtk.datamodel.interfaces.ItemDocument
@@ -73,11 +77,10 @@ sealed abstract class Entity extends Value {
 
   def withStatement(s: WDStatement): Entity
 
-  def mergeStatements(ls: List[WDStatement]): Entity = {
-    ls.foldLeft(this) { 
-      case (current, st) => current.withStatement(st) 
+  def mergeStatements(ls: List[WDStatement]): Entity =
+    ls.foldLeft(this) { case (current, st) =>
+      current.withStatement(st)
     }
-  }
 
   def merge(other: Entity): Entity = {
     println(s"merge for entity: $entityId not implemented yet")
@@ -229,11 +232,20 @@ case class DateValue(
   override def toString = s"$date"
 }
 
+case class QuantityValue(
+    numericValue: java.math.BigDecimal,
+    lowerBound: java.math.BigDecimal,
+    upperBould: java.math.BigDecimal,
+    unit: ItemIdValue
+) extends Value
+
 case class IRIValue(
     iri: IRI
 ) extends LiteralValue {
   override def toString = s"${iri.getLexicalForm}"
 }
+
+case class NotImplementedWDTKValue(v: WDValue, name: String) extends Value
 
 sealed abstract class Qualifier extends Product with Serializable {
   val propertyId: PropertyId
@@ -271,35 +283,10 @@ case class Statement(
     }"
 }
 
-case class LocalStatement(
-    propertyRecord: PropertyRecord,
-    literal: LiteralValue,
-    qualifiers: List[Qualifier]
-) {
-
-  def withQualifiers(qs: List[Qualifier]): LocalStatement =
-    this.copy(qualifiers = qs)
-
-  override def toString = s"$propertyRecord - $literal${
-      if (qualifiers.isEmpty) "" else s"{{" + qualifiers.map(_.toString).mkString(",") + "}}"
-    }"
-}
-
-object LocalStatement {
-  implicit val orderingById: Ordering[Statement] = Ordering.by(_.propertyRecord.id)
-}
-
-case class SiteLink(
-    title: String,
-    siteKey: String,
-    badges: List[ItemId]
-)
-
-
 object Value {
 
   lazy val siteDefault = "http://www.wikidata.org/entity/"
-  lazy val defaultIRI  = IRI(siteDefault)
+  lazy val defaultIRI = IRI(siteDefault)
 
   def triple(
       subj: Entity,
@@ -307,12 +294,6 @@ object Value {
       value: Entity
   ): (Entity, PropertyRecord, Entity, List[Qualifier]) =
     (subj, prop.prec, value, List())
-
-  /*  def triple(
-      subj: Entity, prop: PropertyRecord, value: Entity
-      ): (Entity, PropertyRecord, Entity, List[Qualifier]) = {
-      (subj, prop, value, List())
-    } */
 
   def tripleq(
       subj: Entity,
@@ -345,7 +326,7 @@ object Value {
     Item(
       ItemId(qid, iri = mkSite(site, qid)),
       VertexId(id),
-      label.fold(Map[Lang,String]())(lbl => Map(Lang("en") -> lbl)),
+      label.fold(Map[Lang, String]())(lbl => Map(Lang("en") -> lbl)),
       Map(),
       Map(),
       site,
@@ -353,5 +334,30 @@ object Value {
       List()
     )
   }
+
+  def fromWDTKValue(v: WDValue): Value = {
+    val convertVisitor = ConvertValueVisitor()
+    v.accept(convertVisitor)
+  }
+
+
+  private case class ConvertValueVisitor() extends ValueVisitor[Value] {
+
+    override def visit(v: EntityIdValue): Value = v match {
+      case iv: ItemIdValue     => ItemId(iv.getId(), IRI(iv.getIri()))
+      case pv: PropertyIdValue => PropertyId(pv.getId(), IRI(pv.getIri()))
+      case other               => NotImplementedWDTKValue(v, other.getEntityType())
+    }
+    override def visit(v: GlobeCoordinatesValue): Value = NotImplementedWDTKValue(v, "Quantity")
+    override def visit(v: MonolingualTextValue): Value =
+      NotImplementedWDTKValue(v, "MonolingualText")
+    override def visit(v: WDQuantityValue): Value =
+      QuantityValue(v.getNumericValue(), v.getLowerBound(), v.getUpperBound(), v.getUnitItemId())
+    override def visit(v: WDStringValue): Value = StringValue(v.getString())
+    override def visit(v: TimeValue): Value = NotImplementedWDTKValue(v, "Time")
+    override def visit(v: UnsupportedValue): Value = NotImplementedWDTKValue(v, "Unsupported")
+  }
+
+
 
 }

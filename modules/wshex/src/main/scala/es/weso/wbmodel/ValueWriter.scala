@@ -13,8 +13,6 @@ object ValueWriter {
 
   def entity2JsonStr(v: Entity, showShapes: Boolean): String = {
     val os = new ByteArrayOutputStream()
-    //    val jsonSerializer = new JsonSerializer(os)
-    //    jsonSerializer.open()
     val str = entity2entityDocument(v) match {
       case (id: ItemDocument, okShapes) =>
         JsonSerializer.getJsonString(id) ++ printShapes(showShapes, okShapes)
@@ -23,7 +21,6 @@ object ValueWriter {
       case _ => ""
     }
     str
-    //    jsonSerializer.close()
   }
 
   private def printShapes(showShapes: Boolean, shapes: Set[ShapeLabel]): String =
