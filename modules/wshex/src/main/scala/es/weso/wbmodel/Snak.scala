@@ -9,7 +9,9 @@ import org.wikidata.wdtk.datamodel.interfaces.{
 }
 
 sealed abstract trait Snak extends Product with Serializable 
+
 object Snak {
+
  case class ValueSnak(value: Value) extends Snak
  case object NoValueSnak extends Snak
  case object SomeValueSnak extends Snak

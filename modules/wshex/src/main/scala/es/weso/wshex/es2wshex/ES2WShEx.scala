@@ -7,7 +7,7 @@ import es.weso._
 import es.weso.rbe.interval.{IntLimit, Unbounded}
 import es.weso.rdf.nodes._
 import es.weso.rdf.{PrefixMap, Prefix}
-import es.weso.wbmodel.{Lang => _, Property => _, _}
+import es.weso.wbmodel.{Property => _, _}
 import es.weso.rbe.interval.IntOrUnbounded
 import scala.collection.compat._ // Required for partitionMap
 import es.weso.rdf.nodes._

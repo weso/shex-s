@@ -4,7 +4,7 @@ import io.circe.Json
 import es.weso.rdf.nodes.IRI
 import es.weso.rdf.PrefixMap
 import es.weso.rbe.interval.IntLimit
-import es.weso.wbmodel.{Lang => WBLang, _}
+import es.weso.wbmodel._
 import es.weso.utils.VerboseLevel._
 import es.weso.shex.{Schema => ShExSchema}
 import es.weso.wshex._

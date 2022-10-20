@@ -48,14 +48,6 @@ case class EntityDoc(entityDocument: EntityDocument) extends Serializable {
     case _ => Map()
   }
 
-//  lazy val valueMapFull: Map[PropertyIdValue, LazyList[FullValue]] = ???
-
-  /*  def convertValue(s: WDTKStatement): Value = {
-    val wdtkValue = s.getClaim().getValue()
-    if (wdtkValue == null) throw new RuntimeException(s"Cannot obtain value for statement: $s")
-    else wdtkValue.accept(ConvertValueVisitor())
-  } */
-
   def getStatements(): List[WDTKStatement] = entityDocument match {
     case s: StatementDocument =>
       s.getAllStatements().asScala.toList
@@ -153,6 +145,29 @@ case class EntityDoc(entityDocument: EntityDocument) extends Serializable {
       case pd: PropertyDocument => pd.withStatement(st)
     })
   }
+
+  def addStatement(st: Statement): EntityDoc = {
+    val property = st.propertyId
+      val sb: StatementBuilder = 
+        StatementBuilder
+        .forSubjectAndProperty(entityDocument.getEntityId(), property.toValue)
+
+      val sbSnak = st.snak match {
+        case _: NoValueSnak => sb.withNoValue()
+        case _: SomeValueSnak => sb.withSomeValue()
+        case vs: ValueSnak => sb.withValue(vs.getValue())
+      }
+
+      val sbQs = st.qualifiers.fold(sbSnak)(qs => sbSnak.withQualifiers(qs.getSnakGroups().asJava))
+
+      val sbRefs = st.references.fold(sbQs)(refs => sbQs.withReferences(refs.asJava)) 
+ 
+      val wdStatement = sbRefs.build()
+      EntityDoc(entityDocument match {
+       case id: ItemDocument     => id.withStatement(wdStatement)
+       case pd: PropertyDocument => pd.withStatement(wdStatement)
+      })
+    }
 
   def withLabel(langCode: String, label: String): EntityDoc =
     entityDocument match {

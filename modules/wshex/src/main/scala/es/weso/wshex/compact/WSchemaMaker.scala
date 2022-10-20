@@ -31,7 +31,7 @@ import es.weso.shex.{
   XsFacet
 }
 import es.weso.wshex._
-import es.weso.wbmodel.{Lang => WBLang, _}
+import es.weso.wbmodel._
 import es.weso.rbe.interval._
 import TripleConstraint._
 import TermConstraint._

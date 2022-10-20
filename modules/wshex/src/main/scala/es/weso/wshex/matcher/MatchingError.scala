@@ -1,6 +1,6 @@
 package es.weso.wshex.matcher
 
-import es.weso.wbmodel.{Lang => WBLang, _}
+import es.weso.wbmodel._
 import org.wikidata.wdtk.datamodel.implementation._
 import org.wikidata.wdtk.datamodel.interfaces.{
     Statement => WDTKStatement, 
