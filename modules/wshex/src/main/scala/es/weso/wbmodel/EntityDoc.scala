@@ -5,6 +5,7 @@ import org.wikidata.wdtk.datamodel.interfaces.{
   Statement => WDTKStatement,
   StringValue => WDTKStringValue,
   Value => WDTKValue,
+  Snak => WDTKSnak,
   _
 }
 import org.wikidata.wdtk.datamodel.helpers.JsonDeserializer
@@ -53,6 +54,15 @@ case class EntityDoc(entityDocument: EntityDocument) extends Serializable {
       s.getAllStatements().asScala.toList
     case _ => List()
   }
+
+  def getStatementsForProperty(
+    prop: PropertyIdValue
+    ): List[WDTKStatement] = entityDocument match {
+   case s: StatementDocument => 
+    s.findStatementGroup(prop).getStatements().asScala.toList
+   case _ => List() 
+  }
+    
 
   def getLabels(): Map[String, MonolingualTextValue] =
     entityDocument match {
@@ -148,22 +158,20 @@ case class EntityDoc(entityDocument: EntityDocument) extends Serializable {
 
   def addStatement(st: Statement): EntityDoc = {
     val property = st.propertyId
-      val sb: StatementBuilder = 
+    val sb: StatementBuilder = 
         StatementBuilder
-        .forSubjectAndProperty(entityDocument.getEntityId(), property.toValue)
+        .forSubjectAndProperty(entityDocument.getEntityId(), property.toWDTKValue)
 
-      val sbSnak = st.snak match {
-        case _: NoValueSnak => sb.withNoValue()
-        case _: SomeValueSnak => sb.withSomeValue()
-        case vs: ValueSnak => sb.withValue(vs.getValue())
+    val sbSnak = st.snak match {
+        case _: Snak.NoValueSnak => sb.withNoValue()
+        case _: Snak.SomeValueSnak => sb.withSomeValue()
+        case vs: Snak.ValueSnak => sb.withValue(vs.value.toWDTKValue)
       }
+    val sbQs = sbSnak.withQualifiers(st.qualifiers.snakGroups.asJava)
+    val sbRefs = sbQs.withReferences(st.references.asWDTKReferences.asJava)
+    val wdStatement = sbRefs.build()
 
-      val sbQs = st.qualifiers.fold(sbSnak)(qs => sbSnak.withQualifiers(qs.getSnakGroups().asJava))
-
-      val sbRefs = st.references.fold(sbQs)(refs => sbQs.withReferences(refs.asJava)) 
- 
-      val wdStatement = sbRefs.build()
-      EntityDoc(entityDocument match {
+    EntityDoc(entityDocument match {
        case id: ItemDocument     => id.withStatement(wdStatement)
        case pd: PropertyDocument => pd.withStatement(wdStatement)
       })

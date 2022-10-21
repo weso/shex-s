@@ -16,7 +16,7 @@ import org.wikidata.wdtk.datamodel.interfaces.EntityDocument
 import org.wikidata.wdtk.datamodel.interfaces.ItemDocument
 import org.wikidata.wdtk.datamodel.interfaces.PropertyDocument
 
-abstract class Entity extends Value {
+abstract class Entity {
   val vertexId: VertexId
   val entityId: EntityId
   val localStatements: List[LocalStatement]

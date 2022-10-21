@@ -9,44 +9,59 @@ import org.wikidata.wdtk.datamodel.interfaces.{
   QuantityValue => WDQuantityValue,
   Statement => WDStatement,
   StringValue => WDStringValue,
-  Value => WDValue,
+  Value => WDTKValue,
   SiteLink => WDTKSiteLink,
   _
 }
-import org.wikidata.wdtk.datamodel.interfaces.EntityDocument
-import org.wikidata.wdtk.datamodel.interfaces.ItemDocument
-import org.wikidata.wdtk.datamodel.interfaces.PropertyDocument
+import org.wikidata.wdtk.datamodel.implementation._
 
-abstract trait Value extends Product with Serializable
+abstract trait Value extends Product with Serializable {
+  val wdtkValue: Option[WDTKValue]
+  def toWDTKValue: WDTKValue
+}
 
 sealed abstract class LiteralValue extends Value
 
 case class StringValue(
-    str: String
+    str: String,
+    wdtkValue: Option[WDTKValue] = None
 ) extends LiteralValue {
   override def toString = s"$str"
-}
+  override def toWDTKValue: WDTKValue = 
+    wdtkValue.fold(StringValueImpl(str))(identity)
 
-case class DateValue(
-    date: String
-) extends LiteralValue {
-  override def toString = s"$date"
 }
 
 case class QuantityValue(
     numericValue: java.math.BigDecimal,
     lowerBound: java.math.BigDecimal,
-    upperBould: java.math.BigDecimal,
-    unit: ItemIdValue
-) extends Value
+    upperBound: java.math.BigDecimal,
+    unit: ItemIdValue,
+    wdtkValue: Option[WDTKValue] = None
+) extends Value {
 
-case class IRIValue(
-    iri: IRI
-) extends LiteralValue {
-  override def toString = s"${iri.getLexicalForm}"
+  override def toWDTKValue: WDTKValue = 
+    wdtkValue.fold(QuantityValueImpl(numericValue,lowerBound,upperBound,unit))(identity)
+
 }
 
-case class NotImplementedWDTKValue(v: WDValue, name: String) extends Value
+case class IRIValue(
+    iri: IRI,
+    wdtkValue: Option[WDTKValue] = None
+) extends LiteralValue {
+  override def toString = s"${iri.getLexicalForm}"
+
+  override def toWDTKValue: WDTKValue = 
+    wdtkValue.fold(
+      throw new RuntimeException(s"IRIValue.toWDTKValue: Converting IRIValue to WDTK...pending IRIValueImpl???"))(identity)
+
+}
+
+case class NotImplementedWDTKValue(wdtkValue: Option[WDTKValue], name: String) extends Value {
+  override def toWDTKValue: WDTKValue = 
+    wdtkValue.fold(
+      throw new RuntimeException(s"NotImplementedValue.toWDTKValue: Converting NotImplementedValue to WDTK...pending NotImplementedValueImpl???"))(identity)
+}
 
 object Value {
 
@@ -69,9 +84,6 @@ object Value {
     (subj, prop.prec, value, qs)
 
   def mkSite(base: String, localName: String) = IRI(base + localName)
-
-  def Date(date: String): DateValue =
-    DateValue(date)
 
   def Str(str: String): StringValue =
     StringValue(str)
@@ -100,7 +112,7 @@ object Value {
     )
   }
 
-  def fromWDTKValue(v: WDValue): Value = {
+  def fromWDTKValue(v: WDTKValue): Value = {
     val convertVisitor = ConvertValueVisitor()
     v.accept(convertVisitor)
   }
@@ -111,16 +123,19 @@ object Value {
     override def visit(v: EntityIdValue): Value = v match {
       case iv: ItemIdValue     => ItemId(iv.getId(), IRI(iv.getIri()))
       case pv: PropertyIdValue => PropertyId(pv.getId(), IRI(pv.getIri()))
-      case other               => NotImplementedWDTKValue(v, other.getEntityType())
+      case other               => NotImplementedWDTKValue(v.some, other.getEntityType())
     }
-    override def visit(v: GlobeCoordinatesValue): Value = NotImplementedWDTKValue(v, "Quantity")
+    override def visit(v: GlobeCoordinatesValue): Value = 
+      NotImplementedWDTKValue(v.some, "Quantity")
     override def visit(v: MonolingualTextValue): Value =
-      NotImplementedWDTKValue(v, "MonolingualText")
+      NotImplementedWDTKValue(v.some, "MonolingualText")
     override def visit(v: WDQuantityValue): Value =
       QuantityValue(v.getNumericValue(), v.getLowerBound(), v.getUpperBound(), v.getUnitItemId())
     override def visit(v: WDStringValue): Value = StringValue(v.getString())
-    override def visit(v: TimeValue): Value = NotImplementedWDTKValue(v, "Time")
-    override def visit(v: UnsupportedValue): Value = NotImplementedWDTKValue(v, "Unsupported")
+    override def visit(v: TimeValue): Value = 
+      NotImplementedWDTKValue(v.some, "Time")
+    override def visit(v: UnsupportedValue): Value = 
+      NotImplementedWDTKValue(v.some, "Unsupported")
   }
 
 }

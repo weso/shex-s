@@ -2,18 +2,25 @@ package es.weso.wbmodel
 import es.weso.rdf.nodes.IRI
 import cats._
 import org.wikidata.wdtk.datamodel.implementation._
-import org.wikidata.wdtk.datamodel.interfaces._
+import org.wikidata.wdtk.datamodel.interfaces.{ 
+  Value => WDTKValue, 
+  PropertyIdValue => WDTKPropertyIdValue,
+  _
+}
 
 case class PropertyId(
     id: String,
-    iri: IRI
+    iri: IRI,
+    wdtkValue: Option[WDTKPropertyIdValue] = None
 ) extends EntityId {
   override def toString = s"$id"
 
-  def toValue: PropertyIdValue = {
-    val (name,base) = Utils.splitIri(iri)
-    new PropertyIdValueImpl(id, base)
-  }
+  override def toWDTKValue: WDTKPropertyIdValue = 
+    wdtkValue.fold{
+     val (name,base) = Utils.splitIri(iri) 
+     PropertyIdValueImpl(id, base) 
+    }(identity)
+
 }
 
 object PropertyId {
@@ -27,4 +34,6 @@ object PropertyId {
   def fromNumber(n: Int, baseProperty: IRI): PropertyId =
     PropertyId(s"P$n", baseProperty + s"P$n")
 
+  def fromPropertyIdValue(pidValue: WDTKPropertyIdValue): PropertyId =
+    PropertyId(pidValue.getId(), IRI(pidValue.getIri()))
 }

@@ -189,7 +189,7 @@ sealed abstract class WShapeExpr extends Product with Serializable {
           case _ => Left(NoStringDatatype(entity))
         }
       case e: EmptyExpr => Right(Set()) */
-      case nc: WNodeConstraint => nc.matchLocal(entity).map(_ => Set())
+      case nc: WNodeConstraint => nc.matchLocal(entity.entityId).map(_ => Set())
       case WShapeAnd(_, ls) =>
         val vs = ls.map(_.checkLocal(entity, fromLabel, schema)).sequence.map(_.toSet.flatten)
         vs
@@ -245,7 +245,7 @@ sealed abstract class WShapeExpr extends Product with Serializable {
           case _ => Left(Reason.noStringDatatype)
         }
       case e: EmptyExpr => Right(Set()) */
-      case nc: WNodeConstraint => nc.matchLocalCoded(entity).map(_ => Set())
+      case nc: WNodeConstraint => nc.matchLocalCoded(entity.entityId).map(_ => Set())
       case WShapeAnd(_, ls) =>
         val vs = ls.map(_.checkLocalCoded(entity, fromLabel, schema)).sequence.map(_.toSet.flatten)
         vs
@@ -385,17 +385,17 @@ case class WNodeConstraint(
     } 
 */
   private def matchDatatypeSnak(snak: Snak, d: IRI): Either[Reason,Unit] = snak match {
-    case Snak.ValueSnak(value) => matchDatatype(value,d)
-    case _ => MatchDatatypeError_NoValue(snak).asLeft
+    case sv: Snak.ValueSnak => matchDatatype(sv.value,d)
+    case _ => MatchDatatypeError_NoValueSnak(snak).asLeft
   }
 
   private def matchFacetsSnak(snak: Snak, xsFacets: List[XsFacet]): Either[Reason,Unit] = snak match {
-    case Snak.ValueSnak(value) => matchFacets(value,xsFacets)
+    case sv: Snak.ValueSnak => matchFacets(sv.value,xsFacets)
     case _ => MatchFacetsError_NoValue(snak).asLeft
   }
 
   private def matchValueSetSnak(snak: Snak, vs: List[ValueSetValue]): Either[Reason,Unit] = snak match {
-    case Snak.ValueSnak(value) => matchValueSet(value,vs)
+    case sv: Snak.ValueSnak => matchValueSet(sv.value,vs)
     case _ => MatchValueSetError_NoValue(snak).asLeft
   }  
   private def matchDatatype(value: Value, d: IRI): Either[Reason,Unit] =
@@ -408,10 +408,10 @@ case class WNodeConstraint(
         case _: QuantityValue => ().asRight
         case _ => NoStringDatatype(value).asLeft
       } */
-      case `xsd:dateTime` => value match {
+/*      case `xsd:dateTime` => value match {
         case _: DateValue => ().asRight
         case _            => NoDateDatatype(value).asLeft
-      }
+      } */
       case _ => UnknownDatatypeMatch(d, value).asLeft
     } 
 

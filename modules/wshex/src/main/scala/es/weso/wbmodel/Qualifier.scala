@@ -5,18 +5,18 @@ sealed abstract class Qualifier extends Product with Serializable {
   val snak: Snak
 }
 
-case class EntityQualifier(
+case class EntityIdQualifier(
     propertyId: PropertyId,
-    entity: Entity
+    entityId: EntityId
 ) extends Qualifier {
-  override val snak: Snak = Snak.ValueSnak(entity)
-  override def toString = s"$propertyId:$entity"
+  override val snak: Snak = Snak.ValueSnak(entityId, propertyId)
+  override def toString = s"$propertyId:$entityId"
 }
 
 case class LocalQualifier(
     propertyId: PropertyId,
     literal: LiteralValue
 ) extends Qualifier {
-  override val snak: Snak = Snak.ValueSnak(literal)
+  override val snak: Snak = Snak.ValueSnak(literal, propertyId)
   override def toString = s"$propertyId:$literal"
 }

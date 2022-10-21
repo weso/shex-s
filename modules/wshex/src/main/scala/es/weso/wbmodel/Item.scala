@@ -8,7 +8,7 @@ import org.wikidata.wdtk.datamodel.interfaces.{
   QuantityValue => WDQuantityValue,
   Statement => WDStatement,
   StringValue => WDStringValue,
-  Value => WDValue,
+  Value => WDTKValue,
   SiteLink => WDTKSiteLink,
   _
 }
@@ -25,13 +25,17 @@ case class Item(
     siteIri: String = Value.siteDefault,
     localStatements: List[LocalStatement],
     siteLinks: List[SiteLink],
-    okShapes: Set[ShapeLabel] = Set()
+    okShapes: Set[ShapeLabel] = Set(), 
+//    wdtkValue: Option[WDTKValue] = None
 ) extends Entity {
 
   val entityId: EntityId = itemId
   def iri: IRI = IRI(siteIri + "/" + itemId.id)
 
   override def toString = s"${itemId.id}-${labels.get(WBLang("en")).getOrElse("")}@$vertexId"
+
+  // override def toWDTKValue: WDTKValue = 
+
 
   override def withLocalStatement(
       prec: PropertyRecord,
@@ -44,7 +48,7 @@ case class Item(
 
   override def withOkShapes(shapes: Set[ShapeLabel]): Entity = this.copy(okShapes = shapes)
 
-  override def addPropertyValues(pid: PropertyId, value: List[WDValue]): Entity = {
+  override def addPropertyValues(pid: PropertyId, value: List[WDTKValue]): Entity = {
     println(s"AddPropertyValues: $pid not implemented yet")
     this
   }
