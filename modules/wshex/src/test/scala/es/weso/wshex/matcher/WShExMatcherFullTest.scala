@@ -265,7 +265,83 @@ class WShExMatcherFullTest extends FunSuite {
                        |}""".stripMargin
     val expected: Option[EntityDoc] = EntityDoc(q42_full).some
     checkMatch(label, schemaStr, q42_full, expected)
+  }
+
+  { val label = ":Q42 :P31 :Q5 References {| :P248 :Q6 ; :P214 \"hi\" |} . # <S> { :p31 . {| :P248 . ; |} }"
+    val q42_raw = Q(42).build()
+    val q5 = Q(5).build()
+    val q6 = Q(6).build()
+    val hi = new StringValueImpl("Hi")
+    val p31_q5_refs = 
+      StatementBuilder
+      .forSubjectAndProperty(q42_raw.getEntityId(), PropertyIdValueImpl("P31", defaultSite))
+      .withValue(q5.getEntityId())
+      .withReference(
+        ReferenceBuilder.newInstance()
+        .withPropertyValue(PropertyIdValueImpl("P248", defaultSite), q6.getEntityId())
+        .withPropertyValue(PropertyIdValueImpl("P2148", defaultSite), hi)
+        .build())
+      .build()
+    val q42_full = q42_raw.withStatement(p31_q5_refs)
+    val p31_q5_refExpected = 
+      StatementBuilder
+      .forSubjectAndProperty(q42_raw.getEntityId(), PropertyIdValueImpl("P31", defaultSite))
+      .withValue(q5.getEntityId())
+      .withReference(
+        ReferenceBuilder.newInstance()
+        .withPropertyValue(PropertyIdValueImpl("P248", defaultSite), q6.getEntityId())
+        .build())
+      .build()
+    val q42_expected = q42_raw.withStatement(p31_q5_refExpected)
+    val schemaStr = """|prefix :  <http://www.wikidata.org/entity/>
+                       |
+                       |start = @<S>
+                       |
+                       |<S> { 
+                       |  :P31 . References {| :P248 . |} ;
+                       |}""".stripMargin
+    val expected: Option[EntityDoc] = EntityDoc(q42_expected).some
+    checkMatch(label, schemaStr, q42_full, expected)
   } 
+
+  { val label = ":Q42 :P31 :Q5 References {| :P248 :Q6 ; :P214 \"hi\" |} . # <S> { :p31 . {| :P248 . ; :P214 . |} }"
+    val q42_raw = Q(42).build()
+    val q5 = Q(5).build()
+    val q6 = Q(6).build()
+    val hi = new StringValueImpl("Hi")
+    val p31_q5_refs = 
+      StatementBuilder
+      .forSubjectAndProperty(q42_raw.getEntityId(), PropertyIdValueImpl("P31", defaultSite))
+      .withValue(q5.getEntityId())
+      .withReference(
+        ReferenceBuilder.newInstance()
+        .withPropertyValue(PropertyIdValueImpl("P248", defaultSite), q6.getEntityId())
+        .withPropertyValue(PropertyIdValueImpl("P2148", defaultSite), hi)
+        .build())
+      .build()
+    val q42_full = q42_raw.withStatement(p31_q5_refs)
+    val p31_q5_refExpected = 
+      StatementBuilder
+      .forSubjectAndProperty(q42_raw.getEntityId(), PropertyIdValueImpl("P31", defaultSite))
+      .withValue(q5.getEntityId())
+      .withReference(
+        ReferenceBuilder.newInstance()
+        .withPropertyValue(PropertyIdValueImpl("P248", defaultSite), q6.getEntityId())
+        .withPropertyValue(PropertyIdValueImpl("P214", defaultSite), hi)
+        .build())
+      .build()
+    val q42_expected = q42_raw.withStatement(p31_q5_refExpected)
+    val schemaStr = """|prefix :  <http://www.wikidata.org/entity/>
+                       |
+                       |start = @<S>
+                       |
+                       |<S> { 
+                       |  :P31 . References {| :P248 [ :Q6 ] ; :P214 . |} ;
+                       |}""".stripMargin
+    val expected: Option[EntityDoc] = EntityDoc(q42_expected).some
+    checkMatch(label, schemaStr, q42_full, expected)
+  } 
+
  
   def checkMatch(
       name: String,

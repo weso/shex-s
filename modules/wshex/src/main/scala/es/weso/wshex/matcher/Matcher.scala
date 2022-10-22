@@ -273,6 +273,7 @@ case class Matcher(
   ): Either[MatchingError, List[Snak]] =
     ps match {
       case EachOfPs(ps) => 
+        // ps.map(matchSnaksPropertyLocal(snaks,_)).sequence // 
         NotImplemented(s"matchSnaksPropertySpec: EachPs: $ps").asLeft
       case EmptySpec =>
         if (snaks.isEmpty)

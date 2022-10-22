@@ -1264,8 +1264,22 @@ class WSchemaMaker extends WShExDocBaseVisitor[Any] {
         )
       )
 
-
   override def visitPropertySpec(ctx: PropertySpecContext): Builder[PropertySpec] = 
+    visitOneOfPropertyExpr(ctx.oneOfPropertyExpr())
+
+  override def visitOneOfPropertyExpr(ctx: OneOfPropertyExprContext): Builder[PropertySpec] =
+    visitEachOfPropertyExpr(ctx.eachOfPropertyExpr()).flatMap(eo =>
+      visitList(visitOneOfPropertyExpr, ctx.oneOfPropertyExpr()).flatMap(rest => 
+        ok(if (rest.isEmpty) eo else OneOfPs(eo +: rest)))
+      )
+
+  override def visitEachOfPropertyExpr(ctx: EachOfPropertyExprContext): Builder[PropertySpec] =
+    visitSinglePropertyExpr(ctx.singlePropertyExpr()).flatMap(single =>
+      visitList(visitEachOfPropertyExpr, ctx.eachOfPropertyExpr()).flatMap(rest => 
+        ok(if (rest.isEmpty) single else OneOfPs(single +: rest)))
+      )
+
+  override def visitSinglePropertyExpr(ctx: SinglePropertyExprContext): Builder[PropertySpec] = 
     visitPredicate(ctx.predicate()).flatMap(pred =>
         predicate2PropertyId(pred).flatMap(propId =>
           visitShapeAtom(ctx.shapeAtom()).flatMap(se =>
@@ -1280,7 +1294,7 @@ class WSchemaMaker extends WShExDocBaseVisitor[Any] {
                 case WShape(None, false, Nil, None, Nil) =>
                   ok(PropertyLocal(propId, emptyExpr, 
                      cardinality.min, cardinality.max))
-                case _ => err(s"getQualifierSpec. Error matching shapeExpr: $se")
+                case _ => err(s"getPropertySpec. Error matching shapeExpr: $se")
               }
             )
           )
