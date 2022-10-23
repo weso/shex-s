@@ -39,7 +39,7 @@ import cats.implicits._
 import WNodeConstraint._
 import ReferencesSpec._
 import PropertySpec._
-import PropertyS._
+import PropertyConstraint._
 
 /** Visits the AST and builds the corresponding ShEx abstract syntax
   */
@@ -1276,7 +1276,7 @@ class WSchemaMaker extends WShExDocBaseVisitor[Any] {
   override def visitEachOfPropertyExpr(ctx: EachOfPropertyExprContext): Builder[PropertySpec] =
     visitSinglePropertyExpr(ctx.singlePropertyExpr()).flatMap(single =>
       visitList(visitEachOfPropertyExpr, ctx.eachOfPropertyExpr()).flatMap(rest => 
-        ok(if (rest.isEmpty) single else OneOfPs(single +: rest)))
+        ok(if (rest.isEmpty) single else EachOfPs(single +: rest)))
       )
 
   override def visitSinglePropertyExpr(ctx: SinglePropertyExprContext): Builder[PropertySpec] = 

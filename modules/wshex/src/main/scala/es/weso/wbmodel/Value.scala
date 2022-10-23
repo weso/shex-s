@@ -11,6 +11,7 @@ import org.wikidata.wdtk.datamodel.interfaces.{
   StringValue => WDStringValue,
   Value => WDTKValue,
   SiteLink => WDTKSiteLink,
+  TimeValue => WDTKTimeValue,
   _
 }
 import org.wikidata.wdtk.datamodel.implementation._
@@ -31,6 +32,28 @@ case class StringValue(
     wdtkValue.fold(StringValueImpl(str))(identity)
 
 }
+
+case class TimeValue(
+  year: Long, 
+  month: Byte, 
+  day: Byte, 
+  hour: Byte, 
+  minute: Byte,
+  second: Byte, 
+  precision: Byte, 
+  beforeTolerance: Int,
+  afterTolerance: Int, 
+  timezoneOffset: Int, 
+  calendarModel: String,
+  wdtkValue: Option[WDTKValue] = None) extends Value {
+
+  override def toWDTKValue: WDTKValue = 
+    wdtkValue.fold(TimeValueImpl(
+      year, month, day, hour, minute, second, 
+      precision, beforeTolerance, afterTolerance, 
+      timezoneOffset, calendarModel))(identity)
+
+  }
 
 case class QuantityValue(
     numericValue: java.math.BigDecimal,
@@ -130,10 +153,23 @@ object Value {
     override def visit(v: MonolingualTextValue): Value =
       NotImplementedWDTKValue(v.some, "MonolingualText")
     override def visit(v: WDQuantityValue): Value =
-      QuantityValue(v.getNumericValue(), v.getLowerBound(), v.getUpperBound(), v.getUnitItemId())
+      QuantityValue(v.getNumericValue(), v.getLowerBound(), v.getUpperBound(), v.getUnitItemId(), v.some)
     override def visit(v: WDStringValue): Value = StringValue(v.getString())
-    override def visit(v: TimeValue): Value = 
-      NotImplementedWDTKValue(v.some, "Time")
+    override def visit(v: WDTKTimeValue): Value = 
+      TimeValue(
+        v.getYear(),
+        v.getMonth(),
+        v.getDay(),
+        v.getHour(),
+        v.getMinute(),
+        v.getSecond(),
+        v.getPrecision(),
+        v.getBeforeTolerance(),
+        v.getAfterTolerance(),
+        v.getTimezoneOffset(),
+        v.getPreferredCalendarModel(),
+        v.some
+        )
     override def visit(v: UnsupportedValue): Value = 
       NotImplementedWDTKValue(v.some, "Unsupported")
   }

@@ -27,11 +27,8 @@ import es.weso.rbe.interval.IntOrUnbounded
 import cats.implicits._
 import ReferencesSpec._
 import scala.collection.JavaConverters._
-import es.weso.wshex.PropertySpec.EachOfPs
-import es.weso.wshex.PropertySpec.EmptySpec
-import es.weso.wshex.PropertySpec.OneOfPs
-import es.weso.wshex.PropertySpec.PropertyS.PropertyLocal
-import es.weso.wshex.PropertySpec.PropertyS.PropertyRef
+import es.weso.wshex.PropertySpec._
+import es.weso.wshex.PropertySpec.PropertyConstraint._
 
 /** Matcher contains methods to match a WShEx schema with Wikibase entities
   *
@@ -200,7 +197,7 @@ case class Matcher(
     .partition(_.matches)
    val oksCounter = oks.length
    if (oksCounter < tcl.min) {
-     err(StatementsPropertyFailMin(predicate, e, oksCounter, tcl.min))
+     err(StatementsPropertyFailMin(predicate, oksCounter, tcl.min, tcl, e, oks, errs))
     } 
     else if (tcl.max < oksCounter) 
      err(StatementsPropertyFailMax(predicate, e, oksCounter, tcl.max))
@@ -250,7 +247,7 @@ case class Matcher(
       rs.refs.map(matchReferencePropertySpec(_, refSingle.ps)).partition(_.isRight)
     val numOks = oks.length
     if (numOks < refSingle.min)
-      ReferencesNumLessMin(numOks, refSingle.min, refSingle).asLeft
+      ReferencesNumLessMin(numOks, refSingle.min, rs, refSingle, oks, errs).asLeft
     else if (refSingle.max < numOks)
       ReferencesNumGreaterMax(numOks, refSingle.max, refSingle).asLeft
     else 
@@ -272,17 +269,30 @@ case class Matcher(
       ps: PropertySpec,
   ): Either[MatchingError, List[Snak]] =
     ps match {
-      case EachOfPs(ps) => 
-        // ps.map(matchSnaksPropertyLocal(snaks,_)).sequence // 
-        NotImplemented(s"matchSnaksPropertySpec: EachPs: $ps").asLeft
+      case eo: EachOfPs if eo.ps.forall(_.isInstanceOf[PropertyConstraint]) => {
+        val pcs: List[PropertyConstraint] =
+          eo.ps.map(_.asInstanceOf[PropertyConstraint])
+        pcs.map(matchPropertyConstraint(snaks,_)).sequence.map(_.flatten)
+      }
+      case eo: EachOfPs => 
+        NotImplemented(s"matchSnaksPropertySpec: Complex EachOfPs: $ps").asLeft
       case EmptySpec =>
         if (snaks.isEmpty)
           List().asRight
         else NoMatchingEmptyPropertySpec(snaks).asLeft
       case OneOfPs(ps) => NotImplemented(s"matchSnaksPropertySpec: OneOfPropertySpec: $ps").asLeft
+      case pc: PropertyConstraint => matchPropertyConstraint(snaks, pc)
+    }
+
+  private def matchPropertyConstraint(
+    snaks: List[Snak], 
+    pc: PropertyConstraint
+    ): Either[MatchingError, List[Snak]] = 
+      pc match {
       case pl: PropertyLocal =>
         matchSnaksPropertyLocal(snaks, pl)
-      case pr: PropertyRef => NotImplemented(s"matchSnaksPropertySpec: PropertyRef ps=$ps").asLeft
+      case pr: PropertyRef => 
+        NotImplemented(s"matchSnaksPropertySpec: PropertyRef ps=$pr").asLeft
     }
 
   private def matchSnaksPropertyLocal(

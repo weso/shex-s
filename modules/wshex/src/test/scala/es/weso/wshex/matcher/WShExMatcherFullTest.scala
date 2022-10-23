@@ -316,7 +316,7 @@ class WShExMatcherFullTest extends FunSuite {
       .withReference(
         ReferenceBuilder.newInstance()
         .withPropertyValue(PropertyIdValueImpl("P248", defaultSite), q6.getEntityId())
-        .withPropertyValue(PropertyIdValueImpl("P2148", defaultSite), hi)
+        .withPropertyValue(PropertyIdValueImpl("P214", defaultSite), hi)
         .build())
       .build()
     val q42_full = q42_raw.withStatement(p31_q5_refs)
@@ -326,8 +326,8 @@ class WShExMatcherFullTest extends FunSuite {
       .withValue(q5.getEntityId())
       .withReference(
         ReferenceBuilder.newInstance()
-        .withPropertyValue(PropertyIdValueImpl("P248", defaultSite), q6.getEntityId())
         .withPropertyValue(PropertyIdValueImpl("P214", defaultSite), hi)
+        .withPropertyValue(PropertyIdValueImpl("P248", defaultSite), q6.getEntityId())
         .build())
       .build()
     val q42_expected = q42_raw.withStatement(p31_q5_refExpected)

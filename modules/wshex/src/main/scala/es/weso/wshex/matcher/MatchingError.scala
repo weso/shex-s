@@ -6,6 +6,7 @@ import org.wikidata.wdtk.datamodel.interfaces.{
     Statement => WDTKStatement, 
     Value => WDTKValue, 
     Snak => WDTKSnak,
+    Reference => WDTKReference,
     _
 }
 import es.weso.rdf.nodes._
@@ -16,7 +17,7 @@ import es.weso.rbe.interval.IntOrUnbounded
 import es.weso.utils.internal.CollectionCompat._
 import es.weso.wshex.ReferencesSpec._
 import es.weso.wshex.PropertySpec._
-import es.weso.wshex.PropertySpec.PropertyS._
+import es.weso.wshex.PropertySpec.PropertyConstraint._
 
 sealed abstract class MatchingError(msg: String) extends Product with Serializable
 
@@ -77,10 +78,18 @@ object MatchingError {
                                 |Entity ${entity.show()}
                                 |""".stripMargin)
 
-  case class StatementsPropertyFailMin(property: IRI, entity: EntityDoc, counter: Int, min: Int)
-      extends MatchingError(s"""|Statements for property: ${property} = $counter should be > $min
-                                |Entity ${entity.show()}
-                                |""".stripMargin)
+  case class StatementsPropertyFailMin(
+    property: IRI, counter: Int, min: Int, 
+    tcl: TripleConstraintLocal, entity: EntityDoc,
+    oks: List[MatchingStatus],
+    errs: List[MatchingStatus])
+      extends 
+      MatchingError(s"""|Statements for property: ${property} = $counter should be > $min
+                        |tripleConstraint: $tcl
+                        |oks: $oks
+                        |errs: $errs
+                        |Entity ${entity.show()}
+                        |""".stripMargin)
 
   case class StatementsPropertyFailMax(
       property: IRI,
@@ -196,7 +205,9 @@ object MatchingError {
                                 |err: ${err}
                               |""".stripMargin)
 
-  case class ReferencesNumLessMin(oks: Int, min: Int, ref: ReferencesSpecSingle)
+  case class ReferencesNumLessMin(oksCounter: Int, min: Int, rs: References, ref: ReferencesSpecSingle, 
+     oks: List[Either[MatchingError, Reference]], 
+     errs: List[Either[MatchingError, Reference]])
       extends MatchingError(s"""|Num references match less than min
                                 |Num passed: $oks
                                 |Min: $min

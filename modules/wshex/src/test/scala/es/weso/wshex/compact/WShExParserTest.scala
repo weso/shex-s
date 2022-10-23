@@ -10,7 +10,7 @@ import es.weso.utils.VerboseLevel._
 import es.weso.wshex.TermConstraint._
 import WNodeConstraint._
 import PropertySpec._ 
-import PropertyS._
+import PropertyConstraint._
 
 class WShExParserTest extends CatsEffectSuite {
 

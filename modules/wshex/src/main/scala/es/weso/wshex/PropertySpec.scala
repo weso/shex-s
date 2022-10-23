@@ -7,19 +7,19 @@ object PropertySpec {
  case class EachOfPs(ps: List[PropertySpec]) extends PropertySpec
  case class OneOfPs(ps: List[PropertySpec]) extends PropertySpec
  case object EmptySpec extends PropertySpec
- sealed abstract class PropertyS extends PropertySpec
- object PropertyS {
+ sealed abstract class PropertyConstraint extends PropertySpec
+ object PropertyConstraint {
   case class PropertyLocal(
     p: PropertyId,
     nc: WNodeConstraint,
     min: Int,
     max: IntOrUnbounded
-  ) extends PropertyS
+  ) extends PropertyConstraint
   case class PropertyRef(
     p: PropertyId,
     ref: WShapeRef,
     min: Int,
     max: IntOrUnbounded
-) extends PropertyS
+) extends PropertyConstraint
  }
 }

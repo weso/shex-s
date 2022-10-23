@@ -16,7 +16,7 @@ import es.weso.wshex.TermConstraint._
 import es.weso.wshex.ListSpec.Single
 import es.weso.wshex.ReferencesSpec._
 import es.weso.wshex.PropertySpec._
-import es.weso.wshex.PropertySpec.PropertyS._
+import es.weso.wshex.PropertySpec.PropertyConstraint._
 
 
 case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging {
@@ -587,7 +587,7 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
 
   private def getQualifier(n: Int, schema: shex.AbstractSchema)(
       te: shex.TripleExpr
-  ): Either[ES2WShExConvertError, Option[PropertyS]] =
+  ): Either[ES2WShExConvertError, Option[PropertyConstraint]] =
     te match {
       case tc: shex.TripleConstraint =>
         val iriParsed = IRIConvert.parseIRI(tc.predicate, convertOptions)
