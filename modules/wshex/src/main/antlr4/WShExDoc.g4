@@ -193,7 +193,13 @@ min_range: INTEGER;
 
 max_range: INTEGER | '*';
 
-propertySpec: '{|' predicate shapeAtom cardinality? '|}';
+propertySpec: '{|' oneOfPropertyExpr '|}';
+
+oneOfPropertyExpr : eachOfPropertyExpr ( '|' oneOfPropertyExpr )* ;
+
+eachOfPropertyExpr: singlePropertyExpr ( ';' eachOfPropertyExpr )* ;
+
+singlePropertyExpr: predicate shapeAtom cardinality? ;
 
 referencesSpec: KW_REFERENCES oneOfReferencesExpr ;
 

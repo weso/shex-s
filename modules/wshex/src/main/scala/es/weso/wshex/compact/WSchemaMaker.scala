@@ -31,7 +31,7 @@ import es.weso.shex.{
   XsFacet
 }
 import es.weso.wshex._
-import es.weso.wbmodel.{Lang => WBLang, _}
+import es.weso.wbmodel._
 import es.weso.rbe.interval._
 import TripleConstraint._
 import TermConstraint._
@@ -39,7 +39,7 @@ import cats.implicits._
 import WNodeConstraint._
 import ReferencesSpec._
 import PropertySpec._
-import PropertyS._
+import PropertyConstraint._
 
 /** Visits the AST and builds the corresponding ShEx abstract syntax
   */
@@ -1264,8 +1264,22 @@ class WSchemaMaker extends WShExDocBaseVisitor[Any] {
         )
       )
 
-
   override def visitPropertySpec(ctx: PropertySpecContext): Builder[PropertySpec] = 
+    visitOneOfPropertyExpr(ctx.oneOfPropertyExpr())
+
+  override def visitOneOfPropertyExpr(ctx: OneOfPropertyExprContext): Builder[PropertySpec] =
+    visitEachOfPropertyExpr(ctx.eachOfPropertyExpr()).flatMap(eo =>
+      visitList(visitOneOfPropertyExpr, ctx.oneOfPropertyExpr()).flatMap(rest => 
+        ok(if (rest.isEmpty) eo else OneOfPs(eo +: rest)))
+      )
+
+  override def visitEachOfPropertyExpr(ctx: EachOfPropertyExprContext): Builder[PropertySpec] =
+    visitSinglePropertyExpr(ctx.singlePropertyExpr()).flatMap(single =>
+      visitList(visitEachOfPropertyExpr, ctx.eachOfPropertyExpr()).flatMap(rest => 
+        ok(if (rest.isEmpty) single else EachOfPs(single +: rest)))
+      )
+
+  override def visitSinglePropertyExpr(ctx: SinglePropertyExprContext): Builder[PropertySpec] = 
     visitPredicate(ctx.predicate()).flatMap(pred =>
         predicate2PropertyId(pred).flatMap(propId =>
           visitShapeAtom(ctx.shapeAtom()).flatMap(se =>
@@ -1280,7 +1294,7 @@ class WSchemaMaker extends WShExDocBaseVisitor[Any] {
                 case WShape(None, false, Nil, None, Nil) =>
                   ok(PropertyLocal(propId, emptyExpr, 
                      cardinality.min, cardinality.max))
-                case _ => err(s"getQualifierSpec. Error matching shapeExpr: $se")
+                case _ => err(s"getPropertySpec. Error matching shapeExpr: $se")
               }
             )
           )

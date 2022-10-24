@@ -8,21 +8,23 @@ import cats.implicits._
 sealed abstract class WNodeKind {
   def matchSnak(snak: Snak): Either[Reason, Unit] = snak match {
     case valueSnak: Snak.ValueSnak => matchValue(valueSnak.value)
-    case Snak.NoValueSnak => this match {
+    case nv: Snak.NoValueSnak => this match {
       case WNodeKind.NoValueKind => ().asRight
-      case _ => WnodeKindMatchError_NoValue(snak).asLeft
+      case _ => WnodeKindMatchError_NoValueSnak(snak).asLeft
     }
-    case Snak.SomeValueSnak => this match {
+    case sv: Snak.SomeValueSnak => this match {
       case WNodeKind.SomeValueKind => ().asRight
-      case _ => WnodeKindMatchError_SomeValue(snak).asLeft
+      case _ => WnodeKindMatchError_SomeValueSnak(snak).asLeft
     }
   }
+
   def matchValue(value: Value): Either[Reason, Unit] = this match {
-    case WNodeKind.NoValueKind => WnodeKindMatchError_NoValue(Snak.ValueSnak(value)).asLeft
-    case WNodeKind.SomeValueKind => WnodeKindMatchError_SomeValue(Snak.ValueSnak(value)).asLeft
+    case WNodeKind.NoValueKind => 
+      WnodeKindMatchError_NoValue(value).asLeft
+    case WNodeKind.SomeValueKind => 
+      WnodeKindMatchError_SomeValue(value).asLeft
     case WNodeKind.LiteralKind => value match {
-        case _: StringValue | 
-             _: DateValue => ().asRight
+        case _: StringValue => ().asRight
         case _ => NotImplemented(s"LiteralKind. Failed for value: $value").asLeft
       }
     case WNodeKind.StringKind => value match {
@@ -32,10 +34,6 @@ sealed abstract class WNodeKind {
     case WNodeKind.QuantityKind   => value match {
         case _: QuantityValue => ().asRight
         case _ => NoStringDatatype(value).asLeft
-      }
-    case WNodeKind.TimeKind => value match {
-        case _: DateValue => ().asRight
-        case _            => NoDateDatatype(value).asLeft
       }
     case _ => NotImplemented(s"matchKind. Not implemented yet: $this for value: $value").asLeft
   }

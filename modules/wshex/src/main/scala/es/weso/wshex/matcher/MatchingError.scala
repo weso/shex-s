@@ -1,11 +1,12 @@
 package es.weso.wshex.matcher
 
-import es.weso.wbmodel.{Lang => WBLang, _}
+import es.weso.wbmodel._
 import org.wikidata.wdtk.datamodel.implementation._
 import org.wikidata.wdtk.datamodel.interfaces.{
     Statement => WDTKStatement, 
     Value => WDTKValue, 
     Snak => WDTKSnak,
+    Reference => WDTKReference,
     _
 }
 import es.weso.rdf.nodes._
@@ -16,7 +17,7 @@ import es.weso.rbe.interval.IntOrUnbounded
 import es.weso.utils.internal.CollectionCompat._
 import es.weso.wshex.ReferencesSpec._
 import es.weso.wshex.PropertySpec._
-import es.weso.wshex.PropertySpec.PropertyS._
+import es.weso.wshex.PropertySpec.PropertyConstraint._
 
 sealed abstract class MatchingError(msg: String) extends Product with Serializable
 
@@ -27,6 +28,8 @@ object MatchingError {
   ) extends MatchingError(s"Pending: $msg")
 
   case class NotImplemented(msg: String) extends MatchingError(s"Not Implemented: $msg")
+
+  case class InternalError(msg: String) extends MatchingError(s"Internal Error: $msg")
 
   case class NoShapeExprs(
       wShEx: WSchema
@@ -74,6 +77,34 @@ object MatchingError {
   ) extends MatchingError(s"""|Values for property: ${property} = $counter should be < $max
                                 |Entity ${entity.show()}
                                 |""".stripMargin)
+
+  case class StatementsPropertyFailMin(
+    property: IRI, counter: Int, min: Int, 
+    tcl: TripleConstraintLocal, entity: EntityDoc,
+    oks: List[MatchingStatus],
+    errs: List[MatchingStatus])
+      extends 
+      MatchingError(s"""|Statements for property: ${property} = $counter should be > $min
+                        |tripleConstraint: $tcl
+                        |oks: $oks
+                        |errs: $errs
+                        |Entity ${entity.show()}
+                        |""".stripMargin)
+
+  case class StatementsPropertyFailMax(
+      property: IRI,
+      entity: EntityDoc,
+      counter: Int,
+      max: IntOrUnbounded
+  ) extends MatchingError(s"""|Statements for property: ${property} = $counter should be < $max
+                                |Entity ${entity.show()}
+                                |""".stripMargin)
+
+  case class StatementsFailTripleConstraint(property: IRI, tcl: TripleConstraint, errs: List[MatchingStatus])
+    extends MatchingError(s"""|Statements fail for property ${property} and tripleConstraint: ${tcl}
+                              |Errors: $errs
+                              |""".stripMargin)
+                                
 
   case class ValuesPropertyFailNodeConstraint(
       property: PropertyIdValue,
@@ -156,6 +187,14 @@ object MatchingError {
                                 |wdtkValue: $wdtkValue
                                 |""".stripMargin)
 
+  case class WNodeConstraintSnakError(reason: Reason, nc: WNodeConstraint, snak: Snak)
+      extends MatchingError(s"""|WNodeConstraint Error
+                                |reason: $reason
+                                |nodeConstraint: $nc
+                                |snak: $snak
+                                |""".stripMargin)
+
+
   case class StringConstraintError(
       err: StringConstraintMatchError,
       tc: StringConstraint,
@@ -166,50 +205,47 @@ object MatchingError {
                                 |err: ${err}
                               |""".stripMargin)
 
-  case class ReferencesNumLessMin(oks: Int, min: Int, st: WDTKStatement, ref: ReferencesSpecSingle)
+  case class ReferencesNumLessMin(oksCounter: Int, min: Int, rs: References, ref: ReferencesSpecSingle, 
+     oks: List[Either[MatchingError, Reference]], 
+     errs: List[Either[MatchingError, Reference]])
       extends MatchingError(s"""|Num references match less than min
                                 |Num passed: $oks
                                 |Min: $min
-                                |statement: $st
                                 |ref: ${ref}
                               |""".stripMargin)
 
   case class ReferencesNumGreaterMax(
       oks: Int,
       max: IntOrUnbounded,
-      st: WDTKStatement,
       ref: ReferencesSpecSingle
   ) extends MatchingError(s"""|Num references match less than min
                                 |Num passed: $oks
                                 |Max: $max
-                                |statement: $st
                                 |ref: $ref
                               |""".stripMargin)
 
   case class NoMatchingEmptyPropertySpec(
-      snaks: List[WDTKSnak],
-      st: WDTKStatement
+      snaks: List[Snak]
   ) extends MatchingError(s"""|Empty PropertySpec does not match non empty list of snaks
                               |Snaks: $snaks
-                              |statement: $st
                               |""".stripMargin)
 
-  case class PropertySpecLocalNumLessMin(oksNum: Int, min: Int, pl: PropertyLocal, snaks: List[WDTKSnak], oks: LazyList[MatchingStatus])
+  case class PropertySpecLocalNumLessMin(oksNum: Int, min: Int, pl: PropertyLocal, snaks: List[Snak])
       extends MatchingError(s"""|Num properties match less than min
                                 |Num passed: $oksNum
                                 |Min: $min
                                 |PropertyLocal: $pl
                                 |snaks: ${snaks}
-                                |oks: ${oks}
-                              |""".stripMargin)
+                                |""".stripMargin)
  
-  case class PropertySpecLocalNumGreaterMax(oksNum: Int, max: IntOrUnbounded, pl: PropertyLocal, snaks: List[WDTKSnak], oks: LazyList[MatchingStatus])
+  case class PropertySpecLocalNumGreaterMax(oksNum: Int, max: IntOrUnbounded, pl: PropertyLocal, snaks: List[Snak])
     extends MatchingError(s"""|Num references match greater than max
                                 |Num passed: $oksNum
                                 |Max: $max
                                 |PropertyLocal: $pl
                                 |snaks: ${snaks}
-                                |oks: ${oks}
                               |""".stripMargin)
+
+
                               
 }

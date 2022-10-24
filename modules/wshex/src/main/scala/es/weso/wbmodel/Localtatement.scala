@@ -15,5 +15,5 @@ case class LocalStatement(
 }
 
 object LocalStatement {
-  implicit val orderingById: Ordering[Statement] = Ordering.by(_.propertyRecord.id)
+  implicit val orderingById: Ordering[LocalStatement] = Ordering.by(_.propertyRecord.id)
 }

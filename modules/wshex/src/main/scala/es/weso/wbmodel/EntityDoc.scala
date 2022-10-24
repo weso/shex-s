@@ -5,6 +5,7 @@ import org.wikidata.wdtk.datamodel.interfaces.{
   Statement => WDTKStatement,
   StringValue => WDTKStringValue,
   Value => WDTKValue,
+  Snak => WDTKSnak,
   _
 }
 import org.wikidata.wdtk.datamodel.helpers.JsonDeserializer
@@ -48,19 +49,20 @@ case class EntityDoc(entityDocument: EntityDocument) extends Serializable {
     case _ => Map()
   }
 
-//  lazy val valueMapFull: Map[PropertyIdValue, LazyList[FullValue]] = ???
-
-  /*  def convertValue(s: WDTKStatement): Value = {
-    val wdtkValue = s.getClaim().getValue()
-    if (wdtkValue == null) throw new RuntimeException(s"Cannot obtain value for statement: $s")
-    else wdtkValue.accept(ConvertValueVisitor())
-  } */
-
   def getStatements(): List[WDTKStatement] = entityDocument match {
     case s: StatementDocument =>
       s.getAllStatements().asScala.toList
     case _ => List()
   }
+
+  def getStatementsForProperty(
+    prop: PropertyIdValue
+    ): List[WDTKStatement] = entityDocument match {
+   case s: StatementDocument => 
+    s.findStatementGroup(prop).getStatements().asScala.toList
+   case _ => List() 
+  }
+    
 
   def getLabels(): Map[String, MonolingualTextValue] =
     entityDocument match {
@@ -153,6 +155,27 @@ case class EntityDoc(entityDocument: EntityDocument) extends Serializable {
       case pd: PropertyDocument => pd.withStatement(st)
     })
   }
+
+  def addStatement(st: Statement): EntityDoc = {
+    val property = st.propertyId
+    val sb: StatementBuilder = 
+        StatementBuilder
+        .forSubjectAndProperty(entityDocument.getEntityId(), property.toWDTKValue)
+
+    val sbSnak = st.snak match {
+        case _: Snak.NoValueSnak => sb.withNoValue()
+        case _: Snak.SomeValueSnak => sb.withSomeValue()
+        case vs: Snak.ValueSnak => sb.withValue(vs.value.toWDTKValue)
+      }
+    val sbQs = sbSnak.withQualifiers(st.qualifiers.snakGroups.asJava)
+    val sbRefs = sbQs.withReferences(st.references.asWDTKReferences.asJava)
+    val wdStatement = sbRefs.build()
+
+    EntityDoc(entityDocument match {
+       case id: ItemDocument     => id.withStatement(wdStatement)
+       case pd: PropertyDocument => pd.withStatement(wdStatement)
+      })
+    }
 
   def withLabel(langCode: String, label: String): EntityDoc =
     entityDocument match {
