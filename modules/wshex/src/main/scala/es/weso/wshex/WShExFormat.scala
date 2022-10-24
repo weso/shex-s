@@ -25,7 +25,11 @@ object WShExFormat {
     val strUpper = str.toUpperCase()
     availableFormats.collectFirst { 
       case f if f.name.toUpperCase() == strUpper => f
-    }.fold(ConvertWShExFormatError(str).asLeft)(_.asRight)
+    }.fold(
+      ConvertWShExFormatError(str).asLeft[WShExFormat]
+      )(
+      _.asRight[ConvertWShExFormatError]
+      )
   }
 
   case class ConvertWShExFormatError(str: String) 

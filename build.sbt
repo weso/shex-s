@@ -1,5 +1,5 @@
 lazy val scala212 = "2.12.16"
-lazy val scala213 = "2.13.8"
+lazy val scala213 = "2.13.10"
 lazy val scala3 = "3.2.0"
 lazy val supportedScalaVersions = List(
   scala3,
@@ -252,6 +252,7 @@ lazy val wshex = project
   .settings(
     crossScalaVersions := supportedScalaVersions,
     libraryDependencies ++= Seq(
+      utils, 
       catsCore,
       catsKernel,
       circeCore,
@@ -266,8 +267,9 @@ lazy val wshex = project
       wdtkStorage,
       wdtkUtil,
       scalaCollCompat,
+      srdfJena,
       munit % Test,
-      munitEffect % Test
+      munitEffect % Test,
     ),
     testFrameworks += new TestFramework("munit.Framework")
   )

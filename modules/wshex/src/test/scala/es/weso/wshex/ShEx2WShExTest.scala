@@ -16,7 +16,7 @@ class ShEx2WShExTest extends CatsEffectSuite {
   val wd = IRI("http://www.wikidata.org/entity/")
   val wdt = IRI("http://www.wikidata.org/prop/direct/")
   val pm: PrefixMap =
-    PrefixMap.fromMap(Map("" -> ex, "wd" -> wd, "wdt" -> wdt, "p" -> p, "ps" -> ps))
+    PrefixMap.fromMap(Map("" -> wd))
   val s: ShapeLabel = IRILabel(IRI("S"))
 
   {

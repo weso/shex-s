@@ -75,16 +75,16 @@ class ESMatcherTest extends FunSuite {
                        |start = @<S>
                        |
                        |<S> {
-                       |  p:P279 @<S1>
+                       |  p:P31 @<S1>
                        |}
                        |
                        |<S1> {
-                       | ps:P279 . ;
+                       | ps:P31 . ;
                        | prov:wasDerivedFrom @<T>
                        |}
                        |
                        |<T> {
-                       | pr:P248   [ wd:Q5 ]
+                       | pr:P248   [ wd:Q54919 ]
                        |}
                        |""".stripMargin
     checkMatch("Q42 with P279 reference", schemaStr, q42Str, true, VerboseLevel.Nothing)                   

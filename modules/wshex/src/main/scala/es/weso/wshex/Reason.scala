@@ -48,7 +48,17 @@ case class NoneMatchShapeOr(entity: Entity, so: WShapeOr)
     extends Reason(errCode = Reason.noneMatchShapeOr)
 
 case class StringFacetNoStringValue(facet: StringFacet, value: Value) extends Reason(errCode = Reason.stringFacetNoStringValue)    
-case class NumericFacetNoNumericValue(facet: NumericFacet, value: Value) extends Reason(errCode = Reason.numericFacetNoNumericValue)    
+case class NumericFacetNoNumericValue(facet: NumericFacet, value: Value) extends Reason(errCode = Reason.numericFacetNoNumericValue)
+case class WnodeKindMatchError_Value(snak: Snak) extends Reason(errCode = Reason.wnodeKindMatchError_Value)
+case class WnodeKindMatchError_NoValue(value: Value) extends Reason(errCode = Reason.wnodeKindMatchError_NoValue)
+case class WnodeKindMatchError_SomeValue(value: Value) extends Reason(errCode = Reason.wnodeKindMatchError_SomeValue)
+case class WnodeKindMatchError_SomeValueSnak(snak: Snak) extends Reason(errCode = Reason.wnodeKindMatchError_SomeValue)
+case class MatchDatatypeError_NoValue(value: Value) extends Reason(errCode = Reason.wnodeKindMatchError_SomeValue)
+case class MatchDatatypeError_NoValueSnak(snak: Snak) extends Reason(errCode = Reason.wnodeKindMatchError_SomeValue)
+case class WnodeKindMatchError_NoValueSnak(snak: Snak) extends Reason(errCode = Reason.wnodeKindMatchError_NoValue)
+case class MatchFacetsError_NoValue(snak: Snak) extends Reason(errCode = Reason.matchFacetsError_NoValue)
+case class MatchValueSetError_NoValue(snak: Snak) extends Reason(errCode = Reason.matchValueSetError_NoValue)
+
 
 object Reason {
   val noValueForProperty = ReasonCode(0)
@@ -73,4 +83,10 @@ object Reason {
   val numericFacetNoNumericValue = ReasonCode(19)
   val numericFacetErr = ReasonCode(20)
   val unknownDatatypeMatch = ReasonCode(21)
+  val wnodeKindMatchError_Value = ReasonCode(22)
+  val wnodeKindMatchError_NoValue = ReasonCode(23)
+  val wnodeKindMatchError_SomeValue = ReasonCode(24)
+  val matchDatatypeError_NoValue = ReasonCode(25)
+  val matchFacetsError_NoValue = ReasonCode(26)
+  val matchValueSetError_NoValue = ReasonCode(27)
 }

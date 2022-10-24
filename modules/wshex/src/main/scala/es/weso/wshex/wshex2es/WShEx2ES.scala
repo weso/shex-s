@@ -6,7 +6,7 @@ import com.typesafe.scalalogging.LazyLogging
 import es.weso._
 import es.weso.rbe.interval.{IntLimit, Unbounded}
 import es.weso.rdf.nodes._
-import es.weso.wbmodel.{Lang => _, Property => _, _}
+import es.weso.wbmodel.{Property => _, _}
 import es.weso.rbe.interval.IntOrUnbounded
 import scala.collection.compat._ // Required for partitionMap
 import es.weso.rdf.nodes._
@@ -153,7 +153,7 @@ case class WShEx2ES(convertOptions: WShEx2ESConvertOptions) extends LazyLogging 
     e.asLeft[A]
 
   private def convertOpt[A,B](x: Option[A], cnv: A => Convert[B]): Convert[Option[B]] =
-    x.fold(ok(none))(cnv(_).map(_.some))
+    x.fold(ok(none[B]))(cnv(_).map(_.some))
 
   private def convertList[A,B](xs: List[A], cnv: A => Convert[B]): Convert[List[B]] =
     xs.map(cnv(_)).sequence
