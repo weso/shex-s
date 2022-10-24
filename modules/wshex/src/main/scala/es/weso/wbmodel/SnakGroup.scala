@@ -4,23 +4,21 @@ import org.wikidata.wdtk.datamodel.interfaces.{SnakGroup => WDTKSnakGroup}
 import org.wikidata.wdtk.datamodel.implementation.SnakGroupImpl
 import cats.implicits._
 
-
 case class SnakGroup(
-  snaks: List[Snak], 
-  sg: Option[WDTKSnakGroup] = None
-  ) {
-    
-    lazy val toWDTKSnakGroup: WDTKSnakGroup = sg.fold(
-      SnakGroupImpl(snaks.map(_.toWDTKSnak).asJava)
-    )(identity)
+    snaks: List[Snak],
+    sg: Option[WDTKSnakGroup] = None
+) {
+
+  lazy val toWDTKSnakGroup: WDTKSnakGroup = sg.fold(
+    SnakGroupImpl(snaks.map(_.toWDTKSnak).asJava)
+  )(identity)
 }
 
 object SnakGroup {
-    
-    def fromWDTKSnakGroup(sg: WDTKSnakGroup): SnakGroup = {
-      SnakGroup(
-        sg.getSnaks().asScala.toList.map(Snak.fromWDTKSnak(_)),
-         sg.some   
-      )  
-    }
+
+  def fromWDTKSnakGroup(sg: WDTKSnakGroup): SnakGroup =
+    SnakGroup(
+      sg.getSnaks().asScala.toList.map(Snak.fromWDTKSnak(_)),
+      sg.some
+    )
 }

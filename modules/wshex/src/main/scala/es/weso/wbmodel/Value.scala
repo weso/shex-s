@@ -7,11 +7,11 @@ import es.weso.wshex.ShapeLabel
 import org.wikidata.wdtk.datamodel.interfaces.{
   DatatypeIdValue,
   QuantityValue => WDQuantityValue,
+  SiteLink => WDTKSiteLink,
   Statement => WDStatement,
   StringValue => WDStringValue,
-  Value => WDTKValue,
-  SiteLink => WDTKSiteLink,
   TimeValue => WDTKTimeValue,
+  Value => WDTKValue,
   _
 }
 import org.wikidata.wdtk.datamodel.implementation._
@@ -28,32 +28,44 @@ case class StringValue(
     wdtkValue: Option[WDTKValue] = None
 ) extends LiteralValue {
   override def toString = s"$str"
-  override def toWDTKValue: WDTKValue = 
+  override def toWDTKValue: WDTKValue =
     wdtkValue.fold(StringValueImpl(str))(identity)
 
 }
 
 case class TimeValue(
-  year: Long, 
-  month: Byte, 
-  day: Byte, 
-  hour: Byte, 
-  minute: Byte,
-  second: Byte, 
-  precision: Byte, 
-  beforeTolerance: Int,
-  afterTolerance: Int, 
-  timezoneOffset: Int, 
-  calendarModel: String,
-  wdtkValue: Option[WDTKValue] = None) extends Value {
+    year: Long,
+    month: Byte,
+    day: Byte,
+    hour: Byte,
+    minute: Byte,
+    second: Byte,
+    precision: Byte,
+    beforeTolerance: Int,
+    afterTolerance: Int,
+    timezoneOffset: Int,
+    calendarModel: String,
+    wdtkValue: Option[WDTKValue] = None
+) extends Value {
 
-  override def toWDTKValue: WDTKValue = 
-    wdtkValue.fold(TimeValueImpl(
-      year, month, day, hour, minute, second, 
-      precision, beforeTolerance, afterTolerance, 
-      timezoneOffset, calendarModel))(identity)
+  override def toWDTKValue: WDTKValue =
+    wdtkValue.fold(
+      TimeValueImpl(
+        year,
+        month,
+        day,
+        hour,
+        minute,
+        second,
+        precision,
+        beforeTolerance,
+        afterTolerance,
+        timezoneOffset,
+        calendarModel
+      )
+    )(identity)
 
-  }
+}
 
 case class QuantityValue(
     numericValue: java.math.BigDecimal,
@@ -63,8 +75,8 @@ case class QuantityValue(
     wdtkValue: Option[WDTKValue] = None
 ) extends Value {
 
-  override def toWDTKValue: WDTKValue = 
-    wdtkValue.fold(QuantityValueImpl(numericValue,lowerBound,upperBound,unit))(identity)
+  override def toWDTKValue: WDTKValue =
+    wdtkValue.fold(QuantityValueImpl(numericValue, lowerBound, upperBound, unit))(identity)
 
 }
 
@@ -74,16 +86,22 @@ case class IRIValue(
 ) extends LiteralValue {
   override def toString = s"${iri.getLexicalForm}"
 
-  override def toWDTKValue: WDTKValue = 
+  override def toWDTKValue: WDTKValue =
     wdtkValue.fold(
-      throw new RuntimeException(s"IRIValue.toWDTKValue: Converting IRIValue to WDTK...pending IRIValueImpl???"))(identity)
+      throw new RuntimeException(
+        s"IRIValue.toWDTKValue: Converting IRIValue to WDTK...pending IRIValueImpl???"
+      )
+    )(identity)
 
 }
 
 case class NotImplementedWDTKValue(wdtkValue: Option[WDTKValue], name: String) extends Value {
-  override def toWDTKValue: WDTKValue = 
+  override def toWDTKValue: WDTKValue =
     wdtkValue.fold(
-      throw new RuntimeException(s"NotImplementedValue.toWDTKValue: Converting NotImplementedValue to WDTK...pending NotImplementedValueImpl???"))(identity)
+      throw new RuntimeException(
+        s"NotImplementedValue.toWDTKValue: Converting NotImplementedValue to WDTK...pending NotImplementedValueImpl???"
+      )
+    )(identity)
 }
 
 object Value {
@@ -140,7 +158,6 @@ object Value {
     v.accept(convertVisitor)
   }
 
-
   private case class ConvertValueVisitor() extends ValueVisitor[Value] {
 
     override def visit(v: EntityIdValue): Value = v match {
@@ -148,14 +165,20 @@ object Value {
       case pv: PropertyIdValue => PropertyId(pv.getId(), IRI(pv.getIri()))
       case other               => NotImplementedWDTKValue(v.some, other.getEntityType())
     }
-    override def visit(v: GlobeCoordinatesValue): Value = 
+    override def visit(v: GlobeCoordinatesValue): Value =
       NotImplementedWDTKValue(v.some, "Quantity")
     override def visit(v: MonolingualTextValue): Value =
       NotImplementedWDTKValue(v.some, "MonolingualText")
     override def visit(v: WDQuantityValue): Value =
-      QuantityValue(v.getNumericValue(), v.getLowerBound(), v.getUpperBound(), v.getUnitItemId(), v.some)
+      QuantityValue(
+        v.getNumericValue(),
+        v.getLowerBound(),
+        v.getUpperBound(),
+        v.getUnitItemId(),
+        v.some
+      )
     override def visit(v: WDStringValue): Value = StringValue(v.getString())
-    override def visit(v: WDTKTimeValue): Value = 
+    override def visit(v: WDTKTimeValue): Value =
       TimeValue(
         v.getYear(),
         v.getMonth(),
@@ -169,8 +192,8 @@ object Value {
         v.getTimezoneOffset(),
         v.getPreferredCalendarModel(),
         v.some
-        )
-    override def visit(v: UnsupportedValue): Value = 
+      )
+    override def visit(v: UnsupportedValue): Value =
       NotImplementedWDTKValue(v.some, "Unsupported")
   }
 

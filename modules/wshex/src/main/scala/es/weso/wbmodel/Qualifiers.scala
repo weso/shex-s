@@ -1,8 +1,5 @@
 package es.weso.wbmodel
-import org.wikidata.wdtk.datamodel.interfaces.{ 
-    SnakGroup => WDTKSnakGroup,
-    Snak => WDTKSnak
-} 
+import org.wikidata.wdtk.datamodel.interfaces.{Snak => WDTKSnak, SnakGroup => WDTKSnakGroup}
 import org.wikidata.wdtk.datamodel.implementation.SnakGroupImpl
 import org.wikidata.wdtk.datamodel.implementation.SnakImpl
 import org.wikidata.wdtk.datamodel.implementation.NoValueSnakImpl
@@ -22,21 +19,22 @@ case class Qualifiers(qsMap: Map[PropertyId, List[Snak]]) {
     Qualifiers(qsMap.updated(property, snak +: qsMap.getOrElse(property, List())))
 
   private def mkSnak(s: Snak, p: PropertyIdValue): WDTKSnak = s match {
-    case _: NoValueSnak => new NoValueSnakImpl(p)
+    case _: NoValueSnak   => new NoValueSnakImpl(p)
     case _: SomeValueSnak => new SomeValueSnakImpl(p)
-    case v: ValueSnak => v.value.wdtkValue match {
-      case None => 
-        throw new RuntimeException(
-          s"Converting Snak to value without WDTK value: $s for property $p")
-      case Some(v) => new ValueSnakImpl(p, v)
-    }
+    case v: ValueSnak =>
+      v.value.wdtkValue match {
+        case None =>
+          throw new RuntimeException(
+            s"Converting Snak to value without WDTK value: $s for property $p"
+          )
+        case Some(v) => new ValueSnakImpl(p, v)
+      }
   }
 
-  lazy val snakGroups: List[WDTKSnakGroup] = {
-    qsMap.map { 
-        case (p, snaks) => new SnakGroupImpl(snaks.map(mkSnak(_,p.toWDTKValue)).asJava)
-      }.toList
-  }
+  lazy val snakGroups: List[WDTKSnakGroup] =
+    qsMap.map { case (p, snaks) =>
+      new SnakGroupImpl(snaks.map(mkSnak(_, p.toWDTKValue)).asJava)
+    }.toList
 }
 
 object Qualifiers {
@@ -44,11 +42,11 @@ object Qualifiers {
   def empty: Qualifiers = Qualifiers(Map())
 
   def fromSnakGroups(sgs: java.util.List[WDTKSnakGroup]): Qualifiers = {
-    val m = sgs.asScala.map { 
-      case sg => (
-        PropertyId.fromPropertyIdValue(sg.getProperty()), 
+    val m = sgs.asScala.map { case sg =>
+      (
+        PropertyId.fromPropertyIdValue(sg.getProperty()),
         sg.getSnaks().asScala.toList.map(Snak.fromWDTKSnak(_))
-        ) 
+      )
     }.toMap
     Qualifiers(m)
   }

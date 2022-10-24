@@ -13,6 +13,3 @@ sealed abstract class WShEx2ESConvertError extends Exception {
 }
 
 case class NotImplementedNodeKind(kind: WNodeKind) extends WShEx2ESConvertError
-
-
-

@@ -61,15 +61,13 @@ sealed trait Rbe[+A] extends Product with Serializable {
     * @param matched bag of matched symbols
     */
   def derivBag[U >: A](
-    bag: Bag[U], 
-    open: Boolean, 
-    controlled: Seq[U]
-    )(implicit r: Show[U]): Rbe[U] = {
+      bag: Bag[U],
+      open: Boolean,
+      controlled: Seq[U]
+  )(implicit r: Show[U]): Rbe[U] = {
     val thisBag: Rbe[U] = this
-    bag.toSeq.foldRight(thisBag){
-      case (x, rest) => { 
-        rest.deriv(x, open, controlled)(r) 
-      }
+    bag.toSeq.foldRight(thisBag) { case (x, rest) =>
+      rest.deriv(x, open, controlled)(r)
     }
   }
 
@@ -179,10 +177,10 @@ sealed trait Rbe[+A] extends Product with Serializable {
     * @param controlled defines the symbols that are allowed in closed expressions
     */
   def deriv[U >: A](
-    x: U, 
-    open: Boolean, 
-    controlled: Seq[U]
-    )(implicit r: Show[U]): Rbe[U] =
+      x: U,
+      open: Boolean,
+      controlled: Seq[U]
+  )(implicit r: Show[U]): Rbe[U] =
     this match {
       case f @ Fail(_) => f
       case Empty =>
@@ -190,7 +188,7 @@ sealed trait Rbe[+A] extends Product with Serializable {
           Empty
         else
           Fail(UnexpectedEmpty(x, open)(r))
-      case s : Symbol[U] =>
+      case s: Symbol[U] =>
         derivSymbol(x, s, open, controlled)
       case And(e1, e2) =>
         lazy val d1 = e1.deriv(x, open, controlled)
