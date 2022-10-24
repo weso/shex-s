@@ -30,7 +30,7 @@ object IRIHelpers {
 class WShExTest extends CatsEffectSuite {
   import IRIHelpers._
 
-  /*  val shape = WShape(
+/*  val shape = WShape(
     None,
     false,
     List(),
@@ -109,36 +109,34 @@ class WShExTest extends CatsEffectSuite {
   } */
 
   {
-    val shape = WShape(
-      None,
-      false,
-      List(),
-      None,
-      List(LabelConstraint(Lang("en"), None))
-    )
+   val shape = WShape(
+    None,
+    false,
+    List(),
+    None,
+    List(LabelConstraint(Lang("en"),None))
+   )
 
-    val schema: WSchema = WSchema(
-      prefixes = None,
-      shapesMap = Map(Start -> shape)
-    )
-    val q5 = new ItemIdValueImpl("Q5", "http://www.wikidata.org/entity/")
-    val entity = EntityDoc(
-      ItemDocumentBuilder.forItemId(q5).withLabel("Humano", "es").withLabel("Human", "en").build
-    )
-    val expected = EntityDoc(ItemDocumentBuilder.forItemId(q5).withLabel("Human", "en").build)
-    matchTest("WShape with label", schema, entity, expected)
+   val schema: WSchema = WSchema(
+    prefixes = None,
+    shapesMap = Map(Start -> shape)
+   )
+   val q5 = new ItemIdValueImpl("Q5", "http://www.wikidata.org/entity/")  
+   val entity = EntityDoc(ItemDocumentBuilder.forItemId(q5).withLabel("Humano", "es").withLabel("Human", "en").build)
+   val expected = EntityDoc(ItemDocumentBuilder.forItemId(q5).withLabel("Human", "en").build)
+   matchTest("WShape with label", schema, entity, expected)
   }
 
   def matchTest(
-      name: String,
-      schema: WSchema,
-      entity: EntityDoc,
-      expected: EntityDoc
-  )(implicit loc: munit.Location): Unit = {
+   name: String, 
+   schema: WSchema,
+   entity: EntityDoc, 
+   expected: EntityDoc
+   )(implicit loc: munit.Location): Unit = {
     val matcher = Matcher(wShEx = schema)
     matcher.matchStart(entity.entityDocument) match {
-      case nm: NoMatching => fail(s"No matching: $nm")
-      case m: Matching    => assertEquals(m.entity, expected)
+        case nm: NoMatching => fail(s"No matching: $nm")
+        case m: Matching => assertEquals(m.entity, expected)
+      }
     }
-  }
 }

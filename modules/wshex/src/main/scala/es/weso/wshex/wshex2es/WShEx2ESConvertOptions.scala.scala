@@ -19,10 +19,10 @@ case class WShEx2ESConvertOptions(
     propIri: IRI,
     propStatementIri: IRI,
     propQualifierIri: IRI,
-    entityAlias: String,
-    directPropertyAlias: String,
+    entityAlias: String, 
+    directPropertyAlias: String, 
     propAlias: String,
-    propStatementAlias: String,
+    propStatementAlias: String, 
     propQualifierAlias: String
 )
 
@@ -40,3 +40,4 @@ object WShEx2ESConvertOptions {
     propQualifierAlias = "pq"
   )
 }
+

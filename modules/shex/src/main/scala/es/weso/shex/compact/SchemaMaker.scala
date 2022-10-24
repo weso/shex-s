@@ -1025,6 +1025,7 @@ class SchemaMaker extends ShExDocBaseVisitor[Any] {
     ls <- visitList(visitPredicate, ctx.predicate())
   } yield Extra(ls)
 
+
   override def visitOneOfTripleExpr(ctx: OneOfTripleExprContext): Builder[TripleExpr] = ctx match {
     case _ if isDefined(ctx.groupTripleExpr()) =>
       for {

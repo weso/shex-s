@@ -12,25 +12,26 @@ abstract class Serializer {
 
   def serialize(entityDocument: EntityDocument): IO[String]
 
-  def serialize(entityDoc: EntityDoc): IO[String] =
+  def serialize(entityDoc: EntityDoc): IO[String] = 
     serialize(entityDoc.entityDocument)
 
   private def writeOs(str: String, os: OutputStream): Unit =
-    os.write(str.getBytes(Charset.defaultCharset()))
+      os.write(str.getBytes(Charset.defaultCharset()))
 
-  def serializeOutputStream(entityDocument: EntityDocument, os: OutputStream): Unit =
+  def serializeOutputStream(entityDocument: EntityDocument, os: OutputStream): Unit = {
     writeOs(serialize(entityDocument).unsafeRunSync(), os)
+  }
 
   // Beginning string
   def start: IO[String]
 
-  def startOutputStream(os: OutputStream): Unit =
+  def startOutputStream(os: OutputStream): Unit = 
     writeOs(start.unsafeRunSync(), os)
-
+  
   // Last string
   def end: IO[String]
 
-  def endOutputStream(os: OutputStream): Unit =
+  def endOutputStream(os: OutputStream): Unit = 
     writeOs(end.unsafeRunSync(), os)
 
   // Line separator

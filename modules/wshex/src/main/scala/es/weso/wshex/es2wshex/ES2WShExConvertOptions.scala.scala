@@ -32,3 +32,4 @@ object ES2WShExConvertOptions {
     propReferenceIri = IRI("http://www.wikidata.org/prop/reference/")
   )
 }
+
