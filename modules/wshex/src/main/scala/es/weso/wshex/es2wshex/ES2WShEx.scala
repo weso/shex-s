@@ -548,7 +548,10 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
   }
 
   private def checkAllSome[A](ls: List[Option[A]])(e: ES2WShExConvertError): Convert[List[A]] = 
-    ls.sequence.fold(err(e))(ok(_))
+    ls.sequence match {
+      case None => err(e)
+      case Some(ls) => ok(ls)
+    }
 
   private def getPropertySpec(n: Int, schema: shex.AbstractSchema)(
       te: shex.TripleExpr

@@ -21,11 +21,11 @@ import es.weso.wbmodel._
 import es.weso.wbmodel.Utils._
 import es.weso.wshex.{NotImplemented => _, _}
 import es.weso.utils.VerboseLevel
-import TermConstraint._
-import MatchingError._
+import es.weso.wshex.TermConstraint._
+import es.weso.wshex.matcher.MatchingError._
 import es.weso.rbe.interval.IntOrUnbounded
 import cats.implicits._
-import ReferencesSpec._
+import es.weso.wshex.ReferencesSpec._
 import scala.collection.JavaConverters._
 import es.weso.wshex.PropertySpec._
 import es.weso.wshex.PropertySpec.PropertyConstraint._
@@ -214,14 +214,21 @@ case class Matcher(
     val s: Statement = Statement.fromWDTKStatement(wdtkStatement)
     val eitherStatement = for {
       snak <- matchSnakWNodeConstraint(s.snak, tcl.value)
-      qs <- tcl.qs.fold(Qualifiers.empty.asRight)(quals => matchQs(s.qualifiers, quals))
-      refs <- tcl.refs.fold(References.empty.asRight)(refSpec => matchRefs(s.references, refSpec))
+      qs <- tcl.qs match {
+        case None => Qualifiers.empty.asRight
+        case Some(quals) => matchQs(s.qualifiers, quals)
+      } 
+      refs <- tcl.refs match {
+        case None => References.empty.asRight
+        case Some(refSpec) => matchRefs(s.references, refSpec)
+      } 
     } yield Statement(tcl.property, snak, qs, refs)
     eitherStatement.fold(
-      errs => err(errs),
+      es => err(es),
       s => Matching(List(se), current.addStatement(s))
     )
   }
+
 
 
   private def matchRefs(
@@ -519,10 +526,13 @@ object Matcher {
       base: Option[IRI] = None,
       entityIRI: IRI = defaultIRI,
       format: WShExFormat = WShExFormat.CompactWShExFormat
-  ): Either[ParseError, Matcher] =
-    WSchema
-      .unsafeFromString(str, format, base, entityIRI, verbose)
-      .map(s => Matcher(wShEx = s, verbose = verbose))
+  ): Either[ParseError, Matcher] = {
+    def mkMatcher[E](s:WSchema): Either[E, Matcher] = Matcher(wShEx = s, verbose = verbose).asRight
+    for {
+      wschema <- WSchema.unsafeFromString(str, format, base, entityIRI, verbose)
+      matcher <- mkMatcher(wschema)
+    } yield matcher 
+  }
 
   val defaultIRI = es.weso.wbmodel.Value.defaultIRI
 

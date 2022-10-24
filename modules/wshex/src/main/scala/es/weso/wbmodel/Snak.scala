@@ -26,7 +26,10 @@ object Snak {
    ) extends Snak {
   
   override def toWDTKSnak: WDTKSnak = 
-    wdtkSnak.fold(ValueSnakImpl(propertyId.toWDTKValue, value.toWDTKValue))(identity)
+    wdtkSnak match {
+      case None => new ValueSnakImpl(propertyId.toWDTKValue, value.toWDTKValue)
+      case Some(v) => v
+    }
 }
  
  case class NoValueSnak(
@@ -35,7 +38,10 @@ object Snak {
    ) extends Snak {
 
   override def toWDTKSnak: WDTKSnak = 
-    wdtkSnak.fold(NoValueSnakImpl(propertyId.toWDTKValue))(identity)
+    wdtkSnak match {
+      case None => new NoValueSnakImpl(propertyId.toWDTKValue)
+      case Some(v) => v
+    }
 
    }
 
@@ -45,7 +51,10 @@ object Snak {
   ) extends Snak {
 
   override def toWDTKSnak: WDTKSnak = 
-    wdtkSnak.fold(SomeValueSnakImpl(propertyId.toWDTKValue))(identity)
+    wdtkSnak match {
+      case None => new SomeValueSnakImpl(propertyId.toWDTKValue)
+      case Some(v) => v
+    }
 
   }
 
