@@ -266,17 +266,6 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
         Left(UnsupportedTripleExpr(te))
     }
 
-  /*  private def castToTripleConstraint(
-      maybeTe: Option[TripleExpr]
-  ): Either[ConvertError, Option[TripleConstraint]] = maybeTe match {
-    case None => none.asRight
-    case Some(te) =>
-      te match {
-        case tc: TripleConstraint =>
-          tc.some.asRight
-        case _ => Left(CastTripleConstraintError(te))
-      }
-  } */
 
   private def makeTripleConstraint(
       pred: PropertyId,
@@ -482,7 +471,7 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
       val vs = oks.flatten
       if (vs.isEmpty) ok(none)
       else
-        ok(QualifierSpec(EachOfPs(vs), false).some)
+        ok(QualifierSpec(EachOfPs(vs, 1, IntLimit(1)), false).some)
     } else {
       err(ConvertErrors(errs))
     }
@@ -550,19 +539,40 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
    } 
   }
 
-  private def convertPropertySpecFromShape(n: Int, shape: shex.Shape, schema: shex.AbstractSchema): Convert[PropertySpec] = {
+  private def convertPropertySpecFromShape(
+    n: Int, shape: shex.Shape, schema: shex.AbstractSchema): Convert[PropertySpec] = {
      shape.expression match {
       case None => ok(PropertySpec.EmptySpec)
       case Some(te) => getPropertySpec(n ,schema)(te).map(_.getOrElse(PropertySpec.EmptySpec))
      }
   }
 
+  private def checkAllSome[A](ls: List[Option[A]])(e: ES2WShExConvertError): Convert[List[A]] = 
+    ls.sequence.fold(err(e))(ok(_))
+
   private def getPropertySpec(n: Int, schema: shex.AbstractSchema)(
       te: shex.TripleExpr
-  ): Convert[Option[PropertySpec]] =
-    te match {
+  ): Convert[Option[PropertySpec]] = te match {
       case tc: shex.TripleConstraint =>
-        val iriParsed = IRIConvert.parseIRI(tc.predicate, convertOptions)
+        convertTripleConstraintPropertySpec(n, schema, tc)
+      case eo: shex.EachOf => for {
+       maybeExprs <- eo.expressions.map(getPropertySpec(n, schema)(_)).sequence
+       exprs <- checkAllSome(maybeExprs)(ErrorParsingPropretySpecNone(n, te, maybeExprs))
+      } yield EachOfPs(exprs, eo.min, convertMax(eo.max)).some
+
+      case oo: shex.OneOf => for {
+       maybeExprs <- oo.expressions.map(getPropertySpec(n, schema)(_)).sequence
+       exprs <- checkAllSome(maybeExprs)(ErrorParsingPropretySpecNone(n, te, maybeExprs))
+      } yield OneOfPs(exprs, oo.min, convertMax(oo.max)).some
+
+      case _ => UnsupportedTripleExpr(te, s"Parsing propertySpec for property $n").asLeft
+  }
+
+  private def convertTripleConstraintPropertySpec(
+    n: Int, 
+    schema: shex.AbstractSchema, 
+    tc: shex.TripleConstraint): Convert[Option[PropertyConstraint]] = {
+    val iriParsed = IRIConvert.parseIRI(tc.predicate, convertOptions)
         iriParsed match {
           case Some(PropertyReference(nr)) =>
             val pr = PropertyId.fromNumber(nr, convertOptions.propReferenceIri)
@@ -581,7 +591,6 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
             }
           case _ => UnsupportedPredicate(tc.predicate, s"Parsing references for property $n").asLeft
         }
-      case _ => UnsupportedTripleExpr(te, s"Parsing references of property $n").asLeft
   }
   
 

@@ -73,3 +73,9 @@ case class UnsupportedShapeExprWasDerivedFrom(n: Int, se: shex.ShapeExpr) extend
   override def toString() = s"Unsupported shape expr as value for wasDerivedFrom: $se. Property: $n"
 }
 
+case class ErrorParsingPropretySpecNone(n: Int, te: shex.TripleExpr, maybeExprs: List[Option[PropertySpec]]) extends ES2WShExConvertError {
+  override def toString() = s"""|Error parsing propertySpec for property $n
+                                |PropertySpecs parsed that contain none: $maybeExprs
+                                |tripleExpr: $te
+                                |""".stripMargin
+}

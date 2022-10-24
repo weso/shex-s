@@ -230,12 +230,19 @@ object MatchingError {
                               |Snaks: $snaks
                               |""".stripMargin)
 
-  case class PropertySpecLocalNumLessMin(oksNum: Int, min: Int, pl: PropertyLocal, snaks: List[Snak])
+  case class PropertySpecLocalNumLessMin(
+    oksNum: Int, min: Int, 
+    pl: PropertyLocal, 
+    snaks: List[Snak], 
+    oks: List[Either[MatchingError, Snak]], 
+    errs: List[Either[MatchingError, Snak]])
       extends MatchingError(s"""|Num properties match less than min
                                 |Num passed: $oksNum
                                 |Min: $min
                                 |PropertyLocal: $pl
                                 |snaks: ${snaks}
+                                |oks: ${oks}
+                                |errs: ${errs}
                                 |""".stripMargin)
  
   case class PropertySpecLocalNumGreaterMax(oksNum: Int, max: IntOrUnbounded, pl: PropertyLocal, snaks: List[Snak])

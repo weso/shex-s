@@ -103,7 +103,7 @@ checkConversion(
     VerboseLevel.Nothing
    )   
 
-/*  checkConversion(
+ checkConversion(
     "p:P31 . provenance with EachOf",
     """|PREFIX wd:  <http://www.wikidata.org/entity/>
        |PREFIX wdt: <http://www.wikidata.org/prop/direct/>
@@ -120,25 +120,20 @@ checkConversion(
        |<S1> {
        | ps:P31 . ;
        | prov:wasDerivedFrom @<T> {2} ;
-       | prov:wasDerivedFrom @<U> 
        |}
        |
        |<T> {
-       | pr:P248 [ wd:Q5 ] 
+       | pr:P248 [ wd:Q5 ] ;
+       | pr:P218 .
        |}
-       |
-       |<U> {
-       | pr:P251 .
-       |}""".stripMargin,
+       |""".stripMargin,
     "ShExC",
     """|PREFIX prov: <http://www.w3.org/ns/prov#>
        |PREFIX :  <http://www.wikidata.org/entity/>
        |
        |<S> {
-       | :P31 . References (
-       |          {| :P248 [ :Q5 ] |} {2} ;
-       |          {| :P251 .       |}
-       |        )
+       | :P31 . References 
+       |          {| :P248 [ :Q5 ] ; :P218 . |} {2} 
        |}
        |<S1> {
        |}
@@ -146,7 +141,7 @@ checkConversion(
        |} """.stripMargin,
     "WShExC",
     VerboseLevel.Nothing
-   ) */
+   ) 
 
   checkConversion(
     "Empty",

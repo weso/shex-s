@@ -280,7 +280,7 @@ case class Matcher(
         if (snaks.isEmpty)
           List().asRight
         else NoMatchingEmptyPropertySpec(snaks).asLeft
-      case OneOfPs(ps) => NotImplemented(s"matchSnaksPropertySpec: OneOfPropertySpec: $ps").asLeft
+      case oo: OneOfPs => NotImplemented(s"matchSnaksPropertySpec: OneOfPropertySpec: $oo").asLeft
       case pc: PropertyConstraint => matchPropertyConstraint(snaks, pc)
     }
 
@@ -304,7 +304,7 @@ case class Matcher(
       .map(matchSnakWNodeConstraint(_, pl.nc))
     val (oks, errs) = rs.partition(_.isRight)
      if (pl.min > oks.length)  
-      PropertySpecLocalNumLessMin(oks.length, pl.min, pl, snaks).asLeft[List[Snak]]
+      PropertySpecLocalNumLessMin(oks.length, pl.min, pl, snaks, oks, errs).asLeft[List[Snak]]
      else if (pl.max < oks.length) 
       PropertySpecLocalNumGreaterMax(oks.length, pl.max, pl, snaks).asLeft[List[Snak]]
      else 
@@ -323,8 +323,9 @@ case class Matcher(
     )
   }
 
-  private def hasPropertyId(p: PropertyId, snak: Snak): Boolean =
-    snak.propertyId == p
+  private def hasPropertyId(p: PropertyId, snak: Snak): Boolean = {
+    snak.propertyId.id == p.id
+  }
 
   private def err(merr: MatchingError): MatchingStatus =
     NoMatching(List(merr))
@@ -336,8 +337,8 @@ case class Matcher(
     qualifiers: Qualifiers, 
     qualifierSpec: QualifierSpec,
   ): Either[MatchingError, Qualifiers] =
-    // TODO...add matching on qualifiers
-    qualifiers.asRight
+    matchSnaksPropertySpec(qualifiers.getSnaks(), qualifierSpec.ps)
+    .map(Qualifiers.fromSnaks(_))
 
 /*  private def matchPropertyIdValueExpr(
       propertyId: PropertyId,

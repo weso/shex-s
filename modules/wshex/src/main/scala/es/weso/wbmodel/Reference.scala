@@ -27,13 +27,6 @@ object Reference {
     }
 
     def fromSnaks(snaks: List[Snak]): Reference = 
-        Reference(mkSnakGroups(snaks))
-
-    private def mkSnakGroups(snaks: List[Snak]): List[SnakGroup] = 
-        snaks
-        .groupBy(_.propertyId)
-        .toList
-        .map(_._2)
-        .map(SnakGroup(_))
+        Reference(SnakGroup.mkSnakGroups(snaks))
 
 }
