@@ -5,11 +5,11 @@ import scala.collection.JavaConverters._
 import org.wikidata.wdtk.datamodel.implementation._
 import org.slf4j.LoggerFactory
 import org.wikidata.wdtk.datamodel.interfaces.{
-  Reference => WDTKReference,
-  Snak => WDTKSnak,
   Statement => WDTKStatement,
   StringValue => WDTKStringValue,
   Value => WDTKValue,
+  Snak => WDTKSnak,
+  Reference => WDTKReference,
   _
 }
 import java.nio.file.Path
@@ -141,8 +141,9 @@ case class Matcher(
       current: EntityDoc
   ): MatchingStatus =
     te match {
-      case tc: TripleConstraint =>
+      case tc: TripleConstraint => {
         matchTripleConstraint(tc, entity, se, current)
+      }
       case eo: EachOf if eo.exprs.forall(_.isInstanceOf[TripleConstraint]) =>
         val tcs: LazyList[TripleConstraint] =
           eo.exprs.map(_.asInstanceOf[TripleConstraint]).toLazyList
@@ -150,24 +151,14 @@ case class Matcher(
           current,
           tcs.map(matchTripleConstraint(_, entity, se, current))
         )
-      case eo: EachOf =>
-        err(
-          NotImplemented(
-            s"EachOf contains complex expressions. Only tripleConstraints are accepted by now"
-          )
-        )
+      case eo: EachOf => err(NotImplemented(s"EachOf contains complex expressions. Only tripleConstraints are accepted by now"))  
       case oo: OneOf if oo.exprs.forall(_.isInstanceOf[TripleConstraint]) =>
         val tcs: LazyList[TripleConstraint] =
           oo.exprs.map(_.asInstanceOf[TripleConstraint]).toLazyList
         MatchingStatus.combineOrs(
           tcs.map(tc => matchTripleConstraint(tc, entity, se, current))
         )
-      case oo: OneOf =>
-        err(
-          NotImplemented(
-            s"OneOf contains complex expressions. Only tripleConstraints are accepted by now"
-          )
-        )
+      case oo: OneOf => err(NotImplemented(s"OneOf contains complex expressions. Only tripleConstraints are accepted by now"))  
       case _ =>
         NoMatching(List(NotImplemented(s"matchTripleExpr: $te")))
     }
@@ -177,47 +168,49 @@ case class Matcher(
       e: EntityDoc,
       se: WShape,
       current: EntityDoc
-  ): MatchingStatus =
+  ): MatchingStatus = {
     tc match {
-      case tcr: TripleConstraintRef =>
+      case tcr: TripleConstraintRef => 
         err(NotImplemented(s"tripleConstraintRef: $tcr"))
-      case tcl: TripleConstraintLocal =>
+      case tcl: TripleConstraintLocal => {
         val allowExtras = se.extras.contains(tc.property)
         matchTripleConstraintLocal_Entity(tcl, e, se, current, allowExtras)
+      }
       case tcg: TripleConstraintGeneral =>
         err(NotImplemented(s"tripleConstraintGeneral: $tcg"))
     }
+  }
 
   private def matchTripleConstraintLocal_Entity(
-      tcl: TripleConstraintLocal,
-      e: EntityDoc,
-      se: WShapeExpr,
-      current: EntityDoc,
-      allowExtras: Boolean
-  ): MatchingStatus = {
-    val predicate = tcl.property.iri
-    val pidValue: PropertyIdValue = predicate2propertyIdValue(predicate)
-    val statements = e.getStatementsForProperty(pidValue)
-    val (oks, errs) =
-      statements
-        .map(matchTripleConstraintLocal_Statement(tcl, _, se, current))
-        .partition(_.matches)
-    val oksCounter = oks.length
-    if (oksCounter < tcl.min) {
-      err(StatementsPropertyFailMin(predicate, oksCounter, tcl.min, tcl, e, oks, errs))
-    } else if (tcl.max < oksCounter)
-      err(StatementsPropertyFailMax(predicate, e, oksCounter, tcl.max))
+    tcl: TripleConstraintLocal, 
+    e: EntityDoc, 
+    se: WShapeExpr, 
+    current: EntityDoc, 
+    allowExtras: Boolean
+    ): MatchingStatus = {
+   val predicate = tcl.property.iri
+   val pidValue: PropertyIdValue = predicate2propertyIdValue(predicate)
+   val statements = e.getStatementsForProperty(pidValue)
+   val (oks, errs) = 
+    statements
+    .map(matchTripleConstraintLocal_Statement(tcl, _, se, current))
+    .partition(_.matches)
+   val oksCounter = oks.length
+   if (oksCounter < tcl.min) {
+     err(StatementsPropertyFailMin(predicate, oksCounter, tcl.min, tcl, e, oks, errs))
+    } 
+    else if (tcl.max < oksCounter) 
+     err(StatementsPropertyFailMax(predicate, e, oksCounter, tcl.max))
     else if (errs.nonEmpty && !allowExtras)
-      err(StatementsFailTripleConstraint(predicate, tcl, errs))
-    else MatchingStatus.combineAnds(current, oks.toLazyList)
+              err(StatementsFailTripleConstraint(predicate, tcl, errs))
+    else MatchingStatus.combineAnds(current, oks.toLazyList)  
   }
 
   private def matchTripleConstraintLocal_Statement(
-      tcl: TripleConstraintLocal,
-      wdtkStatement: WDTKStatement,
-      se: WShapeExpr,
-      current: EntityDoc
-  ): MatchingStatus = {
+    tcl: TripleConstraintLocal, 
+    wdtkStatement: WDTKStatement, 
+    se: WShapeExpr, 
+    current: EntityDoc): MatchingStatus = {
     val s: Statement = Statement.fromWDTKStatement(wdtkStatement)
     val eitherStatement = for {
       snak <- matchSnakWNodeConstraint(s.snak, tcl.value)
@@ -230,14 +223,15 @@ case class Matcher(
     )
   }
 
+
   private def matchRefs(
-      refs: References,
-      refSpec: ReferencesSpec
+    refs: References, 
+    refSpec: ReferencesSpec
   ): Either[MatchingError, References] =
     refSpec match {
       case rs: ReferencesSpecSingle =>
         matchReferencesSpecSingle(refs, rs)
-
+        
       case roo: ReferencesOneOf  => NotImplemented(s"ReferencesOneOf: $roo").asLeft
       case reo: ReferencesEachOf => NotImplemented(s"ReferencesEachOf: $reo").asLeft
     }
@@ -247,7 +241,7 @@ case class Matcher(
 
   def matchReferencesSpecSingle(
       rs: References,
-      refSingle: ReferencesSpecSingle
+      refSingle: ReferencesSpecSingle,
   ): Either[MatchingError, References] = {
     val (oks, errs) =
       rs.refs.map(matchReferencePropertySpec(_, refSingle.ps)).partition(_.isRight)
@@ -256,11 +250,11 @@ case class Matcher(
       ReferencesNumLessMin(numOks, refSingle.min, rs, refSingle, oks, errs).asLeft
     else if (refSingle.max < numOks)
       ReferencesNumGreaterMax(numOks, refSingle.max, refSingle).asLeft
-    else
+    else 
       oks.sequence.fold(
-        e => InternalError(s"matchReferencesSpecSingle. Error: $e").asLeft,
+        e => InternalError(s"matchReferencesSpecSingle. Error: $e").asLeft, 
         rs => References(rs).asRight
-      )
+        )
   }
 
   def matchReferencePropertySpec(
@@ -268,18 +262,19 @@ case class Matcher(
       ps: PropertySpec
   ): Either[MatchingError, Reference] =
     matchSnaksPropertySpec(ref.getSnaks(), ps)
-      .map(Reference.fromSnaks(_))
+    .map(Reference.fromSnaks(_))
 
   def matchSnaksPropertySpec(
       snaks: List[Snak],
-      ps: PropertySpec
+      ps: PropertySpec,
   ): Either[MatchingError, List[Snak]] =
     ps match {
-      case eo: EachOfPs if eo.ps.forall(_.isInstanceOf[PropertyConstraint]) =>
+      case eo: EachOfPs if eo.ps.forall(_.isInstanceOf[PropertyConstraint]) => {
         val pcs: List[PropertyConstraint] =
           eo.ps.map(_.asInstanceOf[PropertyConstraint])
-        pcs.map(matchPropertyConstraint(snaks, _)).sequence.map(_.flatten)
-      case eo: EachOfPs =>
+        pcs.map(matchPropertyConstraint(snaks,_)).sequence.map(_.flatten)
+      }
+      case eo: EachOfPs => 
         NotImplemented(s"matchSnaksPropertySpec: Complex EachOfPs: $ps").asLeft
       case EmptySpec =>
         if (snaks.isEmpty)
@@ -290,13 +285,13 @@ case class Matcher(
     }
 
   private def matchPropertyConstraint(
-      snaks: List[Snak],
-      pc: PropertyConstraint
-  ): Either[MatchingError, List[Snak]] =
-    pc match {
+    snaks: List[Snak], 
+    pc: PropertyConstraint
+    ): Either[MatchingError, List[Snak]] = 
+      pc match {
       case pl: PropertyLocal =>
         matchSnaksPropertyLocal(snaks, pl)
-      case pr: PropertyRef =>
+      case pr: PropertyRef => 
         NotImplemented(s"matchSnaksPropertySpec: PropertyRef ps=$pr").asLeft
     }
 
@@ -308,26 +303,25 @@ case class Matcher(
       .filter(hasPropertyId(pl.p, _))
       .map(matchSnakWNodeConstraint(_, pl.nc))
     val (oks, errs) = rs.partition(_.isRight)
-    if (pl.min > oks.length)
+     if (pl.min > oks.length)  
       PropertySpecLocalNumLessMin(oks.length, pl.min, pl, snaks).asLeft[List[Snak]]
-    else if (pl.max < oks.length)
+     else if (pl.max < oks.length) 
       PropertySpecLocalNumGreaterMax(oks.length, pl.max, pl, snaks).asLeft[List[Snak]]
-    else
+     else 
       oks.sequence.fold(
         err => InternalError(s"matchSnaksPropertyLocal: $err, Should all be right...").asLeft,
-        ls => ls.asRight
-      )
+        ls => ls.asRight)
   }
 
   private def matchSnakWNodeConstraint(
       snak: Snak,
       nc: WNodeConstraint
-  ): Either[MatchingError, Snak] =
-    nc.matchLocal(snak)
-      .bimap(
-        reason => WNodeConstraintSnakError(reason, nc, snak),
-        _ => snak
-      )
+  ): Either[MatchingError, Snak] = {
+    nc.matchLocal(snak).bimap(
+      reason => WNodeConstraintSnakError(reason,nc,snak),
+      _ => snak
+    )
+  }
 
   private def hasPropertyId(p: PropertyId, snak: Snak): Boolean =
     snak.propertyId == p
@@ -337,15 +331,15 @@ case class Matcher(
 
   def withPropertyId(property: PropertyId)(st: WDTKStatement): Boolean =
     st.getMainSnak().getPropertyId().getId() == property.id
-
+  
   private def matchQs(
-      qualifiers: Qualifiers,
-      qualifierSpec: QualifierSpec
+    qualifiers: Qualifiers, 
+    qualifierSpec: QualifierSpec,
   ): Either[MatchingError, Qualifiers] =
     // TODO...add matching on qualifiers
     qualifiers.asRight
 
-  /*  private def matchPropertyIdValueExpr(
+/*  private def matchPropertyIdValueExpr(
       propertyId: PropertyId,
       valueExpr: Option[WShapeExpr],
       e: EntityDoc,
@@ -399,10 +393,10 @@ case class Matcher(
         }
     }
     val resQs =
-      qs.fold(resValueExpr)(quals =>
+      qs.fold(resValueExpr)(quals => 
           resValueExpr.and(matchQs(quals, e, current, propertyId)))
-    val resRefs =
-       refs.fold(resQs)(refs =>
+    val resRefs = 
+       refs.fold(resQs)(refs => 
           resQs.and(matchRefs(refs, e, propertyId, se, current)))
     println(s"After checking references: $resRefs")
     resRefs
@@ -463,7 +457,8 @@ case class Matcher(
       .matchLocal(wbValue)
       .fold(
         reason => NoMatching(List(WNodeConstraintError(reason, value, wbValue))),
-        _ => Matching(List(se), current.addPropertyValues(pidValue, LazyList(value)))
+        _ => Matching(List(se), 
+        current.addPropertyValues(pidValue, LazyList(value)))
       )
   }
 

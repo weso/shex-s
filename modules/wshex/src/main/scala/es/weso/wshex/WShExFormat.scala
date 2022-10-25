@@ -18,22 +18,20 @@ object WShExFormat {
     override def name = "ESJson"
   }
 
-  val availableFormats: List[WShExFormat] =
+  val availableFormats: List[WShExFormat] = 
     List(CompactWShExFormat, JsonWShExFormat, ESCompactFormat, ESJsonFormat)
 
   def fromString(str: String): Either[ConvertWShExFormatError, WShExFormat] = {
     val strUpper = str.toUpperCase()
-    availableFormats
-      .collectFirst {
-        case f if f.name.toUpperCase() == strUpper => f
-      }
-      .fold(
-        ConvertWShExFormatError(str).asLeft[WShExFormat]
+    availableFormats.collectFirst { 
+      case f if f.name.toUpperCase() == strUpper => f
+    }.fold(
+      ConvertWShExFormatError(str).asLeft[WShExFormat]
       )(
-        _.asRight[ConvertWShExFormatError]
+      _.asRight[ConvertWShExFormatError]
       )
   }
 
-  case class ConvertWShExFormatError(str: String)
-      extends RuntimeException(s"Error converting $str to WShExFormat")
+  case class ConvertWShExFormatError(str: String) 
+   extends RuntimeException(s"Error converting $str to WShExFormat")  
 }
