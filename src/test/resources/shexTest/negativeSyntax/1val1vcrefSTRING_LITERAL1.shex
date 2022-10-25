@@ -1,5 +1,3 @@
-# ShapeExpression labels may not be literals.
-
 "vc1" LITERAL minlength 4
 
 <http://a.example/EmployeeShape> {

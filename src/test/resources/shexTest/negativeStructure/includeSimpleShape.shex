@@ -1,4 +1,3 @@
-# Inclusion <http://a.example/S1> is not a TripleExpression.
 <http://a.example/S> {
   &<http://a.example/S1>;
   <http://a.example/p1> .

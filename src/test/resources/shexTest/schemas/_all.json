@@ -454,7 +454,7 @@
         "id": "_:a·̀ͯ‿.⁀e",
         "type": "EachOf",
         "expressions": [
-          "http://all.example/S1e",
+          "_:a·̀ͯ‿.⁀e",
           "http://all.example/S2e"
         ]
       }

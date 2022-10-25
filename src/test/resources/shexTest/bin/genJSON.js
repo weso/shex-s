@@ -169,10 +169,6 @@ function genText () {
           [s, "sx", "shex", function (v) { return exists(v[0].substr(dirPath.length)); }],
           [s, "sx", "json", function (v) { return exists(v[0].substr(dirPath.length)); }],
           [s, "sx", "ttl", function (v) { return exists(v[0].substr(dirPath.length)); }],
-          [s, "mf", "startRow"   , function (v) { return parseInt(util.getLiteralValue(v[0])); }],
-          [s, "mf", "startColumn", function (v) { return parseInt(util.getLiteralValue(v[0])); }],
-          [s, "mf", "endRow"     , function (v) { return parseInt(util.getLiteralValue(v[0])); }],
-          [s, "mf", "endColumn"  , function (v) { return parseInt(util.getLiteralValue(v[0])); }],
         ].reduce(function (ret, row) {
           var found = store.findByIRI(row[0], P[row[1]]+row[2], null).map(expandCollection);
           var target = ret;
@@ -235,9 +231,9 @@ function genText () {
   }
   if (!errors) {
     if (OUTFILE) {
-      fs.writeFileSync(OUTFILE, JSON.stringify(ret, null, "  ") + "\n");
+      fs.writeFileSync(OUTFILE, JSON.stringify(ret, null, "  "));
     } else {
-      console.log(JSON.stringify(ret, null, "  ") + "\n");
+      console.log(JSON.stringify(ret, null, "  "));
     }
     process.exit(0);
   } else {

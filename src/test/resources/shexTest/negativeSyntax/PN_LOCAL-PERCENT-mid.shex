@@ -3,5 +3,5 @@
 PREFIX ex: <http://a.example/>
 
 ex:IssueShape {
-   ex:p%1g .
+   ex:p%1 .
 }
