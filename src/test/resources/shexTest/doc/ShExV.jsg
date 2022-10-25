@@ -19,7 +19,7 @@ error            = MissingProperty | TypeMismatch | Failure;
 MissingProperty  { property:IRI valueExpr:NodeConstraint? } # get rid of valueExpr?
 TypeMismatch     { triple:TestedTriple constraint:TripleConstraint errors:[STRING]  }
 NodeTest         { node:(IRI|BNODE|ObjectLiteral) shape:(IRI|BNODE) shapeExpr:shapeExpr }
-ShapeTest        { node:(IRI|BNODE) shape:IRI solution:tripleExprSolutions? startActs:[SemAct+]? annotations:[Annotation+]? }
+ShapeTest        { node:(IRI|BNODE) shape:(IRI|BNODE|START) solution:tripleExprSolutions? startActs:[SemAct+]? annotations:[Annotation+]? }
 SolutionList     { solutions:[shapeExprTest+] }
 FailureList      { errors:[error+] }
 tripleExprSolutions = EachOfSolutions | OneOfSolutions | TripleConstraintSolutions ;
@@ -38,7 +38,7 @@ ShapeAnd         { shapeExprs:[shapeExpr{2,}] }
 ShapeNot         { shapeExpr:shapeExpr }
 NodeConstraint   { nodeKind:("iri"|"bnode"|"nonliteral"|"literal")? datatype:IRI? xsFacet* values:[valueSetValue+]? }
 ShapeRef         { reference:IRI } # should be a TERM or some such
-Shape            { virtual:BOOL? closed:BOOL? extra:[IRI+]? expression:tripleExpr? inherit:[shapeExprLabel+]? semActs:[SemAct+]? annotations:[Annotation+]? }
+Shape            { virtual:BOOL? closed:BOOL? extra:[IRI+]? expression:tripleExpr? extends:[shapeExpr+]? semActs:[SemAct+]? annotations:[Annotation+]? }
 ShapeExternal    {  }
 
 # Triple Expressions
@@ -96,4 +96,4 @@ UCHAR            : '\\u' HEX HEX HEX HEX
                  | '\\U' HEX HEX HEX HEX HEX HEX HEX HEX ;
 HEX              : [0-9] | [A-F] | [a-f] ;
 EXPONENT 	 : [eE] [+-]? [0-9]+ ;
-
+START            : '_: -start-' ;

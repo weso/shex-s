@@ -1,0 +1,24 @@
+{
+  "@context": "http://www.w3.org/ns/shex.jsonld",
+  "type": "Schema",
+  "shapes": [
+    { "type": "ShapeDecl",
+    "id": "http://a.example/S",
+    "shapeExpr": {
+      "type": "Shape",
+      "expression": {
+        "type": "EachOf",
+        "expressions": [
+          {
+            "type": "TripleConstraint",
+            "predicate": "http://a.example/a"
+          },
+          {
+            "type": "TripleConstraint",
+            "predicate": "http://a.example/b"
+          }
+        ]
+      }
+    } }
+  ]
+}

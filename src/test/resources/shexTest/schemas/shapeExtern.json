@@ -4,7 +4,10 @@
   "shapes": [
     {
       "id": "http://a.example/Sext",
-      "type": "ShapeExternal"
+      "type": "ShapeDecl",
+      "shapeExpr": {
+        "type": "ShapeExternal"
+      }
     }
   ]
 }

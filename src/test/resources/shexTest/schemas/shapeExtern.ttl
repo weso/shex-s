@@ -3,7 +3,7 @@ PREFIX sx: <http://www.w3.org/ns/shex#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 [] a sx:Schema ;
-    sx:shapes <http://a.example/Sext> .
+    sx:shapes (<http://a.example/Sext>) .
 
-<http://a.example/Sext> a sx:ShapeExternal .
+<http://a.example/Sext> a sx:ShapeDecl ; sx:shapeExpr [ a sx:ShapeExternal ] .
 

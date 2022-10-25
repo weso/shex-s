@@ -1,7 +1,15 @@
 {
   "name": "shex-test",
-  "version": "2.0.2",
+  "version": "2.2.0-alpha.1",
   "description": "Shape Expressions library tests.",
+  "scripts": {
+    "dist": "for d in schemas/ negativeSyntax/ negativeStructure/ validation/; do (cd $d && echo -n $d ':' && make); done",
+    "test": "npm run test-shexj-jsg && npm run test-shexv-val && npm run test-shexv-err && npm run test-ts",
+    "test-ts": "rm -rf _ts && mkdir -p _ts/schemas && for f in $(ls schemas/*.json | egrep -v '(coverage|representationTests).json'); do sh bin/makeTsTests.sh _ts $f; done && tsc --noEmit _ts/schemas/*.ts && rm -r _ts",
+    "test-shexj-jsg": "ls schemas/*.json | egrep -v '(coverage|representationTests).json' | xargs json-grammar doc/ShExJ.jsg",
+    "test-shexv-val": "ls validation/*.val | xargs json-grammar doc/ShExV.jsg",
+    "test-shexv-err": "ls validation/*.err | xargs json-grammar doc/ShExV.jsg"
+  },
   "author": {
     "name": "Eric Prud'hommeaux",
     "email": "eric@w3.org",
@@ -18,10 +26,7 @@
   "engines": {
     "node": ">=0.10.0"
   },
-  "dependencies": {
-    "n3": "^0.4.5",
-    "xlsx": "^0.8.0"
-  },
+  "postpublish": "PACKAGE_VERSION=$(cat package.json | grep \\\"version\\\" | head -1 | awk -F: '{ print $2 }' | sed 's/[\",]//g' | tr -d '[[:space:]]') && git tag v$PACKAGE_VERSION && git push --tags",
   "file": [
     "schemas",
     "negativeSyntax",
@@ -29,11 +34,20 @@
     "validation",
     "ASTs"
   ],
+  "np": {
+    "branch": "extends"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/shexSpec/shexTest.git"
   },
   "bugs": {
     "url": "https://github.com/shexSpec/shexTest/issues"
+  },
+  "devDependencies": {
+    "@types/shexj": "^2.1.2",
+    "json-grammar": "^0.3.2",
+    "n3": "^1.16.2",
+    "xlsx": "^0.18.5"
   }
 }

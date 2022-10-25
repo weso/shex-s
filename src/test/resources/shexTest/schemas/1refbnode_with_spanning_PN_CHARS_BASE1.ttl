@@ -3,15 +3,14 @@ PREFIX sx: <http://www.w3.org/ns/shex#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 [] a sx:Schema ;
-    sx:shapes _:AZazÀÖØöø˿ͰͽͿ῿‌‍⁰↏Ⰰ⿯、퟿豈﷏ﷰ�𐀀󯿽,
-        <http://a.example/S1> .
+    sx:shapes (<http://a.example/S1> _:AZazÀÖØöø˿ͰͽͿ῿‌‍⁰↏Ⰰ⿯、퟿豈﷏ﷰ�𐀀󯿽) .
 
-<http://a.example/S1> a sx:Shape ;
+<http://a.example/S1> a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ;
     sx:expression [ a sx:TripleConstraint ;
             sx:predicate <http://a.example/p1> ;
-            sx:valueExpr _:AZazÀÖØöø˿ͰͽͿ῿‌‍⁰↏Ⰰ⿯、퟿豈﷏ﷰ�𐀀󯿽 ] .
+            sx:valueExpr _:AZazÀÖØöø˿ͰͽͿ῿‌‍⁰↏Ⰰ⿯、퟿豈﷏ﷰ�𐀀󯿽 ] ] .
 
-_:AZazÀÖØöø˿ͰͽͿ῿‌‍⁰↏Ⰰ⿯、퟿豈﷏ﷰ�𐀀󯿽 a sx:Shape ;
+_:AZazÀÖØöø˿ͰͽͿ῿‌‍⁰↏Ⰰ⿯、퟿豈﷏ﷰ�𐀀󯿽 a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ;
     sx:expression [ a sx:TripleConstraint ;
-      sx:predicate <http://a.example/p2> ] .
+      sx:predicate <http://a.example/p2> ] ] .
 

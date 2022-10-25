@@ -1,0 +1,42 @@
+{
+  "type": "Schema",
+  "shapes": [
+    { "type": "ShapeDecl",
+    "id": "http://example.org/S",
+    "shapeExpr": {
+      "type": "Shape",
+      "expression": {
+        "type": "TripleConstraint",
+        "predicate": "http://example.org/a",
+        "valueExpr": {
+          "type": "ShapeAnd",
+          "shapeExprs": [
+            "http://example.org/T",
+            "http://example.org/U"
+          ]
+        }
+      }
+    } },
+    { "type": "ShapeDecl",
+    "id": "http://example.org/T",
+    "shapeExpr": {
+      "type": "Shape",
+      "expression": {
+        "type": "TripleConstraint",
+        "predicate": "http://example.org/b",
+        "valueExpr": "http://example.org/S"
+      }
+    } },
+    { "type": "ShapeDecl",
+    "id": "http://example.org/U",
+    "shapeExpr": {
+      "type": "Shape",
+      "expression": {
+        "type": "TripleConstraint",
+        "predicate": "http://example.org/c",
+        "valueExpr": "http://example.org/T"
+      }
+    } }
+  ],
+  "@context": "http://www.w3.org/ns/shex.jsonld"
+}

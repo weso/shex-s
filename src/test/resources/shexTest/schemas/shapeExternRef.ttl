@@ -3,13 +3,13 @@ PREFIX sx: <http://www.w3.org/ns/shex#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 [] a sx:Schema ;
-    sx:shapes <http://a.example/S>,
-        <http://a.example/Sext> .
+    sx:shapes (<http://a.example/S>
+        <http://a.example/Sext>) .
 
-<http://a.example/S> a sx:Shape ;
+<http://a.example/S> a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ;
     sx:expression [ a sx:TripleConstraint ;
             sx:predicate <http://a.example/p1> ;
-            sx:valueExpr <http://a.example/Sext> ] .
+            sx:valueExpr <http://a.example/Sext> ] ] .
 
-<http://a.example/Sext> a sx:ShapeExternal .
+<http://a.example/Sext> a sx:ShapeDecl ; sx:shapeExpr [ a sx:ShapeExternal ] .
 

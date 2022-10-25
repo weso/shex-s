@@ -2,11 +2,12 @@
   "@context": "http://www.w3.org/ns/shex.jsonld",
   "type": "Schema",
   "shapes": [
-    {
-      "id": "_:vc1",
+    { "type": "ShapeDecl",
+    "id": "_:vc1",
+    "shapeExpr": {
       "type": "NodeConstraint",
       "nodeKind": "literal",
       "minlength": 5
-    }
+    } }
   ]
 }

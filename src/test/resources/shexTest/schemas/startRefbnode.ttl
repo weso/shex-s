@@ -4,9 +4,9 @@ PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 [] a sx:Schema ;
     sx:start _:S1 ;
-    sx:shapes _:S1 .
+    sx:shapes (_:S1) .
 
 
-_:S1 a sx:Shape ;
+_:S1 a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ;
   sx:expression
-    [ a sx:TripleConstraint ; sx:predicate <http://a.example/p1> ] .
+    [ a sx:TripleConstraint ; sx:predicate <http://a.example/p1> ] ] .
