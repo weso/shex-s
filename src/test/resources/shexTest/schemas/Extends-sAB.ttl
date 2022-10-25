@@ -2,7 +2,7 @@ PREFIX sx: <http://www.w3.org/ns/shex#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 [] a sx:Schema ;
-    sx:shapes <http://a.example/A>, <http://a.example/B> .
+    sx:shapes (<http://a.example/A> <http://a.example/B>) .
 
 <http://a.example/A> a sx:ShapeDecl ;
     sx:abstract true ;
@@ -24,7 +24,7 @@ PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
         )
     ] .
 
-<http://a.example/B> a sx:ShapeAnd ;
+<http://a.example/B> a sx:ShapeDecl ; sx:shapeExpr [ a sx:ShapeAnd ;
     sx:shapeExprs (
         <http://a.example/A>
         [ a sx:NodeConstraint ;
@@ -40,5 +40,5 @@ PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
                 sx:max -1
             ]
         ]
-    ) .
+    ) ] .
 

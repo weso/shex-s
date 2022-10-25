@@ -9,10 +9,10 @@ case class SnakGroup(
   snaks: List[Snak], 
   sg: Option[WDTKSnakGroup] = None
   ) {
-    
-    lazy val toWDTKSnakGroup: WDTKSnakGroup = sg.fold(
-      SnakGroupImpl(snaks.map(_.toWDTKSnak).asJava)
-    )(identity)
+    lazy val toWDTKSnakGroup: WDTKSnakGroup = sg match {
+      case None => new SnakGroupImpl(snaks.map(_.toWDTKSnak).asJava)
+      case Some(v) => v
+    } 
 }
 
 object SnakGroup {
@@ -23,4 +23,11 @@ object SnakGroup {
          sg.some   
       )  
     }
+
+    def mkSnakGroups(snaks: List[Snak]): List[SnakGroup] = 
+        snaks
+        .groupBy(_.propertyId)
+        .toList
+        .map(_._2)
+        .map(SnakGroup(_))
 }

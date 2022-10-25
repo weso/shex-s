@@ -29,7 +29,10 @@ case class StringValue(
 ) extends LiteralValue {
   override def toString = s"$str"
   override def toWDTKValue: WDTKValue = 
-    wdtkValue.fold(StringValueImpl(str))(identity)
+    wdtkValue match {
+      case None => new StringValueImpl(str)
+      case Some(v) => v
+    } 
 
 }
 
@@ -48,10 +51,10 @@ case class TimeValue(
   wdtkValue: Option[WDTKValue] = None) extends Value {
 
   override def toWDTKValue: WDTKValue = 
-    wdtkValue.fold(TimeValueImpl(
-      year, month, day, hour, minute, second, 
-      precision, beforeTolerance, afterTolerance, 
-      timezoneOffset, calendarModel))(identity)
+    wdtkValue match {
+      case None => new TimeValueImpl(year, month, day, hour, minute, second, precision, beforeTolerance, afterTolerance, timezoneOffset, calendarModel)
+      case Some(v) => v
+    } 
 
   }
 
@@ -64,7 +67,10 @@ case class QuantityValue(
 ) extends Value {
 
   override def toWDTKValue: WDTKValue = 
-    wdtkValue.fold(QuantityValueImpl(numericValue,lowerBound,upperBound,unit))(identity)
+    wdtkValue match {
+      case None => new QuantityValueImpl(numericValue,lowerBound,upperBound,unit)
+      case Some(v) => v
+    }
 
 }
 

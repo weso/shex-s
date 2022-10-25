@@ -2,8 +2,9 @@
   "@context": "http://www.w3.org/ns/shex.jsonld",
   "type": "Schema",
   "shapes": [
-    {
-      "id": "http://schema.example/IssueShape",
+    { "type": "ShapeDecl",
+    "id": "http://schema.example/IssueShape",
+    "shapeExpr": {
       "type": "Shape",
       "expression": {
         "type": "TripleConstraint",
@@ -12,6 +13,6 @@
           "type": "NodeConstraint", "nodeKind": "iri"
         }
       }
-    }
+    } }
   ]
 }

@@ -70,8 +70,9 @@
         ]
       }
     },
-    {
-      "id": "http://a.example/B",
+    { "type": "ShapeDecl",
+    "id": "http://a.example/B",
+    "shapeExpr": {
       "type": "ShapeAnd",
       "shapeExprs": [
         { "type": "Shape", "extends": ["http://a.example/A"] },
@@ -130,6 +131,6 @@
           }
         }
       ]
-    }
+    } }
   ]
 }

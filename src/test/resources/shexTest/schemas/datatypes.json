@@ -2,8 +2,9 @@
   "@context": "http://www.w3.org/ns/shex.jsonld",
   "type": "Schema",
   "shapes": [
-    {
-      "id": "http://a.example/S-integer",
+    { "type": "ShapeDecl",
+    "id": "http://a.example/S-integer",
+    "shapeExpr": {
       "type": "Shape",
       "expression": {
         "type": "TripleConstraint",
@@ -13,9 +14,10 @@
           "datatype": "http://www.w3.org/2001/XMLSchema#integer"
         }
       }
-    },
-    {
-      "id": "http://a.example/S-decimal",
+    } },
+    { "type": "ShapeDecl",
+    "id": "http://a.example/S-decimal",
+    "shapeExpr": {
       "type": "Shape",
       "expression": {
         "type": "TripleConstraint",
@@ -25,9 +27,10 @@
           "datatype": "http://www.w3.org/2001/XMLSchema#decimal"
         }
       }
-    },
-    {
-      "id": "http://a.example/S-float",
+    } },
+    { "type": "ShapeDecl",
+    "id": "http://a.example/S-float",
+    "shapeExpr": {
       "type": "Shape",
       "expression": {
         "type": "TripleConstraint",
@@ -37,9 +40,10 @@
           "datatype": "http://www.w3.org/2001/XMLSchema#float"
         }
       }
-    },
-    {
-      "id": "http://a.example/S-double",
+    } },
+    { "type": "ShapeDecl",
+    "id": "http://a.example/S-double",
+    "shapeExpr": {
       "type": "Shape",
       "expression": {
         "type": "TripleConstraint",
@@ -49,9 +53,10 @@
           "datatype": "http://www.w3.org/2001/XMLSchema#double"
         }
       }
-    },
-    {
-      "id": "http://a.example/S-string",
+    } },
+    { "type": "ShapeDecl",
+    "id": "http://a.example/S-string",
+    "shapeExpr": {
       "type": "Shape",
       "expression": {
         "type": "TripleConstraint",
@@ -61,9 +66,10 @@
           "datatype": "http://www.w3.org/2001/XMLSchema#string"
         }
       }
-    },
-    {
-      "id": "http://a.example/S-boolean",
+    } },
+    { "type": "ShapeDecl",
+    "id": "http://a.example/S-boolean",
+    "shapeExpr": {
       "type": "Shape",
       "expression": {
         "type": "TripleConstraint",
@@ -73,9 +79,10 @@
           "datatype": "http://www.w3.org/2001/XMLSchema#boolean"
         }
       }
-    },
-    {
-      "id": "http://a.example/S-dateTime",
+    } },
+    { "type": "ShapeDecl",
+    "id": "http://a.example/S-dateTime",
+    "shapeExpr": {
       "type": "Shape",
       "expression": {
         "type": "TripleConstraint",
@@ -85,9 +92,10 @@
           "datatype": "http://www.w3.org/2001/XMLSchema#dateTime"
         }
       }
-    },
-    {
-      "id": "http://a.example/S-nonPositiveInteger",
+    } },
+    { "type": "ShapeDecl",
+    "id": "http://a.example/S-nonPositiveInteger",
+    "shapeExpr": {
       "type": "Shape",
       "expression": {
         "type": "TripleConstraint",
@@ -97,9 +105,10 @@
           "datatype": "http://www.w3.org/2001/XMLSchema#nonPositiveInteger"
         }
       }
-    },
-    {
-      "id": "http://a.example/S-negativeInteger",
+    } },
+    { "type": "ShapeDecl",
+    "id": "http://a.example/S-negativeInteger",
+    "shapeExpr": {
       "type": "Shape",
       "expression": {
         "type": "TripleConstraint",
@@ -109,9 +118,10 @@
           "datatype": "http://www.w3.org/2001/XMLSchema#negativeInteger"
         }
       }
-    },
-    {
-      "id": "http://a.example/S-long",
+    } },
+    { "type": "ShapeDecl",
+    "id": "http://a.example/S-long",
+    "shapeExpr": {
       "type": "Shape",
       "expression": {
         "type": "TripleConstraint",
@@ -121,9 +131,10 @@
           "datatype": "http://www.w3.org/2001/XMLSchema#long"
         }
       }
-    },
-    {
-      "id": "http://a.example/S-int",
+    } },
+    { "type": "ShapeDecl",
+    "id": "http://a.example/S-int",
+    "shapeExpr": {
       "type": "Shape",
       "expression": {
         "type": "TripleConstraint",
@@ -133,9 +144,10 @@
           "datatype": "http://www.w3.org/2001/XMLSchema#int"
         }
       }
-    },
-    {
-      "id": "http://a.example/S-short",
+    } },
+    { "type": "ShapeDecl",
+    "id": "http://a.example/S-short",
+    "shapeExpr": {
       "type": "Shape",
       "expression": {
         "type": "TripleConstraint",
@@ -145,9 +157,10 @@
           "datatype": "http://www.w3.org/2001/XMLSchema#short"
         }
       }
-    },
-    {
-      "id": "http://a.example/S-byte",
+    } },
+    { "type": "ShapeDecl",
+    "id": "http://a.example/S-byte",
+    "shapeExpr": {
       "type": "Shape",
       "expression": {
         "type": "TripleConstraint",
@@ -157,9 +170,10 @@
           "datatype": "http://www.w3.org/2001/XMLSchema#byte"
         }
       }
-    },
-    {
-      "id": "http://a.example/S-nonNegativeInteger",
+    } },
+    { "type": "ShapeDecl",
+    "id": "http://a.example/S-nonNegativeInteger",
+    "shapeExpr": {
       "type": "Shape",
       "expression": {
         "type": "TripleConstraint",
@@ -169,9 +183,10 @@
           "datatype": "http://www.w3.org/2001/XMLSchema#nonNegativeInteger"
         }
       }
-    },
-    {
-      "id": "http://a.example/S-unsignedLong",
+    } },
+    { "type": "ShapeDecl",
+    "id": "http://a.example/S-unsignedLong",
+    "shapeExpr": {
       "type": "Shape",
       "expression": {
         "type": "TripleConstraint",
@@ -181,9 +196,10 @@
           "datatype": "http://www.w3.org/2001/XMLSchema#unsignedLong"
         }
       }
-    },
-    {
-      "id": "http://a.example/S-unsignedInt",
+    } },
+    { "type": "ShapeDecl",
+    "id": "http://a.example/S-unsignedInt",
+    "shapeExpr": {
       "type": "Shape",
       "expression": {
         "type": "TripleConstraint",
@@ -193,9 +209,10 @@
           "datatype": "http://www.w3.org/2001/XMLSchema#unsignedInt"
         }
       }
-    },
-    {
-      "id": "http://a.example/S-unsignedShort",
+    } },
+    { "type": "ShapeDecl",
+    "id": "http://a.example/S-unsignedShort",
+    "shapeExpr": {
       "type": "Shape",
       "expression": {
         "type": "TripleConstraint",
@@ -205,9 +222,10 @@
           "datatype": "http://www.w3.org/2001/XMLSchema#unsignedShort"
         }
       }
-    },
-    {
-      "id": "http://a.example/S-unsignedByte",
+    } },
+    { "type": "ShapeDecl",
+    "id": "http://a.example/S-unsignedByte",
+    "shapeExpr": {
       "type": "Shape",
       "expression": {
         "type": "TripleConstraint",
@@ -217,9 +235,10 @@
           "datatype": "http://www.w3.org/2001/XMLSchema#unsignedByte"
         }
       }
-    },
-    {
-      "id": "http://a.example/S-positiveInteger",
+    } },
+    { "type": "ShapeDecl",
+    "id": "http://a.example/S-positiveInteger",
+    "shapeExpr": {
       "type": "Shape",
       "expression": {
         "type": "TripleConstraint",
@@ -229,6 +248,6 @@
           "datatype": "http://www.w3.org/2001/XMLSchema#positiveInteger"
         }
       }
-    }
+    } }
   ]
 }

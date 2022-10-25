@@ -2,13 +2,15 @@
   "@context": "http://www.w3.org/ns/shex.jsonld",
   "type": "Schema",
   "shapes": [
-    {
-      "id": "http://all.example/S1",
+    { "type": "ShapeDecl",
+    "id": "http://all.example/S1",
+    "shapeExpr": {
       "type": "Shape",
       "expression": "http://all.example/S2e"
-    },
-    {
-      "id": "http://all.example/S2",
+    } },
+    { "type": "ShapeDecl",
+    "id": "http://all.example/S2",
+    "shapeExpr": {
       "type": "Shape",
       "expression": {
         "type": "TripleConstraint",
@@ -18,6 +20,6 @@
         "max": 1,
         "valueExpr": "http://all.example/S2"
       }
-    }
+    } }
   ]
 }

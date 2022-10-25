@@ -3,9 +3,9 @@ PREFIX sx: <http://www.w3.org/ns/shex#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 [] a sx:Schema ;
-    sx:shapes
-        _:vc1 .
+    sx:shapes (
+        _:vc1) .
 
-_:vc1 a sx:NodeConstraint ;
+_:vc1 a sx:ShapeDecl ; sx:shapeExpr [ a sx:NodeConstraint ;
     sx:minlength 5 ;
-    sx:nodeKind sx:literal .
+    sx:nodeKind sx:literal ] .

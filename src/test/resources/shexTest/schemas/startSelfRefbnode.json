@@ -3,8 +3,9 @@
   "type": "Schema",
   "start": "_:S1",
   "shapes": [
-    {
-      "id": "_:S1",
+    { "type": "ShapeDecl",
+    "id": "_:S1",
+    "shapeExpr": {
       "type": "Shape",
       "expression": {
         "type": "TripleConstraint",
@@ -13,6 +14,6 @@
         "max": -1,
         "valueExpr": "_:S1"
       }
-    }
+    } }
   ]
 }

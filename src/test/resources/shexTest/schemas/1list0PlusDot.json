@@ -2,18 +2,22 @@
   "type": "Schema",
   "shapes": [
     {
-      "type": "Shape",
+      "type": "ShapeDecl",
       "id": "http://a.example/S1",
+      "shapeExpr": {
+      "type": "Shape",
       "closed": true,
       "expression": {
         "type": "TripleConstraint",
         "predicate": "http://a.example/p1",
         "valueExpr": "http://a.example/List0PlusDot"
       }
-    },
+    } },
     {
-      "type": "ShapeOr",
+      "type": "ShapeDecl",
       "id": "http://a.example/List0PlusDot",
+      "shapeExpr": {
+      "type": "ShapeOr",
       "shapeExprs": [
         {
           "type": "NodeConstraint",
@@ -40,7 +44,7 @@
           }
         }
       ]
-    }
+    } }
   ],
   "@context": "http://www.w3.org/ns/shex.jsonld"
 }

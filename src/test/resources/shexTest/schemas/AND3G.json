@@ -77,7 +77,7 @@
       "shapeExpr": {
         "type": "ShapeAnd",
         "shapeExprs": [
-          "http://a.example/A",
+          { "type": "Shape", "extends": ["http://a.example/A"] },
           {
             "type": "NodeConstraint",
             "pattern": "s.B.........$"
@@ -135,8 +135,9 @@
         ]
       }
     },
-    {
-      "id": "http://a.example/C",
+    { "type": "ShapeDecl",
+    "id": "http://a.example/C",
+    "shapeExpr": {
       "type": "ShapeAnd",
       "shapeExprs": [
         {
@@ -194,9 +195,10 @@
           }
         }
       ]
-    },
-    {
-      "id": "http://a.example/D",
+    } },
+    { "type": "ShapeDecl",
+    "id": "http://a.example/D",
+    "shapeExpr": {
       "type": "ShapeAnd",
       "shapeExprs": [
         { "type": "Shape", "extends": ["http://a.example/B"] },
@@ -256,6 +258,6 @@
           }
         }
       ]
-    }
+    } }
   ]
 }

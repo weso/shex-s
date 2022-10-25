@@ -10,8 +10,9 @@
   ],
   "start": "http://ex.example/S1",
   "shapes": [
-    {
-      "id": "http://ex.example/S1",
+    { "type": "ShapeDecl",
+    "id": "http://ex.example/S1",
+    "shapeExpr": {
       "type": "Shape",
       "expression": {
         "type": "EachOf",
@@ -127,9 +128,10 @@
           }
         ]
       }
-    },
-    {
-      "id": "http://ex.example/#UserShape",
+    } },
+    { "type": "ShapeDecl",
+    "id": "http://ex.example/#UserShape",
+    "shapeExpr": {
       "type": "Shape",
       "expression": {
         "type": "EachOf",
@@ -195,9 +197,10 @@
           }
         ]
       }
-    },
-    {
-      "id": "http://ex.example/#EmployeeShape",
+    } },
+    { "type": "ShapeDecl",
+    "id": "http://ex.example/#EmployeeShape",
+    "shapeExpr": {
       "type": "Shape",
       "expression": {
         "type": "EachOf",
@@ -242,9 +245,10 @@
           }
         ]
       }
-    },
-    {
-      "id": "_:IDshape",
+    } },
+    { "type": "ShapeDecl",
+    "id": "_:IDshape",
+    "shapeExpr": {
       "type": "Shape",
       "expression": {
         "id": "_:IDshapeE",
@@ -373,9 +377,10 @@
           }
         ]
       }
-    },
-    {
-      "id": "http://ex.example/#FooID",
+    } },
+    { "type": "ShapeDecl",
+    "id": "http://ex.example/#FooID",
+    "shapeExpr": {
       "type": "Shape",
       "closed": true,
       "expression": "_:IDshapeE",
@@ -383,6 +388,6 @@
         "http://ex.example/#code",
         "http://ex.example/#system"
       ]
-    }
+    } }
   ]
 }

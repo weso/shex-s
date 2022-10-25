@@ -1,6 +1,8 @@
 { "@context": "http://www.w3.org/ns/shex.jsonld", "type": "Schema",
   "imports": [ "2RefS1" ],
   "shapes": [
-    { "id": "http://a.example/S2", "type": "Shape", "expression": {
-        "type": "TripleConstraint", "predicate": "http://a.example/p2" } }
+    { "type": "ShapeDecl",
+    "id": "http://a.example/S2",
+    "shapeExpr": { "type": "Shape", "expression": {
+        "type": "TripleConstraint", "predicate": "http://a.example/p2" } } }
   ] }

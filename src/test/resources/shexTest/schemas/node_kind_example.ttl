@@ -2,11 +2,11 @@ PREFIX ex: <http://schema.example/>
 PREFIX sx: <http://www.w3.org/ns/shex#>
 
 [] a sx:Schema ;
-    sx:shapes ex:IssueShape .
+    sx:shapes (ex:IssueShape) .
 
-ex:IssueShape a sx:Shape ;
+ex:IssueShape a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ;
     sx:expression [ a sx:TripleConstraint ;
             sx:predicate ex:state ;
             sx:valueExpr [ a sx:NodeConstraint ;
-                    sx:nodeKind sx:iri ] ] .
+                    sx:nodeKind sx:iri ] ] ] .
 

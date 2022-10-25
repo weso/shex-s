@@ -457,6 +457,9 @@
         <#Extend3G>
         <#ExtendANDExtend3GAND3G>
         <#vitals-RESTRICTS>
+
+        # meta
+        <#ShExR>
     ) .
 
 <#0> a sht:RepresentationTest ;
@@ -3704,7 +3707,7 @@
 <#2RefS2-Icirc> a sht:RepresentationTest ;
     mf:name "2RefS2-Icirc" ;
     mf:status mf:Approved ;
-    sht:trait sht:Import, sht:start ;
+    sht:trait sht:Import, sht:Start ;
     sx:shex <2RefS2-Icirc.shex> ;
     sx:json <2RefS2-Icirc.json> ;
     sx:ttl <2RefS2-Icirc.ttl> ;
@@ -3927,7 +3930,8 @@
 
 <#0Extends1> a sht:RepresentationTest ;
     mf:name "0Extends1" ;
-    mf:status mf:proposed ;
+    mf:status mf:Proposed ;
+    sht:trait sht:Extends ;
     sx:shex <0Extends1.shex> ;
     sx:json <0Extends1.json> ;
     sx:ttl <0Extends1.ttl> ;
@@ -3935,7 +3939,8 @@
 
 <#1dotExtends1> a sht:RepresentationTest ;
     mf:name "1dotExtends1" ;
-    mf:status mf:proposed ;
+    mf:status mf:Proposed ;
+    sht:trait sht:Extends ;
     sx:shex <1dotExtends1.shex> ;
     sx:json <1dotExtends1.json> ;
     sx:ttl <1dotExtends1.ttl> ;
@@ -3943,7 +3948,8 @@
 
 <#1dot3Extends> a sht:RepresentationTest ;
     mf:name "1dot3Extends" ;
-    mf:status mf:proposed ;
+    mf:status mf:Proposed ;
+    sht:trait sht:Extends ;
     sx:shex <1dot3Extends.shex> ;
     sx:json <1dot3Extends.json> ;
     sx:ttl <1dot3Extends.ttl> ;
@@ -3951,7 +3957,8 @@
 
 <#1dot3ExtendsLN> a sht:RepresentationTest ;
     mf:name "1dot3ExtendsLN" ;
-    mf:status mf:proposed ;
+    mf:status mf:Proposed ;
+    sht:trait sht:Extends ;
     mf:sameSemanticsAs <#1dot3Extends> ;
     sx:shex <1dot3ExtendsLN.shex> ;
     sx:json <1dot3Extends.json> ;
@@ -3961,7 +3968,7 @@
 <#Extends-sAB> a sht:RepresentationTest ;
     mf:name "Extends-sAB" ;
     mf:status mf:Proposed ;
-    sht:trait sht:Import ;
+    sht:trait sht:Extends, sht:Import ;
     sx:shex <Extends-sAB.shex> ;
     sx:json <Extends-sAB.json> ;
     sx:ttl <Extends-sAB.ttl> ;
@@ -3970,7 +3977,7 @@
 <#ExtendsRepeatedP> a sht:RepresentationTest ;
     mf:name "ExtendsRepeatedP" ;
     mf:status mf:Proposed ;
-    sht:train sht:Extends ;
+    sht:trait sht:Extends ;
     sx:shex <ExtendsRepeatedP.shex> ;
     sx:json <ExtendsRepeatedP.json> ;
     sx:ttl <ExtendsRepeatedP.ttl> ;
@@ -3982,7 +3989,8 @@
 
 <#1dotAbstractShapeCode1> a sht:RepresentationTest ;
     mf:name "1dotAbstractShapeCode1" ;
-    mf:status mf:proposed ;
+    mf:status mf:Proposed ;
+    sht:trait sht:Extends ;
     sx:shex <1dotAbstractShapeCode1.shex> ;
     sx:json <1dotAbstractShapeCode1.json> ;
     sx:ttl <1dotAbstractShapeCode1.ttl> ;
@@ -3990,7 +3998,8 @@
 
 <#1dotAbstract> a sht:RepresentationTest ;
     mf:name "1dotAbstract" ;
-    mf:status mf:proposed ;
+    mf:status mf:Proposed ;
+    sht:trait sht:Extends ;
     sx:shex <1dotAbstract.shex> ;
     sx:json <1dotAbstract.json> ;
     sx:ttl <1dotAbstract.ttl> ;
@@ -3999,7 +4008,7 @@
 <#ANDAbstract> a sht:RepresentationTest ;
     mf:name "ANDAbstract" ;
     mf:status mf:Proposed ;
-    sht:train sht:Extends ;
+    sht:trait sht:Extends ;
     sx:shex <ANDAbstract.shex> ;
     sx:json <ANDAbstract.json> ;
     sx:ttl <ANDAbstract.ttl> ;
@@ -4008,7 +4017,7 @@
 <#AND3G> a sht:RepresentationTest ;
     mf:name "AND3G" ;
     mf:status mf:Proposed ;
-    sht:train sht:Extends ;
+    sht:trait sht:Extends ;
     sx:shex <AND3G.shex> ;
     sx:json <AND3G.json> ;
     sx:ttl <AND3G.ttl> ;
@@ -4021,7 +4030,7 @@
 <#ExtendAND3G> a sht:RepresentationTest ;
     mf:name "ExtendAND3G" ;
     mf:status mf:Proposed ;
-    sht:train sht:Extends ;
+    sht:trait sht:Extends ;
     sx:shex <ExtendAND3G.shex> ;
     sx:json <ExtendAND3G.json> ;
     sx:ttl <ExtendAND3G.ttl> ;
@@ -4030,7 +4039,7 @@
 <#Extend3G> a sht:RepresentationTest ;
     mf:name "Extend3G" ;
     mf:status mf:Proposed ;
-    sht:train sht:Extends ;
+    sht:trait sht:Extends ;
     sx:shex <Extend3G.shex> ;
     sx:json <Extend3G.json> ;
     sx:ttl <Extend3G.ttl> ;
@@ -4039,7 +4048,7 @@
 <#ExtendANDExtend3GAND3G> a sht:RepresentationTest ;
     mf:name "ExtendANDExtend3GAND3G" ;
     mf:status mf:Proposed ;
-    sht:train sht:Extends ;
+    sht:trait sht:Extends ;
     sx:shex <ExtendANDExtend3GAND3G.shex> ;
     sx:json <ExtendANDExtend3GAND3G.json> ;
     sx:ttl <ExtendANDExtend3GAND3G.ttl> ;
@@ -4048,13 +4057,25 @@
 <#vitals-RESTRICTS> a sht:RepresentationTest ;
     mf:name "vitals-RESTRICTS" ;
     mf:status mf:Proposed ;
-    sht:train sht:Extends ;
+    sht:trait sht:Extends ;
     sx:shex <vitals-RESTRICTS.shex> ;
     sx:json <vitals-RESTRICTS.json> ;
     sx:ttl <vitals-RESTRICTS.ttl> ;
     .
 
 # } abstract extends
+
+# meta {
+
+<#ShExR> a sht:RepresentationTest ;
+    mf:name "ShExR" ;
+    mf:status mf:Proposed ;
+    sx:shex <../doc/ShExR.shex> ;
+    sx:json <../doc/ShExR.json> ;
+    sx:ttl  <../doc/ShExR.ttl> ;
+    .
+
+# } meta
 
 # regexp template:
 

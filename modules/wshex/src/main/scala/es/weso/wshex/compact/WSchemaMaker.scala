@@ -1270,13 +1270,13 @@ class WSchemaMaker extends WShExDocBaseVisitor[Any] {
   override def visitOneOfPropertyExpr(ctx: OneOfPropertyExprContext): Builder[PropertySpec] =
     visitEachOfPropertyExpr(ctx.eachOfPropertyExpr()).flatMap(eo =>
       visitList(visitOneOfPropertyExpr, ctx.oneOfPropertyExpr()).flatMap(rest => 
-        ok(if (rest.isEmpty) eo else OneOfPs(eo +: rest)))
+        ok(if (rest.isEmpty) eo else OneOfPs(eo +: rest, 1, IntLimit(1))))
       )
 
   override def visitEachOfPropertyExpr(ctx: EachOfPropertyExprContext): Builder[PropertySpec] =
     visitSinglePropertyExpr(ctx.singlePropertyExpr()).flatMap(single =>
       visitList(visitEachOfPropertyExpr, ctx.eachOfPropertyExpr()).flatMap(rest => 
-        ok(if (rest.isEmpty) single else EachOfPs(single +: rest)))
+        ok(if (rest.isEmpty) single else EachOfPs(single +: rest, 1, IntLimit(1))))
       )
 
   override def visitSinglePropertyExpr(ctx: SinglePropertyExprContext): Builder[PropertySpec] = 

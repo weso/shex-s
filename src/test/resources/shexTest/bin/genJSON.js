@@ -29,13 +29,20 @@ function report (msg) {
     ++errors;
   }
 }
+function jsonLdId (t) {
+  switch (t.termType) {
+  case "NamedNode": return t.value;
+  case "BlankNode": return "_:" + t.value;
+  default: throw Error(`unknown termType in ${JSON.stringify(t)}`);
+  }
+}
 
 var fs = require('fs');
-var path = require("path");
+var Path = require("path");
 var N3 = require("n3");
-var parser = N3.Parser({blankNodePrefix: ""});
+var parser = new N3.Parser({blankNodePrefix: ""});
 var util = N3.Util;
-var store = N3.Store();
+var store = new N3.Store();
 //var json = fs.readFileSync(args[0]).toString();
 
 var P = {
@@ -46,21 +53,24 @@ var P = {
   "sx":   "https://shexspec.github.io/shexTest/ns#"
 };
 
-var testDir = path.basename(path.dirname(path.resolve(args[0])));
+var testDir = Path.basename(Path.dirname(Path.resolve(args[0])));
 var basePath = "https://raw.githubusercontent.com/shexSpec/shexTest/master/";
 var dirPath = basePath + testDir + '/';
+function RelPath (p) {
+  return Path.relative(dirPath, p);
+}
 var apparentBase = dirPath + "manifest";
 
 parser.parse(
   "@base <" + apparentBase + "> .\n"+
   fs.readFileSync(args[0], "utf8"),
-  function (error, triple, prefixes) {
+  function (error, quad, prefixes) {
     if (error) {
       error.message = "Error parsing " + args[0] + ": " + error.message;
       throw error;
     }
-    if (triple)
-      store.addTriple(triple)
+    if (quad)
+      store.addQuad(quad)
     else
       genText();
   });
@@ -68,11 +78,11 @@ parser.parse(
 /** expandCollection - N3.js utility to return an rdf collection's elements.
 */
 function expandCollection (h) {
-  if (store.find(h.object, "rdf:first", null).length) {
+  if (store.getQuads(h.object, P.rdf + "first", null).length) {
     var ret = [];
-    while (h.object !== "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil") {
-      ret.push(store.find(h.object, "rdf:first", null)[0].object);
-      h = store.find(h.object, "rdf:rest", null)[0];
+    while (h.object.value !== "http://www.w3.org/1999/02/22-rdf-syntax-ns#nil") {
+      ret.push(store.getQuads(h.object, P.rdf + "first", null)[0].object);
+      h = store.getQuads(h.object, P.rdf + "rest", null)[0];
     }
     return ret;
   } else {
@@ -90,16 +100,14 @@ function genText () {
     "@graph": g
   };
 
-  store.addPrefixes(P);
-
-  var manifest = store.find(null, "rdf:type", "mf:Manifest")[0].subject;
-  var manifestComment = util.getLiteralValue(store.find(manifest, "rdfs:comment", null)[0].object);
+  var manifest = store.getQuads(null, P.rdf + "type", P.mf + "Manifest")[0].subject;
+  var manifestComment = store.getQuads(manifest, P.rdfs + "comment", null)[0].object.value;
   var entries = [];
   var knownMissing = {}; // record missing files.
-  var head = store.find(manifest, "mf:entries", null)[0].object;
-  while (head !== P.rdf + "nil") {
-    entries.push(store.find(head, "rdf:first", null)[0].object);
-    head = store.find(head, "rdf:rest", null)[0].object;
+  var head = store.getQuads(manifest, P.mf + "entries", null)[0].object;
+  while (head.value !== P.rdf + "nil") {
+    entries.push(store.getQuads(head, P.rdf + "first", null)[0].object.value);
+    head = store.getQuads(head, P.rdf + "rest", null)[0].object;
   }
   var unmatched = entries.reduce(function (ret, ent) {
     ret[ent] = true;
@@ -113,15 +121,15 @@ function genText () {
     "@id": "",
     "@type": "mf:Manifest",
     "rdfs:comment": manifestComment,
-    "entries": store.find(null, "rdf:type", null).filter(function (t) {
-      var ret = expectedTypes.indexOf(t.object) !== -1;
+    "entries": store.getQuads(null, P.rdf + "type", null).filter(function (t) {
+      var ret = expectedTypes.indexOf(t.object.value) !== -1;
       if (ret === false &&
-          t.object !== P.mf + "Manifest") {
-        report("test " + t.subject + " has unexpected type " + t.object);
+          t.object.value !== P.mf + "Manifest") {
+        report("test " + t.subject.value + " has unexpected type " + t.object.value);
       }
       return ret;
     }).map(function (t) {
-      return [t.subject, t.object];
+      return [t.subject.value, t.object.value];
     }).filter(function (t) {
       var ret = entries.indexOf(t[0]) !== -1;
       if (ret === false) {
@@ -136,18 +144,18 @@ function genText () {
         -1;
     }).map(function (st) {
       var s = st[0], t = st[1];
-      var testName = util.getLiteralValue(store.find(s, "mf:name", null)[0].object);
-      var testType = store.find(s, "rdf:type", null)[0].object.replace(P.sht, '');
+      var testName = store.getQuads(s, P.mf + "name", null)[0].object.value;
+      var testType = store.getQuads(s, P.rdf + "type", null)[0].object.value.replace(P.sht, '');
       var expectedName = s.substr(apparentBase.length+1);
       if (WARN && testName !== expectedName) {
 	report("expected label \"" + expectedName + "\" ; got \"" + testName + "\"");
       }
-      var actionTriples = store.find(s, "mf:action", null);
+      var actionTriples = store.getQuads(s, P.mf + "action", null);
       function exists (filename) {
-        var filepath = path.join(__dirname, "../" + testDir + '/' + filename);
+        var filepath = Path.join(__dirname, "../" + testDir + '/' + filename);
         if (WARN && !fs.existsSync(filepath) && !(filepath in knownMissing)) {
-          report("non-existent file: " + filepath.substr(dirPath.length) + " is missing " + path.relative(process.cwd(), filepath));
-	  knownMissing[filepath] = path.relative(process.cwd(), filepath);
+          report("non-existent file: " + RelPath(filepath) + " is missing " + Path.relative(process.cwd(), filepath));
+	  knownMissing[filepath] = Path.relative(process.cwd(), filepath);
         }
         return filename;
       }
@@ -158,23 +166,23 @@ function genText () {
         // Representation/Syntax/Structure tests
         return [
           //      ["rdf"  , "type"    , function (v) { return v.substr(P.sht.length); }],
-          [s, "mf"   , "name"    , function (v) { return util.getLiteralValue(v[0]); }],
+          [s, "mf"   , "name"    , function (v) { return v[0].value; }],
           [s, "sht", "trait"  , function (v) {
            return v.map(function (x) {
-             return x.substr(P.sht.length);;
-           });
+             return x.value.substr(P.sht.length);
+           }).sort();
           }],
-          //[s, "rdfs" , "comment" , function (v) { return util.getLiteralValue(v[0]); }],
-          [s, "mf", "status"  , function (v) { return "mf:"+v[0].substr(P.mf.length); }],
-          [s, "sx", "shex", function (v) { return exists(v[0].substr(dirPath.length)); }],
-          [s, "sx", "json", function (v) { return exists(v[0].substr(dirPath.length)); }],
-          [s, "sx", "ttl", function (v) { return exists(v[0].substr(dirPath.length)); }],
-          [s, "mf", "startRow"   , function (v) { return parseInt(util.getLiteralValue(v[0])); }],
-          [s, "mf", "startColumn", function (v) { return parseInt(util.getLiteralValue(v[0])); }],
-          [s, "mf", "endRow"     , function (v) { return parseInt(util.getLiteralValue(v[0])); }],
-          [s, "mf", "endColumn"  , function (v) { return parseInt(util.getLiteralValue(v[0])); }],
+          //[s, "rdfs" , "comment" , function (v) { return (v[0].value; }],
+          [s, "mf", "status"  , function (v) { return "mf:"+v[0].value.substr(P.mf.length); }],
+          [s, "sx", "shex", function (v) { return exists(RelPath(v[0].value)); }],
+          [s, "sx", "json", function (v) { return exists(RelPath(v[0].value)); }],
+          [s, "sx", "ttl", function (v) { return exists(RelPath(v[0].value)); }],
+          [s, "mf", "startRow"   , function (v) { return parseInt(v[0].value); }],
+          [s, "mf", "startColumn", function (v) { return parseInt(v[0].value); }],
+          [s, "mf", "endRow"     , function (v) { return parseInt(v[0].value); }],
+          [s, "mf", "endColumn"  , function (v) { return parseInt(v[0].value); }],
         ].reduce(function (ret, row) {
-          var found = store.findByIRI(row[0], P[row[1]]+row[2], null).map(expandCollection);
+          var found = store.getQuads(row[0], P[row[1]]+row[2], null).map(expandCollection);
           var target = ret;
           if (found.length)
             target[row[2]] = row[3](found);
@@ -184,44 +192,44 @@ function genText () {
       var a = actionTriples[0].object;
       return [
         //      ["rdf"  , "type"    , function (v) { return v.substr(P.sht.length); }],
-        [s, "mf"   , "name"    , function (v) { return util.getLiteralValue(v[0]); }],
+        [s, "mf"   , "name"    , function (v) { return v[0].value; }],
         [s, "sht", "trait"  , function (v) {
           return v.map(function (x) {
-            return x.substr(P.sht.length);;
-          });
+            return x.value.substr(P.sht.length);;
+          }).sort();
         }],
-        [s, "rdfs" , "comment" , function (v) { return util.getLiteralValue(v[0]); }],
-        [s, "mf", "status"  , function (v) { return "mf:"+v[0].substr(P.mf.length); }],
-        [a, "sht", "schema"  , function (v) { return exists("../" + v[0].substr(basePath.length)); } ], // could be more judicious in creating a relative path from an absolute path.
-        [a, "sht", "shape"   , function (v) { return v[0].indexOf(dirPath) === 0 ? v[0].substr(dirPath.length) : v[0]; }],
-        [a, "sht", "data"    , function (v) { return exists(v[0].substr(dirPath.length)); }],
-        [a, "sht", "map"    , function (v) { return exists(v[0].substr(dirPath.length)); }],
+        [s, "rdfs" , "comment" , function (v) { return v[0].value; }],
+        [s, "mf", "status"  , function (v) { return "mf:"+v[0].value.substr(P.mf.length); }],
+        [a, "sht", "schema"  , function (v) { return exists("../" + v[0].value.substr(basePath.length)); } ], // could be more judicious in creating a relative path from an absolute path.
+        [a, "sht", "shape"   , function (v) { return v[0].value.indexOf(dirPath) === 0 ? RelPath(v[0].value) : jsonLdId(v[0]); }],
+        [a, "sht", "data"    , function (v) { return exists(RelPath(v[0].value)); }],
+        [a, "sht", "map"    , function (v) { return exists(RelPath(v[0].value)); }],
         [a, "sht", "focus"   , function (v) {
           // Focus can be a literal
           if (util.isLiteral(v[0])) {
-            var lang = util.getLiteralLanguage(v[0]);
-            var dt = util.getLiteralType(v[0]);
-            var res = {'@value': util.getLiteralValue(v[0])};
+            var lang = v[0].language;
+            var dt = v[0].datatype.value;
+            var res = {'@value': v[0].value};
             if (lang.length > 0) {res['@language'] = lang}
             if (dt.length > 0) {res['@type'] = dt}
             return res;
           } else {
-            return (v[0].indexOf(dirPath) === 0 ? v[0].substr(dirPath.length) : v[0]);
+            return (v[0].value.indexOf(dirPath) === 0 ? RelPath(v[0].value) : jsonLdId(v[0]));
           }
         }],
-        [a, "sht", "semActs" , function (v) { return exists("../" + v[0].substr(basePath.length)); }], // could be more judicious in creating a relative path from an absolute path.
-        [a, "sht", "shapeExterns" , function (v) { return exists("../" + v[0].substr(basePath.length)); }], // could be more judicious in creating a relative path from an absolute path.
-        [s, "mf", "result"  , function (v) { return exists(v[0].substr(dirPath.length)); }],
+        [a, "sht", "semActs" , function (v) { return exists("../" + v[0].value.substr(basePath.length)); }], // could be more judicious in creating a relative path from an absolute path.
+        [a, "sht", "shapeExterns" , function (v) { return exists("../" + v[0].value.substr(basePath.length)); }], // could be more judicious in creating a relative path from an absolute path.
+        [s, "mf", "result"  , function (v) { return exists(RelPath(v[0].value)); }],
         [s, "mf", "extensionResults"  , function (v) {
           return v[0].map(function (x) {
             return {
-              extension: store.find(x, "mf:extension", null)[0].object,
-              prints: util.getLiteralValue(store.find(x, "mf:prints", null)[0].object)
+              extension: store.getQuads(x, P.mf + "extension", null)[0].object.value,
+              prints: store.getQuads(x, P.mf + "prints", null)[0].object.value
             };
           });
         }]
       ].reduce(function (ret, row) {
-        var found = store.findByIRI(row[0], P[row[1]]+row[2], null).map(expandCollection);
+        var found = store.getQuads(row[0], P[row[1]]+row[2], null).map(expandCollection);
         var target = row[0] === s ? ret : row[0] === a ? ret.action : ret.extensionResults;
         if (found.length)
           target[row[2]] = row[3](found);

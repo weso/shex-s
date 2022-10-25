@@ -19,7 +19,12 @@ case class Qualifiers(qsMap: Map[PropertyId, List[Snak]]) {
   lazy val isEmpty = qsMap.isEmpty
 
   def withSnak(property: PropertyId, snak: Snak): Qualifiers =
-    Qualifiers(qsMap.updated(property, snak +: qsMap.getOrElse(property, List())))
+    Qualifiers(qsMap.updated(
+       property, 
+       snak +: qsMap.getOrElse(property, List())))
+
+  def getSnaks(): List[Snak] =
+    qsMap.values.flatten.toList     
 
   private def mkSnak(s: Snak, p: PropertyIdValue): WDTKSnak = s match {
     case _: NoValueSnak => new NoValueSnakImpl(p)
@@ -51,5 +56,9 @@ object Qualifiers {
         ) 
     }.toMap
     Qualifiers(m)
+  }
+
+  def fromSnaks(snaks: List[Snak]): Qualifiers = {
+    Qualifiers(snaks.groupBy(_.propertyId))
   }
 }

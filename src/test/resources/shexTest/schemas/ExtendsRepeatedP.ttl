@@ -2,10 +2,9 @@ PREFIX sx: <http://www.w3.org/ns/shex#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 [] a sx:Schema ;
-    sx:shapes <http://a.example/#A>, <http://a.example/#B>, <http://a.example/#C> .
+    sx:shapes (<http://a.example/#A> <http://a.example/#B> <http://a.example/#C>) .
 
-<http://a.example/#A>a sx:Shape ;
-sx:expression [ a sx:EachOf;
+<http://a.example/#A> a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ; sx:expression [ a sx:EachOf;
     sx:expressions (
         [ a sx:TripleConstraint ;
             sx:predicate <http://a.example/p> ;
@@ -19,9 +18,9 @@ sx:expression [ a sx:EachOf;
             ]
         ]
     )
-] .
+] ] .
 
-<http://a.example/#B> a sx:ShapeAnd ;
+<http://a.example/#B> a sx:ShapeDecl ; sx:shapeExpr [ a sx:ShapeAnd ;
     sx:shapeExprs (
         <http://a.example/#A>
         [ a sx:Shape ;
@@ -40,11 +39,11 @@ sx:expression [ a sx:EachOf;
                 )
             ]
         ]
-    ) .
+    ) ] .
 
-<http://a.example/#C> a sx:Shape ;
+<http://a.example/#C> a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ;
     sx:extends (<http://a.example/#B>)  ;
     sx:expression [ a sx:TripleConstraint ;
         sx:predicate <http://a.example/p>
-    ] .
+    ] ] .
 

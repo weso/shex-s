@@ -3,9 +3,9 @@ PREFIX sx: <http://www.w3.org/ns/shex#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 [] a sx:Schema ;
-    sx:shapes <http://a.example/S1> .
+    sx:shapes (<http://a.example/S1>) .
 
-<http://a.example/S1> a sx:ShapeNot ;
+<http://a.example/S1> a sx:ShapeDecl ; sx:shapeExpr [ a sx:ShapeNot ;
   sx:shapeExpr [
     a sx:Shape ;
     sx:expression [
@@ -15,4 +15,4 @@ PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
         a sx:ShapeNot ;
         sx:shapeExpr [
           a sx:NodeConstraint ;
-          sx:values ( <http://a.example/v1> <http://a.example/v2> )]]]].
+          sx:values ( <http://a.example/v1> <http://a.example/v2> )]]]]] .

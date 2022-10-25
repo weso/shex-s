@@ -2,7 +2,7 @@ PREFIX sx: <http://www.w3.org/ns/shex#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 [] a sx:Schema ;
-    sx:shapes <http://a.example/A>, <http://a.example/B>, <http://a.example/C>, <http://a.example/D>, <http://a.example/E> .
+    sx:shapes (<http://a.example/A> <http://a.example/B> <http://a.example/C> <http://a.example/D> <http://a.example/E>) .
 
 <http://a.example/A> a sx:ShapeDecl ;
     sx:abstract true ;
@@ -28,7 +28,7 @@ PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
     sx:abstract true ;
     sx:shapeExpr [ a sx:ShapeAnd ;
         sx:shapeExprs (
-            <http://a.example/A>
+            [ a sx:Shape ; sx:extends ( <http://a.example/A> ) ]
             [ a sx:NodeConstraint ;
                 sx:pattern "s.B.........$"
             ]
@@ -45,7 +45,7 @@ PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
         )
     ] .
 
-<http://a.example/C> a sx:ShapeAnd ;
+<http://a.example/C> a sx:ShapeDecl ; sx:shapeExpr [ a sx:ShapeAnd ;
     sx:shapeExprs (
         [ a sx:NodeConstraint ;
             sx:pattern "s..C........$"
@@ -60,13 +60,13 @@ PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
                 sx:max -1
             ]
         ]
-    ) .
+    ) ] .
 
 <http://a.example/D> a sx:ShapeDecl ;
     sx:abstract true ;
     sx:shapeExpr [ a sx:ShapeAnd ;
         sx:shapeExprs (
-            <http://a.example/B>
+            [ a sx:Shape ; sx:extends ( <http://a.example/B> ) ]
             <http://a.example/C>
             [ a sx:NodeConstraint ;
                 sx:pattern "s...D.......$"
@@ -84,7 +84,7 @@ PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
         )
     ] .
 
-<http://a.example/E> a sx:ShapeAnd ;
+<http://a.example/E> a sx:ShapeDecl ; sx:shapeExpr [ a sx:ShapeAnd ;
     sx:shapeExprs (
         [ a sx:NodeConstraint ;
             sx:pattern "s....E......$"
@@ -98,5 +98,5 @@ PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
                 ]
             ]
         ]
-    ) .
+    ) ] .
 

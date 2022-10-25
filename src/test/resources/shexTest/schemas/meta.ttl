@@ -30,7 +30,7 @@ PREFIX sht:     <http://www.w3.org/ns/shacl/test-suite#>
                       <open2dotCommasOr1dotCommaclose.shex> sht:sameAbstractSyntaxAs                       <2dotOr1dot.shex> .
                         <openopen2dotcloseOr1dotclose.shex> sht:sameAbstractSyntaxAs                       <2dotOr1dot.shex> .
              <openopen2dotCommascloseOr1dotCommaclose.shex> sht:sameAbstractSyntaxAs                       <2dotOr1dot.shex> .
-<open1dotopen1dotCommaOr1dotCommacloseCommacloseComma.shex> sht:sameAbstractSyntaxAs <open1dotopen1dotOr1dotcloseclose.shex> .
+<open1dotopen1dotCommaOr1dotCommacloseCommacloseComma.shex> a sx:ShapeDecl ; sx:shapeExpr [ sht:sameAbstractSyntaxAs <open1dotopen1dotOr1dotcloseclose.shex> ] .
                                          <1card2blank.shex> sht:sameAbstractSyntaxAs                       <1card2Star.shex> .
                                 <1val1DOUBLElowercase.shex> sht:sameAbstractSyntaxAs                      <1val1DOUBLE.shex> .
                                     <1dotRefSpaceLNex.shex> sht:sameAbstractSyntaxAs                      <1dotRefLNex.shex> .
@@ -40,7 +40,7 @@ PREFIX sht:     <http://www.w3.org/ns/shacl/test-suite#>
                       <open1dotCommaOr2dotcommasclose.shex> sht:sameAbstractSyntaxAs                       <1dotOr2dot.shex> .
              <open1dotCommaOropen2dotCommascloseclose.shex> sht:sameAbstractSyntaxAs                       <1dotOr2dot.shex> .
                                  <open1dotOr2dotclose.shex> sht:sameAbstractSyntaxAs                       <1dotOr2dot.shex> .
-<openopen1dotCommaOr1dotCommaclose1dotCommacloseComma.shex> sht:sameAbstractSyntaxAs <openopen1dotOr1dotclose1dotclose.shex> .
+<openopen1dotCommaOr1dotCommaclose1dotCommacloseComma.shex> a sx:ShapeDecl ; sx:shapeExpr [ sht:sameAbstractSyntaxAs <openopen1dotOr1dotclose1dotclose.shex> ] .
                                      <3groupdot3Extra.shex> sht:sameAbstractSyntaxAs                  <3groupdotExtra3.shex> .
                                  <3groupdotExtra3NLex.shex> sht:sameAbstractSyntaxAs                  <3groupdotExtra3.shex> .
                                <startEqualSpaceInline.shex> sht:sameAbstractSyntaxAs                      <startInline.shex> .

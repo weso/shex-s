@@ -15,8 +15,9 @@
   ],
   "start": "http://all.example/S3",
   "shapes": [
-    {
-      "id": "http://all.example/S1",
+    { "type": "ShapeDecl",
+    "id": "http://all.example/S1",
+    "shapeExpr": {
       "type": "Shape",
       "expression": {
         "id": "http://all.example/S1e",
@@ -41,9 +42,10 @@
         "http://all.example/p2",
         "http://all.example/p3"
       ]
-    },
-    {
-      "id": "http://all.example/S2",
+    } },
+    { "type": "ShapeDecl",
+    "id": "http://all.example/S2",
+    "shapeExpr": {
       "type": "Shape",
       "expression": {
         "id": "http://all.example/S2e",
@@ -68,14 +70,16 @@
         "http://all.example/p2",
         "http://all.example/p3"
       ]
-    },
-    {
-      "id": "http://all.example/IRI",
+    } },
+    { "type": "ShapeDecl",
+    "id": "http://all.example/IRI",
+    "shapeExpr": {
       "type": "NodeConstraint",
       "nodeKind": "iri"
-    },
-    {
-      "id": "http://all.example/vs1",
+    } },
+    { "type": "ShapeDecl",
+    "id": "http://all.example/vs1",
+    "shapeExpr": {
       "type": "ShapeAnd",
       "shapeExprs": [
         {
@@ -100,9 +104,10 @@
           "datatype": "http://all.example/IRI"
         }
       ]
-    },
-    {
-      "id": "http://all.example/S3",
+    } },
+    { "type": "ShapeDecl",
+    "id": "http://all.example/S3",
+    "shapeExpr": {
       "type": "Shape",
       "expression": {
         "type": "EachOf",
@@ -440,14 +445,16 @@
         "http://all.example/prefix",
         "http://all.example/base"
       ]
-    },
-    {
-      "id": "http://all.example/S5",
+    } },
+    { "type": "ShapeDecl",
+    "id": "http://all.example/S5",
+    "shapeExpr": {
       "type": "NodeConstraint",
       "nodeKind": "iri"
-    },
-    {
-      "id": "_:a·̀ͯ‿.⁀",
+    } },
+    { "type": "ShapeDecl",
+    "id": "_:a·̀ͯ‿.⁀",
+    "shapeExpr": {
       "type": "Shape",
       "closed": true,
       "expression": {
@@ -458,11 +465,12 @@
           "http://all.example/S2e"
         ]
       }
-    },
-    {
-      "id": "_:AZazÀÖØöø˿ͰͽͿ῿‌‍⁰↏Ⰰ⿯、퟿豈﷏ﷰ�𐀀󯿽",
+    } },
+    { "type": "ShapeDecl",
+    "id": "_:AZazÀÖØöø˿ͰͽͿ῿‌‍⁰↏Ⰰ⿯、퟿豈﷏ﷰ�𐀀󯿽",
+    "shapeExpr": {
       "type": "Shape",
       "expression": "_:a·̀ͯ‿.⁀e"
-    }
+    } }
   ]
 }

@@ -16,10 +16,13 @@ case class PropertyId(
   override def toString = s"$id"
 
   override def toWDTKValue: WDTKPropertyIdValue = 
-    wdtkValue.fold{
-     val (name,base) = Utils.splitIri(iri) 
-     PropertyIdValueImpl(id, base) 
-    }(identity)
+    wdtkValue match {
+      case None => {
+       val (name,base) = Utils.splitIri(iri) 
+       new PropertyIdValueImpl(id, base) 
+      }
+      case Some(v) => v
+    }
 
 }
 

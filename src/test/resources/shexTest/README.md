@@ -28,9 +28,9 @@ These tests should raise errors when parsed, noting the rule about nested `Value
 
 ### `validation`
 
-* Validation tests in a manifest (Turtle - `manifest.ttl`, [ShExJ][http://shex.io/shex-primer/ShExJ) - `manifest.json`).
+* Validation tests in a manifest (Turtle - `manifest.ttl`, [ShExJ](http://shex.io/shex-semantics/#shexj) ([obselete primer](http://shex.io/shex-primer-20170327/ShExJ)) - `manifest.json`).
 * Input data in Turtle (`.ttl`).
-* [ShEx Results format](http://shex.io/shex-primer/ShExJ) (`.val`).
+* Validation returns a [ShapeMap](https://shexspec.github.io/shape-map/) capturing which node/shape pairs conform. The expected conformance or non-conformance is captured in the test format as a `ValidationTest` or `ValidationFailure`. 
 
 A ShEx validator is `logic-conformant` when it returns success for the tests of type `ValidationTest` and failure for the tests of type `ValidationFailure`.
 A ShEx validator is `result-conformant` (experimental) when it executes as `ValidationTest` and produces the same result structure as produced by this procedure:

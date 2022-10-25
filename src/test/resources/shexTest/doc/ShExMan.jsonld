@@ -1,0 +1,23 @@
+{
+  "@context":{
+    "@version": 1.1 ,
+    "shex": "http://www.w3.org/2013/ShEx/ns#",
+    "shexman": "http://www.w3.org/2013/ShEx/manifest#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+
+    "type": { "@id": "rdf:type", "@type": "@id" },
+    "entries": {"@id": "shexman:entries", "@container": "@list"},
+    "title": "shexman:title",
+    "desc": "shexman:desc" ,
+    "shapePath": "shexman:shapePath" ,
+    "shapePathDataMatch": "shexman:shapePathDataMatch" ,
+    "shexTest": "shexman:shexTest" ,
+    "status": "shexman:status",
+    "shapePathSchemaMatch": {
+      "@id": "shexman:shapePathSchemaMatch",
+      "@context": "http://www.w3.org/ns/shex.jsonld"
+    },
+    "value": "shexman:value"   
+  }
+}

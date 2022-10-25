@@ -3,9 +3,9 @@ PREFIX sx: <http://www.w3.org/ns/shex#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 [] a sx:Schema ;
-    sx:shapes <http://a.example/S1> .
+    sx:shapes (<http://a.example/S1>) .
 
-<http://a.example/S1> a sx:ShapeAnd ;
+<http://a.example/S1> a sx:ShapeDecl ; sx:shapeExpr [ a sx:ShapeAnd ;
   sx:shapeExprs (
     [ a sx:NodeConstraint ; sx:nodeKind sx:iri ; sx:pattern "^https?://" ]
     [ a sx:Shape ; sx:expression [ a sx:EachOf ; sx:expressions (
@@ -30,5 +30,5 @@ PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
           ) ] ]
       ) ] ]
     ) ] ]
-  ) .
+  ) ] .
 

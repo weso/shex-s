@@ -1,15 +1,15 @@
 PREFIX sx: <http://www.w3.org/ns/shex#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
-<http://a.example/S1> a sx:Shape ;
+<http://a.example/S1> a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ;
   sx:closed true ;
   sx:expression [
     a sx:TripleConstraint ;
     sx:predicate <http://a.example/p1> ;
     sx:valueExpr <http://a.example/List1PlusIri>
-  ] .
+  ] ] .
 
-<http://a.example/List1PlusIri> a sx:Shape ;
+<http://a.example/List1PlusIri> a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ;
   sx:closed true ;
   sx:expression [
     a sx:EachOf ;
@@ -30,9 +30,10 @@ PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
         ]
       ]
     )
-  ] .
+  ] ] .
 
 [] a sx:Schema ;
-  sx:shapes
-    <http://a.example/S1> ,
-    <http://a.example/List1PlusIri> .
+  sx:shapes (
+    <http://a.example/S1> 
+    <http://a.example/List1PlusIri>
+  ) .

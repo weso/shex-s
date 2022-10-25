@@ -17,7 +17,7 @@ negativeStructure/manifest.jsonld: negativeStructure/manifest.ttl
 ShExTests: ShExJTests ShExVTests
 
 ShExJTests: doc/ShExJ.jsg
-	(ls schemas/*.json | grep -v coverage.json | xargs \
+	(ls schemas/*.json | grep -vE '(coverage|representationTests)\.json' | xargs \
 	 `npm bin`/json-grammar doc/ShExJ.jsg)
 
 ShExVTests: doc/ShExV.jsg

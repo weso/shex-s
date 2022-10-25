@@ -11,8 +11,11 @@ case class ItemId(
   override def toString = s"$id"
 
   override def toWDTKValue: WDTKValue = 
-    wdtkValue.fold{
-      val (name,base) = Utils.splitIri(iri) 
-      ItemIdValueImpl(id, base)
-    }(identity)
+    wdtkValue match {
+      case None => {
+       val (name,base) = Utils.splitIri(iri) 
+       new ItemIdValueImpl(id, base)
+     }
+     case Some(v) => v
+    }
 }

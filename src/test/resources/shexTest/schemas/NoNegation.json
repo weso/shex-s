@@ -1,16 +1,18 @@
 {
   "type": "Schema",
   "shapes": [
-    {
-      "id": "http://example.org/S",
+    { "type": "ShapeDecl",
+    "id": "http://example.org/S",
+    "shapeExpr": {
       "type": "ShapeAnd",
       "shapeExprs": [
         "http://example.org/T",
         "http://example.org/U"
       ]
-    },
-    {
-      "id": "http://example.org/T",
+    } },
+    { "type": "ShapeDecl",
+    "id": "http://example.org/T",
+    "shapeExpr": {
       "type": "Shape",
       "expression": {
         "type": "EachOf",
@@ -26,15 +28,16 @@
           }
         ]
       }
-    },
-    {
-      "id": "http://example.org/U",
+    } },
+    { "type": "ShapeDecl",
+    "id": "http://example.org/U",
+    "shapeExpr": {
       "type": "Shape",
       "expression": {
         "type": "TripleConstraint",
         "predicate": "http://example.org/b"
       }
-    }
+    } }
   ],
   "@context": "http://www.w3.org/ns/shex.jsonld"
 }

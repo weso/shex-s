@@ -1,277 +1,310 @@
 {
-  "@context": "http://www.w3.org/ns/shex.jsonld",
   "type": "Schema",
   "shapes": [
     {
+      "type": "ShapeDecl",
       "id": "http://a.example/#Observation",
-      "type": "Shape",
-      "expression": {
-        "type": "EachOf",
-        "expressions": [
+      "shapeExpr": {
+        "type": "Shape",
+        "closed": true,
+        "expression": {
+          "type": "EachOf",
+          "expressions": [
+            {
+              "type": "TripleConstraint",
+              "predicate": "http://hl7.org/ns/fhir#code",
+              "min": 0,
+              "max": 1
+            },
+            {
+              "type": "TripleConstraint",
+              "predicate": "http://hl7.org/ns/fhir#component",
+              "valueExpr": {
+                "type": "Shape",
+                "closed": true,
+                "expression": {
+                  "type": "EachOf",
+                  "expressions": [
+                    {
+                      "type": "TripleConstraint",
+                      "predicate": "http://hl7.org/ns/fhir#code"
+                    },
+                    {
+                      "type": "TripleConstraint",
+                      "predicate": "http://hl7.org/ns/fhir#value"
+                    }
+                  ]
+                }
+              },
+              "min": 0,
+              "max": -1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "ShapeDecl",
+      "id": "http://a.example/#Vital",
+      "abstract": true,
+      "shapeExpr": {
+        "type": "Shape",
+        "extends": [
+          "http://a.example/#Observation"
+        ],
+        "closed": true
+      }
+    },
+    {
+      "type": "ShapeDecl",
+      "id": "http://a.example/#PostureVital",
+      "abstract": true,
+      "shapeExpr": {
+        "type": "Shape",
+        "extends": [
+          "http://a.example/#Vital",
+          "http://a.example/#Posture"
+        ],
+        "closed": true
+      }
+    },
+    {
+      "type": "ShapeDecl",
+      "id": "http://a.example/#ReclinedVital",
+      "abstract": true,
+      "shapeExpr": {
+        "type": "Shape",
+        "extends": [
+          "http://a.example/#PostureVital",
+          "http://a.example/#Reclined"
+        ],
+        "closed": true
+      }
+    },
+    {
+      "type": "ShapeDecl",
+      "id": "http://a.example/#BP",
+      "shapeExpr": {
+        "type": "ShapeAnd",
+        "shapeExprs": [
           {
-            "type": "TripleConstraint",
-            "predicate": "http://hl7.org/ns/fhir#code",
-            "min": 0,
-            "max": 1
+            "type": "Shape",
+            "extends": [
+              "http://a.example/#Vital"
+            ],
+            "closed": true
           },
           {
-            "type": "TripleConstraint",
-            "predicate": "http://hl7.org/ns/fhir#component",
-            "valueExpr": {
-              "type": "Shape",
-              "expression": {
-                "type": "EachOf",
-                "expressions": [
+            "type": "Shape",
+            "closed": true,
+            "expression": {
+              "type": "EachOf",
+              "expressions": [
+                {
+                  "type": "TripleConstraint",
+                  "predicate": "http://hl7.org/ns/fhir#component",
+                  "valueExpr": {
+                    "type": "Shape",
+                    "expression": {
+                      "type": "TripleConstraint",
+                      "predicate": "http://hl7.org/ns/fhir#code",
+                      "valueExpr": {
+                        "type": "NodeConstraint",
+                        "values": [
+                          {
+                            "value": "systolic"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                },
+                {
+                  "type": "TripleConstraint",
+                  "predicate": "http://hl7.org/ns/fhir#component",
+                  "valueExpr": {
+                    "type": "Shape",
+                    "expression": {
+                      "type": "TripleConstraint",
+                      "predicate": "http://hl7.org/ns/fhir#code",
+                      "valueExpr": {
+                        "type": "NodeConstraint",
+                        "values": [
+                          {
+                            "value": "diastolic"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "ShapeDecl",
+      "id": "http://a.example/#PostureBP",
+      "shapeExpr": {
+        "type": "Shape",
+        "extends": [
+          "http://a.example/#BP",
+          "http://a.example/#PostureVital"
+        ],
+        "closed": true
+      }
+    },
+    {
+      "type": "ShapeDecl",
+      "id": "http://a.example/#ReclinedBP",
+      "shapeExpr": {
+        "type": "Shape",
+        "extends": [
+          "http://a.example/#BP",
+          "http://a.example/#ReclinedVital"
+        ],
+        "closed": true
+      }
+    },
+    {
+      "type": "ShapeDecl",
+      "id": "http://a.example/#Pulse",
+      "shapeExpr": {
+        "type": "ShapeAnd",
+        "shapeExprs": [
+          {
+            "type": "Shape",
+            "extends": [
+              "http://a.example/#Vital"
+            ],
+            "closed": true
+          },
+          {
+            "type": "Shape",
+            "expression": {
+              "type": "TripleConstraint",
+              "predicate": "http://hl7.org/ns/fhir#code",
+              "valueExpr": {
+                "type": "NodeConstraint",
+                "values": [
                   {
-                    "type": "TripleConstraint",
-                    "predicate": "http://hl7.org/ns/fhir#code"
-                  },
-                  {
-                    "type": "TripleConstraint",
-                    "predicate": "http://hl7.org/ns/fhir#value"
+                    "value": "pulse"
                   }
                 ]
               }
-            },
-            "min": 0,
-            "max": -1
+            }
           }
         ]
       }
     },
     {
-      "id": "http://a.example/#Vital",
       "type": "ShapeDecl",
-      "abstract": true,
+      "id": "http://a.example/#PosturePulse",
       "shapeExpr": {
-        "type": "ShapeAnd",
-        "shapeExprs": [
-          "http://a.example/#Observation",
-          {
-            "type": "Shape"
-          }
-        ]
+        "type": "Shape",
+        "extends": [
+          "http://a.example/#Pulse",
+          "http://a.example/#PostureVital"
+        ],
+        "closed": true
       }
     },
     {
-      "id": "http://a.example/#PostureVital",
       "type": "ShapeDecl",
-      "abstract": true,
+      "id": "http://a.example/#ReclinedPulse",
+      "shapeExpr": {
+        "type": "Shape",
+        "extends": [
+          "http://a.example/#Pulse",
+          "http://a.example/#ReclinedVital"
+        ],
+        "closed": true
+      }
+    },
+    {
+      "type": "ShapeDecl",
+      "id": "http://a.example/#Posture",
+      "shapeExpr": {
+        "type": "Shape",
+        "expression": {
+          "type": "TripleConstraint",
+          "predicate": "http://hl7.org/ns/fhir#component",
+          "valueExpr": {
+            "type": "Shape",
+            "expression": {
+              "type": "TripleConstraint",
+              "predicate": "http://hl7.org/ns/fhir#code",
+              "valueExpr": {
+                "type": "NodeConstraint",
+                "values": [
+                  {
+                    "value": "posture"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "ShapeDecl",
+      "id": "http://a.example/#Reclined",
       "shapeExpr": {
         "type": "ShapeAnd",
         "shapeExprs": [
-          "http://a.example/#Vital",
           {
             "type": "Shape",
             "extends": [
               "http://a.example/#Posture"
-            ]
-          }
-        ]
-      }
-    },
-    {
-      "id": "http://a.example/#ReclinedVital",
-      "type": "ShapeDecl",
-      "abstract": true,
-      "shapeExpr": {
-        "type": "ShapeAnd",
-        "shapeExprs": [
-          "http://a.example/#PostureVital",
+            ],
+            "closed": true
+          },
           {
             "type": "Shape",
-            "extends": [
-              "http://a.example/#Reclined"
-            ]
+            "expression": {
+              "type": "TripleConstraint",
+              "predicate": "http://hl7.org/ns/fhir#component",
+              "valueExpr": {
+                "type": "Shape",
+                "closed": true,
+                "expression": {
+                  "type": "EachOf",
+                  "expressions": [
+                    {
+                      "type": "TripleConstraint",
+                      "predicate": "http://hl7.org/ns/fhir#code",
+                      "valueExpr": {
+                        "type": "NodeConstraint",
+                        "values": [
+                          {
+                            "value": "posture"
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "type": "TripleConstraint",
+                      "predicate": "http://hl7.org/ns/fhir#value",
+                      "valueExpr": {
+                        "type": "NodeConstraint",
+                        "values": [
+                          {
+                            "value": "reclined"
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              }
+            }
           }
         ]
       }
-    },
-    {
-      "id": "http://a.example/#BP",
-      "type": "ShapeAnd",
-      "shapeExprs": [
-        {
-          "type": "Shape",
-          "extends": [
-            "http://a.example/#Vital"
-          ]
-        },
-        {
-          "type": "Shape",
-          "expression": {
-            "type": "EachOf",
-            "expressions": [
-              {
-                "type": "TripleConstraint",
-                "predicate": "http://hl7.org/ns/fhir#component",
-                "valueExpr": {
-                  "type": "Shape",
-                  "expression": {
-                    "type": "TripleConstraint",
-                    "predicate": "http://hl7.org/ns/fhir#code",
-                    "valueExpr": {
-                      "type": "NodeConstraint",
-                      "values": [
-                        {
-                          "value": "systolic"
-                        }
-                      ]
-                    }
-                  }
-                }
-              },
-              {
-                "type": "TripleConstraint",
-                "predicate": "http://hl7.org/ns/fhir#component",
-                "valueExpr": {
-                  "type": "Shape",
-                  "expression": {
-                    "type": "TripleConstraint",
-                    "predicate": "http://hl7.org/ns/fhir#code",
-                    "valueExpr": {
-                      "type": "NodeConstraint",
-                      "values": [
-                        {
-                          "value": "diastolic"
-                        }
-                      ]
-                    }
-                  }
-                }
-              }
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "id": "http://a.example/#PostureBP",
-      "type": "Shape",
-      "extends": [
-        "http://a.example/#BP",
-        "http://a.example/#PostureVital"
-      ]
-    },
-    {
-      "id": "http://a.example/#ReclinedBP",
-      "type": "Shape",
-      "extends": [
-        "http://a.example/#BP",
-        "http://a.example/#ReclinedVital"
-      ]
-    },
-    {
-      "id": "http://a.example/#Pulse",
-      "type": "ShapeAnd",
-      "shapeExprs": [
-        {
-          "type": "Shape",
-          "extends": [
-            "http://a.example/#Vital"
-          ]
-        },
-        {
-          "type": "Shape",
-          "expression": {
-            "type": "TripleConstraint",
-            "predicate": "http://hl7.org/ns/fhir#code",
-            "valueExpr": {
-              "type": "NodeConstraint",
-              "values": [
-                {
-                  "value": "pulse"
-                }
-              ]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "id": "http://a.example/#PosturePulse",
-      "type": "Shape",
-      "extends": [
-        "http://a.example/#Pulse",
-        "http://a.example/#PostureVital"
-      ]
-    },
-    {
-      "id": "http://a.example/#ReclinedPulse",
-      "type": "Shape",
-      "extends": [
-        "http://a.example/#Pulse",
-        "http://a.example/#ReclinedVital"
-      ]
-    },
-    {
-      "id": "http://a.example/#Posture",
-      "type": "Shape",
-      "expression": {
-        "type": "TripleConstraint",
-        "predicate": "http://hl7.org/ns/fhir#component",
-        "valueExpr": {
-          "type": "Shape",
-          "expression": {
-            "type": "TripleConstraint",
-            "predicate": "http://hl7.org/ns/fhir#code",
-            "valueExpr": {
-              "type": "NodeConstraint",
-              "values": [
-                {
-                  "value": "posture"
-                }
-              ]
-            }
-          }
-        }
-      }
-    },
-    {
-      "id": "http://a.example/#Reclined",
-      "type": "ShapeAnd",
-      "shapeExprs": [
-        "http://a.example/#Posture",
-        {
-          "type": "Shape",
-          "expression": {
-            "type": "TripleConstraint",
-            "predicate": "http://hl7.org/ns/fhir#component",
-            "valueExpr": {
-              "type": "Shape",
-              "expression": {
-                "type": "EachOf",
-                "expressions": [
-                  {
-                    "type": "TripleConstraint",
-                    "predicate": "http://hl7.org/ns/fhir#code",
-                    "valueExpr": {
-                      "type": "NodeConstraint",
-                      "values": [
-                        {
-                          "value": "posture"
-                        }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "TripleConstraint",
-                    "predicate": "http://hl7.org/ns/fhir#value",
-                    "valueExpr": {
-                      "type": "NodeConstraint",
-                      "values": [
-                        {
-                          "value": "reclined"
-                        }
-                      ]
-                    }
-                  }
-                ]
-              }
-            }
-          }
-        }
-      ]
     }
-  ]
+  ],
+  "@context": "http://www.w3.org/ns/shex.jsonld"
 }

@@ -2,7 +2,9 @@
   "imports": [ "start2RefS1" ],
   "start": "http://a.example/S2",
   "shapes": [
-    { "id": "http://a.example/S2", "type": "Shape", "expression": {
+    { "type": "ShapeDecl",
+    "id": "http://a.example/S2",
+    "shapeExpr": { "type": "Shape", "expression": {
         "type": "TripleConstraint", "predicate": "http://a.example/p2",
-        "valueExpr": "http://a.example/S1" } }
+        "valueExpr": "http://a.example/S1" } } }
   ] }

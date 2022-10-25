@@ -12,9 +12,10 @@ case class Reference(
     def getSnaks(): List[Snak] = 
         groups.map(_.snaks).flatten
 
-    lazy val toWDTKReference: WDTKReference = wdtkReference.fold(
-      ReferenceImpl(groups.map(_.toWDTKSnakGroup).asJava)
-    )(identity)
+    lazy val toWDTKReference: WDTKReference = wdtkReference match {
+        case None => new ReferenceImpl(groups.map(_.toWDTKSnakGroup).asJava)
+        case Some(v) => v
+    }
 }
 
 
@@ -27,13 +28,6 @@ object Reference {
     }
 
     def fromSnaks(snaks: List[Snak]): Reference = 
-        Reference(mkSnakGroups(snaks))
-
-    private def mkSnakGroups(snaks: List[Snak]): List[SnakGroup] = 
-        snaks
-        .groupBy(_.propertyId)
-        .toList
-        .map(_._2)
-        .map(SnakGroup(_))
+        Reference(SnakGroup.mkSnakGroups(snaks))
 
 }

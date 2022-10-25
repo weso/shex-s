@@ -1,16 +1,14 @@
-@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+PREFIX sx: <http://www.w3.org/ns/shex#>
 
-<http://schema.example/IssueShape> a <http://www.w3.org/ns/shex#Shape>;
-   <http://www.w3.org/ns/shex#expression> [
-     a <http://www.w3.org/ns/shex#TripleConstraint>;
-     <http://www.w3.org/ns/shex#max> -1;
-     <http://www.w3.org/ns/shex#min> 0;
-     <http://www.w3.org/ns/shex#predicate> <http://schema.example/related>;
-     <http://www.w3.org/ns/shex#valueExpr> <http://schema.example/IssueShape>
-   ] .
+<http://schema.example/IssueShape> a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape;
+   sx:expression [
+     a sx:TripleConstraint;
+     sx:max -1;
+     sx:min 0;
+     sx:predicate <http://schema.example/related>;
+     sx:valueExpr <http://schema.example/IssueShape>
+   ] ] .
 
- [
-     a <http://www.w3.org/ns/shex#Schema>;
-     <http://www.w3.org/ns/shex#shapes> <http://schema.example/IssueShape>
- ] .
+[]
+     a sx:Schema;
+     sx:shapes (<http://schema.example/IssueShape>) .
