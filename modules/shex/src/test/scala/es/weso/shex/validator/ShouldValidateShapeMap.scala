@@ -34,7 +34,7 @@ trait ShouldValidateShapeMap extends CatsEffectSuite {
         verbose.info(msg)
 
       val validate: IO[Boolean] = for {
-        //_ <- info(s"Before all validate...")
+        // _ <- info(s"Before all validate...")
         res1 <- RDFAsJenaModel.fromString(rdfStr, "Turtle", None)
         res2 <- RDFAsJenaModel.empty
         vv <- (res1, res2).tupled.use { case (rdf, builder) =>

@@ -103,7 +103,6 @@ case class WSchema(
   lazy val startShapeExpr: Option[WShapeExpr] =
     getShape(Start).orElse(shapes.headOption)
 
-
 }
 
 object WSchema {
@@ -120,46 +119,40 @@ object WSchema {
     case WShExFormat.JsonWShExFormat    => "ShExJ"
   }
 
-  def parseFormat(formatStr: String): IO[WShExFormat] = 
-   IO.fromEither(WShExFormat.fromString(formatStr))
+  def parseFormat(formatStr: String): IO[WShExFormat] =
+    IO.fromEither(WShExFormat.fromString(formatStr))
 
   def fromInputStream(
-    is: InputStream,
-    format: WShExFormat = WShExFormat.CompactWShExFormat,
-    base: Option[IRI] = None,
-    entityIRI: IRI = defaultEntityIRI,      
-    verbose: VerboseLevel
+      is: InputStream,
+      format: WShExFormat = WShExFormat.CompactWShExFormat,
+      base: Option[IRI] = None,
+      entityIRI: IRI = defaultEntityIRI,
+      verbose: VerboseLevel
   ): IO[WSchema] = format match {
-    case WShExFormat.CompactWShExFormat => {
+    case WShExFormat.CompactWShExFormat =>
       val reader = new InputStreamReader(is)
       val parserOptions = ParserOptions(entityIRI)
       parseSchemaReader(reader, base, parserOptions)
-      .fold(e => 
-        IO.raiseError(WShExErrorReading(e, format)
-      ), 
-      _.pure[IO]
-      )
-    }
-    case WShExFormat.ESCompactFormat | WShExFormat.ESJsonFormat => 
+        .fold(e => IO.raiseError(WShExErrorReading(e, format)), _.pure[IO])
+    case WShExFormat.ESCompactFormat | WShExFormat.ESJsonFormat =>
       for {
         schema <- es.weso.shex.Schema.fromInputStream(is, cnvFormat(format), base)
         resolvedSchema <- es.weso.shex.ResolvedSchema.resolve(schema, base, verbose)
         wschema <- IO.fromEither(
           ES2WShEx(ES2WShExConvertOptions.default).convert(resolvedSchema)
-          )
+        )
       } yield wschema
-    case _ => IO.raiseError(WShExUnsupportedFormat(format))  
+    case _ => IO.raiseError(WShExUnsupportedFormat(format))
   }
 
   def fromPath(
       path: Path,
       format: WShExFormat = WShExFormat.CompactWShExFormat,
       base: Option[IRI] = None,
-      entityIRI: IRI = defaultEntityIRI,      
+      entityIRI: IRI = defaultEntityIRI,
       verbose: VerboseLevel
-  ): IO[WSchema] = {
-      fromInputStream(Files.newInputStream(path),format,base,entityIRI,verbose)
-  }
+  ): IO[WSchema] =
+    fromInputStream(Files.newInputStream(path), format, base, entityIRI, verbose)
 
   def fromString(
       schemaString: String,
@@ -168,8 +161,8 @@ object WSchema {
       entityIRI: IRI = defaultEntityIRI,
       verbose: VerboseLevel
   ): IO[WSchema] = {
-      val is = new ByteArrayInputStream(schemaString.getBytes())
-      fromInputStream(is,format,base,entityIRI,verbose)
+    val is = new ByteArrayInputStream(schemaString.getBytes())
+    fromInputStream(is, format, base, entityIRI, verbose)
   }
 
   /** Read a Schema from a file
@@ -203,7 +196,7 @@ object WSchema {
       str: String,
       format: WShExFormat,
       base: Option[IRI] = None,
-      entityIRI: IRI = defaultEntityIRI, 
+      entityIRI: IRI = defaultEntityIRI,
       verbose: VerboseLevel
   ): Either[ParseError, WSchema] = {
     import cats.effect.unsafe.implicits.global
@@ -214,26 +207,24 @@ object WSchema {
     }
   }
 
-  case class WShExErrorReadingString(msg: String, inputStr: String, format: WShExFormat) extends 
-    RuntimeException(s"""|Error reading WSchema from String
+  case class WShExErrorReadingString(msg: String, inputStr: String, format: WShExFormat)
+      extends RuntimeException(s"""|Error reading WSchema from String
                          |Error: $msg
                          |String: ${inputStr}
                          |""".stripMargin)
-  case class WShExErrorReadingPath(msg: String, inputPath: Path, format: WShExFormat) extends 
-    RuntimeException(s"""|Error reading WSchema from path
+  case class WShExErrorReadingPath(msg: String, inputPath: Path, format: WShExFormat)
+      extends RuntimeException(s"""|Error reading WSchema from path
                          |Error: $msg
                          |Path: $inputPath
                          |""".stripMargin)
-  case class WShExErrorReading(msg: String, format: WShExFormat) extends 
-    RuntimeException(s"""|Error reading WSchema from path
+  case class WShExErrorReading(msg: String, format: WShExFormat)
+      extends RuntimeException(s"""|Error reading WSchema from path
                          |Error: $msg
                          |""".stripMargin)
-  case class WShExUnsupportedFormat(format: WShExFormat) extends 
-    RuntimeException(s"""|Error reading WSchema.
+  case class WShExUnsupportedFormat(format: WShExFormat)
+      extends RuntimeException(s"""|Error reading WSchema.
                          |Unsupported format yet: $format
                          |""".stripMargin)
-
-
 
   /** Read a Schema from a file
     * This version is unsafe in the sense that it can throw exceptions
