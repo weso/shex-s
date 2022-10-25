@@ -24,33 +24,11 @@ import org.wikidata.wdtk.datamodel.interfaces.TermedDocument
 import org.wikidata.wdtk.datamodel.interfaces.StatementDocument
 import org.wikidata.wdtk.datamodel.interfaces.MonolingualTextValue
 import scala.jdk.CollectionConverters._
-import org.wikidata.wdtk.datamodel.interfaces.StatementGroup
-import org.wikidata.wdtk.datamodel.interfaces.StatementRank
-import org.wikidata.wdtk.datamodel.interfaces.Statement
-import org.wikidata.wdtk.datamodel.interfaces.SnakVisitor
-import org.wikidata.wdtk.datamodel.interfaces.NoValueSnak
-import org.wikidata.wdtk.datamodel.interfaces.SomeValueSnak
-import org.wikidata.wdtk.datamodel.interfaces.ValueSnak
-import org.wikidata.wdtk.datamodel.interfaces.ValueVisitor
-import org.wikidata.wdtk.datamodel.interfaces.GlobeCoordinatesValue
-import org.wikidata.wdtk.datamodel.interfaces.EntityIdValue
-import org.wikidata.wdtk.datamodel.interfaces.QuantityValue
-import org.wikidata.wdtk.datamodel.interfaces.StringValue
-import org.wikidata.wdtk.datamodel.interfaces.TimeValue
-import org.wikidata.wdtk.datamodel.interfaces.UnsupportedValue
-import org.wikidata.wdtk.datamodel.interfaces.ItemIdValue
-import org.wikidata.wdtk.datamodel.interfaces.PropertyIdValue
-import org.wikidata.wdtk.datamodel.interfaces.FormIdValue
-import org.wikidata.wdtk.datamodel.interfaces.LexemeIdValue
+import org.wikidata.wdtk.datamodel.interfaces._
 import org.wikidata.wdtk.rdf.Vocabulary
-import org.antlr.v4
-import org.wikidata.wdtk.datamodel.interfaces.Claim
 import org.wikidata.wdtk.rdf.values.TimeValueConverter
+import es.weso.rdf.PREFIXES._
 
-case class RDFSerializerErrorUnknownEntity(ed: EntityDoc)
-    extends RuntimeException(s"Unexpected entitydoc: $ed. Should be item or property")
-case class RDFSerializerErrorUnknownEntityIdValue(ed: EntityIdValue)
-    extends RuntimeException(s"Unexpected entityIdValue: $ed")
 
 case class RDFSerializer(format: RDFFormat) extends Serializer {
 
@@ -78,6 +56,7 @@ case class RDFSerializer(format: RDFFormat) extends Serializer {
   val wikibase = IRI(Vocabulary.PREFIX_WBONTO)
   val owl      = IRI(Vocabulary.PREFIX_OWL)
   val xsd      = IRI(Vocabulary.PREFIX_XSD)
+  val wdno     = IRI("http://www.wikidata.org/prop/novalue/")
 
   val rdfs_label         = rdfs + "label"
   val skos_prefLabel     = skos + "prefLabel"
@@ -85,6 +64,7 @@ case class RDFSerializer(format: RDFFormat) extends Serializer {
   val wikibase_Item      = wikibase + "Item"
   val schema_description = schema + "description"
   val xsd_string         = xsd + "string"
+  val prov_wasDerivedFrom = prov + "wasDerivedFrom"
 
   val wikibasePrefixMap = PrefixMap(
     Map(
@@ -102,7 +82,8 @@ case class RDFSerializer(format: RDFFormat) extends Serializer {
       Prefix("wd")       -> wd,
       Prefix("wdt")      -> wdt,
       Prefix("wikibase") -> wikibase,
-      Prefix("xsd")      -> xsd
+      Prefix("xsd")      -> xsd,
+      Prefix("wdno")     -> wdno
     )
   )
 
@@ -171,18 +152,21 @@ case class RDFSerializer(format: RDFFormat) extends Serializer {
 
   def mkSimpleStatement(statement: Statement, rdf: RDFBuilder): IO[RDFBuilder] = {
     val subj             = IRI(statement.getSubject().getIri())
-    val pred             = wdt + statement.getMainSnak().getPropertyId().getId()
-    val snakRdfConverter = SnakRdfConverter(subj, pred, rdf)
+    val pred             = statement.getMainSnak().getPropertyId()
+    val snakRdfConverter = SnakRdfConverter(subj, pred, rdf, Direct(wdt))
     statement.getMainSnak().accept(snakRdfConverter)
   }
 
-  case class SnakRdfConverter(subj: IRI, pred: IRI, rdf: RDFBuilder)
+  case class SnakRdfConverter(subj: RDFNode, predId: PropertyIdValue, rdf: RDFBuilder, mode: Mode)
       extends SnakVisitor[IO[RDFBuilder]]
       with ValueVisitor[IO[RDFBuilder]] {
 
+    val pred = wdt + predId.getId()    
     override def visit(noValue: NoValueSnak): IO[RDFBuilder] =
-      IO.println(s"Not implemented noValue visitor for $subj - $pred") *> rdf.pure[IO]
+      rdf.addTriple(RDFTriple(subj, `rdf:type`, wdno + predId.getId())) 
+      
     override def visit(someValue: SomeValueSnak): IO[RDFBuilder] =
+      // rdf.addTriple(RDFTriple(subj, ))
       IO.println(s"Not implemented someValue visitor for $subj - $pred") *> rdf.pure[IO]
 
     override def visit(value: ValueSnak): IO[RDFBuilder] = {
@@ -224,24 +208,43 @@ case class RDFSerializer(format: RDFFormat) extends Serializer {
   def mkFullStatement(statement: Statement, rdf: RDFBuilder): IO[RDFBuilder] = {
     val iriStatement = IRI(Vocabulary.getStatementUri(statement))
     val subj         = IRI(statement.getSubject().getIri())
-    val propId       = statement.getMainSnak().getPropertyId().getId()
-    val pred         = p + propId
+    val propId       = statement.getMainSnak().getPropertyId()
+    val pred         = p + propId.getId()
     rdf.addTriple(RDFTriple(subj, pred, iriStatement)) *>
       rdf.addType(iriStatement, IRI(Vocabulary.WB_STATEMENT)) *>
-      mkClaim(iriStatement, ps + propId, statement.getClaim(), rdf)
+      mkClaim(iriStatement, propId, statement.getClaim(), rdf) *>
+      mkReferences(iriStatement, propId, statement.getReferences().asScala.toList, rdf)
     // TODO: references, sitelinks
   }
 
-  def mkClaim(subj: IRI, pred: IRI, claim: Claim, rdf: RDFBuilder): IO[RDFBuilder] = {
-    val snakRdfConverter = SnakRdfConverter(subj, pred, rdf)
+  def mkClaim(subj: IRI, propId: PropertyIdValue, claim: Claim, rdf: RDFBuilder): IO[RDFBuilder] = {
+    val snakRdfConverter = SnakRdfConverter(subj, propId, rdf, Property(p))
     claim.getMainSnak().accept(snakRdfConverter) *>
       claim.getAllQualifiers().asScala.toList.foldM(rdf) {
         case (current, snak) => {
-          val qualifierConverter = SnakRdfConverter(subj, pq + snak.getPropertyId().getId(), rdf)
+          val qualifierConverter = SnakRdfConverter(subj, snak.getPropertyId(), current, Qualifier(pq))
           snak.accept(qualifierConverter)
         }
       }
   }
+
+  def mkReferences(subj: IRI, propId: PropertyIdValue, references: List[Reference], rdf: RDFBuilder): IO[RDFBuilder] = 
+    references.foldM(rdf){ 
+      case (currentRdf, ref) => mkReference(subj, propId, ref, currentRdf) 
+    }
+
+  def mkReference(subj: IRI, propId: PropertyIdValue, reference: Reference, rdf: RDFBuilder): IO[RDFBuilder] = 
+    rdf.createBNode.flatMap{ case (bnode, rdf1) => 
+      rdf1.addTriple(RDFTriple(subj, prov_wasDerivedFrom, bnode)).flatMap(rdf2 => {
+        reference.getAllSnaks().asScala.toList.foldM(rdf2) {
+          case (current, snak) => {
+            val referenceConverter = SnakRdfConverter(bnode, snak.getPropertyId(), current, ReferenceMode(pr))
+            snak.accept(referenceConverter)
+          }
+        }
+      })
+    }
+    
 
   def mkStatement(statement: Statement, rdf: RDFBuilder, bestRank: Option[StatementRank]): IO[RDFBuilder] = {
     if (isBest(statement, bestRank)) {
