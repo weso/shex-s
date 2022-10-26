@@ -27,23 +27,23 @@ class RDF2ManifestTest extends CatsEffectSuite {
       )
     )
 
-  test("RDF2Manifest schemas") {
+ /* test("RDF2Manifest schemas") {
     checkResults(
       parseManifest(
         "manifest",
         "schemas",
         validationFolder,
-        Only("1dot"),
+        All,
         List("AND3G", "Extend3G", "ExtendANDExtend3GAND3G"),
         Validator.apply,
         1.seconds,
         assumeLocal,
-        VerboseLevel.Debug
+        VerboseLevel.Nothing
       )
     )
   }
 
-/*  test("RDF2Manifest negativeSyntax") {
+  test("RDF2Manifest negativeSyntax") {
     checkResults(
       parseManifest(
         "manifest",
@@ -54,7 +54,7 @@ class RDF2ManifestTest extends CatsEffectSuite {
         Validator.apply,
         1.seconds,
         assumeLocal,
-        VerboseLevel.Info
+        VerboseLevel.Nothing
       )
     )
   }
@@ -84,7 +84,7 @@ class RDF2ManifestTest extends CatsEffectSuite {
       )
     )
   }
-
+  */
   test("RDF2Manifest validating") {
     checkResults(
       parseManifest(
@@ -100,7 +100,7 @@ class RDF2ManifestTest extends CatsEffectSuite {
       ),
       false
     )
-  } */
+  } 
 
   def checkResults(process: IO[List[Result]], verbose: Boolean = false): IO[Unit] = for {
     results <- process

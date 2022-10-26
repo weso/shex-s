@@ -6,6 +6,7 @@ import es.weso.shex.implicits.eqShEx._
 
 object CompareSchemas {
   type ShapeMap = Map[ShapeLabel, ShapeExpr]
+
   // Compare schemas ignoring namespaces or other minor differences like None vs Some(false)
   def compareSchemas(s1: Schema, s2: Schema): Boolean =
     compareShapesMaps(s1.shapesMap, s2.shapesMap)
@@ -42,8 +43,8 @@ object CompareSchemas {
       case (s1: Shape, s2: Shape)                               => compareShapes(s1, s2)
       case (ShapeRef(i1, _, _), ShapeRef(i2, _, _))             => Eq[ShapeLabel].eqv(i1, i2)
       case (ShapeExternal(id1, _, _), ShapeExternal(id2, _, _)) => id1 == id2
-      case (ShapeDecl(id1, se1), ShapeDecl(id2, se2)) =>
-        id1 == id2 && compareShapeExprs(se1, se2)
+      case (ShapeDecl(id1, se1, b1), ShapeDecl(id2, se2, b2)) =>
+        id1 == id2 && b1 == b2 && compareShapeExprs(se1, se2)
       case (_, _) =>
         pprint.log(se1, "compareShapeExprs")
         pprint.log(se2, "compareShapeExprs")

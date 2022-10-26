@@ -359,9 +359,9 @@ case class ValidatorEitherT(
       attempt: Attempt
   ): CheckTyping =
     debug(
-      s"ShapeDecl(${node.show}, ${showSE(sd)}), withDescendants: ${withDescendants.show(schema)} ${showVisited(visited)}"
+      s"ShapeDecl(${node.show}, ${showSE(sd)}, abstract: ${sd._abstract}), withDescendants: [${withDescendants.show(schema)}], visited: ${showVisited(visited)}"
     ) *>
-      (withDescendants match {
+      (if (sd._abstract) withDescendants match {
         case NoDescendants => satisfies(node, sd.shapeExpr, ext, visited, NoDescendants, attempt)
         case _: FollowDescendants =>
           checkDescendants(attempt, node, sd, ext, visited)(
@@ -369,7 +369,8 @@ case class ValidatorEitherT(
               s"Abstract shape ${showSE(sd)} is not satisfied by any descendant for node ${node.show}"
             )
           )
-      })
+      } else satisfies(node, sd.shapeExpr, ext, visited, withDescendants, attempt)
+      )
 
   private def checkNonAbstractsInTyping(
       node: RDFNode,

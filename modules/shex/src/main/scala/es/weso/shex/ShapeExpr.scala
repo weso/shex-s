@@ -525,14 +525,15 @@ object ShapeExternal {
   */
 case class ShapeDecl(
     lbl: ShapeLabel,
-    shapeExpr: ShapeExpr
+    shapeExpr: ShapeExpr,
+    _abstract: Boolean = false
 ) extends ShapeExpr {
 
   override def id = Some(lbl)
   override def addId(lbl: ShapeLabel): ShapeDecl = this.copy(lbl = lbl)
   override def rmId = this
 
-  def isVirtual: Boolean = true
+  def isVirtual: Boolean = _abstract
 
   override def paths(schema: AbstractSchema): Either[String, Set[Path]] =
     shapeExpr.paths(schema)

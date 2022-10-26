@@ -58,7 +58,8 @@ object eqShEx {
       case (s1: Shape, s2: Shape)                               => s1 === s2
       case (ShapeRef(i1, _, _), ShapeRef(i2, _, _))             => i1 === i2
       case (ShapeExternal(id1, _, _), ShapeExternal(id2, _, _)) => id1 == id2
-      case (ShapeDecl(id1, se1), ShapeDecl(id2, se2))           => id1 == id2 && se1 == se2
+      case (ShapeDecl(id1, se1, b1), ShapeDecl(id2, se2, b2))     => 
+        id1 == id2 && se1 == se2 && b1 == b2
       case (_, _)                                               => false
     }
   }

@@ -61,7 +61,7 @@ object InheritanceGraph {
           addShapeExpr(g, sub, se, verbose)
         // verbose.debug(s"ShapeAnd: ${sub.toRDFNode.show}: $s") *>
         s.shapeExprs.foldM(())(f)
-      case ShapeDecl(l, se) =>
+      case ShapeDecl(l, se, _) =>
         se match {
           case _ => addShapeExpr(g, sub, se, verbose)
         }
