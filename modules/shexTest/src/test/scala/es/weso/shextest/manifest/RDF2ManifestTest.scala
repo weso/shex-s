@@ -5,7 +5,7 @@ package es.weso.shextest.manifest
 import com.typesafe.config.{Config, ConfigFactory}
 import cats.effect._
 import cats.implicits._
-import munit._
+import munit.{Only => MUnitOnly, _}
 import ValidateManifest._
 import TestSelector._
 import es.weso.utils.VerboseLevel
@@ -33,17 +33,17 @@ class RDF2ManifestTest extends CatsEffectSuite {
         "manifest",
         "schemas",
         validationFolder,
-        All,
+        Only("1dot"),
         List("AND3G", "Extend3G", "ExtendANDExtend3GAND3G"),
         Validator.apply,
         1.seconds,
         assumeLocal,
-        VerboseLevel.Nothing
+        VerboseLevel.Debug
       )
     )
   }
 
-  test("RDF2Manifest negativeSyntax") {
+/*  test("RDF2Manifest negativeSyntax") {
     checkResults(
       parseManifest(
         "manifest",
@@ -100,7 +100,7 @@ class RDF2ManifestTest extends CatsEffectSuite {
       ),
       false
     )
-  }
+  } */
 
   def checkResults(process: IO[List[Result]], verbose: Boolean = false): IO[Unit] = for {
     results <- process
@@ -108,7 +108,7 @@ class RDF2ManifestTest extends CatsEffectSuite {
     _ <- IO.println(s"${failedValues.size}/${results.size} values failed")
     _ <- failedValues
       .map(fv =>
-        IO.println(s"Failed value: ${fv.name}\n${if (verbose) s"Reason: ${fv.reason}" else ""}")
+        IO.print(s"| Failed value: ${fv.name} ${if (verbose) s"Reason: ${fv.reason}" else ""}")
       )
       .sequence
   } yield assertEquals(failedValues.map(_.name), List())
