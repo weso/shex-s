@@ -59,6 +59,7 @@ case class Item(
 }
 
 object Item {
+
   def fromItemDocument(id: ItemDocument): Item = {
     val itemId = ItemId(id.getEntityId().getId(), IRI(id.getEntityId().getIri()))
     Item(

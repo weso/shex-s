@@ -28,9 +28,13 @@ import org.wikidata.wdtk.datamodel.interfaces._
 import org.wikidata.wdtk.rdf.Vocabulary
 import org.wikidata.wdtk.rdf.values.TimeValueConverter
 import es.weso.rdf.PREFIXES._
+import es.weso.rdf.saver.RDFSaver
 
 
-case class RDFSerializer(format: RDFFormat) extends Serializer {
+// TODO: Rewrite this code using RDFSaver instead of plain RDFBuilder methods...
+// TODO: Change format from String to RDFFormat
+
+case class RDFSerializer(format: String) extends Serializer with RDFSaver {
 
   // val logger = Logger
 
@@ -40,33 +44,33 @@ case class RDFSerializer(format: RDFFormat) extends Serializer {
     so we decided to replicate those definitions using SRDF
    */
 
-  val wd       = IRI("http://www.wikidata.org/entity/")
-  val geo      = IRI(Vocabulary.PREFIX_GEO)
-  val wdt      = IRI(Vocabulary.PREFIX_PROPERTY_DIRECT)
-  val rdf      = IRI(Vocabulary.PREFIX_RDF)
-  val p        = IRI(Vocabulary.PREFIX_PROPERTY)
-  val ps       = IRI(Vocabulary.PREFIX_PROPERTY_STATEMENT)
-  val pq       = IRI(Vocabulary.PREFIX_PROPERTY_QUALIFIER)
-  val pr       = IRI(Vocabulary.PREFIX_PROPERTY_REFERENCE)
-  val prov     = IRI(Vocabulary.PREFIX_PROV)
-  val rdfs     = IRI(Vocabulary.PREFIX_RDFS)
-  val wds      = IRI(Vocabulary.PREFIX_WIKIDATA_STATEMENT)
-  val skos     = IRI(Vocabulary.PREFIX_SKOS)
-  val schema   = IRI(Vocabulary.PREFIX_SCHEMA)
-  val wikibase = IRI(Vocabulary.PREFIX_WBONTO)
-  val owl      = IRI(Vocabulary.PREFIX_OWL)
-  val xsd      = IRI(Vocabulary.PREFIX_XSD)
-  val wdno     = IRI("http://www.wikidata.org/prop/novalue/")
+  private val wd       = IRI("http://www.wikidata.org/entity/")
+  private val geo      = IRI(Vocabulary.PREFIX_GEO)
+  private val wdt      = IRI(Vocabulary.PREFIX_PROPERTY_DIRECT)
+  private val rdf      = IRI(Vocabulary.PREFIX_RDF)
+  private val p        = IRI(Vocabulary.PREFIX_PROPERTY)
+  private val ps       = IRI(Vocabulary.PREFIX_PROPERTY_STATEMENT)
+  private val pq       = IRI(Vocabulary.PREFIX_PROPERTY_QUALIFIER)
+  private val pr       = IRI(Vocabulary.PREFIX_PROPERTY_REFERENCE)
+  private val prov     = IRI(Vocabulary.PREFIX_PROV)
+  private val rdfs     = IRI(Vocabulary.PREFIX_RDFS)
+  private val wds      = IRI(Vocabulary.PREFIX_WIKIDATA_STATEMENT)
+  private val skos     = IRI(Vocabulary.PREFIX_SKOS)
+  private val schema   = IRI(Vocabulary.PREFIX_SCHEMA)
+  private val wikibase = IRI(Vocabulary.PREFIX_WBONTO)
+  private val owl      = IRI(Vocabulary.PREFIX_OWL)
+  private val xsd      = IRI(Vocabulary.PREFIX_XSD)
+  private val wdno     = IRI("http://www.wikidata.org/prop/novalue/")
 
-  val rdfs_label         = rdfs + "label"
-  val skos_prefLabel     = skos + "prefLabel"
-  val skos_altLabel      = skos + "altLabel"
-  val wikibase_Item      = wikibase + "Item"
-  val schema_description = schema + "description"
-  val xsd_string         = xsd + "string"
-  val prov_wasDerivedFrom = prov + "wasDerivedFrom"
+  private val rdfs_label         = rdfs + "label"
+  private val skos_prefLabel     = skos + "prefLabel"
+  private val skos_altLabel      = skos + "altLabel"
+  private val wikibase_Item      = wikibase + "Item"
+  private val schema_description = schema + "description"
+  private val xsd_string         = xsd + "string"
+  private val prov_wasDerivedFrom = prov + "wasDerivedFrom"
 
-  val wikibasePrefixMap = PrefixMap(
+  private val wikibasePrefixMap = PrefixMap(
     Map(
       Prefix("geo")      -> geo,
       Prefix("p")        -> p,
@@ -87,7 +91,7 @@ case class RDFSerializer(format: RDFFormat) extends Serializer {
     )
   )
 
-  def prefixDecls: IO[String] =
+  private def prefixDecls: IO[String] =
     RDFAsJenaModel.empty.flatMap(
       _.use(
         rdf =>
@@ -98,14 +102,19 @@ case class RDFSerializer(format: RDFFormat) extends Serializer {
       )
     )
 
-  def mkLangString(str: MonolingualTextValue): LangLiteral = LangLiteral(str.getText(), Lang(str.getLanguageCode()))
+  private def mkLangString(str: MonolingualTextValue): LangLiteral = 
+    LangLiteral(str.getText(), Lang(str.getLanguageCode()))
 
-  def mkTerms(subj: IRI, prop: IRI, ts: Map[String, MonolingualTextValue], rdf: RDFBuilder): IO[RDFBuilder] =
+  private def mkTerms(
+    subj: IRI, 
+    prop: IRI, 
+    ts: Map[String, MonolingualTextValue], 
+    rdf: RDFBuilder): IO[RDFBuilder] =
     ts.toList.map(_._2).foldM(rdf) {
       case (current, v) => current.addTriple(RDFTriple(subj, prop, mkLangString(v)))
     }
 
-  def mkTermsLs(
+  private def mkTermsLs(
       subj: IRI,
       prop: IRI,
       ts: java.util.Map[String, java.util.List[MonolingualTextValue]],
@@ -116,27 +125,27 @@ case class RDFSerializer(format: RDFFormat) extends Serializer {
     }
   }
 
-  def mkEntityDocument(e: EntityDocument, rdf: RDFBuilder): IO[RDFBuilder] =
+  private def mkEntityDocument(e: EntityDocument, rdf: RDFBuilder): IO[RDFBuilder] =
     e match {
       case id: ItemDocument     => mkItemDocument(id, rdf)
       case pd: PropertyDocument => mkPropertyDocument(pd, rdf)
     }
 
-  def mkLabels(td: TermedDocument, rdf: RDFBuilder): IO[RDFBuilder] =
+  private def mkLabels(td: TermedDocument, rdf: RDFBuilder): IO[RDFBuilder] =
     mkTerms(mkEntity(td), rdfs_label, td.getLabels().asScala.toMap, rdf)
 
-  def mkDescriptions(td: TermedDocument, rdf: RDFBuilder): IO[RDFBuilder] =
+  private def mkDescriptions(td: TermedDocument, rdf: RDFBuilder): IO[RDFBuilder] =
     mkTerms(mkEntity(td), schema_description, td.getDescriptions().asScala.toMap, rdf)
 
-  def mkAliases(td: TermedDocument, rdf: RDFBuilder): IO[RDFBuilder] =
+  private def mkAliases(td: TermedDocument, rdf: RDFBuilder): IO[RDFBuilder] =
     mkTermsLs(mkEntity(td), skos_altLabel, td.getAliases(), rdf)
 
-  def mkDocumentTerms(td: TermedDocument, rdf: RDFBuilder): IO[RDFBuilder] =
+  private def mkDocumentTerms(td: TermedDocument, rdf: RDFBuilder): IO[RDFBuilder] =
     mkLabels(td, rdf) *>
       mkDescriptions(td, rdf) *>
       mkAliases(td, rdf)
 
-  def getBestRank(sg: StatementGroup): Option[StatementRank] = {
+  private def getBestRank(sg: StatementGroup): Option[StatementRank] = {
     val bestStatements = sg.getBestStatements()
     if (bestStatements != null)
       Some(bestStatements.iterator().next.getRank)
@@ -144,24 +153,24 @@ case class RDFSerializer(format: RDFFormat) extends Serializer {
       None
   }
 
-  def isBest(statement: Statement, bestRank: Option[StatementRank]): Boolean = {
+  private def isBest(statement: Statement, bestRank: Option[StatementRank]): Boolean = {
     val sr      = statement.getRank()
     val maybeSr = if (sr == null) None else Some(sr)
     bestRank == maybeSr
   }
 
-  def mkSimpleStatement(statement: Statement, rdf: RDFBuilder): IO[RDFBuilder] = {
+  private def mkSimpleStatement(statement: Statement, rdf: RDFBuilder): IO[RDFBuilder] = {
     val subj             = IRI(statement.getSubject().getIri())
     val pred             = statement.getMainSnak().getPropertyId()
     val snakRdfConverter = SnakRdfConverter(subj, pred, rdf, Direct(wdt))
     statement.getMainSnak().accept(snakRdfConverter)
   }
 
-  case class SnakRdfConverter(subj: RDFNode, predId: PropertyIdValue, rdf: RDFBuilder, mode: Mode)
+  private case class SnakRdfConverter(subj: RDFNode, predId: PropertyIdValue, rdf: RDFBuilder, mode: Mode)
       extends SnakVisitor[IO[RDFBuilder]]
       with ValueVisitor[IO[RDFBuilder]] {
 
-    val pred = wdt + predId.getId()    
+    val pred = mode.base + predId.getId()    
     override def visit(noValue: NoValueSnak): IO[RDFBuilder] =
       rdf.addTriple(RDFTriple(subj, `rdf:type`, wdno + predId.getId())) 
       
@@ -205,7 +214,7 @@ case class RDFSerializer(format: RDFFormat) extends Serializer {
 
   }
 
-  def mkFullStatement(statement: Statement, rdf: RDFBuilder): IO[RDFBuilder] = {
+  private def mkFullStatement(statement: Statement, rdf: RDFBuilder): IO[RDFBuilder] = {
     val iriStatement = IRI(Vocabulary.getStatementUri(statement))
     val subj         = IRI(statement.getSubject().getIri())
     val propId       = statement.getMainSnak().getPropertyId()
@@ -217,8 +226,8 @@ case class RDFSerializer(format: RDFFormat) extends Serializer {
     // TODO: references, sitelinks
   }
 
-  def mkClaim(subj: IRI, propId: PropertyIdValue, claim: Claim, rdf: RDFBuilder): IO[RDFBuilder] = {
-    val snakRdfConverter = SnakRdfConverter(subj, propId, rdf, Property(p))
+  private def mkClaim(subj: IRI, propId: PropertyIdValue, claim: Claim, rdf: RDFBuilder): IO[RDFBuilder] = {
+    val snakRdfConverter = SnakRdfConverter(subj, propId, rdf, PropertyStatement(ps))
     claim.getMainSnak().accept(snakRdfConverter) *>
       claim.getAllQualifiers().asScala.toList.foldM(rdf) {
         case (current, snak) => {
@@ -228,25 +237,30 @@ case class RDFSerializer(format: RDFFormat) extends Serializer {
       }
   }
 
-  def mkReferences(subj: IRI, propId: PropertyIdValue, references: List[Reference], rdf: RDFBuilder): IO[RDFBuilder] = 
+  private def mkReferences(subj: IRI, propId: PropertyIdValue, references: List[Reference], rdf: RDFBuilder): IO[RDFBuilder] = 
     references.foldM(rdf){ 
       case (currentRdf, ref) => mkReference(subj, propId, ref, currentRdf) 
     }
 
-  def mkReference(subj: IRI, propId: PropertyIdValue, reference: Reference, rdf: RDFBuilder): IO[RDFBuilder] = 
-    rdf.createBNode.flatMap{ case (bnode, rdf1) => 
-      rdf1.addTriple(RDFTriple(subj, prov_wasDerivedFrom, bnode)).flatMap(rdf2 => {
-        reference.getAllSnaks().asScala.toList.foldM(rdf2) {
-          case (current, snak) => {
-            val referenceConverter = SnakRdfConverter(bnode, snak.getPropertyId(), current, ReferenceMode(pr))
-            snak.accept(referenceConverter)
-          }
-        }
-      })
-    }
-    
+  private def mkReference(subj: IRI, propId: PropertyIdValue, reference: Reference, rdf: RDFBuilder): IO[RDFBuilder] = for {
+    pair <- rdf.createBNode
+    (bnode, rdf1): (RDFNode, RDFBuilder) = pair
+    rdf2 <- rdf1.addTriple(RDFTriple(subj, prov_wasDerivedFrom, bnode))
+    rdf3 <- reference.getAllSnaks().asScala.toList.foldM(rdf2)(convertSnak(bnode))
+  } yield rdf3 
 
-  def mkStatement(statement: Statement, rdf: RDFBuilder, bestRank: Option[StatementRank]): IO[RDFBuilder] = {
+  private def convertSnak(bnode: RDFNode)(current: RDFBuilder, snak: Snak): IO[RDFBuilder] = {
+    val referenceConverter: SnakVisitor[IO[RDFBuilder]] = 
+         SnakRdfConverter(bnode, snak.getPropertyId(), current, ReferenceMode(pr))
+    val x: IO[RDFBuilder] = snak.accept(referenceConverter)
+    x
+  }
+
+  private def mkStatement(
+    statement: Statement, 
+    rdf: RDFBuilder, 
+    bestRank: Option[StatementRank]
+    ): IO[RDFBuilder] = {
     if (isBest(statement, bestRank)) {
       mkSimpleStatement(statement, rdf) *>
         mkFullStatement(statement, rdf)
@@ -254,13 +268,13 @@ case class RDFSerializer(format: RDFFormat) extends Serializer {
       mkFullStatement(statement, rdf)
   }
 
-  def mkStatementGroup(sg: StatementGroup, rdf: RDFBuilder, bestRank: Option[StatementRank]): IO[RDFBuilder] = {
+  private def mkStatementGroup(sg: StatementGroup, rdf: RDFBuilder, bestRank: Option[StatementRank]): IO[RDFBuilder] = {
     sg.iterator().asScala.toList.foldM(rdf) {
       case (current, statement) => mkStatement(statement, current, bestRank)
     }
   }
 
-  def mkDocumentStatements(sd: StatementDocument, rdf: RDFBuilder): IO[RDFBuilder] = {
+  private def mkDocumentStatements(sd: StatementDocument, rdf: RDFBuilder): IO[RDFBuilder] = {
     val statementGroup = sd.getStatementGroups().asScala.toList
     statementGroup.foldM(rdf) {
       case (current, sg) => {
@@ -270,19 +284,19 @@ case class RDFSerializer(format: RDFFormat) extends Serializer {
     }
   }
 
-  def mkItemDocument(id: ItemDocument, rdf: RDFBuilder): IO[RDFBuilder] =
+  private def mkItemDocument(id: ItemDocument, rdf: RDFBuilder): IO[RDFBuilder] =
     rdf.addType(mkEntity(id), wikibase_Item) *>
       mkDocumentTerms(id, rdf) *>
       mkDocumentStatements(id, rdf)
 
-  def mkPropertyDocument(pd: PropertyDocument, rdf: RDFBuilder): IO[RDFBuilder] =
+  private def mkPropertyDocument(pd: PropertyDocument, rdf: RDFBuilder): IO[RDFBuilder] =
     rdf.addType(mkEntity(pd), wikibase_Item)
 
   /*    addTriple(
       RDFTriple(mkEntity(id) , IRI("a"), StringLiteral(e.getEntityId().getId()))
     ) */
 
-  def mkEntity(e: EntityDocument): IRI =
+  private def mkEntity(e: EntityDocument): IRI =
     IRI(e.getEntityId().getIri)
 
   def serialize(entityDocument: EntityDocument): IO[String] = {
@@ -307,7 +321,7 @@ case class RDFSerializer(format: RDFFormat) extends Serializer {
 
 object RDFSerializer {
 
-  def makeSerializer(format: RDFFormat): Resource[IO, RDFSerializer] = {
+  def makeSerializer(format: String): Resource[IO, RDFSerializer] = {
     def acquire: IO[RDFSerializer] = IO {
       RDFSerializer(format)
     }
@@ -323,7 +337,9 @@ object RDFSerializer {
     str.substring(str.indexOf("\n") + 1)
 
   private def removePrefix(str: String): Option[String] = {
-    if (str.startsWith("prefix") || str.startsWith("@prefix")) Some(removeLine(str))
+    if (str.toLowerCase.startsWith("prefix") || 
+        str.toLowerCase.startsWith("@prefix")
+        ) Some(removeLine(str))
     else None
   }
 
