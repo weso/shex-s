@@ -478,9 +478,9 @@ case class ValidatorEitherT1(
               val entries = getEntries(neighsInPaths)
               getAvailableShapeExprs(s).flatMap(ses =>
               getAvailablePaths(ses).flatMap(availablePaths =>
-              getNodesPrefixMap.flatMap(nodesPrefixMap =>   
+              getNodesPrefixMap.flatMap(nodesPrefixMap => {  
                   val ps = partsOver(entries, availablePaths)
-                  info(s"Available ShapeExprs for shape ${s.show} = ${showSEs(ses)}") *>
+                  info(s"Available ShapeExprs for shape ${showShape(s)} = ${showSEs(ses)}") *>
                   info(s"Available paths: ${availablePaths.map(_.values.map(_.show).mkString(",")).mkString("|")}") *>
                       (ps match {
                         case p #:: rs if rs.isEmpty =>
@@ -489,7 +489,7 @@ case class ValidatorEitherT1(
                         case _ =>
                           checkSomeLazyList(ps.map(processLine(node, s, ses, visited, attempt, nodesPrefixMap)),
                            StringError(s"""|Node: ${node.show}
-                                           |Shape: ${s.show}
+                                           |Shape: ${showShape(s)}
                                            |Attempt: ${attempt.show}
                                            |No partition conforms to list of ShapeExprs
                                            |ShapeExprs: ${showSEs(ses)}
@@ -497,6 +497,7 @@ case class ValidatorEitherT1(
                                            |${showPartitions(ps, nodesPrefixMap)}
                                            |""".stripMargin))
                       })
+                    }
               )))
             }
           }

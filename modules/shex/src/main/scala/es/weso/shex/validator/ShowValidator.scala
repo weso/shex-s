@@ -78,13 +78,13 @@ trait ShowValidator {
       case Some(es) => s"extends ${es.map(_.show).mkString(",")}"
   }      
 
-  private def showTripleExpr(m: Option[TripleExpr]) = m match {
+  private def showOptTripleExpr(m: Option[TripleExpr]) = m match {
       case None => ""
-      case Some(te) => s"${te.show}"
+      case Some(te) => s"${te.toString}"
   }
 
   def showShape(s: Shape): String = {
-    s"Shape(${showExtends(s._extends)}${showTripleExpr(s.expression)})"
+    s"Shape(${showExtends(s._extends)}${showOptTripleExpr(s.expression)})"
   }
 
 }

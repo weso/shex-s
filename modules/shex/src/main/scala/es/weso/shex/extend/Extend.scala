@@ -52,7 +52,7 @@ trait Extend {
                       v2 <- r
                     } yield combine(v1, v2))
           } yield v
-        Foldable[List].foldM(lbls, none.asRight)(comb).map(_.map(combine(expr(s),_)))
+        Foldable[List].foldM[Visited, Label, Result](lbls, none.asRight)(comb).map(_.map(combine(expr(s),_)))
     }
     val (visited, e) = flattenExprAux(s).run(List(s)).value
     e

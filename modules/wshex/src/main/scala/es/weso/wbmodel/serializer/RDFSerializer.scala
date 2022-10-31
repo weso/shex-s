@@ -244,9 +244,11 @@ case class RDFSerializer(format: String) extends Serializer with RDFSaver {
 
   private def mkReference(subj: IRI, propId: PropertyIdValue, reference: Reference, rdf: RDFBuilder): IO[RDFBuilder] = for {
     pair <- rdf.createBNode
-    (bnode, rdf1): (RDFNode, RDFBuilder) = pair
+    // (bnode, rdf1): (RDFNode, RDFBuilder) = pair
+    bnode = pair._1
+    rdf1 = pair._2
     rdf2 <- rdf1.addTriple(RDFTriple(subj, prov_wasDerivedFrom, bnode))
-    rdf3 <- reference.getAllSnaks().asScala.toList.foldM(rdf2)(convertSnak(bnode))
+    rdf3 <- reference.getAllSnaks().asScala.toList.foldM[IO, RDFBuilder](rdf2)(convertSnak(bnode))
   } yield rdf3 
 
   private def convertSnak(bnode: RDFNode)(current: RDFBuilder, snak: Snak): IO[RDFBuilder] = {
