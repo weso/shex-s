@@ -146,8 +146,7 @@ case class Validator21(
         )
           .handleErrorWith(e =>
             debug(
-              s"checkNodeLabelSafe(${node.show}@${schema.qualify(label)} failed. Checking if there are descendants with ${withDescendants
-                  .show(schema)}"
+              s"checkNodeLabelSafe(${node.show}@${schema.qualify(label)} failed. Checking if there are descendants with ${withDescendants.show}"
             ) *>
               (withDescendants match {
                 case NoDescendants => err(e)
@@ -176,8 +175,7 @@ case class Validator21(
     getTyping.flatMap(typing =>
       getNodesPrefixMap.flatMap(nodesPrefixMap =>
         infoType(
-          s"nodeLabel(${node.show},${label.show}). ${showVisited(visited)}, ext: ${showExt(ext)}, withDescendants: ${withDescendants
-              .show(schema)}"
+          s"nodeLabel(${node.show},${label.show}). ${showVisited(visited)}, ext: ${showExt(ext)}, withDescendants: ${withDescendants.show}"
         ) *>
           (if (visited.contains(node, label) && !withDescendants.isNoDescendants) {
              debug(
@@ -225,7 +223,7 @@ case class Validator21(
       attempt: Attempt
   ): CheckTyping =
     debug(
-      s"satisfies(${node.show}@${showSE(s)}, withDescendants: ${withDescendants.show(schema)}"
+      s"satisfies(${node.show}@${showSE(s)}, withDescendants: ${withDescendants.show}"
     ) *>
       getNodesPrefixMap
         .flatMap(nodesPrefixMap =>
@@ -363,7 +361,7 @@ case class Validator21(
       attempt: Attempt
   ): CheckTyping =
     debug(
-      s"ShapeDecl(${node.show}, ${showSE(sd)}), withDescendants: ${withDescendants.show(schema)} ${showVisited(visited)}"
+      s"ShapeDecl(${node.show}, ${showSE(sd)}), withDescendants: ${withDescendants.show} ${showVisited(visited)}"
     ) *>
       (withDescendants match {
         case NoDescendants => satisfies(node, sd.shapeExpr, ext, visited, NoDescendants, attempt)
@@ -431,8 +429,7 @@ case class Validator21(
     getTyping.flatMap(typing =>
       getNodesPrefixMap.flatMap(nodesPrefixMap =>
         infoType(
-          s"Ref: ${node.show}@${schema.qualify(ref)}, ext: ${showExt(ext)}, ${showVisited(visited)}, withDescendants: ${withDescendants
-              .show(schema)}"
+          s"Ref: ${node.show}@${schema.qualify(ref)}, ext: ${showExt(ext)}, ${showVisited(visited)}, withDescendants: ${withDescendants.show}"
         ) *>
           checkNodeLabel(node, ref, ext, visited, withDescendants).flatMap(t =>
             checkHasType(node, t, attempt)(ref).flatMap(_ => ok(t))

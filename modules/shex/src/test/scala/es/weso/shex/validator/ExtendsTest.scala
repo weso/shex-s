@@ -3,7 +3,7 @@ import es.weso.utils.VerboseLevel._
 
 class ExtendsTest extends ShouldValidateShapeMap {
 
-/*  {
+  {
     val rdf =
       """|prefix : <http://e#>
          |:x :p 1, 2, 3, 4 .""".stripMargin
@@ -340,7 +340,7 @@ class ExtendsTest extends ShouldValidateShapeMap {
            |""".stripMargin
     shouldValidateWithShapeMap(rdf, shex, ":n1@:S1", ":n1@:S1,:n1@:S2", Nothing)
   }
-*/
+
   {
       val rdf =
         """|prefix : <http://e#>

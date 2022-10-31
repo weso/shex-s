@@ -64,7 +64,7 @@ trait ShowValidator {
     s.id.map(lbl => schema.prefixMap.qualify(lbl.toRDFNode))
       .getOrElse(s match {
         case sa: ShapeAnd       => s"AND(${sa.shapeExprs.map(showSE(_).mkString(","))})"
-        case sa: ShapeOr        => s"OR(@@${sa.shapeExprs.map(showSE(_).mkString(","))})"
+        case so: ShapeOr        => s"OR(@${so.shapeExprs.map(showSE(_)).mkString(",")})"
         case sn: ShapeNot       => s"NOT(${showSE(sn.shapeExpr)})"
         case sd: ShapeDecl      => s"Decl(${showSE(sd.shapeExpr)})"
         case sr: ShapeRef       => s"@${schema.prefixMap.qualify(sr.reference.toRDFNode)}"
@@ -84,7 +84,7 @@ trait ShowValidator {
   }
 
   def showShape(s: Shape): String = {
-    s"Shape(${showExtends(s._extends)}${showOptTripleExpr(s.expression)})"
+    s"Shape(${showExtends(s._extends)}${showOptTripleExpr(s.expression)}, closed= ${s.closed})"
   }
 
 }
