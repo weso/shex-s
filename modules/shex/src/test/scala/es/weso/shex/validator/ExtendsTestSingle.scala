@@ -14,7 +14,7 @@ class ExtendsTestSingle extends ShouldValidateShapeMap {
          |:C extends @:A { :p [ 3 ] }
          |:D extends @:B extends @:C { :p [ 4 ] }
          |""".stripMargin
-    shouldValidateWithShapeMap(rdf, shex, ":x@:D", ":x@:D", Debug)
+    shouldValidateWithShapeMap(rdf, shex, ":x@:D", ":x@:D", Nothing)
   }
 
 

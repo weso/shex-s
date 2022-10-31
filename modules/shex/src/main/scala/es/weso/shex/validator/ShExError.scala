@@ -772,7 +772,7 @@ object ShExError {
       ds: Set[ShapeLabel],
       schema: ResolvedSchema
   ) extends ShExError(
-        s"ShapeExpr ${showSE(se, schema)} failed: ${err.msg} and no descendants pass from: ${ds.map(_.toRDFNode.show).mkString(",")}"
+        s"ShapeExpr ${showSE(se, schema)} failed: ${err.msg} and no descendants pass. List of descendants: ${ds.map(_.toRDFNode.show).mkString(",")}"
       ) {
 
     override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String =

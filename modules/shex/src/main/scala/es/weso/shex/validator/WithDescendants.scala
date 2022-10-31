@@ -10,6 +10,11 @@ sealed abstract class WithDescendants {
     case _             => false
   }
 
+  def isFollowDescendants: Boolean = this match {
+    case FollowDescendants => true
+    case _ => false
+  }
+
   def addExcept(lbl: ShapeLabel) = this match {
     case NoDescendants     => NoDescendants 
     case FollowDescendants => FollowDescendants
