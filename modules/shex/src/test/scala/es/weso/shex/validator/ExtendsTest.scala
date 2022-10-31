@@ -3,7 +3,32 @@ import es.weso.utils.VerboseLevel._
 
 class ExtendsTest extends ShouldValidateShapeMap {
 
-  /* Commented on oct 2022
+/*  {
+    val rdf =
+      """|prefix : <http://e#>
+         |:x :p 1, 2, 3, 4 .""".stripMargin
+    val shex =
+      """|prefix : <http://e#>
+         |:A { :p [ 1 ] }
+         |:B extends @:A { :p [ 2 ] }
+         |:C extends @:A { :p [ 3 ] }
+         |:D extends @:B extends @:C { :p [ 4 ] }
+         |""".stripMargin
+    shouldValidateWithShapeMap(rdf, shex, ":x@:D", ":x@:D", Info)
+  } */
+
+/*    {
+    val rdf =
+      """|prefix : <http://e#>
+           |:x :p 1 .""".stripMargin
+    val shex =
+      """|prefix : <http://e#>
+           |:A { :p [ 1 ] }
+           |""".stripMargin
+    shouldValidateWithShapeMap(rdf, shex, ":x@:A", ":x@:A", Debug)
+  } */
+
+
   {
     val rdf =
       """|prefix : <http://e#>
@@ -14,10 +39,10 @@ class ExtendsTest extends ShouldValidateShapeMap {
            |:A extends @:B {
            | :p [ 3 ]
            |}""".stripMargin
-    shouldValidateWithShapeMap(rdf, shex, ":x@:A", ":x@:A")
-  }
+    shouldValidateWithShapeMap(rdf, shex, ":x@:A", ":x@:A", Debug)
+  } 
 
-
+/*
 
   {
     val rdf =

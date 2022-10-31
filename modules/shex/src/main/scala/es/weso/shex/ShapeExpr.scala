@@ -294,9 +294,9 @@ case class Shape(
       // println(s"Result of getPaths($s)=[${ps.map(_.show).mkString(",")}]")
       ps
     }
-    def combinePaths(p1: List[Path], p2: List[Path]): List[Path] = p1 ++ p2
+    // def combinePaths(p1: List[Path], p2: List[Path]): List[Path] = p1 ++ p2
 
-    extendCheckingVisited(this, schema.getShape(_), extend, combinePaths, getPath)
+    extendCheckingVisited(this, schema.getShape(_), extend, getPath)
       .map(_.getOrElse(List()))
       .map(_.toSet)
   }
@@ -305,9 +305,11 @@ case class Shape(
     expression.map(_.paths(schema)).getOrElse(Set()).asRight[String]
 
   def extendExpression(schema: Schema): Either[String, Option[TripleExpr]] = {
-    def combine(e1: TripleExpr, e2: TripleExpr): TripleExpr =
-      EachOf(None, List(e1, e2), None, None, None, None)
-    extendCheckingVisited(this, schema.getShape(_), extend, combine, expr)
+    implicit val semiGroupTripleExpr: Semigroup[TripleExpr] = new Semigroup[TripleExpr] {
+      def combine(e1: TripleExpr, e2: TripleExpr): TripleExpr =
+        EachOf(None, List(e1, e2), None, None, None, None)
+    }
+    extendCheckingVisited(this, schema.getShape(_), extend, expr)
   }
 
   override def addAnnotations(as: List[Annotation]): ShapeExpr =
@@ -327,6 +329,12 @@ case class Shape(
       annotations.map(_.map(_.relativize(base))),
       actions.map(_.map(_.relativize(base)))
     )
+
+  def withExpr(te: Option[TripleExpr]): Shape =
+    this.copy(expression = te)  
+
+  def withExtra(extras: Option[List[IRI]]): Shape =
+    this.copy(extra = extras)
 
 }
 
@@ -529,7 +537,7 @@ case class ShapeDecl(
     _abstract: Boolean = false
 ) extends ShapeExpr {
 
-  override def id = Some(lbl)
+  override def id = lbl.some
   override def addId(lbl: ShapeLabel): ShapeDecl = this.copy(lbl = lbl)
   override def rmId = this
 

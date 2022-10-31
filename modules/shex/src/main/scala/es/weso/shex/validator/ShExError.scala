@@ -25,7 +25,9 @@ sealed abstract class ShExError protected (val msg: String)
     with NoStackTrace
     with Product
     with Serializable {
+  
   def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String
+  
   def toJson: Json
 
   override def toString: String = s"err: $msg"
@@ -171,7 +173,7 @@ object ShExError {
       values: Int,
       card: Cardinality,
       rdf: RDFReader
-  ) extends ShExError(s"Cardinality error. Node: $node. Cardinality: ${card.show}") {
+  ) extends ShExError(s"Cardinality error. Node: $node. Path: $path values: $values Cardinality: ${card.show}") {
     override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String =
       s"""${attempt.showQualified(nodesPrefixMap, shapesPrefixMap)}: # of values for ${path
           .showQualified(shapesPrefixMap)}=$values doesn't match ${card.show}"""
@@ -303,15 +305,15 @@ object ShExError {
   }
 
   // TotalDigits
-  case class ErrorObtainingTotalDigits(value: String, e: Throwable)
-      extends ShExError(s"Error obtaining total digits: ${value}: ${e.getMessage()}") {
+  case class TotalDigitsError(value: String, override val msg: String)
+      extends ShExError(s"Error obtaining total digits: ${value}: ${msg}") {
     override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String =
-      s"""TotalDigits(${value}) Error: ${e.getMessage}"""
+      s"""TotalDigits(${value}) Error: ${msg}"""
 
     override def toJson: Json = Json.obj(
       ("type", Json.fromString("ErrorObtainingTotalDigits")),
       ("value", Json.fromString(value)),
-      ("error", Json.fromString(e.getMessage()))
+      ("error", Json.fromString(msg))
     )
   }
 

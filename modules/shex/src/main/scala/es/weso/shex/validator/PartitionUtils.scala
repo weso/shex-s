@@ -4,8 +4,8 @@ import es.weso.utils.SetUtils._
 
 object PartitionUtils {
 
-  trait Entry[A, B] {
-    val key: A
+  trait Entry[A, B] { 
+    val key: A  
     val value: B
   }
 

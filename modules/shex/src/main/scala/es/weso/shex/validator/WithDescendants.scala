@@ -11,20 +11,19 @@ sealed abstract class WithDescendants {
   }
 
   def addExcept(lbl: ShapeLabel) = this match {
-    case NoDescendants         => NoDescendants // FollowDescendants(Set(lbl))
-    case FollowDescendants(ls) => FollowDescendants(ls + lbl)
+    case NoDescendants     => NoDescendants 
+    case FollowDescendants => FollowDescendants
   }
 
   def show(schema: AbstractSchema): String = this match {
     case NoDescendants => s"NoDescendants"
-    case FollowDescendants(ls) =>
-      s"Follow ${if (ls.isEmpty) "" else s"except [${ls.map(schema.qualify(_)).mkString(",")}]"}"
+    case FollowDescendants => s"Follow"
   }
 
 }
 case object NoDescendants extends WithDescendants
-case class FollowDescendants(except: Set[ShapeLabel]) extends WithDescendants
+case object FollowDescendants extends WithDescendants
 
 object WithDescendants {
-  val followDescendants = FollowDescendants(Set())
+  val followDescendants = FollowDescendants
 }

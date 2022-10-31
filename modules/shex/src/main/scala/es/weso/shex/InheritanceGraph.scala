@@ -51,20 +51,13 @@ object InheritanceGraph {
       se: ShapeExpr,
       verbose: VerboseLevel
   ): IO[Unit] =
-    // verbose.info(s"addShapeExpr(${sub},${showSE(se)}") *>
     se match {
       case s: Shape => addExtendsRestricts(g, sub, s)
       case s: ShapeAnd =>
-        def f(x: Unit, se: ShapeExpr): IO[Unit] =
-          // verbose.debug(s"Inside and ${sub.toRDFNode.show}: new shape: ${se.id.map(_.toRDFNode.show).getOrElse("?")}") *>
-          // TODO: Check visited before?
-          addShapeExpr(g, sub, se, verbose)
-        // verbose.debug(s"ShapeAnd: ${sub.toRDFNode.show}: $s") *>
-        s.shapeExprs.foldM(())(f)
-      case ShapeDecl(l, se, _) =>
-        se match {
-          case _ => addShapeExpr(g, sub, se, verbose)
+        s.shapeExprs.foldM(()){ 
+          case (_, se) => addShapeExpr(g, sub, se, verbose) 
         }
+      case sd: ShapeDecl => addShapeExpr(g, sub, sd.shapeExpr, verbose)
       case sr: ShapeRef => g.addInheritance(sub, sr.reference, References)
       case _            => ().pure[IO]
     }

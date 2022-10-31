@@ -120,6 +120,8 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
           .map(se => WShapeNot(id = convertId(snot.id), shapeExpr = se))
       case sref: shex.ShapeRef =>
         WShapeRef(convertId(sref.id), convertShapeLabel(sref.reference)).asRight
+      case sd: shex.ShapeDecl =>
+        convertShapeExpr(sd.shapeExpr, schema).map(_.withLabel(convertShapeLabel(sd.lbl)))
       case _ => 
         err(UnsupportedShapeExpr(se))
     }
@@ -358,6 +360,8 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
     shapeExpr match {
       case s: shex.Shape => 
         convertTripleConstraintPropertyShape(n, s, schema)
+      case sd: shex.ShapeDecl =>
+        convertTripleConstraintProperty(n, sd.shapeExpr, schema)  
       case ref: shex.ShapeRef =>
         schema.getShape(ref.reference) match {
           case Left(msg) => NotFoundShape(ref.reference, msg).asLeft
@@ -365,6 +369,9 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
             se match {
               case s: shex.Shape => {
                 convertTripleConstraintPropertyShape(n, s, schema)
+              }
+              case s: shex.ShapeDecl => {
+                convertTripleConstraintProperty(n, s.shapeExpr, schema)
               }
               case _ =>
                 UnsupportedShapeExpr(se, s"Parsing property $n with ref ${ref.reference} and se= $se").asLeft
@@ -506,7 +513,16 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
    val max = optMax.map(convertMax).getOrElse(defaultMax)
    optSe match {
     case None => ok(ReferencesSpecSingle(PropertySpec.EmptySpec, min, max,false))
-    case Some(se) => se match {
+    case Some(se) => getReferencesShapeExpr(se, min, max, n, schema) 
+   } 
+  }
+
+  private def getReferencesShapeExpr(
+    se: shex.ShapeExpr, 
+    min: Int, 
+    max: IntOrUnbounded, 
+    n: Int, 
+    schema: shex.AbstractSchema): Convert[ReferencesSpecSingle] = se match {
       case ref: shex.ShapeRef => {
         schema.getShape(ref.reference) match {
           case Left(msg) => NotFoundShape(ref.reference, msg).asLeft
@@ -516,28 +532,20 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
                 convertPropertySpecFromShape(n, s, schema).flatMap(ps => 
                   ok(ReferencesSpecSingle(ps, min, max, false)))
               }
+              case s: shex.ShapeDecl => 
+                getReferencesShapeExpr(se,min,max,n,schema)
               case _ =>
                 err(UnsupportedShapeExpr(se, s"Parsing wasDerivedFrom $n with ref ${ref.reference} and se= $se"))
             }
         }
       }
-/*      case eo: shex.EachOf => {
-
-      }
+      case sd: shex.ShapeDecl => getReferencesShapeExpr(sd.shapeExpr, min, max, n, schema)
       case s: shex.Shape => {
-
-      } */
+        convertPropertySpecFromShape(n, s, schema).flatMap(ps => 
+        ok(ReferencesSpecSingle(ps, min, max, false)))
+      }
       case _ => err(UnsupportedShapeExprWasDerivedFrom(n, se))
     }
-   /*   getPropertySpec(n, schema).flatMap(optPs => {
-        val os: Option[PropertySpec] = optPs
-        val ps: PropertySpec = optPs.getOrElse(PropertySpec.EmptySpec)
-        ok(ReferencesSpecSingle(ps, min, max, false))
-       }
-      )
-    } */
-   } 
-  }
 
   private def convertPropertySpecFromShape(
     n: Int, shape: shex.Shape, schema: shex.AbstractSchema): Convert[PropertySpec] = {
