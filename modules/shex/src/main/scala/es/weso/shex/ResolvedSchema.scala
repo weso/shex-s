@@ -46,13 +46,13 @@ case class ResolvedSchema(
     resolvedMapShapeExprs.get(sl).toRight(s"Not found $sl").map(_.se)
 
   def isNonAbstract(sl: ShapeLabel): Boolean = getShape(sl).fold(
-      _ => false,
-      se =>
-        se match {
-          case sd: ShapeDecl => !sd._abstract
-          case _            => true
-        }
-    )
+    _ => false,
+    se =>
+      se match {
+        case sd: ShapeDecl => !sd._abstract
+        case _             => true
+      }
+  )
 
   override def getTripleExpr(sl: ShapeLabel): Either[String, TripleExpr] =
     resolvedMapTripleExprs.get(sl).toRight(s"Not found $sl").map(_.te)

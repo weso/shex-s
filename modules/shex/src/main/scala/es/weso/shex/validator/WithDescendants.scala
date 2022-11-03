@@ -12,16 +12,16 @@ sealed abstract class WithDescendants {
 
   def isFollowDescendants: Boolean = this match {
     case FollowDescendants => true
-    case _ => false
+    case _                 => false
   }
 
   def addExcept(lbl: ShapeLabel) = this match {
-    case NoDescendants     => NoDescendants 
+    case NoDescendants     => NoDescendants
     case FollowDescendants => FollowDescendants
   }
 
   def show(schema: AbstractSchema): String = this match {
-    case NoDescendants => s"NoDescendants"
+    case NoDescendants     => s"NoDescendants"
     case FollowDescendants => s"Follow"
   }
 

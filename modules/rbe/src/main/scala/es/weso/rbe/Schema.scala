@@ -16,8 +16,7 @@ case class Schema[Edge, Node, Label, Err, Evidence](
 }
 
 object Schema {
-  def empty[Edge, Node, Label, Err, Evidence](): 
-     Schema[Edge, Node, Label, Err, Evidence] =
+  def empty[Edge, Node, Label, Err, Evidence](): Schema[Edge, Node, Label, Err, Evidence] =
     Schema(Map(), Seq())
 
 }

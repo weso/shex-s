@@ -217,7 +217,7 @@ object ShapePath {
             case _: ShapeNot =>
               warning(s"ShapeNot: evaluating index ${index.show} returns no item") >>
                 ok(current)
-            case sd: ShapeDecl => 
+            case sd: ShapeDecl =>
               cmb(current, ShapeExprItem(sd.shapeExpr))
             case s: Shape =>
               index match {

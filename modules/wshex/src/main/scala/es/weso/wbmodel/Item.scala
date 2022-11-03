@@ -6,10 +6,10 @@ import es.weso.wshex.ShapeLabel
 import org.wikidata.wdtk.datamodel.interfaces.{
   DatatypeIdValue,
   QuantityValue => WDQuantityValue,
+  SiteLink => WDTKSiteLink,
   Statement => WDStatement,
   StringValue => WDStringValue,
   Value => WDTKValue,
-  SiteLink => WDTKSiteLink,
   _
 }
 import org.wikidata.wdtk.datamodel.interfaces.EntityDocument
@@ -25,7 +25,7 @@ case class Item(
     siteIri: String = Value.siteDefault,
     localStatements: List[LocalStatement],
     siteLinks: List[SiteLink],
-    okShapes: Set[ShapeLabel] = Set(), 
+    okShapes: Set[ShapeLabel] = Set()
 //    wdtkValue: Option[WDTKValue] = None
 ) extends Entity {
 
@@ -34,8 +34,7 @@ case class Item(
 
   override def toString = s"${itemId.id}-${labels.get(WBLang("en")).getOrElse("")}@$vertexId"
 
-  // override def toWDTKValue: WDTKValue = 
-
+  // override def toWDTKValue: WDTKValue =
 
   override def withLocalStatement(
       prec: PropertyRecord,
