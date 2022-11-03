@@ -109,21 +109,17 @@ case class WShEx2ES(convertOptions: WShEx2ESConvertOptions) extends LazyLogging 
     case is: IRIStem => ok (shex.IRIStem(is.stem))
   }
 
-  private def convertShape(s: WShape): Convert[shex.Shape] = for {
+  private def convertShape(s: WShape): Convert[shex.ShapeExpr] = for {
     id <- convertId(s.id)
     te <- convertOpt(s.expression, convertTripleExpr)
     extras <- s.extras.map(convertExtra(_)).sequence
-  } yield shex.Shape(
-     id = id, 
-     virtual = None, 
-     closed = s.closed.some, 
-     extra = if (s.extras.isEmpty) None else Some(extras),
-     expression = te,
-     _extends = None,
-     restricts = None,
-     annotations = None,
-     actions = None
-  )
+  } yield {
+    val extra = if (extras.isEmpty) none else extras.some
+    id match {
+     case None => shex.Shape.empty.withExpr(te).withExtra(extra)
+     case Some(lbl) => shex.ShapeDecl(lbl, shex.Shape.empty.withExpr(te).withExtra(extra))
+    } 
+  }
 
   private def convertTripleExpr(te: TripleExpr): Convert[shex.TripleExpr] = te match {
     case eo: EachOf => for {

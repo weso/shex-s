@@ -143,8 +143,8 @@ object CompactShow {
           acts,
           semActsDoc(pm)
         )
-      case ShapeDecl(id, se) =>
-        str("abstract") :: space :: idDoc(Some(id), pm) :: space :: shapeExprDoc(pm)(se)
+      case ShapeDecl(id, se, b) =>
+        (if (b) str("abstract") else str("")):: space :: idDoc(Some(id), pm) :: space :: shapeExprDoc(pm)(se)
       case other => str(s"ERROR: Unknown type of ShapeExpr: ${other}")
     }
 

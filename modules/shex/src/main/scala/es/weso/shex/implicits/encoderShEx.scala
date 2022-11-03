@@ -102,12 +102,20 @@ object encoderShEx {
         case ShapeRef(r, _, _)  => r.asJson
         case ShapeExternal(id, _, _) =>
           mkObjectTyped("ShapeExternal", List(optField("id", id)))
-        case ShapeDecl(id, se) =>
+        case ShapeDecl(id, se, true) =>
           mkObjectTyped(
             "ShapeDecl",
             List(
               field("id", id),
               field("abstract", true),
+              field("shapeExpr", se)
+            )
+          )
+        case ShapeDecl(id, se, false) =>
+          mkObjectTyped(
+            "ShapeDecl",
+            List(
+              field("id", id),
               field("shapeExpr", se)
             )
           )

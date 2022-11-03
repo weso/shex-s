@@ -89,7 +89,7 @@ object FlatShape {
 
   implicit lazy val showFlatShape: Show[FlatShape] = new Show[FlatShape] {
     final def show(c: FlatShape): String =
-      s"FlatShape(${c.id.map(_.toRDFNode.show).getOrElse("?")}), closed: ${c.closed}\nSlots: ${c.slots.map(showSlot).mkString("\n")}"
+      s"FlatShape(${c.id.map(_.toRDFNode.show).getOrElse("?")}), closed: ${c.closed} Slots: [${c.slots.map(showSlot).mkString(",")}]"
 
     private def showSlot(pair: (Path, Constraint)): String = {
       val (path, c) = pair

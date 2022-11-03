@@ -646,7 +646,7 @@ trait ShExChecker {
 
   def infoTyping(t: ShapeTyping, msg: String, shapesPrefixMap: PrefixMap): Check[Unit] = for {
     nodesPrefixMap <- getNodesPrefixMap
-    _ <- debug(s"$msg${t.showShort(nodesPrefixMap, shapesPrefixMap)}")
+    _ <- info(s"$msg${t.showShort(nodesPrefixMap, shapesPrefixMap)}")
   } yield ()
 
   def getNodesPrefixMap: Check[PrefixMap] = for {

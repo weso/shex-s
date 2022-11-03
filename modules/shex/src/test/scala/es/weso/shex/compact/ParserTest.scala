@@ -12,7 +12,12 @@ class ParserTest extends FunSuite {
     s"<S> {}",
     None,
     Schema.empty
-      .addShape(Shape.empty.copy(id = Some(IRILabel(IRI("S")))))
+      .addShape(
+        ShapeDecl(
+          lbl = IRILabel(IRI("S")), 
+          shapeExpr = Shape.empty, 
+          _abstract = false
+          ))
       .withLabelLocationMap(
         Some(Map(IRILabel(IRI("S")) -> Location(line = 1, col = 0, tokenType = "label")))
       )
@@ -23,10 +28,13 @@ class ParserTest extends FunSuite {
     None,
     Schema.empty
       .addShape(
-        Shape.empty.copy(
-          id = Some(IRILabel(IRI("S"))),
-          closed = Some(false),
-          _extends = Some(List(IRILabel(IRI("T"))))
+        ShapeDecl(
+          lbl = IRILabel(IRI("S")),
+          shapeExpr = Shape.empty.copy(
+            closed = Some(false),
+           _extends = Some(List(IRILabel(IRI("T"))))
+           ),
+          _abstract = false
         )
       )
       .withLabelLocationMap(
@@ -41,7 +49,9 @@ class ParserTest extends FunSuite {
           pprint.log(e, "Error parsing")
           fail(s"Failed to parse with error: $e")
         case Right(parsedSchema) =>
-          pprint.log(parsedSchema, "parsedSchema")
+          if (parsedSchema != expected) {
+            pprint.log(s"Schemas are different\nParsed: $parsedSchema\nexpected: $expected")
+          }
           assertEquals(parsedSchema, expected)
       }
     }

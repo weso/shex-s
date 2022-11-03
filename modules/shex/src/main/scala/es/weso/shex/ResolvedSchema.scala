@@ -45,12 +45,11 @@ case class ResolvedSchema(
   override def getShape(sl: ShapeLabel): Either[String, ShapeExpr] =
     resolvedMapShapeExprs.get(sl).toRight(s"Not found $sl").map(_.se)
 
-  def isNonAbstract(sl: ShapeLabel): Boolean =
-    getShape(sl).fold(
+  def isNonAbstract(sl: ShapeLabel): Boolean = getShape(sl).fold(
       _ => false,
       se =>
         se match {
-          case _: ShapeDecl => false
+          case sd: ShapeDecl => !sd._abstract
           case _            => true
         }
     )
@@ -58,8 +57,6 @@ case class ResolvedSchema(
   override def getTripleExpr(sl: ShapeLabel): Either[String, TripleExpr] =
     resolvedMapTripleExprs.get(sl).toRight(s"Not found $sl").map(_.te)
 
-  // override def addShape(se: ShapeExpr): es.weso.shex.Schema = ???
-  // override def labels: List[ShapeLabel] = ???
   lazy val optTripleExprMap: Option[Map[ShapeLabel, TripleExpr]] =
     Some(resolvedMapTripleExprs.mapValues(_.te).toMap)
 

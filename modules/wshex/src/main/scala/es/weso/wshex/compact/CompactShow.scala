@@ -143,9 +143,12 @@ object CompactShow {
           acts,
           semActsDoc(pm)
         )
-      case ShapeDecl(id, se) =>
+      case ShapeDecl(id, se, true) =>
         str("abstract") :: space :: idDoc(Some(id), pm) :: space :: shapeExprDoc(pm)(se)
-      // case _ => str(s"ERROR: Unknown type of ShapeExpr: ${other}")
+
+      case ShapeDecl(id, se, false) =>
+        idDoc(Some(id), pm) :: space :: shapeExprDoc(pm)(se)
+
     }
 
   private def nodeConstraintDoc(pm: PrefixMap)(nc: NodeConstraint): Doc =

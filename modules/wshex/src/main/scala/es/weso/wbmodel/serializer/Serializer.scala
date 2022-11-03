@@ -42,7 +42,7 @@ object Serializer {
 
   def makeSerializer(format: WBSerializeFormat): Resource[IO, Serializer] = format match {
     case WBSerializeFormat.JSON   => JSONSerializer.make()
-    case WBSerializeFormat.Turtle => RDFSerializer.makeSerializer(RDFFormat.TURTLE)
+    case WBSerializeFormat.Turtle => RDFSerializer.makeSerializer("TURTLE")
     case WBSerializeFormat.Plain  => PlainSerializer.make()
   }
 }

@@ -215,8 +215,10 @@ object ShapePath {
                   ok(current)
               }
             case _: ShapeNot =>
-              warning(s"ShapeOr: evaluating index ${index.show} returns no item") >>
+              warning(s"ShapeNot: evaluating index ${index.show} returns no item") >>
                 ok(current)
+            case sd: ShapeDecl => 
+              cmb(current, ShapeExprItem(sd.shapeExpr))
             case s: Shape =>
               index match {
                 case ShapeLabelIndex(lbl) =>
@@ -424,6 +426,7 @@ object ShapePath {
     case Nil => okr(se)
     case ExprStep(None, LabelTripleExprIndex(IRILabel(iri), None), _) :: Nil =>
       se match {
+        case sd: ShapeDecl => throw new RuntimeException(s"TODO!! ???")
         case s: Shape =>
           s.expression match {
             case None => okr(se)

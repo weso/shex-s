@@ -36,7 +36,8 @@ object showShEx {
       case nc: NodeConstraint         => nc.show
       case ShapeRef(r, _, _)          => s"@${r.show}"
       case ShapeExternal(id, _, _)    => s"${optShow(id)} EXTERNAL"
-      case ShapeDecl(id, se)          => s"ABSTRACT ${id.show} ${se.show}"
+      case ShapeDecl(id, se, true)    => s"ABSTRACT ${id.show} ${se.show}"
+      case ShapeDecl(id, se, false)   => se.show
       case _                          => s"Error. Unknown type of ShapeExpr: ${se}"
     }
   }

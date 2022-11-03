@@ -14,7 +14,7 @@ import io.circe.parser._
 import io.circe.syntax._
 import Reason._
 import es.weso.utils._
-import es.weso.utils.VerboseLevel._
+import es.weso.utils.VerboseLevel
 import scala.concurrent.duration.FiniteDuration
 import es.weso.rdf.nodes._
 import es.weso.shex.validator.ExternalResolver
@@ -162,7 +162,7 @@ object ValidateManifest extends RunManifest {
       } else {
         val folderURI = Paths.get(ep.parentFolder).normalize.toUri
         val base = Paths.get(".").toUri
-
+        verbose.debug(s"Entry type: ${ep.entry}") *> {
         ep.entry match {
 
           case v: ValidationTest =>
@@ -203,10 +203,11 @@ object ValidateManifest extends RunManifest {
 
           case v: NegativeSyntax     => negativeSyntax(v, folderURI)
           case v: NegativeStructure  => negativeStructure(v, folderURI)
-          case r: RepresentationTest => representationTest(r, folderURI)
+          case r: RepresentationTest => representationTest(r, folderURI, verbose)
           case other                 => result(other.name, false, UnsupportedEntryType(ep.entry))
         }
       }
+     }
     } else {
       None.pure[IO]
     }
@@ -219,7 +220,7 @@ object ValidateManifest extends RunManifest {
   def fromEitherS[A](e: Either[String, A]): EitherT[IO, String, A] = EitherT.fromEither(e)
   def fromIO[A](io: IO[A]): EitherT[IO, String, A] = EitherT.liftF(io)
 
-  def representationTest(repTest: RepresentationTest, folderURI: URI): IO[Option[Result]] = {
+  def representationTest(repTest: RepresentationTest, folderURI: URI, verbose: VerboseLevel): IO[Option[Result]] = {
     // implicit val decodeSchema : Decoder[Schema] = es.weso.shex.implicits.decoderShEx.decodeSchema
     val resolvedJson =
       mkLocal(repTest.json, schemasBase, folderURI) // IRI(shexFolderURI).resolve(r.json).uri
@@ -229,11 +230,10 @@ object ValidateManifest extends RunManifest {
       jsonStr <- derefUriIO(resolvedJson)
       schemaStr <- derefUriIO(resolvedShEx)
       schema <- Schema.fromString(schemaStr, "SHEXC", None)
-      expectedSchema <- jsonStr2Schema(
-        jsonStr
-      ) // fromES(decode[Schema](jsonStr).leftMap(e => e.toString))
-      r <-
-        if (CompareSchemas.compareSchemas(schema, expectedSchema)) {
+      expectedSchema <- jsonStr2Schema(jsonStr) // fromES(decode[Schema](jsonStr).leftMap(e => e.toString))
+      _ <- verbose.debug(s"Parsed schema: $schema")
+      _ <- verbose.debug(s"Expected schema: $expectedSchema")
+      r <- if (CompareSchemas.compareSchemas(schema, expectedSchema)) {
           parse(jsonStr) match {
             case Left(err) =>
               result(repTest.name, false, ErrorParsingJsonStr(jsonStr))
