@@ -17,8 +17,7 @@ trait Extend {
     def getVisited: Visited[List[S]] = State.get
     
     def addVisited(x: S): Visited[Unit] = {
-      // def fn(ls: List[Label]): List[Label] = x :: ls
-      State.modify[List[S]](x :: _) // (fn)
+      State.modify[List[S]](x :: _) 
     }
     
     def ok[A](x: A): Visited[A] = StateT.pure(x)
@@ -57,4 +56,7 @@ trait Extend {
     val (visited, e) = flattenExprAux(s).run(List(s)).value
     e
   }
+
+  
+
 }

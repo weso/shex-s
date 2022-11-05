@@ -33,7 +33,8 @@ case class Validator21(
     builder: RDFBuilder
 ) extends Validator
     with ShExChecker
-    with ShowValidator {
+    with ShowValidator 
+    with AllPaths {
 
   type ShapeChecker = ShapeExpr => CheckTyping
   type NodeShapeChecker = (RDFNode, Shape) => CheckTyping
@@ -461,7 +462,8 @@ case class Validator21(
       t <- satisfies(node, externalShape, ext, visited, withDescendants, newAttempt)
     } yield t
 
-  private def allPaths(s: Shape): Check[Set[Path]] = fromEitherString(s.allPaths(schema))
+  // TODO: We changed the definition of allPaths...so this code may be broken...  
+  private def allPaths(s: Shape): Check[Set[Path]] = fromEitherString(allPaths(s, schema))
 
   private def checkShape(
       node: RDFNode,

@@ -25,6 +25,8 @@ import es.weso.utils.VerboseLevel
 import PartitionUtils._
 import es.weso.shapemaps.Status._
 import es.weso.shex.extend.Extend
+import es.weso.shex.AllPaths
+import es.weso.shex.validator.AvailableShapeExprPaths
 
 /** ShEx validator
   */
@@ -35,7 +37,7 @@ case class ValidatorEitherT(
 ) extends Validator
     with ShExChecker
     with ShowValidator 
-    with Extend {
+    with Extend with AllPaths with AvailableShapeExprPaths {
 
   type ShapeChecker = ShapeExpr => CheckTyping
   type NodeShapeChecker = (RDFNode, Shape) => CheckTyping
@@ -231,7 +233,10 @@ case class ValidatorEitherT(
               if (sd._abstract) 
                 checkShapeDeclAbstract(node, sd, ext, visited, extendsMode, withDescendants, attempt)
               else 
-                satisfies(node, sd.shapeExpr, ext, visited, extendsMode, withDescendants, attempt)
+                sd.shapeExpr match {
+                  case s: Shape => checkShapeDecl(node, sd.lbl, s, ext, visited, extendsMode, withDescendants, attempt)
+                  case se => satisfies(node, sd.shapeExpr, ext, visited, extendsMode, withDescendants, attempt)
+                }
           })}
         )
         .flatMap(typing =>
@@ -276,7 +281,7 @@ case class ValidatorEitherT(
       attempt: Attempt
   ): CheckTyping =
     debug(s"And($node, ${ses.map(showSE(_)).mkString(",")})") *>
-      checkAll(ses.map(se => satisfies(node, se, ext, visited, extendsMode, withDescendants, attempt))).flatMap(
+      checkAll(ses.map(se => satisfies(node, se, ext, visited, ExtendsMode.ApplyExtends, withDescendants, attempt))).flatMap(
         ts => combineTypings(ts)
       )
 
@@ -291,7 +296,7 @@ case class ValidatorEitherT(
   ): CheckTyping =
     debug(s"OR(${showSEs(ses)}, ext: ${showExt(ext)}") *>
       checkSome(
-        ses.map(se => satisfies(node, se, ext, visited, extendsMode, withDescendants, attempt)),
+        ses.map(se => satisfies(node, se, ext, visited, ExtendsMode.ApplyExtends, withDescendants, attempt)),
         StringError(
           s"None of the alternatives of OR(${ses.map(showSE(_)).mkString(",")}) is valid for node ${node.show}"
         )
@@ -311,7 +316,7 @@ case class ValidatorEitherT(
       attempt: Attempt
   ): CheckTyping = {
     val parentShape = attempt.nodeShape.st
-    val check: CheckTyping = satisfies(node, s, ext, visited, extendsMode, withDescendants, attempt)
+    val check: CheckTyping = satisfies(node, s, ext, visited, ExtendsMode.ApplyExtends, withDescendants, attempt)
     val handleError: ShExError => Check[ShapeTyping] = e =>
       for {
         t1 <- addNotEvidence(
@@ -326,6 +331,22 @@ case class ValidatorEitherT(
       errStr(s"Failed NOT(${showSE(s)}) because node ${node.show} satisfies it")
     cond(check, handleNotError, handleError)
   }
+
+  private def checkShapeDecl(
+      node: RDFNode,
+      lbl: ShapeLabel,
+      s: Shape, 
+      ext: Option[Neighs],
+      visited: Visited,
+      extendsMode: ExtendsMode,
+      withDescendants: WithDescendants,
+      attempt: Attempt
+  ): CheckTyping =
+    info(
+      s"ShapeDecl(${node.show}@${lbl.show}-showSE(s)}, extendsMode: ${extendsMode}, withDescendants: [${withDescendants.show}], visited: ${showVisited(visited)})"
+    ) *>
+    checkShapeWithExtendPartitions(node, s, ext, visited, attempt, lbl.some)  
+
 
   private def checkShapeDeclAbstract(
       node: RDFNode,
@@ -432,10 +453,11 @@ case class ValidatorEitherT(
         attempt.path,
         rdf
       )
-      t <- satisfies(node, externalShape, ext, visited, extendsMode, withDescendants, newAttempt)
+      t <- satisfies(node, externalShape, ext, visited, ExtendsMode.ApplyExtends, withDescendants, newAttempt)
     } yield t
 
-  private def allPaths(s: Shape): Check[Set[Path]] = fromEitherString(s.allPaths(schema))
+  private def allPaths(s: Shape): Check[Set[Path]] = 
+    fromEitherString(allPaths(s, schema))
 
   private def checkShape(
       node: RDFNode,
@@ -444,10 +466,10 @@ case class ValidatorEitherT(
       visited: Visited,
       extendsMode: ExtendsMode,
       withDescendants: WithDescendants,
-      attempt: Attempt
+      attempt: Attempt,
   ): CheckTyping = extendsMode match {
     case ExtendsMode.IgnoreExtends => checkShapeBase(attempt, node, s, ext, visited)
-    case ExtendsMode.ApplyExtends => checkShapeWithExtendPartitions(node, s, ext, visited, attempt)  
+    case ExtendsMode.ApplyExtends => checkShapeWithExtendPartitions(node, s, ext, visited, attempt, None)  
   }
 
   private def checkShapeWithExtendPartitions(
@@ -455,7 +477,9 @@ case class ValidatorEitherT(
     s: Shape, 
     ext: Option[Neighs], 
     visited: Visited, 
-    attempt: Attempt): CheckTyping = {
+    attempt: Attempt, 
+    labelDecl: Option[ShapeLabel]
+    ): CheckTyping = {
      infoType(s"Shape(${node.show}@${showSE(s)}) ext: ${showExt(ext)}") *>
       allPaths(s).flatMap(paths =>
         infoType(s"Shape(${node.show}@${showSE(s)}), paths: ${paths.show}") *>
@@ -468,14 +492,24 @@ case class ValidatorEitherT(
             mkErrWithRDF(ExtraPropertiesClosedShape(node, otherNeighs.getPredicates(), s, _))
            } else {
             val entries = getEntries(neighsInPaths)
-            getAvailableShapeExprs(s).flatMap(ses =>
-            getAvailablePaths(ses).flatMap(availablePaths =>
-            getNodesPrefixMap.flatMap(nodesPrefixMap => {
+            fromIO(getAvailableShapeExprsPaths(s, schema, labelDecl)).flatMap(sePaths =>
+            // getAvailablePaths(ses, labelDecl).flatMap(availablePaths =>
+             val ses = sePaths.map(_._1)
+             val availablePaths = sePaths.map(_._2)
+             getNodesPrefixMap.flatMap(nodesPrefixMap => {
              val partitions = partsOver(entries, availablePaths)
-             info(s"Available ShapeExprs for shape ${showShape(s)} = ${showSEs(ses)}") *>
-             info(s"Available paths: ${availablePaths.map(_.values.map(_.show).mkString(",")).mkString("|")}") *> 
+             info(s"${ses.length} available ShapeExprs for shape ${showShape(s)} =\n${showSEs(ses)}") *>
+             debug(s"${neighsInPaths.length} neighsInPaths: ${neighsInPaths.showQualified(schema.prefixMap)}") *>
+             info(s"---end available shapeExprs") *>
+             info(s"${entries.size} entries: ${showEntrySet(nodesPrefixMap)(entries)}") *>
+             info(s"--end Entries") *>
+             info(s"${availablePaths.length} available paths: ${
+              availablePaths.zip(ses).map{
+                case (s,se) => s"${showSE(se)} -> path[${s.values.map(_.show).mkString(",")}]"
+              }.mkString("|")
+             }") *> 
              (if (isSingle(partitions)) {
-              debug(s"One partition...") *> 
+              debug(s"One partition with single line: ${showLine(nodesPrefixMap)(partitions.head)}") *> 
               processLine(node, s, ses, visited, attempt, nodesPrefixMap)(partitions.head)
              } else {
               checkSomeLazyList(partitions.map(processLine(node, s, ses, visited, attempt, nodesPrefixMap)),
@@ -489,7 +523,8 @@ case class ValidatorEitherT(
                  |""".stripMargin))
                })
               }  
-            )))
+            ))
+            // )
       }
       }
    )}
@@ -505,10 +540,14 @@ case class ValidatorEitherT(
   private def processLine(node: RDFNode, s: Shape, ses: List[ShapeExpr], visited: Visited, attempt: Attempt, prefixMap: PrefixMap)(line: List[Set[Entry[Path, RDFNode]]]): CheckTyping = {
     val neighsShape = entries2Neighs(line.head)
     val extended = line.zip(ses).tail.map { case (ns, se) => (se, entries2Neighs(ns)) }
-    info(s"""|>->ProcessLine node: ${node.show}, shape ${showShape(s)}: ses=${showSEs(ses)}, line: ${showLine(prefixMap)(line)}""".stripMargin) *>
+    infoGreen(s"""|--------------------------
+                  |ProcessLine: ${showLine(prefixMap)(line)} for ${showNode(node, prefixMap)}@${showShape(s)}""".stripMargin) *>
+    info(s"""|ses=${showSEs(ses)}
+             |---------
+             |""".stripMargin) *>
     checkPartitionNeighs(attempt, node, s, neighsShape, extended, visited).attempt.flatMap(eitherResult => 
       eitherResult.fold(e => 
-        info(s"Error: $e") *> err(e), r => ok(r))
+        infoGreen(s"Error processing line: $e") *> err(e), r => ok(r))
     )
   }
 
@@ -528,7 +567,7 @@ case class ValidatorEitherT(
         t =>
           val cs = extended.map { case (se, neighs) =>
             val newVisited = addVisited(visited, node, s.id)
-            satisfies(node, se, Some(neighs), newVisited, ExtendsMode.IgnoreExtends, NoDescendants, attempt)
+            satisfies(node, se, Some(neighs), newVisited, ExtendsMode.IgnoreExtends, FollowDescendants, attempt)
           }
           checkAll(cs).flatMap(ts => combineTypings(t :: ts))
       }
@@ -556,30 +595,8 @@ case class ValidatorEitherT(
       .map { case (p, n) => E(p, n) }
       .toSet
 
-  def getAvailableShapeExprs(s: Shape): Check[List[ShapeExpr]] = {
-    
-    def finder(lbl: ShapeLabel): Either[ShExError, ShapeExpr] = 
-      schema.getShape(lbl).leftMap(ShExError.LabelNotFound(lbl, _, schema.labels))
-    
-    def extend(s: ShapeExpr): Option[List[ShapeLabel]] = s match {
-      case s: Shape => s._extends
-      case sd: ShapeDecl => extend(sd.shapeExpr)
-      case _ => none
-    }  
-    
-    def expr(s: ShapeExpr): Option[List[ShapeExpr]] = List(s).some
-
-    val x: Either[Err, Option[List[ShapeExpr]]] = 
-      extendCheckingVisited[ShapeExpr, List[ShapeExpr], ShExError, ShapeLabel](s, finder, extend, expr)
-    x.fold(
-      err(_),
-      m => ok(m.getOrElse(List()))
-    )  
-    // s.getExtend.map(getShape).sequence.map(s :: _)
-  }
-
   def getAvailablePaths(ses: List[ShapeExpr]): Check[List[Available[Path]]] =
-    ses.map(se => getPaths(se, schema).map(Available.apply)).sequence
+    ses.map(se => getPaths(se, schema).map(Available(_))).sequence
 
   private def checkNeighsShape(
       attempt: Attempt,
@@ -916,7 +933,7 @@ case class ValidatorEitherT(
       } yield (r.log, result)
     )
 
-  private def showSEs(ses: List[ShapeExpr]): String = ses.map(showSE(_)).mkString(",")
+  private def showSEs(ses: List[ShapeExpr]): String = ses.map(showSE(_)).mkString("\n")
   private def showExt(ext: Option[Neighs]): String =
     ext.map(_.showQualified(schema.prefixMap)).getOrElse("None")
   private def showLs[A: Show](ls: Iterable[A]): String = ls.map(_.show).mkString(",")

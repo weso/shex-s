@@ -21,7 +21,7 @@ import es.weso.rdf.nodes.DatatypeLiteral
 import es.weso.shex.Schema
 
 sealed abstract class ShExError protected (val msg: String)
-    extends Exception(msg)
+    extends RuntimeException(msg)
     with NoStackTrace
     with Product
     with Serializable {

@@ -216,3 +216,5 @@ case class Expr(id: Option[ShapeLabel], e: ValueExpr) extends TripleExpr {
     Expr(id.map(_.relativize(base)), e)
   override def hasSemActs: Boolean = false
 }
+
+

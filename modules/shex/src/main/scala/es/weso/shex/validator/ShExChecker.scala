@@ -384,6 +384,7 @@ trait ShExChecker {
     } yield r
   }
 
+  def infoGreen(msg: String): Check[Unit] = getVerbose.flatMap(v => fromIO(v.infoGreen(msg)))
   def info(msg: String): Check[Unit] = getVerbose.flatMap(v => fromIO(v.info(msg)))
   def debug(msg: String): Check[Unit] = getVerbose.flatMap(v => fromIO(v.debug(msg)))
   def step(msg: String): Check[Unit] = getVerbose.flatMap(v => fromIO(v.step(msg)))

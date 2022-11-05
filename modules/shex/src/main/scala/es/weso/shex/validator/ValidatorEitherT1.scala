@@ -33,7 +33,7 @@ case class ValidatorEitherT1(
     builder: RDFBuilder
 ) extends Validator
     with ShExChecker
-    with ShowValidator {
+    with ShowValidator with AllPaths {
 
   type ShapeChecker = ShapeExpr => CheckTyping
   type NodeShapeChecker = (RDFNode, Shape) => CheckTyping
@@ -449,7 +449,7 @@ case class ValidatorEitherT1(
       t <- satisfies(node, externalShape, ext, visited, withDescendants, newAttempt)
     } yield t
 
-  private def allPaths(s: Shape): Check[Set[Path]] = fromEitherString(s.allPaths(schema))
+  private def allPaths(s: Shape): Check[Set[Path]] = fromEitherString(allPaths(s, schema))
 
   private def checkShape(
       node: RDFNode,
