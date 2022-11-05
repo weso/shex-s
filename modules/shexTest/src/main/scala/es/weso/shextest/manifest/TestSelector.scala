@@ -1,22 +1,17 @@
 package es.weso.shextest.manifest
 
 sealed abstract class TestSelector {
-  import TestSelector._
-  def toOption: Option[String] = this match {
-    case All        => None
-    case Only(name) => Some(name)
-  }
-
-  def matches(other: String) = this match {
-    case All                         => true
-    case Only(name) if name == other => true
-    case _                           => false
-  }
+  def matches(other: String): Boolean
 }
 
 object TestSelector {
-  case object All extends TestSelector
-  case class Only(name: String) extends TestSelector
+  case object All extends TestSelector {
+    override def matches(other: String) = true
+  }
+
+  case class Only(names: String*) extends TestSelector {
+    override def matches(other: String) = names.toList.contains(other)
+  }
 
   def fromOption(opt: Option[String]): TestSelector = opt match {
     case None    => All
