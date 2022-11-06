@@ -286,7 +286,7 @@ case class Shape(
     )
 
   def withExpr(te: Option[TripleExpr]): Shape =
-    this.copy(expression = te)  
+    this.copy(expression = te)
 
   def withExtra(extras: Option[List[IRI]]): Shape =
     this.copy(extra = extras)
@@ -349,6 +349,8 @@ case class NodeConstraint(
       actions.map(_.map(_.relativize(base)))
     )
 
+  def withValues(vs: ValueSetValue*): NodeConstraint =
+    this.copy(values = vs.toList.some)
 }
 
 object NodeConstraint {

@@ -40,8 +40,8 @@ trait AvailableShapeExprPaths extends ExtendM {
     def extend(se: ShapeExpr): IO[List[ShapeLabel]] = se match {
       case shape: Shape =>
         IO.pure(shape._extends.getOrElse(List()))
-      /* case sd: ShapeDecl =>
-        extend(sd.shapeExpr) */
+      case sd: ShapeDecl =>
+        extend(sd.shapeExpr)
       case _ => IO(List())
     }
 
@@ -60,7 +60,8 @@ trait AvailableShapeExprPaths extends ExtendM {
       ses.map(rest(_)).sequence.map(_.flatten)
 
     def rest(se: ShapeExpr): IO[List[(ShapeExpr, Available[Path])]] =
-      getAvailablePathsSE(se).map(List(_))
+      getAvailablePathsSE(se)
+        .map(List(_))
 
     def getAvailablePathsSE(se: ShapeExpr): IO[(ShapeExpr, Available[Path])] = se match {
       case sd: ShapeDecl => getPaths(sd.shapeExpr).map(ps => (sd.shapeExpr, ps))

@@ -9,6 +9,7 @@ import cats.implicits._
 import cats._
 import munit._
 import es.weso.shex.validator.PartitionUtils._
+import ObjectValue._
 
 class AvailableShapeExprPathsTest extends CatsEffectSuite with AvailableShapeExprPaths {
 
@@ -35,7 +36,7 @@ class AvailableShapeExprPathsTest extends CatsEffectSuite with AvailableShapeExp
     shouldMatchAvailableShapeExprPaths(msg, schema, s, Some(_Reclined), expected)
   }
 
-  {
+  /*  {
     val msg = """|prefix : <http://e/
                  |
                  |:Reclined extends @:Posture {}
@@ -58,6 +59,38 @@ class AvailableShapeExprPathsTest extends CatsEffectSuite with AvailableShapeExp
       (postureSE, Available(Set(Direct(p))))
     )
     shouldMatchAvailableShapeExprPaths(msg, schema, s, Some(_Reclined), expected)
+  } */
+
+  {
+    val msg = """|prefix : <http://e/
+                 |
+                 |:A { :p [ 1] }
+                 |:B extends @:A { :p [ 2 ] }
+                 |:C extends @:A { :p [ 3 ] }
+                 |:D extends @:B extends @:C { :p [ 4 ] } 
+                 |
+                 |""".stripMargin
+    val ex = IRI("http://e/")
+    val _p = ex + "p"
+    def p(n: Int): TripleExpr =
+      TripleConstraint.emptyPred(_p).withValueExpr(NodeConstraint.empty.withValues(intValue(n)))
+    val _A = IRILabel(ex + "A")
+    val _B = IRILabel(ex + "B")
+    val _C = IRILabel(ex + "C")
+    val _D = IRILabel(ex + "D")
+    val A = ShapeDecl(_A, Shape.empty.withExpr(p(1)))
+    val B = ShapeDecl(_B, Shape.empty.withExtends(_A).withExpr(p(2)))
+    val C = ShapeDecl(_C, Shape.empty.withExtends(_A).withExpr(p(3)))
+    val sD = Shape.empty.withExtends(_B, _C).withExpr(p(4))
+    val D = ShapeDecl(_D, sD)
+    val schema = Schema.emptyWithId(ex + "Schema").withShapes(A, B, C, D)
+    val expected: List[(ShapeExpr, Available[Path])] = List(
+      (sD, Available(Set(Direct(_p)))),
+      (B, Available(Set(Direct(_p)))),
+      (A, Available(Set(Direct(_p)))),
+      (C, Available(Set(Direct(_p))))
+    )
+    shouldMatchAvailableShapeExprPaths(msg, schema, sD, Some(_D), expected)
   }
 
   def shouldMatchAvailableShapeExprPaths(
@@ -73,7 +106,9 @@ class AvailableShapeExprPathsTest extends CatsEffectSuite with AvailableShapeExp
       s"""|AvailableShapeExprPathsTest: 
           |${msg}
           |Shape: ${s}
-          |Expected: ${expected.map(_.toString).mkString("\n")}
+          |${expected.length} expected: 
+          |${expected.map(_.toString).mkString("\n")}
+          |----
           |""".stripMargin
     ) {
       assertIO(
@@ -84,7 +119,16 @@ class AvailableShapeExprPathsTest extends CatsEffectSuite with AvailableShapeExp
                            |Schema:
                            |$schema
                            |""".stripMargin) *>
-              getAvailableShapeExprsPaths(s, schema, parent)
+              getAvailableShapeExprsPaths(s, schema, parent).flatMap(r =>
+                if (r != expected)
+                  IO.println(s"""|Different....
+                                 |${r.length} obtained: 
+                                 |${r.map(_.toString).mkString("\n")}
+                                 |---
+                                 |""".stripMargin) *>
+                    IO.pure(r)
+                else IO.pure(r)
+              )
           ),
         expected
       )

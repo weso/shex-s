@@ -191,9 +191,14 @@ case class TripleConstraint(
       semActs.map(_.map(_.relativize(base))),
       annotations.map(_.map(_.relativize(base)))
     )
+
+  def withValueExpr(e: ShapeExpr): TripleConstraint =
+    this.copy(valueExpr = e.some)
+
 }
 
 object TripleConstraint {
+
   def emptyPred(pred: IRI): TripleConstraint =
     TripleConstraint(None, None, None, pred, None, None, None, None, None, None)
 
@@ -216,5 +221,3 @@ case class Expr(id: Option[ShapeLabel], e: ValueExpr) extends TripleExpr {
     Expr(id.map(_.relativize(base)), e)
   override def hasSemActs: Boolean = false
 }
-
-
