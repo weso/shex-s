@@ -26,47 +26,63 @@ class WBModelSerializerTest extends CatsEffectSuite {
   }
 
   {
-   val q42 = Q(42).build() 
-   val q5 = Q(5).build() 
-   val q6 = Q(6).build()
-   val hi = new StringValueImpl("Hi")
-   val ref1 = ReferenceBuilder.newInstance()
-        .withPropertyValue(PropertyIdValueImpl("P214", defaultSite), hi)
-        .withPropertyValue(PropertyIdValueImpl("P248", defaultSite), q6.getEntityId())
-        .build()
-   val p31_q5 = 
-      StatementBuilder.forSubjectAndProperty(q42.getEntityId(), 
-        new PropertyIdValueImpl("P31", defaultSite)).withValue(q5.getEntityId()
-      ).withQualifierValue(PropertyIdValueImpl("P585", defaultSite), makeStringValue("Hi")).withReference(ref1)
+    val q42 = Q(42).build()
+    val q5 = Q(5).build()
+    val q6 = Q(6).build()
+    val hi = new StringValueImpl("Hi")
+    val ref1 = ReferenceBuilder
+      .newInstance()
+      .withPropertyValue(new PropertyIdValueImpl("P214", defaultSite), hi)
+      .withPropertyValue(new PropertyIdValueImpl("P248", defaultSite), q6.getEntityId())
       .build()
-   val q42_p31_q5 = q42.withStatement(p31_q5)     
-   checkSerialization("Simple statement",
-     q42_p31_q5,
-     """|prefix wd: <http://www.wikidata.org/entity/>
+    val p31_q5 =
+      StatementBuilder
+        .forSubjectAndProperty(q42.getEntityId(), new PropertyIdValueImpl("P31", defaultSite))
+        .withValue(q5.getEntityId())
+        .withQualifierValue(new PropertyIdValueImpl("P585", defaultSite), makeStringValue("Hi"))
+        .withReference(ref1)
+        .build()
+    val q42_p31_q5 = q42.withStatement(p31_q5)
+    checkSerialization(
+      "Simple statement",
+      q42_p31_q5,
+      """|prefix wd: <http://www.wikidata.org/entity/>
         |PREFIX wdt: <http://www.wikidata.org/prop/direct/>
         |
         |wd:Q42 wdt:P31 wd:Q5 .
         |""".stripMargin,
-     IgnoreTest
-   )
-  }  
- 
+      IgnoreTest
+    )
+  }
+
   def checkSerialization(
       name: String,
       entityDocument: EntityDocument,
       expected: String,
       shouldIgnore: ShouldIgnoreOption
-  )(implicit loc: munit.Location): Unit = 
+  )(implicit loc: munit.Location): Unit =
     shouldIgnore match {
-        case IgnoreTest => test(name.ignore) { }
-        case DontIgnore => test(name) {
-        RDFAsJenaModel.fromString(expected, "TURTLE").flatMap(_.use(rdfExpected => 
-            rdfExpected.serialize("TURTLE").flatMap(strExpected => 
-            RDFSerializer("TURTLE").serialize(entityDocument).flatMap(entityDocStr => 
-                IO.pure((entityDocStr, RDFSerializer.removePrefixes(strExpected)))
-        )))).map { 
-            case (entityDocStr, strExpected) => assertEquals(entityDocStr, strExpected)
+      case IgnoreTest => test(name.ignore) {}
+      case DontIgnore =>
+        test(name) {
+          RDFAsJenaModel
+            .fromString(expected, "TURTLE")
+            .flatMap(
+              _.use(rdfExpected =>
+                rdfExpected
+                  .serialize("TURTLE")
+                  .flatMap(strExpected =>
+                    RDFSerializer("TURTLE")
+                      .serialize(entityDocument)
+                      .flatMap(entityDocStr =>
+                        IO.pure((entityDocStr, RDFSerializer.removePrefixes(strExpected)))
+                      )
+                  )
+              )
+            )
+            .map { case (entityDocStr, strExpected) =>
+              assertEquals(entityDocStr, strExpected)
+            }
         }
-     }
     }
 }

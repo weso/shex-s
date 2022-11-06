@@ -102,6 +102,26 @@ object MatchingError {
                                 |Entity ${entity.show()}
                                 |""".stripMargin)
 
+  case class StatementsPropertyRefFailMin(
+      property: IRI,
+      counter: Int,
+      min: Int,
+      tcr: TripleConstraintRef,
+      entity: EntityDoc
+  ) extends MatchingError(s"""|Statements for property: ${property} = $counter should be > $min
+                        |tripleConstraintRef: $tcr
+                        |Entity ${entity.show()}
+                        |""".stripMargin)
+
+  case class StatementsPropertyRefFailMax(
+      property: IRI,
+      entity: EntityDoc,
+      counter: Int,
+      max: IntOrUnbounded
+  ) extends MatchingError(s"""|Statements for propertyRef: ${property} = $counter should be < $max
+                                |Entity ${entity.show()}
+                                |""".stripMargin)
+
   case class StatementsFailTripleConstraint(
       property: IRI,
       tcl: TripleConstraint,

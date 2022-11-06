@@ -186,13 +186,34 @@ case class Matcher(
   ): MatchingStatus =
     tc match {
       case tcr: TripleConstraintRef =>
-        err(NotImplemented(s"tripleConstraintRef: $tcr"))
+        matchTripleConstraintRef(tcr, e, se, current)
       case tcl: TripleConstraintLocal =>
         val allowExtras = se.extras.contains(tc.property)
         matchTripleConstraintLocal_Entity(tcl, e, se, current, allowExtras)
       case tcg: TripleConstraintGeneral =>
         err(NotImplemented(s"tripleConstraintGeneral: $tcg"))
     }
+
+  private def matchTripleConstraintRef(
+      tcr: TripleConstraintRef,
+      e: EntityDoc,
+      se: WShape,
+      current: EntityDoc
+  ): MatchingStatus = {
+    val predicate = tcr.property.iri
+    val statements = e.getStatementsForProperty(predicate2propertyIdValue(predicate))
+    val oksCounter = statements.length // We assume all of them match
+    if (oksCounter < tcr.min) {
+      err(StatementsPropertyRefFailMin(predicate, oksCounter, tcr.min, tcr, e))
+    } else if (tcr.max < oksCounter)
+      err(StatementsPropertyRefFailMax(predicate, e, oksCounter, tcr.max))
+    else
+      Matching(
+        shapeExprs = List(se),
+        entity = current.mergeStatements(statements)
+        // TODO: Add dependencies...
+      )
+  }
 
   private def matchTripleConstraintLocal_Entity(
       tcl: TripleConstraintLocal,

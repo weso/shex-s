@@ -36,7 +36,7 @@ class ES2WShExTest extends CatsEffectSuite {
        |}""".stripMargin,
     "WShExC",
     VerboseLevel.Nothing
-   ) 
+  )
 
   checkConversion(
     "Ignore wasDerivedFrom",
@@ -63,9 +63,9 @@ class ES2WShExTest extends CatsEffectSuite {
        |}""".stripMargin,
     "WShExC",
     VerboseLevel.Nothing
-   )
+  )
 
-checkConversion(
+  checkConversion(
     "p:P31 . provenance",
     """|PREFIX wd:  <http://www.wikidata.org/entity/>
        |PREFIX wdt: <http://www.wikidata.org/prop/direct/>
@@ -101,9 +101,9 @@ checkConversion(
        |} """.stripMargin,
     "WShExC",
     VerboseLevel.Nothing
-   )   
+  )
 
- checkConversion(
+  checkConversion(
     "p:P31 . provenance with EachOf",
     """|PREFIX wd:  <http://www.wikidata.org/entity/>
        |PREFIX wdt: <http://www.wikidata.org/prop/direct/>
@@ -141,7 +141,7 @@ checkConversion(
        |} """.stripMargin,
     "WShExC",
     VerboseLevel.Nothing
-   ) 
+  )
 
   checkConversion(
     "Empty",
@@ -150,7 +150,7 @@ checkConversion(
     """|""".stripMargin,
     "WShExC",
     VerboseLevel.Nothing
-   ) 
+  )
 
   def checkConversion(
       name: String,
@@ -158,23 +158,31 @@ checkConversion(
       formatShEx: String = "ShExC",
       expectedWShExStr: String,
       expectedFormatWShEx: String = "WShExC",
-      verboseLevel: VerboseLevel, 
+      verboseLevel: VerboseLevel,
       ignore: ShouldIgnoreOption = DontIgnore
   )(implicit loc: munit.Location): Unit = if (ignore == Ignore) {
-   println(s"Ignored test: $name")
+    println(s"Ignored test: $name")
   } else {
     val convertOptions = ES2WShExConvertOptions.default
     val entityIri = es.weso.wbmodel.Value.defaultIRI
 
     test(name) {
-      WSchema.parseFormat(expectedFormatWShEx).flatMap(wshexFormat =>
-      WSchema.fromString(expectedWShExStr, wshexFormat, None, entityIri, verboseLevel).flatMap(wshexSchemaExpected =>
-      ShExSchema.fromString(shExStr, formatShEx, None).map(schema => 
-      ES2WShEx(convertOptions).convert(schema).fold(
-        err => fail(s"Error converting ShEx -> WShEx: $err"),
-        wshexSchemaConverted => 
-          if (wshexSchemaConverted.toString != wshexSchemaExpected.toString) {
-                    println(s"""|Schemas are different
+      WSchema
+        .parseFormat(expectedFormatWShEx)
+        .flatMap(wshexFormat =>
+          WSchema
+            .fromString(expectedWShExStr, wshexFormat, None, entityIri, verboseLevel)
+            .flatMap(wshexSchemaExpected =>
+              ShExSchema
+                .fromString(shExStr, formatShEx, None)
+                .map(schema =>
+                  ES2WShEx(convertOptions)
+                    .convert(schema)
+                    .fold(
+                      err => fail(s"Error converting ShEx -> WShEx: $err"),
+                      wshexSchemaConverted =>
+                        if (wshexSchemaConverted.toString != wshexSchemaExpected.toString) {
+                          println(s"""|Schemas are different
                                 |schema
                                 |${schema.shapes}
                                 |converted: 
@@ -190,15 +198,16 @@ checkConversion(
                                 |${wshexSchemaExpected.toString}
                                 |----------endExpectedString
                                 |""".stripMargin)
-                  }
-                  assertEquals(
-                        wshexSchemaConverted.toString, 
-                        wshexSchemaExpected.toString)
-            ))))
+                        } else {}
+                        assertEquals(wshexSchemaConverted.toString, wshexSchemaExpected.toString)
+                    )
+                )
+            )
+        )
     }
   }
 
-/*
+  /*
   val ex = IRI("http://example.org/")
   val p = IRI("http://www.wikidata.org/prop/")
   val ps = IRI("http://www.wikidata.org/prop/statement/")
@@ -456,7 +465,7 @@ checkConversion(
     s"""|$pmStr
         |<S> {
         | rdfs:label [ @en ] ;
-        | skos:altLabel [ @en ] 
+        | skos:altLabel [ @en ]
         |}
         |""".stripMargin,
     WSchema(

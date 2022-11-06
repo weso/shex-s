@@ -38,6 +38,8 @@ case class Matching(
 
   private def merge(e: EntityDoc, other: EntityDoc): EntityDoc = e.merge(other)
 
+  def withDependencies(ds: List[Dependency]) = this.copy(dependencies = ds)
+
 }
 
 case class NoMatching(
