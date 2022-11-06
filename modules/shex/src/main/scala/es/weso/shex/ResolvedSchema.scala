@@ -47,20 +47,19 @@ case class ResolvedSchema(
     resolvedMapShapeExprs.get(sl).toRight(s"Not found $sl").map(_.se)
 
   def isNonAbstract(sl: ShapeLabel): Boolean = getShape(sl).fold(
-      _ => false,
-      se =>
-        se match {
-          case sd: ShapeDecl => !sd._abstract
-          case _            => true
-        }
-    )
+    _ => false,
+    se =>
+      se match {
+        case sd: ShapeDecl => !sd._abstract
+        case _             => true
+      }
+  )
 
   override def getTripleExpr(sl: ShapeLabel): Either[String, TripleExpr] =
     resolvedMapTripleExprs.get(sl).toRight(s"Not found $sl").map(_.te)
 
-  lazy val optTripleExprMap: Option[Map[ShapeLabel, TripleExpr]] = {
-    mapValues[ShapeLabel, ResolvedTripleExpr, TripleExpr](resolvedMapTripleExprs)(_.te).some 
-  }  
+  lazy val optTripleExprMap: Option[Map[ShapeLabel, TripleExpr]] =
+    mapValues[ShapeLabel, ResolvedTripleExpr, TripleExpr](resolvedMapTripleExprs)(_.te).some
 }
 
 object ResolvedSchema {
@@ -71,8 +70,7 @@ object ResolvedSchema {
   ) {
     def merge(schema: Schema, iri: IRI): MapsImported =
       this.copy(
-        shapeExprMaps =
-          mapValues(schema.shapesMap)(ResolvedShapeExpr(_, iri)) ++ shapeExprMaps, 
+        shapeExprMaps = mapValues(schema.shapesMap)(ResolvedShapeExpr(_, iri)) ++ shapeExprMaps,
         tripleExprMaps =
           mapValues(schema.tripleExprMap)(ResolvedTripleExpr(_, iri)) ++ tripleExprMaps
       )
@@ -104,7 +102,10 @@ object ResolvedSchema {
         mapsImported.shapeExprMaps,
         verboseLevel
       )
-      shapeExprMapsWithDescendants <- addDescendantsInfo(inheritanceGraph, mapsImported.shapeExprMaps)
+      shapeExprMapsWithDescendants <- addDescendantsInfo(
+        inheritanceGraph,
+        mapsImported.shapeExprMaps
+      )
     } yield ResolvedSchema(
       source = schema,
       resolvedMapShapeExprs = shapeExprMapsWithDescendants,
@@ -114,25 +115,28 @@ object ResolvedSchema {
     )
 
   private def addDescendantsInfo(
-    inheritanceGraph: Inheritance[ShapeLabel, ShapesRelation], 
-    seMap: Map[ShapeLabel, ResolvedShapeExpr]): IO[Map[ShapeLabel, ResolvedShapeExpr]] = {
+      inheritanceGraph: Inheritance[ShapeLabel, ShapesRelation],
+      seMap: Map[ShapeLabel, ResolvedShapeExpr]
+  ): IO[Map[ShapeLabel, ResolvedShapeExpr]] =
     cnvMapIO(seMap, addDescendantInfoSE(inheritanceGraph, _))
-  }
 
-  private def cnvMapIO[K,A,B](m: Map[K,A], f: A => IO[B]): IO[Map[K, B]] = {
-    mapValues(m)(f).toList.map { case (k, ioa) => ioa.map(v => (k,v)) }.sequence.map(_.toMap)
-  }
+  private def cnvMapIO[K, A, B](m: Map[K, A], f: A => IO[B]): IO[Map[K, B]] =
+    mapValues(m)(f).toList.map { case (k, ioa) => ioa.map(v => (k, v)) }.sequence.map(_.toMap)
 
-  private def addDescendantInfoSE(inheritance: Inheritance[ShapeLabel, ShapesRelation], rse: ResolvedShapeExpr): IO[ResolvedShapeExpr] = {
+  private def addDescendantInfoSE(
+      inheritance: Inheritance[ShapeLabel, ShapesRelation],
+      rse: ResolvedShapeExpr
+  ): IO[ResolvedShapeExpr] =
     getDescendants(inheritance, rse.se)
-    .map(rse.withDescendants(_))
-  }
+      .map(rse.withDescendants(_))
 
-  private def getDescendants(inheritance: Inheritance[ShapeLabel, ShapesRelation], se: ShapeExpr): IO[Set[ShapeLabel]] = se.id match {
-    case None => Set().pure
+  private def getDescendants(
+      inheritance: Inheritance[ShapeLabel, ShapesRelation],
+      se: ShapeExpr
+  ): IO[Set[ShapeLabel]] = se.id match {
+    case None      => IO.pure(Set[ShapeLabel]())
     case Some(lbl) => inheritance.descendantsByEdgtypes(lbl, Set(Extends, References))
   }
-
 
   private def getEffectiveIRI(iri: IRI, assumeLocal: Option[(IRI, FilePath)]): IRI =
     assumeLocal match {

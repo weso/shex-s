@@ -480,40 +480,54 @@ case class ValidatorEitherT(
     attempt: Attempt, 
     labelDecl: Option[ShapeLabel]
     ): CheckTyping = {
-     infoType(s"Shape(${node.show}@${showSE(s)}) ext: ${showExt(ext)}") *>
-      allPaths(s).flatMap(paths =>
-        infoType(s"Shape(${node.show}@${showSE(s)}), paths: ${paths.show}") *>
-          getNeighs(node, ext).flatMap { neighs =>
-           val (neighsInPaths, otherNeighs) = neighs.partitionByPaths(paths)
-           val otherNeighsDirect = otherNeighs.filterDirect
-           if (s.isClosed && otherNeighsDirect.nonEmpty) {
+  infoType(s"Shape(${node.show}@${showSE(s)}) ext: ${showExt(ext)}") *>
+  allPaths(s).flatMap(paths =>
+    infoType(s"Shape(${node.show}@${showSE(s)}), paths: ${paths.show}") *>
+    getNeighs(node, ext).flatMap( neighs => { 
+      val (neighsInPaths, otherNeighs) = neighs.partitionByPaths(paths)
+      val otherNeighsDirect = otherNeighs.filterDirect
+      if (s.isClosed && otherNeighsDirect.nonEmpty) {
             debug(s"Shape(${node.show}@${showSE(s)}) closed condition failed, extra-neighs: ${otherNeighsDirect.showQualified(schema.prefixMap)}") *>
             debug(s"neighsInPaths: ${neighsInPaths.showQualified(schema.prefixMap)}") *>
             mkErrWithRDF(ExtraPropertiesClosedShape(node, otherNeighs.getPredicates(), s, _))
-           } else {
-            val entries = getEntries(neighsInPaths)
-            fromIO(getAvailableShapeExprsPaths(s, schema, labelDecl)).flatMap(sePaths =>
-            // getAvailablePaths(ses, labelDecl).flatMap(availablePaths =>
-             val ses = sePaths.map(_._1)
-             val availablePaths = sePaths.map(_._2)
-             getNodesPrefixMap.flatMap(nodesPrefixMap => {
-             val partitions = partsOver(entries, availablePaths)
-             info(s"${ses.length} available ShapeExprs for shape ${showShape(s)} =\n${showSEs(ses)}") *>
-             debug(s"${neighsInPaths.length} neighsInPaths: ${neighsInPaths.showQualified(schema.prefixMap)}") *>
-             info(s"---end available shapeExprs") *>
-             info(s"${entries.size} entries: ${showEntrySet(nodesPrefixMap)(entries)}") *>
-             info(s"--end Entries") *>
-             info(s"${availablePaths.length} available paths: ${
-              availablePaths.zip(ses).map{
-                case (s,se) => s"${showSE(se)} -> path[${s.values.map(_.show).mkString(",")}]"
-              }.mkString("|")
-             }") *> 
-             (if (isSingle(partitions)) {
-              debug(s"One partition with single line: ${showLine(nodesPrefixMap)(partitions.head)}") *> 
-              processLine(node, s, ses, visited, attempt, nodesPrefixMap)(partitions.head)
-             } else {
-              checkSomeLazyList(partitions.map(processLine(node, s, ses, visited, attempt, nodesPrefixMap)),
-                StringError(s"""|Node: ${node.show}
+      } else {
+       val entries = getEntries(neighsInPaths)
+       fromIO(getAvailableShapeExprsPaths(s, schema, labelDecl)).flatMap(sePaths => 
+        checkPartitionsSEPaths(sePaths, neighsInPaths, entries, node, s, visited, attempt))
+        }
+      }   
+    ))
+  }
+
+  private def checkPartitionsSEPaths(
+    sePaths: List[(ShapeExpr, Available[Path])],
+    neighsInPaths: Neighs,
+    entries: Set[Entry[Path, RDFNode]],
+    node: RDFNode,
+    s: Shape, 
+    visited: Visited,
+    attempt: Attempt
+      ): CheckTyping = { 
+    val ses = sePaths.map(_._1)
+    val availablePaths = sePaths.map(_._2)
+    getNodesPrefixMap.flatMap(nodesPrefixMap => {
+      val partitions = partsOver(entries, availablePaths)
+      info(s"${ses.length} available ShapeExprs for shape ${showShape(s)} =\n${showSEs(ses)}") *>
+      debug(s"${neighsInPaths.length} neighsInPaths: ${neighsInPaths.showQualified(schema.prefixMap)}") *>
+      info(s"---end available shapeExprs") *>
+      info(s"${entries.size} entries: ${showEntrySet(nodesPrefixMap)(entries)}") *>
+      info(s"--end Entries") *>
+      info(s"${availablePaths.length} available paths: ${
+      availablePaths.zip(ses).map{
+       case (s,se) => s"${showSE(se)} -> path[${s.values.map(_.show).mkString(",")}]"
+      }.mkString("|")
+      }") *> 
+      (if (isSingle(partitions)) {
+        debug(s"One partition with single line: ${showLine(nodesPrefixMap)(partitions.head)}") *> 
+        processLine(node, s, ses, visited, attempt, nodesPrefixMap)(partitions.head)
+       } else {
+        checkSomeLazyList(partitions.map(processLine(node, s, ses, visited, attempt, nodesPrefixMap)),
+        StringError(s"""|Node: ${node.show}
                  |Shape: ${showShape(s)}
                  |Attempt: ${attempt.show}
                  |No partition conforms to list of ShapeExprs
@@ -521,13 +535,10 @@ case class ValidatorEitherT(
                  |Available lines:
                  |${showPartitions(partitions, nodesPrefixMap)}
                  |""".stripMargin))
-               })
-              }  
-            ))
-            // )
-      }
-      }
-   )}
+               }
+       )
+    })
+  }
 
   private def mkErrWithRDF[A](mkErr: RDFReader => Err): Check[A] =
     getRDF.flatMap(rdf => err(mkErr(rdf)))

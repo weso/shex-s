@@ -48,8 +48,8 @@ trait AvailableShapeExprPaths extends ExtendM {
     def first(se: ShapeExpr): IO[List[(ShapeExpr, Available[Path])]] =
       rest(se).flatMap(rs =>
         parent match {
-          case None      => rs.pure
-          case Some(lbl) => rs.pure // TODO: Nothing by now
+          case None      => IO.pure(rs) //
+          case Some(lbl) => IO.pure(rs) // .pure // TODO: Nothing by now
         }
       )
 
@@ -71,7 +71,7 @@ trait AvailableShapeExprPaths extends ExtendM {
       se.paths(schema)
         .fold(
           err => IO.raiseError(StringError(err)),
-          Available(_).pure
+          v => IO.pure(Available(v))
         )
 
     extendCheckingVisitedM1[

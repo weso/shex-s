@@ -19,14 +19,14 @@ class ExtendMTest extends FunSuite with ExtendM {
     def flattenExpr(schema: Schema): Cmp[Expr] = {
 
       implicit val monoidExpr: Monoid[Expr] = new Monoid[Expr] {
-       def combine(e1: Expr, e2: Expr): Expr =
-        Expr(e1.es ++ e2.es)
+        def combine(e1: Expr, e2: Expr): Expr =
+          Expr(e1.es ++ e2.es)
 
-       def empty: Expr = Expr(List()) 
+        def empty: Expr = Expr(List())
       }
 
       def getEither(lbl: Label): Cmp[Shape] =
-        schema.get(lbl).fold(s"Not found".asLeft)(_.asRight)
+        schema.get(lbl).fold(s"Not found".asLeft[Shape])(v => v.asRight[String])
 
       extendCheckingVisitedM[Shape, Expr, Label, Cmp](this, getEither(_), _.extend, _.expr)
     }
@@ -41,7 +41,8 @@ class ExtendMTest extends FunSuite with ExtendM {
     shouldFlattenExpr("No extensions", shape, schema, expected)
   }
 
-  { val shape: Shape = Shape(expr = Expr(List("x")).asRight, extend = List("s").asRight)
+  {
+    val shape: Shape = Shape(expr = Expr(List("x")).asRight, extend = List("s").asRight)
     val schema: Schema = Map("s" -> shape)
     val expected: Either[String, Expr] = Expr(List("x")).asRight
     shouldFlattenExpr("Circular extension", shape, schema, expected)
@@ -55,7 +56,7 @@ class ExtendMTest extends FunSuite with ExtendM {
     shouldFlattenExpr("S extends T", s, schema, expected)
   }
 
- {
+  {
     val s: Shape = Shape(extend = List("r").asRight, expr = Expr(List("x")).asRight)
     val t: Shape = Shape(extend = no, expr = Expr(List("y")).asRight)
     val schema: Schema = Map("s" -> s, "t" -> t)
@@ -88,11 +89,11 @@ class ExtendMTest extends FunSuite with ExtendM {
     )
   }
 
-/*    {
+  /*    {
     val a: Shape = Shape(expr = Expr(List("p [3]")).some, extend = List("B").some)
     val b: Shape = Shape(expr = Expr(List("p [1]")).some, extend = List().some)
     val schema: Schema = Map("A" -> a, "B" -> b)
-    val expected: Either[String, Option[Expr]] = 
+    val expected: Either[String, Option[Expr]] =
       Expr(List("p [3]", "p [1]")).some.asRight
     shouldFlattenExpr(
       "B { p [3]}, A extend B { p [1] } == [p [1], p [3]]",
@@ -108,7 +109,7 @@ class ExtendMTest extends FunSuite with ExtendM {
     val c: Shape = Shape(expr = Expr(List("p [3]")).some, extend = List("A").some)
     val d: Shape = Shape(expr = Expr(List("p [4]")).some, extend = List("B", "C").some)
     val schema: Schema = Map("A" -> a, "B" -> b, "C" -> c, "D" -> d)
-    val expected: Either[String, Option[Expr]] = 
+    val expected: Either[String, Option[Expr]] =
       Expr(List("p [4]", "p [3]", "p [2]", "p [1]")).some.asRight
     shouldFlattenExpr(
       "Diamond",
@@ -117,14 +118,12 @@ class ExtendMTest extends FunSuite with ExtendM {
       expected
     )
   } */
-  
-
 
   def shouldFlattenExpr(
       msg: String,
       s: Shape,
       schema: Schema,
-      expected: Either[String,Expr]
+      expected: Either[String, Expr]
   )(implicit loc: munit.Location): Unit =
     test(s"$msg. Should flatten expr of $s and obtain $expected") {
       assertEquals(s.flattenExpr(schema), expected)
