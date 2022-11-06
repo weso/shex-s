@@ -44,11 +44,13 @@ object TermConstraint {
     ): Either[MatchingError, EntityDoc] = {
       val labelsMap = ed.getLabels()
       labelsMap.get(lang.lang) match {
-        case None =>
-          LabelConstraintNoLang(lang, ed).asLeft
-        case Some(value) =>
+        case None        => {
+        LabelConstraintNoLang(lang, ed).asLeft
+        }
+        case Some(value) => 
           optMatchConstraint(strConstraint, value)
-            .map(_ => current.withLabel(value.getLanguageCode(), value.getText()))
+          .map(_ => 
+            current.withLabel(value.getLanguageCode(), value.getText()))
       }
     }
 
@@ -100,7 +102,7 @@ object TermConstraint {
     override def matchTerm(
         ed: EntityDoc,
         current: EntityDoc
-    ): Either[MatchingError, EntityDoc] = ???
+    ): Either[MatchingError, EntityDoc] = ??? 
   }
 
   case class NotTerm(t: TermConstraint) extends TermConstraint {
@@ -136,11 +138,11 @@ object TermConstraint {
 
     def matchMonolingualTextValue(value: MonolingualTextValue): Either[MatchingError, Unit] = {
       val s = value.getText()
-      FacetChecker
-        .stringFacetChecker(s, facet)
-        .leftMap(err => StringConstraintError(StringFacetMatchError(err), this, value))
+      FacetChecker.stringFacetChecker(s, facet).leftMap(err => 
+        StringConstraintError(StringFacetMatchError(err), this, value)
+      )
     }
-  }
+  }   
 
   case class StringSet(ss: List[String]) extends StringConstraint {
     import StringConstraintMatchError._
@@ -150,7 +152,8 @@ object TermConstraint {
       if (ss.contains(s)) ().asRight
       else StringConstraintError(StringSetMatchError(s, ss), this, value).asLeft
     }
-  }
+  }   
+
 
   case class Constant(str: String) extends StringConstraint {
     def matchMonolingualTextValue(value: MonolingualTextValue): Either[MatchingError, Unit] = {
@@ -160,12 +163,12 @@ object TermConstraint {
     }
   }
 
-  sealed abstract class StringConstraintMatchError
+  sealed abstract class StringConstraintMatchError 
   object StringConstraintMatchError {
     import es.weso.shex.validator.FacetChecker.StringFacetError
     case class StringFacetMatchError(err: StringFacetError) extends StringConstraintMatchError
-    case class StringSetMatchError(value: String, ss: List[String])
-        extends StringConstraintMatchError
+    case class StringSetMatchError(value: String, ss: List[String]) extends StringConstraintMatchError
   }
+
 
 }

@@ -17,4 +17,5 @@ class ExtendsTestSingle extends ShouldValidateShapeMap {
     shouldValidateWithShapeMap(rdf, shex, ":x@:D", ":x@:D", Nothing)
   }
 
+
 }

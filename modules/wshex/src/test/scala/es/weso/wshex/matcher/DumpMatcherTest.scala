@@ -80,13 +80,13 @@ class DumpMatcherTest extends CatsEffectSuite {
           /* IO.println(
             s"### Error with Neil\n${nm.matchingErrors.map(_.toString.take(300)).mkString("\n")}"
           ) >> */
-          Entities(List()).pure[IO]
+            Entities(List()).pure[IO]
         else
           // IO.println(s"No matching for ${e.getID()}") >>
-          Entities(List()).pure[IO]
+            Entities(List()).pure[IO]
       case m: Matching =>
         // IO.println(s"Matches: ${m.entity}!") >>
-        Entities(List(m.entity)).pure[IO]
+          Entities(List(m.entity)).pure[IO]
     }
 
   def checkMatch(
@@ -101,10 +101,9 @@ class DumpMatcherTest extends CatsEffectSuite {
       assertIO(
         Matcher
           .fromPath(
-            schemaPath = getResourcePath(schemaFile),
-            format = format,
-            verbose = verboseLevel
-          )
+            schemaPath = getResourcePath(schemaFile), 
+            format = format, 
+            verbose = verboseLevel)
           .flatMap(matcher =>
             DumpReader.read(getResourceInputStream(dumpFileName), entityMatch(matcher))
           ),
