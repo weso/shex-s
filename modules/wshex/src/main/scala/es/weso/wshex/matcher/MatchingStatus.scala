@@ -22,6 +22,7 @@ case class Matching(
     entity: EntityDoc, // Matched entity
     override val dependencies: List[Dependency] = List()
 ) extends MatchingStatus {
+
   override def matches: Boolean = true
   override def and(other: => MatchingStatus): MatchingStatus = other match {
     case m: Matching =>
@@ -50,17 +51,20 @@ case class NoMatching(
     case m: Matching => m
     case nm: NoMatching =>
       NoMatching(
-        this.matchingErrors ++ nm.matchingErrors,
-        this.dependencies ++ nm.dependencies
+        matchingErrors = this.matchingErrors ++ nm.matchingErrors,
+        dependencies = this.dependencies ++ nm.dependencies
       )
   }
+
 }
 
 object MatchingStatus {
 
-  def matchEmpty(e: EntityDoc): MatchingStatus = Matching(shapeExprs = List(), entity = e)
+  def matchEmpty(e: EntityDoc): MatchingStatus =
+    Matching(shapeExprs = List(), entity = e)
 
-  lazy val noMatchingEmpty: MatchingStatus = NoMatching(matchingErrors = List())
+  lazy val noMatchingEmpty: MatchingStatus =
+    NoMatching(matchingErrors = List())
 
   def combineAnds(e: EntityDoc, ls: LazyList[MatchingStatus]): MatchingStatus =
     ls.foldLeft(matchEmpty(e))(_.and(_))

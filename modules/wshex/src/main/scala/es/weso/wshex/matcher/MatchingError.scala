@@ -3,11 +3,11 @@ package es.weso.wshex.matcher
 import es.weso.wbmodel._
 import org.wikidata.wdtk.datamodel.implementation._
 import org.wikidata.wdtk.datamodel.interfaces.{
-    Statement => WDTKStatement, 
-    Value => WDTKValue, 
-    Snak => WDTKSnak,
-    Reference => WDTKReference,
-    _
+  Reference => WDTKReference,
+  Snak => WDTKSnak,
+  Statement => WDTKStatement,
+  Value => WDTKValue,
+  _
 }
 import es.weso.rdf.nodes._
 import es.weso.wshex._
@@ -79,12 +79,14 @@ object MatchingError {
                                 |""".stripMargin)
 
   case class StatementsPropertyFailMin(
-    property: IRI, counter: Int, min: Int, 
-    tcl: TripleConstraintLocal, entity: EntityDoc,
-    oks: List[MatchingStatus],
-    errs: List[MatchingStatus])
-      extends 
-      MatchingError(s"""|Statements for property: ${property} = $counter should be > $min
+      property: IRI,
+      counter: Int,
+      min: Int,
+      tcl: TripleConstraintLocal,
+      entity: EntityDoc,
+      oks: List[MatchingStatus],
+      errs: List[MatchingStatus]
+  ) extends MatchingError(s"""|Statements for property: ${property} = $counter should be > $min
                         |tripleConstraint: $tcl
                         |oks: $oks
                         |errs: $errs
@@ -100,11 +102,13 @@ object MatchingError {
                                 |Entity ${entity.show()}
                                 |""".stripMargin)
 
-  case class StatementsFailTripleConstraint(property: IRI, tcl: TripleConstraint, errs: List[MatchingStatus])
-    extends MatchingError(s"""|Statements fail for property ${property} and tripleConstraint: ${tcl}
+  case class StatementsFailTripleConstraint(
+      property: IRI,
+      tcl: TripleConstraint,
+      errs: List[MatchingStatus]
+  ) extends MatchingError(s"""|Statements fail for property ${property} and tripleConstraint: ${tcl}
                               |Errors: $errs
                               |""".stripMargin)
-                                
 
   case class ValuesPropertyFailNodeConstraint(
       property: PropertyIdValue,
@@ -194,7 +198,6 @@ object MatchingError {
                                 |snak: $snak
                                 |""".stripMargin)
 
-
   case class StringConstraintError(
       err: StringConstraintMatchError,
       tc: StringConstraint,
@@ -205,10 +208,14 @@ object MatchingError {
                                 |err: ${err}
                               |""".stripMargin)
 
-  case class ReferencesNumLessMin(oksCounter: Int, min: Int, rs: References, ref: ReferencesSpecSingle, 
-     oks: List[Either[MatchingError, Reference]], 
-     errs: List[Either[MatchingError, Reference]])
-      extends MatchingError(s"""|Num references match less than min
+  case class ReferencesNumLessMin(
+      oksCounter: Int,
+      min: Int,
+      rs: References,
+      ref: ReferencesSpecSingle,
+      oks: List[Either[MatchingError, Reference]],
+      errs: List[Either[MatchingError, Reference]]
+  ) extends MatchingError(s"""|Num references match less than min
                                 |Num passed: $oks
                                 |Min: $min
                                 |ref: ${ref}
@@ -231,12 +238,13 @@ object MatchingError {
                               |""".stripMargin)
 
   case class PropertySpecLocalNumLessMin(
-    oksNum: Int, min: Int, 
-    pl: PropertyLocal, 
-    snaks: List[Snak], 
-    oks: List[Either[MatchingError, Snak]], 
-    errs: List[Either[MatchingError, Snak]])
-      extends MatchingError(s"""|Num properties match less than min
+      oksNum: Int,
+      min: Int,
+      pl: PropertyLocal,
+      snaks: List[Snak],
+      oks: List[Either[MatchingError, Snak]],
+      errs: List[Either[MatchingError, Snak]]
+  ) extends MatchingError(s"""|Num properties match less than min
                                 |Num passed: $oksNum
                                 |Min: $min
                                 |PropertyLocal: $pl
@@ -244,15 +252,24 @@ object MatchingError {
                                 |oks: ${oks}
                                 |errs: ${errs}
                                 |""".stripMargin)
- 
-  case class PropertySpecLocalNumGreaterMax(oksNum: Int, max: IntOrUnbounded, pl: PropertyLocal, snaks: List[Snak])
-    extends MatchingError(s"""|Num references match greater than max
+
+  case class PropertySpecLocalNumGreaterMax(
+      oksNum: Int,
+      max: IntOrUnbounded,
+      pl: PropertyLocal,
+      snaks: List[Snak]
+  ) extends MatchingError(s"""|Num references match greater than max
                                 |Num passed: $oksNum
                                 |Max: $max
                                 |PropertyLocal: $pl
                                 |snaks: ${snaks}
                               |""".stripMargin)
 
+  case class ShapeNotFound(
+      label: ShapeLabel,
+      wshex: WSchema
+  ) extends MatchingError(s"""|Label ${label} not found in schema
+                              |Available labels: [${wshex.labels.map(_.toString).mkString(",")}]
+                              |Schema: ${wshex}""".stripMargin)
 
-                              
 }
