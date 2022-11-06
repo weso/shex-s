@@ -58,9 +58,9 @@ object eqShEx {
       case (s1: Shape, s2: Shape)                               => s1 === s2
       case (ShapeRef(i1, _, _), ShapeRef(i2, _, _))             => i1 === i2
       case (ShapeExternal(id1, _, _), ShapeExternal(id2, _, _)) => id1 == id2
-      case (ShapeDecl(id1, se1, b1), ShapeDecl(id2, se2, b2))     => 
+      case (ShapeDecl(id1, se1, b1), ShapeDecl(id2, se2, b2)) =>
         id1 == id2 && se1 == se2 && b1 == b2
-      case (_, _)                                               => false
+      case (_, _) => false
     }
   }
 
@@ -142,7 +142,7 @@ object eqShEx {
         n1.datatype === n2.datatype &&
         n1.xsFacets.toSet === n2.xsFacets.toSet &&
         n1.values.getOrElse(List()).toSet ===
-          n2.values.getOrElse(List()).toSet
+        n2.values.getOrElse(List()).toSet
   }
 
   implicit lazy val eqObjectLiteral: Eq[ObjectLiteral] = new Eq[ObjectLiteral] {
