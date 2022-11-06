@@ -45,10 +45,7 @@ object ExtendsConverter {
 
   private def cnvSe(s: ResolvedSchema)(se: ResolvedShapeExpr): Cnv[ResolvedShapeExpr] = for {
     newSe <- transSe(s)(se.se)
-  } yield ResolvedShapeExpr(
-    se = newSe,
-    source = se.source
-  )
+  } yield se.copy(se = newSe)
 
   private def transSe(schema: ResolvedSchema)(se: ShapeExpr): Cnv[ShapeExpr] = se match {
     case nk: NodeConstraint => mkDisj(schema)(nk)

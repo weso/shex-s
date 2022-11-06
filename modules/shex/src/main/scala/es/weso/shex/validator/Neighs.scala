@@ -11,6 +11,8 @@ import es.weso.rdf.nodes.IRI
 
 case class Neighs(m: Map[Path, Set[RDFNode]]) extends AnyVal {
 
+  def length: Int = m.size
+
   def toList: List[Arc] =
     m.toList.map { case (p, ns) => ns.toList.map(n => (p, n)) }.flatten.map { case (p, n) =>
       Arc(p, n)

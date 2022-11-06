@@ -161,6 +161,10 @@ case class Schema(
   def resolve(base: Option[IRI], verbose: VerboseLevel): IO[ResolvedSchema] =
     ResolvedSchema.resolve(this, base, verbose)
 
+  def withId(iri: IRI): Schema = this.copy(id = iri)  
+
+  def withShapes(ses: ShapeExpr*): Schema = this.copy(shapes = ses.toList.some)
+
 }
 
 object Schema {
@@ -169,6 +173,10 @@ object Schema {
 
   def empty: Schema =
     Schema(IRI(""), None, None, None, None, None, None, List(), None)
+
+  def emptyWithId(iri: IRI): Schema =
+    Schema.empty.withId(iri)
+
 
   def fromIRI(
       i: IRI,

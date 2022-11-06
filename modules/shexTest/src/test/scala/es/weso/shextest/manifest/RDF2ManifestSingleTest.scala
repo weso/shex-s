@@ -29,7 +29,7 @@ class RDF2ManifestSingleTest extends CatsEffectSuite {
       validationFolder,
       // None,
       Only(
-        "vitals-RESTRICTS-pass_lie-Vital"
+        "ExtendANDExtend3GAND3G-t24"
       ),
       List(),
       Validator.apply,

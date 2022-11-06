@@ -18,8 +18,8 @@ class ExtendTest extends FunSuite with Extend {
     def flattenExpr(schema: Schema): Either[String, Option[Expr]] = {
 
       implicit val semigroupExpr: Semigroup[Expr] = new Semigroup[Expr] {
-       def combine(e1: Expr, e2: Expr): Expr =
-        Expr(e1.es ++ e2.es)
+        def combine(e1: Expr, e2: Expr): Expr =
+          Expr(e1.es ++ e2.es)
       }
 
       def getEither(lbl: Label): Either[String, Shape] =
@@ -36,7 +36,8 @@ class ExtendTest extends FunSuite with Extend {
     shouldFlattenExpr("No extensions", shape, schema, expected)
   }
 
-  { val shape: Shape = Shape(expr = Expr(List("x")).some, extend = List("s").some)
+  {
+    val shape: Shape = Shape(expr = Expr(List("x")).some, extend = List("s").some)
     val schema: Schema = Map("s" -> shape)
     val expected: Either[String, Option[Expr]] = Right(Some(Expr(List("x"))))
     shouldFlattenExpr("Circular extension", shape, schema, expected)
@@ -83,11 +84,11 @@ class ExtendTest extends FunSuite with Extend {
     )
   }
 
-    {
+  {
     val a: Shape = Shape(expr = Expr(List("p [3]")).some, extend = List("B").some)
     val b: Shape = Shape(expr = Expr(List("p [1]")).some, extend = List().some)
     val schema: Schema = Map("A" -> a, "B" -> b)
-    val expected: Either[String, Option[Expr]] = 
+    val expected: Either[String, Option[Expr]] =
       Expr(List("p [3]", "p [1]")).some.asRight
     shouldFlattenExpr(
       "B { p [3]}, A extend B { p [1] } == [p [1], p [3]]",
@@ -97,13 +98,13 @@ class ExtendTest extends FunSuite with Extend {
     )
   }
 
-    {
+  {
     val a: Shape = Shape(expr = Expr(List("p [1]")).some, extend = none)
     val b: Shape = Shape(expr = Expr(List("p [2]")).some, extend = List("A").some)
     val c: Shape = Shape(expr = Expr(List("p [3]")).some, extend = List("A").some)
     val d: Shape = Shape(expr = Expr(List("p [4]")).some, extend = List("B", "C").some)
     val schema: Schema = Map("A" -> a, "B" -> b, "C" -> c, "D" -> d)
-    val expected: Either[String, Option[Expr]] = 
+    val expected: Either[String, Option[Expr]] =
       Expr(List("p [4]", "p [3]", "p [2]", "p [1]")).some.asRight
     shouldFlattenExpr(
       "Diamond",
@@ -112,8 +113,6 @@ class ExtendTest extends FunSuite with Extend {
       expected
     )
   }
-  
-
 
   def shouldFlattenExpr(
       msg: String,

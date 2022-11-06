@@ -33,7 +33,7 @@ case class ValidatorEitherT1(
     builder: RDFBuilder
 ) extends Validator
     with ShExChecker
-    with ShowValidator {
+    with ShowValidator with AllPaths {
 
   type ShapeChecker = ShapeExpr => CheckTyping
   type NodeShapeChecker = (RDFNode, Shape) => CheckTyping
@@ -148,8 +148,7 @@ case class ValidatorEitherT1(
         )
           .handleErrorWith(e =>
             debug(
-              s"checkNodeLabelSafe(${node.show}@${schema.qualify(label)} failed. Checking if there are descendants with ${withDescendants
-                  .show(schema)}"
+              s"checkNodeLabelSafe(${node.show}@${schema.qualify(label)} failed. Checking if there are descendants with ${withDescendants.show}"
             ) *>
               (withDescendants match {
                 case NoDescendants => err(e)
@@ -178,8 +177,7 @@ case class ValidatorEitherT1(
     getTyping.flatMap(typing =>
       getNodesPrefixMap.flatMap(nodesPrefixMap =>
         infoType(
-          s"nodeLabel(${node.show},${label.show}). ${showVisited(visited)}, ext: ${showExt(ext)}, withDescendants: ${withDescendants
-              .show(schema)}"
+          s"nodeLabel(${node.show},${label.show}). ${showVisited(visited)}, ext: ${showExt(ext)}, withDescendants: ${withDescendants.show}"
         ) *>
           (if (visited.contains(node, label) && !withDescendants.isNoDescendants) {
              debug(
@@ -217,7 +215,7 @@ case class ValidatorEitherT1(
       withDescendants: WithDescendants,
       attempt: Attempt
   ): CheckTyping =
-    info(s"satisfies(${node.show}@${showSE(s)}, ${showVisited(visited)}, withDescendants: ${withDescendants.show(schema)})") *>
+    info(s"satisfies(${node.show}@${showSE(s)}, ${showVisited(visited)}, withDescendants: ${withDescendants.show})") *>
       getNodesPrefixMap.flatMap(nodesPrefixMap =>
           s match {
             case so: ShapeOr => checkOr(node, so.shapeExprs, ext, visited, withDescendants, attempt)
@@ -350,7 +348,7 @@ case class ValidatorEitherT1(
       attempt: Attempt
   ): CheckTyping =
     info(
-      s"ShapeDeclAbstract(${node.show}, ${showSE(sd)}, withDescendants: [${withDescendants.show(schema)}], visited: ${showVisited(visited)})"
+      s"ShapeDeclAbstract(${node.show}, ${showSE(sd)}, withDescendants: [${withDescendants.show}], visited: ${showVisited(visited)})"
     ) *>
     ( withDescendants match {
         case NoDescendants => satisfies(node, sd.shapeExpr, ext, visited, NoDescendants, attempt)
@@ -419,8 +417,7 @@ case class ValidatorEitherT1(
     getTyping.flatMap(typing =>
       getNodesPrefixMap.flatMap(nodesPrefixMap =>
         infoType(
-          s"Ref: ${node.show}@${schema.qualify(ref)}, ext: ${showExt(ext)}, ${showVisited(visited)}, withDescendants: ${withDescendants
-              .show(schema)}"
+          s"Ref: ${node.show}@${schema.qualify(ref)}, ext: ${showExt(ext)}, ${showVisited(visited)}, withDescendants: ${withDescendants.show}"
         ) *>
           checkNodeLabel(node, ref, ext, visited, withDescendants).flatMap(t =>
             checkHasType(node, t, attempt)(ref).flatMap(_ => ok(t))
@@ -452,7 +449,7 @@ case class ValidatorEitherT1(
       t <- satisfies(node, externalShape, ext, visited, withDescendants, newAttempt)
     } yield t
 
-  private def allPaths(s: Shape): Check[Set[Path]] = fromEitherString(s.allPaths(schema))
+  private def allPaths(s: Shape): Check[Set[Path]] = fromEitherString(allPaths(s, schema))
 
   private def checkShape(
       node: RDFNode,

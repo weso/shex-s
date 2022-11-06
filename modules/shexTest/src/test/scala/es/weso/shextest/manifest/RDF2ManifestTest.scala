@@ -91,10 +91,11 @@ class RDF2ManifestTest extends CatsEffectSuite {
         "manifest",
         "validation",
         validationFolder,
+        // Only("vitals-RESTRICTS-pass_lie-ReclinedVital"), 
         All,
         List(),
         Validator.apply,
-        1.seconds,
+        15.seconds,
         assumeLocal,
         VerboseLevel.Nothing
       ),

@@ -18,6 +18,23 @@ object PartitionUtils {
       x.forall(contains(_))
   }
 
+  /**
+   * Create possible partitions of a set of entries over a list of available elements
+   * @param set Set of entries
+   * @param ps List of available elements
+   * @tparam Type of key of elements to partition over
+   * @tparam Type of values
+   * 
+   * {{{
+   *  partsOver(set = Set(E("p", 1), E("p", 2))), 
+   *            ps = List(Set("p"), Set(), Set("p"))
+      LazyList(List(Set(E("p", 1), E("p", 2)), Set(), Set()),
+               List(Set(E("p", 2)), Set(), Set(E("p", 1))),
+               List(Set(E("p", 1)), Set(), Set(E("p", 2))),
+               List(Set(), Set(), Set(E("p", 1), E("p", 2)))
+   * ))
+   * }}}
+   **/
   def partsOver[A, B](
       set: Set[Entry[A, B]],
       ps: List[Available[A]]
