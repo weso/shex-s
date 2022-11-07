@@ -13,7 +13,7 @@ import es.weso.shex.extend.Extend
 trait AllPaths extends Extend {
 
   /** Return all the paths that are mentioned in a shape expression
-    * It includes also the paths in extends
+    * It includes also the paths it extends and the paths from its descendants
     * @param schema Schema to which the shape belongs, it is needed to resolve references to other shapes
     * @return Set of paths or error in case the shape is not well defined (may have bad references)
     */
