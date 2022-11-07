@@ -16,6 +16,9 @@ object PartitionUtils {
 
     def containsAll[B](x: Set[Entry[A, B]]): Boolean =
       x.forall(contains(_))
+
+    def add(vs: Set[A]): Available[A] =
+      Available(values ++ vs)  
   }
 
   /**
