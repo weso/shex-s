@@ -225,8 +225,18 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
   private def parseTermTripleConstraint(
       tc: shex.TripleConstraint
   ): Convert[List[TermConstraint]] = tc.predicate match {
-    case `rdfsLabel` =>
-      List(LabelConstraint(Lang("en"), None)).asRight
+    case `rdfsLabel` => tc.valueExpr match {
+      case None => List().asRight // TODO
+      case Some(v) => v match {
+        case nc: shex.NodeConstraint => nc.values match {
+          case None => List().asRight // TODO
+          case Some(vs) => vs.map{ case v => v match {
+            case shex.Language(l) => LabelConstraint(Lang(l.lang),None).asRight
+            case _ => UnsupportedValueSetValue(v).asLeft
+          }}.sequence
+        } 
+      } 
+    }
     case `skosAltLabel` =>
       List(AliasConstraint(Lang("en"), None)).asRight
     case _ => List().asRight

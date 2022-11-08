@@ -177,6 +177,36 @@ class ES2WShExTest extends CatsEffectSuite {
   )
 
   checkConversion(
+    "English or Spanish",
+    """|PREFIX wd:  <http://www.wikidata.org/entity/>
+       |PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+       |PREFIX p:   <http://www.wikidata.org/prop/>
+       |PREFIX pr:  <http://www.wikidata.org/prop/reference/>
+       |PREFIX prov: <http://www.w3.org/ns/prov#>
+       |PREFIX ps:  <http://www.wikidata.org/prop/statement/>
+       |PREFIX pq:   <http://www.wikidata.org/prop/qualifier/>
+       |PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+       |
+       |start = @<S> 
+       |    
+       |<S> {
+       |  rdfs:label [ @en @es ] + 
+       |}
+       |""".stripMargin,
+    "ShExC",
+    """|PREFIX prov: <http://www.w3.org/ns/prov#>
+       |PREFIX :  <http://www.wikidata.org/entity/>
+       |
+       |start = @<S>
+       |
+       |<S> Label (en -> ., es -> .) {
+       |}
+       |""".stripMargin,
+    "WShExC",
+    VerboseLevel.Nothing
+  )
+
+  checkConversion(
     "Empty",
     """|""".stripMargin,
     "ShExC",
