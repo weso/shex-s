@@ -58,8 +58,11 @@ case class EntityDoc(entityDocument: EntityDocument) extends Serializable {
   def getStatementsForProperty(
     prop: PropertyIdValue
     ): List[WDTKStatement] = entityDocument match {
-   case s: StatementDocument => 
+   case s: StatementDocument => try { 
     s.findStatementGroup(prop).getStatements().asScala.toList
+   } catch {
+    case e: Exception => List()
+   }
    case _ => List() 
   }
     
