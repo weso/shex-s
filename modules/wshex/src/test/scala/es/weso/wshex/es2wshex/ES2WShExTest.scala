@@ -143,6 +143,39 @@ class ES2WShExTest extends CatsEffectSuite {
     VerboseLevel.Nothing
   )
 
+
+  checkConversion(
+    "start OR",
+    """|PREFIX wd:  <http://www.wikidata.org/entity/>
+       |PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+       |PREFIX p:   <http://www.wikidata.org/prop/>
+       |PREFIX pr:  <http://www.wikidata.org/prop/reference/>
+       |PREFIX prov: <http://www.w3.org/ns/prov#>
+       |PREFIX ps:  <http://www.wikidata.org/prop/statement/>
+       |PREFIX pq:  <http://www.wikidata.org/prop/qualifier/>
+       |
+       |start = @<S> OR @<T>
+       |    
+       |<S> { 
+       |}
+       |
+       |<T> {
+       |}
+       |""".stripMargin,
+    "ShExC",
+    """|PREFIX prov: <http://www.w3.org/ns/prov#>
+       |PREFIX :  <http://www.wikidata.org/entity/>
+       |
+       |start = @<S> OR @<T>
+       |
+       |<S> {
+       |}
+       |<T> { 
+       |} """.stripMargin,
+    "WShExC",
+    VerboseLevel.Nothing
+  )
+
   checkConversion(
     "Empty",
     """|""".stripMargin,

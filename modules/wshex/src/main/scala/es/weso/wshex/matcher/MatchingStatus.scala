@@ -34,7 +34,14 @@ case class Matching(
     case nm: NoMatching => nm
   }
 
-  override def or(other: => MatchingStatus): MatchingStatus = this
+  override def or(other: => MatchingStatus): MatchingStatus = other match {
+    case ms: Matching => Matching(
+      shapeExprs = this.shapeExprs ++ ms.shapeExprs,
+      entity = merge(this.entity, ms.entity),
+      dependencies = this.dependencies ++ ms.dependencies
+    )
+    case _ => this
+  }
 
   private def merge(e: EntityDoc, other: EntityDoc): EntityDoc = e.merge(other)
 
