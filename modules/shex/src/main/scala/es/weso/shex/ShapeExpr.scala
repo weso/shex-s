@@ -198,9 +198,13 @@ object ShapeAnd {
 }
 
 object ShapeExpr {
+
   def any: ShapeExpr = Shape.empty
 
   def fail: ShapeExpr = NodeConstraint.valueSet(List(), List())
+
+  def and(ses: ShapeExpr*): ShapeExpr =
+    ShapeAnd(None, ses.toList, None, None)
 
 }
 

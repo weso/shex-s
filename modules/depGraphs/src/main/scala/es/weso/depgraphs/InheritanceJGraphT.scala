@@ -5,10 +5,12 @@ import es.weso.utils.internal.CollectionCompat.CollectionConverters._
 import cats.implicits._
 import alleycats.std.set._
 import cats.effect._
+import scala.util.Try
+
 
 case class Edge[Node, EdgeType](sub: Node, sup: Node, etype: EdgeType) {
 
-  def show(showNode: Node => String, showEdge: EdgeType => String): String =
+ def show(showNode: Node => String, showEdge: EdgeType => String): String =
     s"${showNode(sub)}${showEdge(etype)}${showNode(sup)}"
 
 }
@@ -16,6 +18,12 @@ case class Edge[Node, EdgeType](sub: Node, sup: Node, etype: EdgeType) {
 case class InheritanceJGraphT[Node, EdgeType](
     refGraph: Ref[IO, DirectedAcyclicGraph[Node, Edge[Node, EdgeType]]]
 ) extends Inheritance[Node, EdgeType] {
+
+  case class ErrorAddingNode(node: Node, e: Throwable) 
+   extends RuntimeException(s"Error adding node: $node. Err: ${e.getMessage()}")
+
+  case class ErrorAddingInheritance(node1: Node, node2: Node, etype: EdgeType, e: Throwable) 
+   extends RuntimeException(s"Error adding inheritance. Node1: $node1, Node2: $node2, etype: $etype, err: ${e.getMessage()}") 
 
   override def clear: IO[Unit] = for {
     graph <- getGraph
@@ -31,22 +39,25 @@ case class InheritanceJGraphT[Node, EdgeType](
     graph <- getGraph
   } yield graph.vertexSet.asScala.toSet
 
-  override def addNode(node: Node): IO[Unit] = for {
-    graph <- getGraph
-  } yield {
-    graph.addVertex(node)
-    ()
-  }
+  override def addNode(node: Node): IO[Unit] = 
+    getGraph.flatMap(graph => {
+      Try(graph.addVertex(node)).fold(e => 
+        IO.raiseError(ErrorAddingNode(node, e)),
+        v => IO.pure(()) 
+      )
+    })
 
   override def addInheritance(node1: Node, node2: Node, etype: EdgeType): IO[Unit] =
-    for {
-      graph <- getGraph
-    } yield {
-      graph.addVertex(node1)
-      graph.addVertex(node2)
-      graph.addEdge(node1, node2, Edge(node1, node2, etype))
-      ()
-    }
+    getGraph.flatMap(graph =>
+      Try {
+       graph.addVertex(node1)
+       graph.addVertex(node2)
+       graph.addEdge(node1, node2, Edge(node1, node2, etype))
+      }.fold(
+        e => IO.raiseError(ErrorAddingInheritance(node1,node2,etype,e)),
+        v => IO.pure(())
+      )
+      )
 
   override def descendants(node: Node): IO[Set[Node]] = for {
     graph <- getGraph

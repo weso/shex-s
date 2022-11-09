@@ -90,6 +90,27 @@ class ESMatcherTest extends FunSuite {
     checkMatch("Q42 with P248 reference", schemaStr, q42Str, true, VerboseLevel.Nothing)                   
   }
 
+  {
+    val schemaStr = """|prefix wd:  <http://www.wikidata.org/entity/>
+                       |prefix wdt: <http://www.wikidata.org/prop/direct/>
+                       |prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+                       |prefix p:    <http://www.wikidata.org/prop/>
+                       |prefix pr:   <http://www.wikidata.org/prop/reference/>
+                       |prefix ps:   <http://www.wikidata.org/prop/statement/>
+                       |prefix prov: <http://www.w3.org/ns/prov#>  
+                       |
+                       |start = @<Human> OR @<Gene>
+                       |
+                       |<Human> EXTRA wdt:P31 {
+                       |  wdt:P31 [ wd:Q5 ]
+                       |}
+                       |
+                       |<Gene> EXTRA wdt:P31 {
+                       | wdt:P31 [ wd:Q7187 ] ;
+                       |}
+                       |""".stripMargin
+    checkMatch("Q42 with OR", schemaStr, q42Str, true, VerboseLevel.Nothing)                   
+  }
 
 
   def checkMatch(

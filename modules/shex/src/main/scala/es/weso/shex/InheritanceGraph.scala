@@ -53,10 +53,10 @@ object InheritanceGraph {
   ): IO[Unit] =
     se match {
       case s: Shape => addExtendsRestricts(g, sub, s)
-      case s: ShapeAnd =>
+/*      case s: ShapeAnd =>
         s.shapeExprs.foldM(()){ 
           case (_, se) => addShapeExpr(g, sub, se, verbose) 
-        }
+        } */
       case sd: ShapeDecl => addShapeExpr(g, sub, sd.shapeExpr, verbose)
       case sr: ShapeRef => g.addInheritance(sub, sr.reference, References)
       case _            => ().pure[IO]

@@ -13,7 +13,7 @@ import es.weso.shex.validator.PartitionUtils._
 import cats.effect._
 import es.weso.shex.validator.ShExError._
 
-trait AvailableShapeExprPaths extends ExtendM {
+trait AvailableShapeExprPaths extends ExtendM with AllPaths {
 
   /** Return all the pairs (se,paths) where se is a ShapeExpr and paths are the available paths for that ShapeExpr
     *  It includes also the paths it extends and the paths from its descendants
@@ -49,7 +49,13 @@ trait AvailableShapeExprPaths extends ExtendM {
       rest(se).flatMap(rs =>
         parent match {
           case None      => IO.pure(rs) //
-          case Some(lbl) => IO.pure(rs) // .pure // TODO: Nothing by now
+          case Some(lbl) => // IO.pure(rs)
+            schema.getShape(lbl).fold(
+                e => IO.raiseError(new RuntimeException(s"Error obtaining shape $lbl: $e")),
+                parentShape => allPaths(parentShape, schema).fold(
+                  e => IO.raiseError(new RuntimeException(s"Error obtaining allPaths from shape $parentShape: $e")),
+                  ps => IO.pure(rs.map{ case (se, a) => (se, a.add(ps)) })
+              ))
         }
       )
 
