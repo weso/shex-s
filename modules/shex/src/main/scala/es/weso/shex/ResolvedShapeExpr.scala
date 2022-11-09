@@ -18,6 +18,5 @@ case class ResolvedShapeExpr(
 
 object ResolvedShapeExpr {
   def apply(se: ShapeExpr): ResolvedShapeExpr = ResolvedShapeExpr(se, None, Set(), List())
-  def apply(se: ShapeExpr, iri: IRI): ResolvedShapeExpr =
-    ResolvedShapeExpr(se, Some(iri), Set(), List())
+  def apply(se: ShapeExpr, iri: IRI): ResolvedShapeExpr = ResolvedShapeExpr(se, Some(iri), Set(), List())
 }
