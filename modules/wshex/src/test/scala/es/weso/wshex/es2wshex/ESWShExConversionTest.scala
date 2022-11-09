@@ -62,5 +62,4 @@ class ESWShExConversionTest extends CatsEffectSuite {
   def getResourcePath(fileName: String): Path =
     Paths.get(getClass().getClassLoader().getResource(fileName).toURI().getPath())
 
-
-  }
+}

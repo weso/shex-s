@@ -52,12 +52,11 @@ trait Bag[A] {
   def size: Int =
     elems.foldLeft(0)((r, n) => r + n._2)
 
-/*  override def equals(other: Any): Boolean = other match {
+  /*  override def equals(other: Any): Boolean = other match {
     case otherBag: Bag[A] => this.asSortedMap.equals(otherBag.asSortedMap)
     case _ => false
   } */
 //    other.isInstanceOf[Bag[A]] &&
-      
 
   def asSortedMap: SortedMap[A, Int]
 
