@@ -175,13 +175,28 @@ object MatchingError {
                               |Entity ${entity.show()}
                               |""".stripMargin)
 
+  case class LabelAnyNoLabel(entity: EntityDoc)
+      extends MatchingError(s"""|LabelAny, no label
+                              |Entity ${entity.show()}
+                              |""".stripMargin)
+
   case class LabelConstraintNoLang(lang: Lang, entity: EntityDoc)
       extends MatchingError(s"""|No label with lang: ${lang}
                               |Entity ${entity.show()}
                               |""".stripMargin)
 
+  case class DescrAnyNoDescr(entity: EntityDoc)
+      extends MatchingError(s"""|DescrAny, no description
+                              |Entity ${entity.show()}
+                              |""".stripMargin)
+
   case class DescriptionConstraintNoLang(lang: Lang, entity: EntityDoc)
       extends MatchingError(s"""|No description with lang: ${lang}
+                              |Entity ${entity.show()}
+                              |""".stripMargin)
+
+  case class AliasAnyNoAlias(entity: EntityDoc)
+      extends MatchingError(s"""|No alias when constraint is any alias
                               |Entity ${entity.show()}
                               |""".stripMargin)
 

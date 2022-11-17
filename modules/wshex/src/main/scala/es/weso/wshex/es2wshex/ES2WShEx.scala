@@ -225,11 +225,12 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
   private def parseTermTripleConstraint(
       tc: shex.TripleConstraint
   ): Convert[List[TermConstraint]] = tc.predicate match {
+
     case `rdfsLabel` => tc.valueExpr match {
-      case None => List().asRight // TODO
+      case None => List(LabelAny(None)).asRight 
       case Some(v) => v match {
         case nc: shex.NodeConstraint => nc.values match {
-          case None => List().asRight // TODO
+          case None => List(LabelAny(None)).asRight 
           case Some(vs) => vs.map{ case v => v match {
             case shex.Language(l) => LabelConstraint(Lang(l.lang),None).asRight
             case _ => UnsupportedValueSetValue(v).asLeft
@@ -237,8 +238,32 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
         } 
       } 
     }
-    case `skosAltLabel` =>
-      List(AliasConstraint(Lang("en"), None)).asRight
+    
+    case `schemaDescription` => tc.valueExpr match {
+      case None => List(DescriptionAny(None)).asRight
+      case Some(v) => v match {
+        case nc: shex.NodeConstraint => nc.values match {
+          case None => List(DescriptionAny(None)).asRight 
+          case Some(vs) => vs.map{ case v => v match {
+            case shex.Language(l) => DescriptionConstraint(Lang(l.lang),None).asRight
+            case _ => UnsupportedValueSetValue(v).asLeft
+          }}.sequence
+        } 
+      } 
+    }
+
+    case `skosAltLabel` => tc.valueExpr match {
+      case None => List(AliasAny(None)).asRight 
+      case Some(v) => v match {
+        case nc: shex.NodeConstraint => nc.values match {
+          case None => List(AliasAny(None)).asRight 
+          case Some(vs) => vs.map{ case v => v match {
+            case shex.Language(l) => AliasConstraint(Lang(l.lang),None).asRight
+            case _ => UnsupportedValueSetValue(v).asLeft
+          }}.sequence
+        } 
+      } 
+    }
     case _ => List().asRight
   }
 

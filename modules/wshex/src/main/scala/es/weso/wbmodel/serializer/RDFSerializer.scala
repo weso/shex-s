@@ -175,8 +175,10 @@ case class RDFSerializer(format: String) extends Serializer with RDFSaver {
       rdf.addTriple(RDFTriple(subj, `rdf:type`, wdno + predId.getId())) 
       
     override def visit(someValue: SomeValueSnak): IO[RDFBuilder] =
-      // rdf.addTriple(RDFTriple(subj, ))
-      IO.println(s"Not implemented someValue visitor for $subj - $pred") *> rdf.pure[IO]
+      rdf.createBNode.flatMap(pair => {
+        val (bnode, newRdf) = pair
+        newRdf.addTriple(RDFTriple(subj, pred, bnode))
+      })
 
     override def visit(value: ValueSnak): IO[RDFBuilder] = {
       val v = value.getValue
@@ -192,7 +194,9 @@ case class RDFSerializer(format: String) extends Serializer with RDFSaver {
       case id: PropertyIdValue => rdf.addTriple(RDFTriple(subj, pred, IRI(id.getIri())))
       case fd: FormIdValue     => rdf.addTriple(RDFTriple(subj, pred, IRI(fd.getIri())))
       case lv: LexemeIdValue   => rdf.addTriple(RDFTriple(subj, pred, IRI(lv.getIri())))
-      case _                   => IO.raiseError(RDFSerializerErrorUnknownEntityIdValue(value))
+      case sv: SenseIdValue    => rdf.addTriple(RDFTriple(subj, pred, IRI(sv.getIri())))
+      case _                   => IO.println(s"Unexpected entityIdValue: $value") *>
+                                  rdf.addTriple(RDFTriple(subj, pred, IRI(value.getIri())))
     }
     override def visit(value: MonolingualTextValue): IO[RDFBuilder] =
       rdf.addTriple(RDFTriple(subj, pred, mkLangString(value)))
