@@ -81,11 +81,14 @@ object ExtendsConverter {
           case _        => ok(ShapeOr(id = Some(lbl), shapeExprs = maybeR.map(_.rmId), None, None))
         }
       } yield r
-    case ShapeDecl(lbl, se, false) => cnvDescendants(schema)(se).flatMap(ds => ds match {
-      case Nil =>  err[ShapeExpr](s"No descendants for ${schema.qualify(lbl)}?")
-      case s :: Nil => ok(s.addId(lbl))
-      case _ => ok(ShapeOr(id = Some(lbl), shapeExprs = ds.map(_.rmId), None, None))
-    }) 
+    case ShapeDecl(lbl, se, false) =>
+      cnvDescendants(schema)(se).flatMap(ds =>
+        ds match {
+          case Nil      => err[ShapeExpr](s"No descendants for ${schema.qualify(lbl)}?")
+          case s :: Nil => ok(s.addId(lbl))
+          case _        => ok(ShapeOr(id = Some(lbl), shapeExprs = ds.map(_.rmId), None, None))
+        }
+      )
   }
 
   private def mkDisj(schema: ResolvedSchema)(se: ShapeExpr): Cnv[ShapeExpr] = for {
