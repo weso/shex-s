@@ -48,23 +48,14 @@ trait AvailableShapeExprPaths extends ExtendM with AllPaths {
     def first(se: ShapeExpr): IO[List[(ShapeExpr, Available[Path])]] =
       rest(se).flatMap(rs =>
         parent match {
-          case None => IO.pure(rs) //
+          case None      => IO.pure(rs) //
           case Some(lbl) => // IO.pure(rs)
-            schema
-              .getShape(lbl)
-              .fold(
+            schema.getShape(lbl).fold(
                 e => IO.raiseError(new RuntimeException(s"Error obtaining shape $lbl: $e")),
-                parentShape =>
-                  allPaths(parentShape, schema).fold(
-                    e =>
-                      IO.raiseError(
-                        new RuntimeException(
-                          s"Error obtaining allPaths from shape $parentShape: $e"
-                        )
-                      ),
-                    ps => IO.pure(rs.map { case (se, a) => (se, a.add(ps)) })
-                  )
-              )
+                parentShape => allPaths(parentShape, schema).fold(
+                  e => IO.raiseError(new RuntimeException(s"Error obtaining allPaths from shape $parentShape: $e")),
+                  ps => IO.pure(rs.map{ case (se, a) => (se, a.add(ps)) })
+              ))
         }
       )
 

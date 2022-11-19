@@ -163,53 +163,51 @@ object ValidateManifest extends RunManifest {
         val folderURI = Paths.get(ep.parentFolder).normalize.toUri
         val base = Paths.get(".").toUri
         verbose.debug(s"Entry type: ${ep.entry}") *> {
-          ep.entry match {
+        ep.entry match {
 
-            case v: ValidationTest =>
-              v.action match {
-                case focusAction: FocusAction =>
-                  validateFocusAction(
-                    focusAction,
-                    base,
-                    v,
-                    true,
-                    v.name,
-                    folderURI,
-                    assumeLocal,
-                    verbose
-                  )
-                case mr: MapResultAction =>
-                  validateMapResult(mr, base, v, v.name, folderURI, verbose)
-                case ma: ManifestAction =>
-                  result(v.name, false, NotImplemented("validate ManifestAction"))
-              }
+          case v: ValidationTest =>
+            v.action match {
+              case focusAction: FocusAction =>
+                validateFocusAction(
+                  focusAction,
+                  base,
+                  v,
+                  true,
+                  v.name,
+                  folderURI,
+                  assumeLocal,
+                  verbose
+                )
+              case mr: MapResultAction => validateMapResult(mr, base, v, v.name, folderURI, verbose)
+              case ma: ManifestAction =>
+                result(v.name, false, NotImplemented("validate ManifestAction"))
+            }
 
-            case v: ValidationFailure =>
-              v.action match {
-                case focusAction: FocusAction =>
-                  validateFocusAction(
-                    focusAction,
-                    base,
-                    v,
-                    false,
-                    v.name,
-                    folderURI,
-                    assumeLocal,
-                    verbose
-                  )
-                case mr: MapResultAction =>
-                  validateMapResult(mr, base, v, v.name, folderURI, verbose)
-                case ma: ManifestAction =>
-                  result(v.name, false, NotImplemented("ValidationFailure ManifestAction"))
-              }
+          case v: ValidationFailure =>
+            v.action match {
+              case focusAction: FocusAction =>
+                validateFocusAction(
+                  focusAction,
+                  base,
+                  v,
+                  false,
+                  v.name,
+                  folderURI,
+                  assumeLocal,
+                  verbose
+                )
+              case mr: MapResultAction => validateMapResult(mr, base, v, v.name, folderURI, verbose)
+              case ma: ManifestAction =>
+                result(v.name, false, NotImplemented("ValidationFailure ManifestAction"))
+            }
 
-            case v: NegativeSyntax     => negativeSyntax(v, folderURI)
-            case v: NegativeStructure  => negativeStructure(v, folderURI)
-            case r: RepresentationTest => representationTest(r, folderURI, verbose)
-            case other                 => result(other.name, false, UnsupportedEntryType(ep.entry))
-          }
+          case v: NegativeSyntax     => negativeSyntax(v, folderURI)
+          case v: NegativeStructure  => negativeStructure(v, folderURI)
+          case r: RepresentationTest => representationTest(r, folderURI, verbose)
+          case other                 => result(other.name, false, UnsupportedEntryType(ep.entry))
         }
       }
+     }
     } else {
       None.pure[IO]
     }
@@ -222,11 +220,7 @@ object ValidateManifest extends RunManifest {
   def fromEitherS[A](e: Either[String, A]): EitherT[IO, String, A] = EitherT.fromEither(e)
   def fromIO[A](io: IO[A]): EitherT[IO, String, A] = EitherT.liftF(io)
 
-  def representationTest(
-      repTest: RepresentationTest,
-      folderURI: URI,
-      verbose: VerboseLevel
-  ): IO[Option[Result]] = {
+  def representationTest(repTest: RepresentationTest, folderURI: URI, verbose: VerboseLevel): IO[Option[Result]] = {
     // implicit val decodeSchema : Decoder[Schema] = es.weso.shex.implicits.decoderShEx.decodeSchema
     val resolvedJson =
       mkLocal(repTest.json, schemasBase, folderURI) // IRI(shexFolderURI).resolve(r.json).uri
@@ -236,13 +230,10 @@ object ValidateManifest extends RunManifest {
       jsonStr <- derefUriIO(resolvedJson)
       schemaStr <- derefUriIO(resolvedShEx)
       schema <- Schema.fromString(schemaStr, "SHEXC", None)
-      expectedSchema <- jsonStr2Schema(
-        jsonStr
-      ) // fromES(decode[Schema](jsonStr).leftMap(e => e.toString))
+      expectedSchema <- jsonStr2Schema(jsonStr) // fromES(decode[Schema](jsonStr).leftMap(e => e.toString))
       _ <- verbose.debug(s"Parsed schema: $schema")
       _ <- verbose.debug(s"Expected schema: $expectedSchema")
-      r <-
-        if (CompareSchemas.compareSchemas(schema, expectedSchema)) {
+      r <- if (CompareSchemas.compareSchemas(schema, expectedSchema)) {
           parse(jsonStr) match {
             case Left(err) =>
               result(repTest.name, false, ErrorParsingJsonStr(jsonStr))

@@ -88,6 +88,9 @@ class PathsTest extends CatsEffectSuite with AllPaths {
     shouldMatchPaths(shexStr, c, Set(s))
   }
 
+
+
+
   def shouldMatchPaths(strSchema: String, shapeLabel: IRI, paths: Set[Path])(implicit
       loc: munit.Location
   ): Unit =
@@ -146,7 +149,7 @@ class PathsTest extends CatsEffectSuite with AllPaths {
     val ex = IRI("http://e/")
     val code = Direct(ex + "code")
     val se = ex + "PostureBP"
-    shouldMatchAllPaths(shex, se, Set(code))
+    shouldMatchAllPaths(shex, se, Set(code))         
   }
 
   {
@@ -176,14 +179,16 @@ class PathsTest extends CatsEffectSuite with AllPaths {
          |
          |:Reclined EXTENDS @:Posture { } 
          |
-         |""".stripMargin
+         |""".stripMargin    
     val ex = IRI("http://e/")
     val code = Direct(ex + "code")
     val se = ex + "Reclined"
-    shouldMatchAllPaths(shex, se, Set(code))
+    shouldMatchAllPaths(shex, se, Set(code))         
   }
 
-  // TODO: Check allPaths of PostureBP
+
+
+  // TODO: Check allPaths of PostureBP  
 
   def shouldMatchAllPaths(strSchema: String, shapeLabel: IRI, paths: Set[Path])(implicit
       loc: munit.Location
@@ -199,5 +204,6 @@ class PathsTest extends CatsEffectSuite with AllPaths {
       } yield paths
       assertIO(result.value, paths.asRight[String])
     }
+  
 
 }
