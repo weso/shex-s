@@ -8,9 +8,10 @@ import es.weso.rdf.PrefixMap
 import scala.collection.compat.immutable.LazyList
 import es.weso.shex.Direct
 import es.weso.rdf.nodes.IRI
-// import es.weso.utils.SetUtils
 
 case class Neighs(m: Map[Path, Set[RDFNode]]) extends AnyVal {
+
+  def length: Int = m.size
 
   def toList: List[Arc] =
     m.toList.map { case (p, ns) => ns.toList.map(n => (p, n)) }.flatten.map { case (p, n) =>

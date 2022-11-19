@@ -16,37 +16,37 @@ PREFIX a: <http://all.example/>
     sx:code " START2 ";
     sx:name <http://all.example/act2>
   ]);
-  sx:shapes
-    <http://all.example/IRI>,
-    <http://all.example/S1>,
-    <http://all.example/S2>,
-    <http://all.example/S3>,
-    <http://all.example/S5>,
-    <http://all.example/vs1>,
-    _:a·̀ͯ‿.⁀,
-    _:AZazÀÖØöø˿ͰͽͿ῿‌‍⁰↏Ⰰ⿯、퟿豈﷏ﷰ�𐀀󯿽 .
+  sx:shapes (
+    <http://all.example/S1>
+    <http://all.example/S2>
+    <http://all.example/IRI>
+    <http://all.example/vs1>
+    <http://all.example/S3>
+    <http://all.example/S5>
+    _:a·̀ͯ‿.⁀
+    _:AZazÀÖØöø˿ͰͽͿ῿‌‍⁰↏Ⰰ⿯、퟿豈﷏ﷰ�𐀀󯿽) .
 
-<http://all.example/IRI> a sx:NodeConstraint ; sx:nodeKind sx:iri .
+<http://all.example/IRI> a sx:ShapeDecl ; sx:shapeExpr [ a sx:NodeConstraint ; sx:nodeKind sx:iri ] .
 
-<http://all.example/S1> a sx:Shape ;
+<http://all.example/S1> a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ;
   sx:extra <http://all.example/p1>, <http://all.example/p2>, <http://all.example/p3> ;
-  sx:expression <http://all.example/S1e> .
+  sx:expression <http://all.example/S1e> ] .
 <http://all.example/S1e> a sx:EachOf ;
     sx:expressions (
       [ a sx:TripleConstraint ; sx:predicate <http://all.example/p1> ]
       [ a sx:TripleConstraint ; sx:predicate <http://all.example/p2> ]
       [ a sx:TripleConstraint ; sx:predicate <http://all.example/p3> ] ) .
 
-<http://all.example/S2> a sx:Shape ;
+<http://all.example/S2> a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ;
   sx:extra <http://all.example/p1>, <http://all.example/p2>, <http://all.example/p3> ;
-  sx:expression prefix1:S2e .
+  sx:expression prefix1:S2e ] .
 prefix1:S2e a sx:EachOf ;
     sx:expressions (
       [ a sx:TripleConstraint ; sx:predicate <http://all.example/p1-> ]
       [ a sx:TripleConstraint ; sx:predicate <http://all.example/p2> ]
       [ a sx:TripleConstraint ; sx:predicate <http://all.example/p3> ] ) .
 
-<http://all.example/S3> a sx:Shape ;
+<http://all.example/S3> a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ;
   sx:extra <http://all.example/a>, <http://all.example/prefix>, <http://all.example/base> ;
   sx:expression [ a sx:EachOf ;
     sx:expressions (
@@ -98,7 +98,7 @@ prefix1:S2e a sx:EachOf ;
 	      <http://a.example/p\u0031>
 	      0.0 0e0 0E0 false 0 "ab"^^<http://all.example/bloodType> "o+"^^prefix1:bloodType
 	      ' !"#$%&():;<=>?@[]^_`{|}~'
-	      '	&([]' # Eliding \u0000 because it confuses UTF-8 detectors.
+	      '	&([]' # Eliding \u0000 because it confuses UTF-8 detectors] .
 	      '߿ࠀ࿿က쿿퀀퟿�𐀀𿿽񀀀󿿽􀀀􏿽'
 	      "\"\\"
 	      "𝟘𝟙𝟚𝟛𝟜𝟝𝟞𝟟𝟠𝟡" # outside of BMP
@@ -157,26 +157,26 @@ prefix1:S2e a sx:EachOf ;
           [ a sx:IriStemRange ; sx:stem [ a sx:Wildcard ] ; sx:exclusion
               ([ a sx:IriStem ; sx:stem "http://all.example/a" ]
               <http://all.example/b>) ] ) ] ]
-    ) ] .
+    ) ] ] .
 
-<http://all.example/S5> a sx:NodeConstraint ; sx:nodeKind sx:iri .
+<http://all.example/S5> a sx:ShapeDecl ; sx:shapeExpr [ a sx:NodeConstraint ; sx:nodeKind sx:iri ] .
 
-<http://all.example/vs1> a sx:ShapeAnd ;
+<http://all.example/vs1> a sx:ShapeDecl ; sx:shapeExpr [ a sx:ShapeAnd ;
   sx:shapeExprs (
     [ a sx:NodeConstraint ; sx:values (
       <http://a.example/a1>
       [ a sx:IriStemRange ; sx:stem "http://all.example/" ; sx:exclusion
         ([ a sx:IriStem ; sx:stem "http://all.example/a" ]
         <http://all.example/b>) ] ) ]
-    [ a sx:NodeConstraint ; sx:datatype <http://all.example/IRI> ] ) .
+    [ a sx:NodeConstraint ; sx:datatype <http://all.example/IRI> ] ) ] .
 
-_:a·̀ͯ‿.⁀ a sx:Shape ; sx:closed true ;
-  sx:expression _:a·̀ͯ‿.⁀e .
+_:a·̀ͯ‿.⁀ a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ; sx:closed true ;
+  sx:expression _:a·̀ͯ‿.⁀e ] .
 _:a·̀ͯ‿.⁀e a sx:EachOf ;
     sx:expressions (
       a:S1e
       <http://all.example/S2e> ) .
 
-_:AZazÀÖØöø˿ͰͽͿ῿‌‍⁰↏Ⰰ⿯、퟿豈﷏ﷰ�𐀀󯿽 a sx:Shape ;
-  sx:expression _:a·̀ͯ‿.⁀e .
+_:AZazÀÖØöø˿ͰͽͿ῿‌‍⁰↏Ⰰ⿯、퟿豈﷏ﷰ�𐀀󯿽 a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ;
+  sx:expression _:a·̀ͯ‿.⁀e ] .
 

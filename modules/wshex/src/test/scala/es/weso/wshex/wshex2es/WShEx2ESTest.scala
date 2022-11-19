@@ -110,6 +110,38 @@ class WShEx2ESTest extends CatsEffectSuite {
    )   
 
    checkConversion(
+    "References",
+    """|PREFIX :  <http://www.wikidata.org/entity/>
+       |
+       |<S> {
+       |  :P31 [ :Q5 ] References {| :P248 . ; :P227 . |}
+       |}""".stripMargin,
+    "WShExC",
+    """|PREFIX wd:  <http://www.wikidata.org/entity/>
+       |PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+       |PREFIX p:   <http://www.wikidata.org/prop/>
+       |PREFIX ps:  <http://www.wikidata.org/prop/statement/>
+       |PREFIX pq:  <http://www.wikidata.org/prop/qualifier/>
+       |PREFIX pr: <http://www.wikidata.org/prop/reference/>
+       |PREFIX prov: <http://www.w3.org/ns/prov#>
+       |    
+       |<S> {
+       | wdt:P31 . ;
+       | p:P31 { 
+       |  ps:P31 [ wd:Q5 ] ; 
+       |  prov:wasDerivedFrom {
+       |   pr:P248 . ;
+       |   pr:P227 .
+       |  }
+       | }
+       |}""".stripMargin,
+    "ShExC",
+    VerboseLevel.Nothing,
+    IgnoreTest
+   )   
+
+
+   checkConversion(
     "Empty",
     """|""".stripMargin,
     "WShExC",

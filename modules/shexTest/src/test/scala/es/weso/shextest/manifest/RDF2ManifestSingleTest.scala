@@ -29,8 +29,7 @@ class RDF2ManifestSingleTest extends CatsEffectSuite {
       validationFolder,
       // None,
       Only(
-        // "Extend3G-pass"
-        "1literalTotaldigits_pass-integer-equalLead"
+        "ExtendANDExtend3GAND3G-t24"
       ),
       List(),
       Validator.apply,

@@ -5,10 +5,12 @@ import io.circe.Json
 import es.weso.rdf.nodes._
 import es.weso.rdf.PrefixMap
 import es.weso.rbe.interval.IntLimit
-import es.weso.wbmodel.{Lang => WLang, _}
+import es.weso.wbmodel._
 import es.weso.utils.VerboseLevel._
 import es.weso.wshex.TermConstraint._
 import WNodeConstraint._
+import PropertySpec._ 
+import PropertyConstraint._
 
 class WShExParserTest extends CatsEffectSuite {
 

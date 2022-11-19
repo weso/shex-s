@@ -6,7 +6,7 @@ import com.typesafe.scalalogging.LazyLogging
 import es.weso._
 import es.weso.rbe.interval.{IntLimit, Unbounded}
 import es.weso.rdf.nodes._
-import es.weso.wbmodel.{Lang => _, Property => _, _}
+import es.weso.wbmodel.{Property => _, _}
 import es.weso.rbe.interval.IntOrUnbounded
 import scala.collection.compat._ // Required for partitionMap
 import es.weso.rdf.nodes._
@@ -109,21 +109,17 @@ case class WShEx2ES(convertOptions: WShEx2ESConvertOptions) extends LazyLogging 
     case is: IRIStem => ok (shex.IRIStem(is.stem))
   }
 
-  private def convertShape(s: WShape): Convert[shex.Shape] = for {
+  private def convertShape(s: WShape): Convert[shex.ShapeExpr] = for {
     id <- convertId(s.id)
     te <- convertOpt(s.expression, convertTripleExpr)
     extras <- s.extras.map(convertExtra(_)).sequence
-  } yield shex.Shape(
-     id = id, 
-     virtual = None, 
-     closed = s.closed.some, 
-     extra = if (s.extras.isEmpty) None else Some(extras),
-     expression = te,
-     _extends = None,
-     restricts = None,
-     annotations = None,
-     actions = None
-  )
+  } yield {
+    val extra = if (extras.isEmpty) none else extras.some
+    id match {
+     case None => shex.Shape.empty.withExpr(te).withExtra(extra)
+     case Some(lbl) => shex.ShapeDecl(lbl, shex.Shape.empty.withExpr(te).withExtra(extra))
+    } 
+  }
 
   private def convertTripleExpr(te: TripleExpr): Convert[shex.TripleExpr] = te match {
     case eo: EachOf => for {
@@ -153,7 +149,7 @@ case class WShEx2ES(convertOptions: WShEx2ESConvertOptions) extends LazyLogging 
     e.asLeft[A]
 
   private def convertOpt[A,B](x: Option[A], cnv: A => Convert[B]): Convert[Option[B]] =
-    x.fold(ok(none))(cnv(_).map(_.some))
+    x.fold(ok(none[B]))(cnv(_).map(_.some))
 
   private def convertList[A,B](xs: List[A], cnv: A => Convert[B]): Convert[List[B]] =
     xs.map(cnv(_)).sequence

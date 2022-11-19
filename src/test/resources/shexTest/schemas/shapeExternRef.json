@@ -2,18 +2,22 @@
   "@context": "http://www.w3.org/ns/shex.jsonld",
   "type": "Schema",
   "shapes": [
-    {
-      "id": "http://a.example/S",
+    { "type": "ShapeDecl",
+    "id": "http://a.example/S",
+    "shapeExpr": {
       "type": "Shape",
       "expression": {
         "type": "TripleConstraint",
         "predicate": "http://a.example/p1",
         "valueExpr": "http://a.example/Sext"
       }
-    },
+    } },
     {
       "id": "http://a.example/Sext",
-      "type": "ShapeExternal"
+      "type": "ShapeDecl",
+      "shapeExpr": {
+        "type": "ShapeExternal"
+      }
     }
   ]
 }

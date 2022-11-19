@@ -77,7 +77,7 @@
       "shapeExpr": {
         "type": "ShapeAnd",
         "shapeExprs": [
-          "http://a.example/A",
+          { "type": "Shape", "extends": ["http://a.example/A"] },
           {
             "type": "NodeConstraint",
             "pattern": "s.B.........$"
@@ -135,8 +135,9 @@
         ]
       }
     },
-    {
-      "id": "http://a.example/C",
+    { "type": "ShapeDecl",
+    "id": "http://a.example/C",
+    "shapeExpr": {
       "type": "ShapeAnd",
       "shapeExprs": [
         {
@@ -194,7 +195,7 @@
           }
         }
       ]
-    },
+    } },
     {
       "id": "http://a.example/D",
       "type": "ShapeDecl",
@@ -202,7 +203,7 @@
       "shapeExpr": {
         "type": "ShapeAnd",
         "shapeExprs": [
-          "http://a.example/B",
+          { "type": "Shape", "extends": ["http://a.example/B"] },
           "http://a.example/C",
           {
             "type": "NodeConstraint",
@@ -294,8 +295,9 @@
         ]
       }
     },
-    {
-      "id": "http://a.example/F",
+    { "type": "ShapeDecl",
+    "id": "http://a.example/F",
+    "shapeExpr": {
       "type": "ShapeAnd",
       "shapeExprs": [
         {
@@ -319,7 +321,7 @@
           }
         }
       ]
-    },
+    } },
     {
       "id": "http://a.example/G",
       "type": "ShapeDecl",
@@ -361,7 +363,7 @@
       "shapeExpr": {
         "type": "ShapeAnd",
         "shapeExprs": [
-          "http://a.example/G",
+          { "type": "Shape", "extends": ["http://a.example/G"] },
           {
             "type": "NodeConstraint",
             "pattern": "s.......H...$"
@@ -415,8 +417,9 @@
         ]
       }
     },
-    {
-      "id": "http://a.example/I",
+    { "type": "ShapeDecl",
+    "id": "http://a.example/I",
+    "shapeExpr": {
       "type": "ShapeAnd",
       "shapeExprs": [
         {
@@ -440,9 +443,10 @@
           }
         }
       ]
-    },
-    {
-      "id": "http://a.example/J",
+    } },
+    { "type": "ShapeDecl",
+    "id": "http://a.example/J",
+    "shapeExpr": {
       "type": "ShapeAnd",
       "shapeExprs": [
         { "type": "Shape", "extends": ["http://a.example/H"] },
@@ -470,6 +474,6 @@
           }
         }
       ]
-    }
+    } }
   ]
 }

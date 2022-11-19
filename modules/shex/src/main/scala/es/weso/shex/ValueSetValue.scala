@@ -32,16 +32,25 @@ case class LangString(s: String, lang: Lang) extends ObjectLiteral {
 }
 
 object ObjectValue {
+  
   def trueValue: ObjectValue = DatatypeString("true", `xsd:boolean`)
+
   def falseValue: ObjectValue = DatatypeString("false", `xsd:boolean`)
+
   def intValue(n: Int, repr: String): ObjectValue =
     DatatypeString(repr, `xsd:integer`)
+
   def intValue(n: Int): ObjectValue =
     intValue(n, n.toString)
+
   def doubleValue(d: Double, repr: String): ObjectValue =
     DatatypeString(repr, `xsd:double`)
+
   def decimalValue(d: BigDecimal, repr: String): ObjectValue =
     DatatypeString(repr, `xsd:decimal`)
+
+  def stringValue(str: String): ObjectValue = StringValue(str)
+
   def literalValue(l: Literal): ObjectValue =
     l match {
       case DatatypeLiteral(lex, dt) =>

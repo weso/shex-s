@@ -1,0 +1,13 @@
+PREFIX : <http://e/>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+:Observation {}
+:Vital EXTENDS @:Observation { }
+:Posture { :code ["posture"] }
+:Reclined EXTENDS @:Posture { }
+
+:PostureVital Extends @:Posture extends @:Vital { }
+:ReclinedVital EXTENDS @:PostureVital EXTENDS @:Reclined { }
+
+:BP EXTENDS @:Vital { } AND { :code ["bp"] }
+:ReclinedBP EXTENDS @:BP EXTENDS @:ReclinedVital { }

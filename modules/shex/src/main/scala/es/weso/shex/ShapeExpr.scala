@@ -198,9 +198,13 @@ object ShapeAnd {
 }
 
 object ShapeExpr {
+
   def any: ShapeExpr = Shape.empty
 
   def fail: ShapeExpr = NodeConstraint.valueSet(List(), List())
+
+  def and(ses: ShapeExpr*): ShapeExpr =
+    ShapeAnd(None, ses.toList, None, None)
 
 }
 
@@ -260,55 +264,12 @@ case class Shape(
       getActions == Shape.emptySemActs &&
       expression.isEmpty
 
-  private def extend(s: ShapeExpr): Option[List[ShapeLabel]] = {
-    val es = s match {
-      case s: Shape => s._extends
-      case _        => None
-    }
-    // println(s"Resulf of extend(${s} = [${es.map(_.toString).mkString(",")}]")
-    es
-  }
-
-  private def expr(s: ShapeExpr): Option[TripleExpr] = s match {
-    case s: Shape => s.expression
-    case _        => None
-  }
-
-  /** Return the all paths that are mentioned in a shape
-    * It includes also the paths in extends
-    * @param schema Schema to which the shape belongs, it is needed to resolve references to other shapes
-    * @return Set of paths or error in case the shape is not well defined (may have bad references)
-    */
-  def allPaths(schema: AbstractSchema): Either[String, Set[Path]] = {
-
-    def getPath(s: ShapeExpr): Option[List[Path]] = {
-      def cnv[A, B](e: Either[B, Set[A]]): Option[List[A]] = e.fold(_ => None, _.toList.some)
-      val ps = s match {
-        case s: Shape      => Some(s.expression.map(_.paths(schema).toList).getOrElse(List()))
-        case sd: ShapeDecl => cnv(sd.paths(schema))
-        case sa: ShapeAnd  => cnv(sa.paths(schema))
-        case so: ShapeOr   => cnv(so.paths(schema))
-        case sn: ShapeNot  => cnv(sn.paths(schema))
-        case _             => Some(List())
-      }
-      // println(s"Result of getPaths($s)=[${ps.map(_.show).mkString(",")}]")
-      ps
-    }
-    def combinePaths(p1: List[Path], p2: List[Path]): List[Path] = p1 ++ p2
-
-    extendCheckingVisited(this, schema.getShape(_), extend, combinePaths, getPath)
-      .map(_.getOrElse(List()))
-      .map(_.toSet)
-  }
-
   override def paths(schema: AbstractSchema): Either[String, Set[Path]] =
     expression.map(_.paths(schema)).getOrElse(Set()).asRight[String]
 
-  def extendExpression(schema: Schema): Either[String, Option[TripleExpr]] = {
-    def combine(e1: TripleExpr, e2: TripleExpr): TripleExpr =
-      EachOf(None, List(e1, e2), None, None, None, None)
-    extendCheckingVisited(this, schema.getShape(_), extend, combine, expr)
-  }
+  def withExtends(es: ShapeLabel*): Shape = this.copy(_extends = es.toList.some)
+
+  def withExpr(te: TripleExpr): Shape = this.copy(expression = te.some)
 
   override def addAnnotations(as: List[Annotation]): ShapeExpr =
     this.copy(annotations = maybeAddList(annotations, as))
@@ -327,6 +288,12 @@ case class Shape(
       annotations.map(_.map(_.relativize(base))),
       actions.map(_.map(_.relativize(base)))
     )
+
+  def withExpr(te: Option[TripleExpr]): Shape =
+    this.copy(expression = te)
+
+  def withExtra(extras: Option[List[IRI]]): Shape =
+    this.copy(extra = extras)
 
 }
 
@@ -386,6 +353,8 @@ case class NodeConstraint(
       actions.map(_.map(_.relativize(base)))
     )
 
+  def withValues(vs: ValueSetValue*): NodeConstraint =
+    this.copy(values = vs.toList.some)
 }
 
 object NodeConstraint {
@@ -525,14 +494,15 @@ object ShapeExternal {
   */
 case class ShapeDecl(
     lbl: ShapeLabel,
-    shapeExpr: ShapeExpr
+    shapeExpr: ShapeExpr,
+    _abstract: Boolean = false
 ) extends ShapeExpr {
 
-  override def id = Some(lbl)
+  override def id = lbl.some
   override def addId(lbl: ShapeLabel): ShapeDecl = this.copy(lbl = lbl)
   override def rmId = this
 
-  def isVirtual: Boolean = true
+  def isVirtual: Boolean = _abstract
 
   override def paths(schema: AbstractSchema): Either[String, Set[Path]] =
     shapeExpr.paths(schema)

@@ -4,11 +4,13 @@
   const OCTICON_USE = "<svg viewBox='0 0 16 16' style='height: .8em;' aria-hidden='true'><use xlink:href='#octicon'/></svg>"; // doesn't render when composed in pieces.
 
   if (location.search.substr(1) === "toy") { // some examples from validation/manifest.jsonld
-    renderManifest(aFewTests(), "validation/");
+    const url = new URL(location.search.substr(1) + '/' +'toy', location).href;
+    renderManifest(aFewTests(), "validation/", url);
   } else {
     $.ajaxSetup({ mimeType: "text/plain" }); // for persistent FF bug.
-    $.getJSON(location.search.substr(1) + '/' + MANIFEST_FILE).then(data => {
-      renderManifest(data["@graph"][0].entries, location.search.substr(1) + "/");
+    const url = new URL(location.search.substr(1) + '/' + MANIFEST_FILE, location).href;
+    $.getJSON(url).then(data => {
+      renderManifest(data["@graph"][0].entries, location.search.substr(1) + "/", url);
     }).fail(e => {
       $("table thead").append(
         $("<tr/>").append(
@@ -88,7 +90,7 @@
 
   /* progressively render the tests, adjusting relative URLs by relPrepend.
    */
-  function renderManifest (tests, relPrepend) {
+  function renderManifest (tests, relPrepend, manifestUrl) {
     let toAdd = [];
     let startTime = new Date();
     let testNo = 0;
@@ -213,10 +215,11 @@
       }
 
       let titleText = "#" + (testNo+1) + " " + structure.str;
-      let id = test["@id"].substr(1);
+      let id = test["@id"];
+      test["@id"] = new URL(id, manifestUrl).href;
       let status = drag("td", { title: titleText, class: structure.str }, showTest, "application/json").text(structure.chr);
       let attrs = structure.offset.reduce((acc, o) => { return acc[o]; }, test);
-      let octicon = $("<a>", { href: test["@id"] }).append(OCTICON_USE).on("click", function (evt) {
+      let octicon = $("<a>", { href: id }).append(OCTICON_USE).on("click", function (evt) {
         evt.preventDefault();
         $(".highlight").removeClass("highlight");
         let fragment = $(this).attr("href").substr(1);
@@ -230,7 +233,7 @@
       let name = drag("td", { title: test.comment }, showTest, "application/json").append(
         octicon,
         " ",
-        id
+        id.substr(1)
       );
       toAdd = toAdd.concat(
         $("<tr/>", {id: id}).append(
@@ -365,16 +368,16 @@
         "status": "mf:proposed"
       },
       {
-        "@id": "#3groupdot3Extra_pass-iri1",
+        "@id": "#3Eachdot3Extra_pass-iri1",
         "@type": "sht:ValidationTest",
         "action": {
-          "schema": "../schemas/3groupdot3Extra.shex",
+          "schema": "../schemas/3Eachdot3Extra.shex",
           "shape": "http://a.example/S1",
           "data": "Is_Ipn_IonX3.ttl",
           "focus": "http://a.example/s"
         },
         "extensionResults": [],
-        "name": "3groupdot3Extra_pass-iri1",
+        "name": "3Eachdot3Extra_pass-iri1",
         "trait": [
           "Extra",
           "IriEquivalence",

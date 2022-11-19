@@ -2,8 +2,9 @@
   "@context": "http://www.w3.org/ns/shex.jsonld",
   "type": "Schema",
   "shapes": [
-    {
-      "id": "http://a.example/#A",
+    { "type": "ShapeDecl",
+    "id": "http://a.example/#A",
+    "shapeExpr": {
       "type": "Shape",
       "expression": {
         "type": "EachOf",
@@ -29,9 +30,10 @@
           }
         ]
       }
-    },
-    {
-      "id": "http://a.example/#B",
+    } },
+    { "type": "ShapeDecl",
+    "id": "http://a.example/#B",
+    "shapeExpr": {
       "type": "ShapeAnd",
       "shapeExprs": [
         "http://a.example/#A",
@@ -56,9 +58,10 @@
           }
         }
       ]
-    },
-    {
-      "id": "http://a.example/#C",
+    } },
+    { "type": "ShapeDecl",
+    "id": "http://a.example/#C",
+    "shapeExpr": {
       "type": "Shape",
       "extends": [
         "http://a.example/#B"
@@ -67,6 +70,6 @@
         "type": "TripleConstraint",
         "predicate": "http://a.example/p"
       }
-    }
+    } }
   ]
 }

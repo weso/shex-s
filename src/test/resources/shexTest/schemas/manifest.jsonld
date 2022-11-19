@@ -3637,8 +3637,8 @@
           "@type": "sht:RepresentationTest",
           "name": "2RefS2-Icirc",
           "trait": [
-            "start",
-            "Import"
+            "Import",
+            "Start"
           ],
           "status": "mf:Approved",
           "shex": "2RefS2-Icirc.shex",
@@ -3877,7 +3877,10 @@
           "@id": "#0Extends1",
           "@type": "sht:RepresentationTest",
           "name": "0Extends1",
-          "status": "mf:proposed",
+          "trait": [
+            "Extends"
+          ],
+          "status": "mf:Proposed",
           "shex": "0Extends1.shex",
           "json": "0Extends1.json",
           "ttl": "0Extends1.ttl"
@@ -3886,7 +3889,10 @@
           "@id": "#1dotExtends1",
           "@type": "sht:RepresentationTest",
           "name": "1dotExtends1",
-          "status": "mf:proposed",
+          "trait": [
+            "Extends"
+          ],
+          "status": "mf:Proposed",
           "shex": "1dotExtends1.shex",
           "json": "1dotExtends1.json",
           "ttl": "1dotExtends1.ttl"
@@ -3895,7 +3901,10 @@
           "@id": "#1dot3Extends",
           "@type": "sht:RepresentationTest",
           "name": "1dot3Extends",
-          "status": "mf:proposed",
+          "trait": [
+            "Extends"
+          ],
+          "status": "mf:Proposed",
           "shex": "1dot3Extends.shex",
           "json": "1dot3Extends.json",
           "ttl": "1dot3Extends.ttl"
@@ -3904,7 +3913,10 @@
           "@id": "#1dot3ExtendsLN",
           "@type": "sht:RepresentationTest",
           "name": "1dot3ExtendsLN",
-          "status": "mf:proposed",
+          "trait": [
+            "Extends"
+          ],
+          "status": "mf:Proposed",
           "shex": "1dot3ExtendsLN.shex",
           "json": "1dot3Extends.json",
           "ttl": "1dot3Extends.ttl"
@@ -3914,6 +3926,7 @@
           "@type": "sht:RepresentationTest",
           "name": "Extends-sAB",
           "trait": [
+            "Extends",
             "Import"
           ],
           "status": "mf:Proposed",
@@ -3925,6 +3938,9 @@
           "@id": "#ExtendsRepeatedP",
           "@type": "sht:RepresentationTest",
           "name": "ExtendsRepeatedP",
+          "trait": [
+            "Extends"
+          ],
           "status": "mf:Proposed",
           "shex": "ExtendsRepeatedP.shex",
           "json": "ExtendsRepeatedP.json",
@@ -3934,7 +3950,10 @@
           "@id": "#1dotAbstractShapeCode1",
           "@type": "sht:RepresentationTest",
           "name": "1dotAbstractShapeCode1",
-          "status": "mf:proposed",
+          "trait": [
+            "Extends"
+          ],
+          "status": "mf:Proposed",
           "shex": "1dotAbstractShapeCode1.shex",
           "json": "1dotAbstractShapeCode1.json",
           "ttl": "1dotAbstractShapeCode1.ttl"
@@ -3943,7 +3962,10 @@
           "@id": "#1dotAbstract",
           "@type": "sht:RepresentationTest",
           "name": "1dotAbstract",
-          "status": "mf:proposed",
+          "trait": [
+            "Extends"
+          ],
+          "status": "mf:Proposed",
           "shex": "1dotAbstract.shex",
           "json": "1dotAbstract.json",
           "ttl": "1dotAbstract.ttl"
@@ -3952,6 +3974,9 @@
           "@id": "#ANDAbstract",
           "@type": "sht:RepresentationTest",
           "name": "ANDAbstract",
+          "trait": [
+            "Extends"
+          ],
           "status": "mf:Proposed",
           "shex": "ANDAbstract.shex",
           "json": "ANDAbstract.json",
@@ -3961,6 +3986,9 @@
           "@id": "#AND3G",
           "@type": "sht:RepresentationTest",
           "name": "AND3G",
+          "trait": [
+            "Extends"
+          ],
           "status": "mf:Proposed",
           "shex": "AND3G.shex",
           "json": "AND3G.json",
@@ -3970,6 +3998,9 @@
           "@id": "#ExtendAND3G",
           "@type": "sht:RepresentationTest",
           "name": "ExtendAND3G",
+          "trait": [
+            "Extends"
+          ],
           "status": "mf:Proposed",
           "shex": "ExtendAND3G.shex",
           "json": "ExtendAND3G.json",
@@ -3979,6 +4010,9 @@
           "@id": "#Extend3G",
           "@type": "sht:RepresentationTest",
           "name": "Extend3G",
+          "trait": [
+            "Extends"
+          ],
           "status": "mf:Proposed",
           "shex": "Extend3G.shex",
           "json": "Extend3G.json",
@@ -3988,6 +4022,9 @@
           "@id": "#ExtendANDExtend3GAND3G",
           "@type": "sht:RepresentationTest",
           "name": "ExtendANDExtend3GAND3G",
+          "trait": [
+            "Extends"
+          ],
           "status": "mf:Proposed",
           "shex": "ExtendANDExtend3GAND3G.shex",
           "json": "ExtendANDExtend3GAND3G.json",
@@ -3997,10 +4034,22 @@
           "@id": "#vitals-RESTRICTS",
           "@type": "sht:RepresentationTest",
           "name": "vitals-RESTRICTS",
+          "trait": [
+            "Extends"
+          ],
           "status": "mf:Proposed",
           "shex": "vitals-RESTRICTS.shex",
           "json": "vitals-RESTRICTS.json",
           "ttl": "vitals-RESTRICTS.ttl"
+        },
+        {
+          "@id": "#ShExR",
+          "@type": "sht:RepresentationTest",
+          "name": "ShExR",
+          "status": "mf:Proposed",
+          "shex": "../doc/ShExR.shex",
+          "json": "../doc/ShExR.json",
+          "ttl": "../doc/ShExR.ttl"
         }
       ]
     }

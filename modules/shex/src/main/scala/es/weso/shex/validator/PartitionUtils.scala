@@ -4,8 +4,8 @@ import es.weso.utils.SetUtils._
 
 object PartitionUtils {
 
-  trait Entry[A, B] {
-    val key: A
+  trait Entry[A, B] { 
+    val key: A  
     val value: B
   }
 
@@ -16,8 +16,28 @@ object PartitionUtils {
 
     def containsAll[B](x: Set[Entry[A, B]]): Boolean =
       x.forall(contains(_))
+
+    def add(vs: Set[A]): Available[A] =
+      Available(values ++ vs)  
   }
 
+  /**
+   * Create possible partitions of a set of entries over a list of available elements
+   * @param set Set of entries
+   * @param ps List of available elements
+   * @tparam Type of key of elements to partition over
+   * @tparam Type of values
+   * 
+   * {{{
+   *  partsOver(set = Set(E("p", 1), E("p", 2))), 
+   *            ps = List(Set("p"), Set(), Set("p"))
+      LazyList(List(Set(E("p", 1), E("p", 2)), Set(), Set()),
+               List(Set(E("p", 2)), Set(), Set(E("p", 1))),
+               List(Set(E("p", 1)), Set(), Set(E("p", 2))),
+               List(Set(), Set(), Set(E("p", 1), E("p", 2)))
+   * ))
+   * }}}
+   **/
   def partsOver[A, B](
       set: Set[Entry[A, B]],
       ps: List[Available[A]]

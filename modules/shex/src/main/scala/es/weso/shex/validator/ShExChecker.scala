@@ -384,6 +384,7 @@ trait ShExChecker {
     } yield r
   }
 
+  def infoGreen(msg: String): Check[Unit] = getVerbose.flatMap(v => fromIO(v.infoGreen(msg)))
   def info(msg: String): Check[Unit] = getVerbose.flatMap(v => fromIO(v.info(msg)))
   def debug(msg: String): Check[Unit] = getVerbose.flatMap(v => fromIO(v.debug(msg)))
   def step(msg: String): Check[Unit] = getVerbose.flatMap(v => fromIO(v.step(msg)))
@@ -646,7 +647,7 @@ trait ShExChecker {
 
   def infoTyping(t: ShapeTyping, msg: String, shapesPrefixMap: PrefixMap): Check[Unit] = for {
     nodesPrefixMap <- getNodesPrefixMap
-    _ <- debug(s"$msg${t.showShort(nodesPrefixMap, shapesPrefixMap)}")
+    _ <- info(s"$msg${t.showShort(nodesPrefixMap, shapesPrefixMap)}")
   } yield ()
 
   def getNodesPrefixMap: Check[PrefixMap] = for {

@@ -1,8 +1,9 @@
 {
   "type": "Schema",
   "shapes": [
-    {
-      "id": "http://example.org/S",
+    { "type": "ShapeDecl",
+    "id": "http://example.org/S",
+    "shapeExpr": {
       "type": "Shape",
       "expression": {
         "type": "TripleConstraint",
@@ -16,7 +17,7 @@
           }
         }
       }
-    }
+    } }
   ],
   "@context": "http://www.w3.org/ns/shex.jsonld"
 }

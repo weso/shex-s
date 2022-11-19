@@ -2,10 +2,10 @@ PREFIX sx: <http://www.w3.org/ns/shex#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 [] a sx:Schema ;
-    sx:shapes <http://a.example/#Observation>, <http://a.example/#Vital>, <http://a.example/#PostureVital>, <http://a.example/#ReclinedVital>, <http://a.example/#BP>, <http://a.example/#PostureBP>, <http://a.example/#ReclinedBP>, <http://a.example/#Pulse>, <http://a.example/#PosturePulse>, <http://a.example/#ReclinedPulse>, <http://a.example/#Posture>, <http://a.example/#Reclined> .
+    sx:shapes (<http://a.example/#Observation> <http://a.example/#Vital> <http://a.example/#PostureVital> <http://a.example/#ReclinedVital> <http://a.example/#BP> <http://a.example/#PostureBP> <http://a.example/#ReclinedBP> <http://a.example/#Pulse> <http://a.example/#PosturePulse> <http://a.example/#ReclinedPulse> <http://a.example/#Posture> <http://a.example/#Reclined>) .
 
-<http://a.example/#Observation> a sx:Shape ;
-sx:expression [ a sx:EachOf;
+<http://a.example/#Observation> a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ;        sx:closed true ;
+    sx:expression [ a sx:EachOf;
     sx:expressions ( [ a sx:TripleConstraint ;
             sx:predicate <http://hl7.org/ns/fhir#code> ;
             sx:min 0;
@@ -14,6 +14,7 @@ sx:expression [ a sx:EachOf;
         [ a sx:TripleConstraint ;
             sx:predicate <http://hl7.org/ns/fhir#component>  ;
             sx:valueExpr [ a sx:Shape ;
+                sx:closed true ;
                 sx:expression [ a sx:EachOf;
                     sx:expressions ( [ a sx:TripleConstraint ;
                             sx:predicate <http://hl7.org/ns/fhir#code>
@@ -28,45 +29,43 @@ sx:expression [ a sx:EachOf;
             sx:max -1
         ]
     )
-] .
+] ] .
 
 <http://a.example/#Vital> a sx:ShapeDecl ;
     sx:abstract true ;
-    sx:shapeExpr [ a sx:ShapeAnd ;
-        sx:shapeExprs (
-            <http://a.example/#Observation>
-            [ a sx:Shape ]
-        )
+    sx:shapeExpr [ a sx:Shape ;
+        sx:extends ( <http://a.example/#Observation> ) ;
+        sx:closed true
     ] .
 
 <http://a.example/#PostureVital> a sx:ShapeDecl ;
     sx:abstract true ;
-    sx:shapeExpr [ a sx:ShapeAnd ;
-        sx:shapeExprs (
+    sx:shapeExpr [ a sx:Shape ;
+        sx:extends (
             <http://a.example/#Vital>
-            [ a sx:Shape ;
-                sx:extends (<http://a.example/#Posture>)
-            ]
-        )
+            <http://a.example/#Posture>
+        ) ;
+        sx:closed true
     ] .
 
 <http://a.example/#ReclinedVital> a sx:ShapeDecl ;
     sx:abstract true ;
-    sx:shapeExpr [ a sx:ShapeAnd ;
-        sx:shapeExprs (
+    sx:shapeExpr [ a sx:Shape ;
+        sx:extends (
             <http://a.example/#PostureVital>
-            [ a sx:Shape ;
-                sx:extends (<http://a.example/#Reclined>)
-            ]
-        )
+            <http://a.example/#Reclined>
+        ) ;
+        sx:closed true
     ] .
 
-<http://a.example/#BP> a sx:ShapeAnd ;
+<http://a.example/#BP> a sx:ShapeDecl ; sx:shapeExpr [ a sx:ShapeAnd ;
     sx:shapeExprs (
         [ a sx:Shape ;
-            sx:extends (<http://a.example/#Vital>)
+            sx:extends (<http://a.example/#Vital>) ;
+            sx:closed true
         ]
         [ a sx:Shape ;
+            sx:closed true ;
             sx:expression [ a sx:EachOf;
                 sx:expressions ( [ a sx:TripleConstraint ;
                         sx:predicate <http://hl7.org/ns/fhir#component>  ;
@@ -93,18 +92,21 @@ sx:expression [ a sx:EachOf;
                 )
             ]
         ]
-    ) .
+    ) ] .
 
-<http://a.example/#PostureBP> a sx:Shape ;
-    sx:extends (<http://a.example/#BP> <http://a.example/#PostureVital>) .
+<http://a.example/#PostureBP> a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ;
+    sx:extends (<http://a.example/#BP> <http://a.example/#PostureVital>) ;
+    sx:closed true ] .
 
-<http://a.example/#ReclinedBP> a sx:Shape ;
-    sx:extends (<http://a.example/#BP> <http://a.example/#ReclinedVital>) .
+<http://a.example/#ReclinedBP> a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ;
+    sx:extends (<http://a.example/#BP> <http://a.example/#ReclinedVital>) ;
+    sx:closed true ] .
 
-<http://a.example/#Pulse> a sx:ShapeAnd ;
+<http://a.example/#Pulse> a sx:ShapeDecl ; sx:shapeExpr [ a sx:ShapeAnd ;
     sx:shapeExprs (
         [ a sx:Shape ;
-            sx:extends (<http://a.example/#Vital>)
+            sx:extends (<http://a.example/#Vital>) ;
+            sx:closed true
         ]
         [ a sx:Shape ;
             sx:expression [ a sx:TripleConstraint ;
@@ -114,16 +116,17 @@ sx:expression [ a sx:EachOf;
                 ]
             ]
         ]
-    ) .
+    ) ] .
 
-<http://a.example/#PosturePulse> a sx:Shape ;
-    sx:extends (<http://a.example/#Pulse> <http://a.example/#PostureVital>) .
+<http://a.example/#PosturePulse> a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ;
+    sx:extends (<http://a.example/#Pulse> <http://a.example/#PostureVital>) ;
+    sx:closed true ] .
 
-<http://a.example/#ReclinedPulse> a sx:Shape ;
-    sx:extends (<http://a.example/#Pulse> <http://a.example/#ReclinedVital>) .
+<http://a.example/#ReclinedPulse> a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ;
+    sx:extends (<http://a.example/#Pulse> <http://a.example/#ReclinedVital>) ;
+    sx:closed true ] .
 
-<http://a.example/#Posture>a sx:Shape ;
-sx:expression [ a sx:TripleConstraint ;
+<http://a.example/#Posture> a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ; sx:expression [ a sx:TripleConstraint ;
     sx:predicate <http://hl7.org/ns/fhir#component>  ;
     sx:valueExpr [ a sx:Shape ;
         sx:expression [ a sx:TripleConstraint ;
@@ -133,15 +136,18 @@ sx:expression [ a sx:TripleConstraint ;
             ]
         ]
     ]
-] .
+] ] .
 
-<http://a.example/#Reclined> a sx:ShapeAnd ;
+<http://a.example/#Reclined> a sx:ShapeDecl ; sx:shapeExpr [ a sx:ShapeAnd ;
     sx:shapeExprs (
-        <http://a.example/#Posture>
+        [ a sx:Shape ;
+          sx:extends (<http://a.example/#Posture>) ;
+          sx:closed true ]
         [ a sx:Shape ;
             sx:expression [ a sx:TripleConstraint ;
-                sx:predicate <http://hl7.org/ns/fhir#component>  ;
+                sx:predicate <http://hl7.org/ns/fhir#component> ;
                 sx:valueExpr [ a sx:Shape ;
+                    sx:closed true ;
                     sx:expression [ a sx:EachOf;
                         sx:expressions ( [ a sx:TripleConstraint ;
                                 sx:predicate <http://hl7.org/ns/fhir#code>  ;
@@ -160,5 +166,5 @@ sx:expression [ a sx:TripleConstraint ;
                 ]
             ]
         ]
-    ) .
+    ) ] .
 

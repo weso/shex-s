@@ -160,12 +160,6 @@ groupTripleExpr: singleElementGroup | multiElementGroup;
 
 any: '.';
 
-/*
- innerTripleExpr
- : multiElementGroup
- | multiElementOneOf
- ;
- */
 
 singleElementGroup: unaryTripleExpr ';'?;
 
@@ -182,7 +176,7 @@ bracketedTripleExpr: '(' tripleExpression ')' cardinality?;
 
 tripleConstraint:
 		//W senseFlags? 
-		predicate inlineShapeExpression cardinality? qualifierSpec?;
+		predicate inlineShapeExpression cardinality? propertySpec? referencesSpec?;
 	//W annotation* semanticAction* /* variableDecl? */
 
 cardinality:
@@ -199,47 +193,26 @@ min_range: INTEGER;
 
 max_range: INTEGER | '*';
 
-qualifierSpec: '{|' predicate shapeAtom cardinality? '|}';
-	/*
-	 variableDecl
- : KW_AS varName
- ;
-	 */
+propertySpec: '{|' oneOfPropertyExpr '|}';
 
-	/*
-	 varName
- : VAR
- ;
-	 */
+oneOfPropertyExpr : eachOfPropertyExpr ( '|' oneOfPropertyExpr )* ;
 
-	//W expr: expr binOp expr | basicExpr;
+eachOfPropertyExpr: singlePropertyExpr ( ';' eachOfPropertyExpr )* ;
 
-	/* binOp:
- '=' # equals
- | '!=' # notEquals
- | '>' # gt
- | '<' # lt
- | '>=' # ge
- | '<=' # le
-	 |
- '*'
- # mult
- | '/' # div
- | '+' # add
- | '-' # minus
- ;
-	 */
+singlePropertyExpr: predicate shapeAtom cardinality? ;
 
-	basicExpr:
-		/* varName
- |
-		 */
+referencesSpec: KW_REFERENCES oneOfReferencesExpr ;
+
+oneOfReferencesExpr: singleReferencesExpr ( '|' oneOfReferencesExpr )* ;
+
+singleReferencesExpr: propertySpec cardinality? ;
+
+basicExpr:
 		literal
 		| iri
 		| blankNode;
 
 	senseFlags: '!' '^'? | '^' '!'?;
-	// inverse not
 
 valueSet: '[' valueSetValue* ']';
 
@@ -401,6 +374,8 @@ KW_GEOSHAPE: G E O S H A P E ;
 
 KW_MEDIA: M E D I A ;
 
+KW_REFERENCES: R E F E R E N C E S ;
+
 // -------------------------- TERMINALS --------------------------
 
 // Skip white spaces in the shEx and comments.
@@ -416,29 +391,10 @@ fragment WHITE_SPACE: [ \t\r\n]+;
 
 CODE: '{' (~[%\\] | '\\' [%\\] | UCHAR)* '%' '}';
 
-		/*
-		 VAR
- : /* VAR1
- | VAR2
- ;
-		 */
-
-		/*
-		 VAR1
- : '$' VARNAME
- ;
-		 */
-
-		/*
-		 VAR2
- : '?' VARNAME
- ;
-		 */
 
 RDF_TYPE: 'a';
 
 IRIREF: '<' (~[\u0000-\u0020=<>"{}|^`\\] | UCHAR)* '>';
-		/* #x00=NULL #01-#x1F=control codes #x20=space */
 
 PNAME_NS: PN_PREFIX? ':';
 

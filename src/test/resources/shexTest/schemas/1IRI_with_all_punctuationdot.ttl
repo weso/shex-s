@@ -3,9 +3,9 @@ PREFIX sx: <http://www.w3.org/ns/shex#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 [] a sx:Schema ;
-    sx:shapes <http://a.example/S1> .
+    sx:shapes (<http://a.example/S1>) .
 
-<http://a.example/S1> a sx:Shape ;
+<http://a.example/S1> a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ;
     sx:expression [ a sx:TripleConstraint ;
-            sx:predicate <scheme:!$%25&amp;'()*+,-./0123456789:/@ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz~?#> ] .
+            sx:predicate <scheme:!$%25&amp;'()*+,-./0123456789:/@ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz~?#> ] ] .
 

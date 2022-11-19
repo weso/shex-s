@@ -9,6 +9,7 @@ import es.weso.depgraphs.InheritanceJGraphT
 import es.weso.rdf.locations.Location
 import es.weso.utils.VerboseLevel
 import java.nio.file.{Path => FilePath}
+import es.weso.utils.internal.CollectionCompat._
 
 /** Represents a schema with all the imports resolved
   *
@@ -45,24 +46,20 @@ case class ResolvedSchema(
   override def getShape(sl: ShapeLabel): Either[String, ShapeExpr] =
     resolvedMapShapeExprs.get(sl).toRight(s"Not found $sl").map(_.se)
 
-  def isNonAbstract(sl: ShapeLabel): Boolean =
-    getShape(sl).fold(
-      _ => false,
-      se =>
-        se match {
-          case _: ShapeDecl => false
-          case _            => true
-        }
-    )
+  def isNonAbstract(sl: ShapeLabel): Boolean = getShape(sl).fold(
+    _ => false,
+    se =>
+      se match {
+        case sd: ShapeDecl => !sd._abstract
+        case _             => true
+      }
+  )
 
   override def getTripleExpr(sl: ShapeLabel): Either[String, TripleExpr] =
     resolvedMapTripleExprs.get(sl).toRight(s"Not found $sl").map(_.te)
 
-  // override def addShape(se: ShapeExpr): es.weso.shex.Schema = ???
-  // override def labels: List[ShapeLabel] = ???
   lazy val optTripleExprMap: Option[Map[ShapeLabel, TripleExpr]] =
-    Some(resolvedMapTripleExprs.mapValues(_.te).toMap)
-
+    mapValues[ShapeLabel, ResolvedTripleExpr, TripleExpr](resolvedMapTripleExprs)(_.te).some
 }
 
 object ResolvedSchema {
@@ -73,10 +70,9 @@ object ResolvedSchema {
   ) {
     def merge(schema: Schema, iri: IRI): MapsImported =
       this.copy(
-        shapeExprMaps =
-          schema.shapesMap.mapValues(ResolvedShapeExpr(_, iri)).toMap ++ shapeExprMaps,
+        shapeExprMaps = mapValues(schema.shapesMap)(ResolvedShapeExpr(_, iri)) ++ shapeExprMaps,
         tripleExprMaps =
-          schema.tripleExprMap.mapValues(ResolvedTripleExpr(_, iri)).toMap ++ tripleExprMaps
+          mapValues(schema.tripleExprMap)(ResolvedTripleExpr(_, iri)) ++ tripleExprMaps
       )
   }
 
@@ -86,8 +82,8 @@ object ResolvedSchema {
     */
   def resolve(
       schema: Schema,
-      base: Option[IRI],
-      verboseLevel: VerboseLevel,
+      base: Option[IRI] = None,
+      verboseLevel: VerboseLevel = VerboseLevel.Nothing,
       assumeLocal: Option[(IRI, FilePath)] = None
   ): IO[ResolvedSchema] =
     for {
@@ -95,8 +91,8 @@ object ResolvedSchema {
         schema.imports,
         List(schema.id),
         MapsImported(
-          schema.shapesMap.mapValues(ResolvedShapeExpr(_)).toMap,
-          schema.tripleExprMap.mapValues(ResolvedTripleExpr(_)).toMap
+          mapValues(schema.shapesMap)(ResolvedShapeExpr(_)),
+          mapValues(schema.tripleExprMap)(ResolvedTripleExpr(_))
         ),
         base,
         verboseLevel,
@@ -106,20 +102,47 @@ object ResolvedSchema {
         mapsImported.shapeExprMaps,
         verboseLevel
       )
+      shapeExprMapsWithDescendants <- addDescendantsInfo(
+        inheritanceGraph,
+        mapsImported.shapeExprMaps
+      )
     } yield ResolvedSchema(
       source = schema,
-      resolvedMapShapeExprs = mapsImported.shapeExprMaps.toMap,
-      resolvedMapTripleExprs = mapsImported.tripleExprMaps.toMap,
+      resolvedMapShapeExprs = shapeExprMapsWithDescendants,
+      resolvedMapTripleExprs = mapsImported.tripleExprMaps,
       inheritanceGraph,
       labelLocationMap = schema.labelLocationMap
     )
+
+  private def addDescendantsInfo(
+      inheritanceGraph: Inheritance[ShapeLabel, ShapesRelation],
+      seMap: Map[ShapeLabel, ResolvedShapeExpr]
+  ): IO[Map[ShapeLabel, ResolvedShapeExpr]] =
+    cnvMapIO(seMap, addDescendantInfoSE(inheritanceGraph, _))
+
+  private def cnvMapIO[K, A, B](m: Map[K, A], f: A => IO[B]): IO[Map[K, B]] =
+    mapValues(m)(f).toList.map { case (k, ioa) => ioa.map(v => (k, v)) }.sequence.map(_.toMap)
+
+  private def addDescendantInfoSE(
+      inheritance: Inheritance[ShapeLabel, ShapesRelation],
+      rse: ResolvedShapeExpr
+  ): IO[ResolvedShapeExpr] =
+    getDescendants(inheritance, rse.se)
+      .map(rse.withDescendants(_))
+
+  private def getDescendants(
+      inheritance: Inheritance[ShapeLabel, ShapesRelation],
+      se: ShapeExpr
+  ): IO[Set[ShapeLabel]] = se.id match {
+    case None      => IO.pure(Set[ShapeLabel]())
+    case Some(lbl) => inheritance.descendantsByEdgtypes(lbl, Set(Extends, References))
+  }
 
   private def getEffectiveIRI(iri: IRI, assumeLocal: Option[(IRI, FilePath)]): IRI =
     assumeLocal match {
       case Some((prefix, path)) if iri.str.startsWith(prefix.str) =>
         val local = iri.str.stripPrefix(prefix.str)
         val newIri = IRI(path.resolve(local).toUri)
-        // println(s"getEffectiveIRI($iri, $assumeLocal), local=$local, newIri=$newIri")
         newIri
       case _ => iri
     }

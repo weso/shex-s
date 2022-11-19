@@ -24,7 +24,7 @@ trait ShouldValidateShapeMap extends CatsEffectSuite {
       shexStr: String,
       shapeMapStr: String,
       expected: String,
-      verbose: VerboseLevel = VerboseLevel.Info
+      verbose: VerboseLevel = VerboseLevel.Nothing
   )(implicit loc: munit.Location): Unit =
     test(
       s"Should validate shapeMap: ${shapeMapStr} and return: $expected\nUsing RDF: \n ${rdfStr}\nand schema:\n${shexStr}"

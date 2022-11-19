@@ -1,5 +1,5 @@
 lazy val scala212 = "2.12.16"
-lazy val scala213 = "2.13.8"
+lazy val scala213 = "2.13.10"
 lazy val scala3 = "3.2.0"
 lazy val supportedScalaVersions = List(
   scala3,
@@ -15,13 +15,13 @@ lazy val documentVersion = "0.0.34"
 
 // Dependency versions
 // lazy val antlrVersion            = "4.9.3"
-lazy val catsVersion = "2.8.0"
-lazy val catsEffectVersion = "3.3.14"
+lazy val catsVersion = "2.9.0"
+lazy val catsEffectVersion = "3.4.0"
 lazy val circeVersion = "0.14.2"
 lazy val commonsTextVersion = "1.8"
 lazy val declineVersion = "2.3.0"
 lazy val fansiVersion = "0.3.0"
-lazy val fs2Version = "3.2.12"
+lazy val fs2Version = "3.3.0"
 lazy val jenaVersion = "4.3.2"
 lazy val junitVersion = "4.13.2"
 lazy val junitInterfaceVersion = "0.13.3"
@@ -252,6 +252,7 @@ lazy val wshex = project
   .settings(
     crossScalaVersions := supportedScalaVersions,
     libraryDependencies ++= Seq(
+      utils, 
       catsCore,
       catsKernel,
       circeCore,
@@ -266,8 +267,9 @@ lazy val wshex = project
       wdtkStorage,
       wdtkUtil,
       scalaCollCompat,
+      srdfJena,
       munit % Test,
-      munitEffect % Test
+      munitEffect % Test,
     ),
     testFrameworks += new TestFramework("munit.Framework")
   )

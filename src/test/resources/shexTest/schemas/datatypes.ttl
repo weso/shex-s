@@ -2,119 +2,119 @@ PREFIX sx: <http://www.w3.org/ns/shex#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 [] a sx:Schema ;
-  sx:shapes
-    <http://a.example/S-integer> ,
-    <http://a.example/S-decimal> ,
-    <http://a.example/S-float> ,
-    <http://a.example/S-double> ,
-    <http://a.example/S-string> ,
-    <http://a.example/S-boolean> ,
-    <http://a.example/S-dateTime> ,
-    <http://a.example/S-nonPositiveInteger> ,
-    <http://a.example/S-negativeInteger> ,
-    <http://a.example/S-long> ,
-    <http://a.example/S-int> ,
-    <http://a.example/S-short> ,
-    <http://a.example/S-byte> ,
-    <http://a.example/S-nonNegativeInteger> ,
-    <http://a.example/S-unsignedLong> ,
-    <http://a.example/S-unsignedInt> ,
-    <http://a.example/S-unsignedShort> ,
-    <http://a.example/S-unsignedByte> ,
-    <http://a.example/S-positiveInteger> .
+  sx:shapes (
+    <http://a.example/S-integer> 
+    <http://a.example/S-decimal> 
+    <http://a.example/S-float> 
+    <http://a.example/S-double> 
+    <http://a.example/S-string> 
+    <http://a.example/S-boolean> 
+    <http://a.example/S-dateTime> 
+    <http://a.example/S-nonPositiveInteger> 
+    <http://a.example/S-negativeInteger> 
+    <http://a.example/S-long> 
+    <http://a.example/S-int> 
+    <http://a.example/S-short> 
+    <http://a.example/S-byte> 
+    <http://a.example/S-nonNegativeInteger> 
+    <http://a.example/S-unsignedLong> 
+    <http://a.example/S-unsignedInt> 
+    <http://a.example/S-unsignedShort> 
+    <http://a.example/S-unsignedByte> 
+    <http://a.example/S-positiveInteger>) .
 
-<http://a.example/S-integer> a sx:Shape ;
+<http://a.example/S-integer> a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ;
   sx:expression [ a sx:TripleConstraint ;
     sx:predicate <http://a.example/p> ;
-    sx:valueExpr [ a sx:NodeConstraint ; sx:datatype xsd:integer ] ] .
+    sx:valueExpr [ a sx:NodeConstraint ; sx:datatype xsd:integer ] ] ] .
 
-<http://a.example/S-decimal> a sx:Shape ;
+<http://a.example/S-decimal> a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ;
   sx:expression [ a sx:TripleConstraint ;
     sx:predicate <http://a.example/p> ;
-    sx:valueExpr [ a sx:NodeConstraint ; sx:datatype xsd:decimal ] ] .
+    sx:valueExpr [ a sx:NodeConstraint ; sx:datatype xsd:decimal ] ] ] .
 
-<http://a.example/S-float> a sx:Shape ;
+<http://a.example/S-float> a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ;
   sx:expression [ a sx:TripleConstraint ;
     sx:predicate <http://a.example/p> ;
-    sx:valueExpr [ a sx:NodeConstraint ; sx:datatype xsd:float ] ] .
+    sx:valueExpr [ a sx:NodeConstraint ; sx:datatype xsd:float ] ] ] .
 
-<http://a.example/S-double> a sx:Shape ;
+<http://a.example/S-double> a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ;
   sx:expression [ a sx:TripleConstraint ;
     sx:predicate <http://a.example/p> ;
-    sx:valueExpr [ a sx:NodeConstraint ; sx:datatype xsd:double ] ] .
+    sx:valueExpr [ a sx:NodeConstraint ; sx:datatype xsd:double ] ] ] .
 
-<http://a.example/S-string> a sx:Shape ;
+<http://a.example/S-string> a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ;
   sx:expression [ a sx:TripleConstraint ;
     sx:predicate <http://a.example/p> ;
-    sx:valueExpr [ a sx:NodeConstraint ; sx:datatype xsd:string ] ] .
+    sx:valueExpr [ a sx:NodeConstraint ; sx:datatype xsd:string ] ] ] .
 
-<http://a.example/S-boolean> a sx:Shape ;
+<http://a.example/S-boolean> a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ;
   sx:expression [ a sx:TripleConstraint ;
     sx:predicate <http://a.example/p> ;
-    sx:valueExpr [ a sx:NodeConstraint ; sx:datatype xsd:boolean ] ] .
+    sx:valueExpr [ a sx:NodeConstraint ; sx:datatype xsd:boolean ] ] ] .
 
-<http://a.example/S-dateTime> a sx:Shape ;
+<http://a.example/S-dateTime> a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ;
   sx:expression [ a sx:TripleConstraint ;
     sx:predicate <http://a.example/p> ;
-    sx:valueExpr [ a sx:NodeConstraint ; sx:datatype xsd:dateTime ] ] .
+    sx:valueExpr [ a sx:NodeConstraint ; sx:datatype xsd:dateTime ] ] ] .
 
-<http://a.example/S-nonPositiveInteger> a sx:Shape ;
+<http://a.example/S-nonPositiveInteger> a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ;
   sx:expression [ a sx:TripleConstraint ;
     sx:predicate <http://a.example/p> ;
-    sx:valueExpr [ a sx:NodeConstraint ; sx:datatype xsd:nonPositiveInteger ] ] .
+    sx:valueExpr [ a sx:NodeConstraint ; sx:datatype xsd:nonPositiveInteger ] ] ] .
 
-<http://a.example/S-negativeInteger> a sx:Shape ;
+<http://a.example/S-negativeInteger> a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ;
   sx:expression [ a sx:TripleConstraint ;
     sx:predicate <http://a.example/p> ;
-    sx:valueExpr [ a sx:NodeConstraint ; sx:datatype xsd:negativeInteger ] ] .
+    sx:valueExpr [ a sx:NodeConstraint ; sx:datatype xsd:negativeInteger ] ] ] .
 
-<http://a.example/S-long> a sx:Shape ;
+<http://a.example/S-long> a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ;
   sx:expression [ a sx:TripleConstraint ;
     sx:predicate <http://a.example/p> ;
-    sx:valueExpr [ a sx:NodeConstraint ; sx:datatype xsd:long ] ] .
+    sx:valueExpr [ a sx:NodeConstraint ; sx:datatype xsd:long ] ] ] .
 
-<http://a.example/S-int> a sx:Shape ;
+<http://a.example/S-int> a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ;
   sx:expression [ a sx:TripleConstraint ;
     sx:predicate <http://a.example/p> ;
-    sx:valueExpr [ a sx:NodeConstraint ; sx:datatype xsd:int ] ] .
+    sx:valueExpr [ a sx:NodeConstraint ; sx:datatype xsd:int ] ] ] .
 
-<http://a.example/S-short> a sx:Shape ;
+<http://a.example/S-short> a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ;
   sx:expression [ a sx:TripleConstraint ;
     sx:predicate <http://a.example/p> ;
-    sx:valueExpr [ a sx:NodeConstraint ; sx:datatype xsd:short ] ] .
+    sx:valueExpr [ a sx:NodeConstraint ; sx:datatype xsd:short ] ] ] .
 
-<http://a.example/S-byte> a sx:Shape ;
+<http://a.example/S-byte> a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ;
   sx:expression [ a sx:TripleConstraint ;
     sx:predicate <http://a.example/p> ;
-    sx:valueExpr [ a sx:NodeConstraint ; sx:datatype xsd:byte ] ] .
+    sx:valueExpr [ a sx:NodeConstraint ; sx:datatype xsd:byte ] ] ] .
 
-<http://a.example/S-nonNegativeInteger> a sx:Shape ;
+<http://a.example/S-nonNegativeInteger> a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ;
   sx:expression [ a sx:TripleConstraint ;
     sx:predicate <http://a.example/p> ;
-    sx:valueExpr [ a sx:NodeConstraint ; sx:datatype xsd:nonNegativeInteger ] ] .
+    sx:valueExpr [ a sx:NodeConstraint ; sx:datatype xsd:nonNegativeInteger ] ] ] .
 
-<http://a.example/S-unsignedLong> a sx:Shape ;
+<http://a.example/S-unsignedLong> a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ;
   sx:expression [ a sx:TripleConstraint ;
     sx:predicate <http://a.example/p> ;
-    sx:valueExpr [ a sx:NodeConstraint ; sx:datatype xsd:unsignedLong ] ] .
+    sx:valueExpr [ a sx:NodeConstraint ; sx:datatype xsd:unsignedLong ] ] ] .
 
-<http://a.example/S-unsignedInt> a sx:Shape ;
+<http://a.example/S-unsignedInt> a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ;
   sx:expression [ a sx:TripleConstraint ;
     sx:predicate <http://a.example/p> ;
-    sx:valueExpr [ a sx:NodeConstraint ; sx:datatype xsd:unsignedInt ] ] .
+    sx:valueExpr [ a sx:NodeConstraint ; sx:datatype xsd:unsignedInt ] ] ] .
 
-<http://a.example/S-unsignedShort> a sx:Shape ;
+<http://a.example/S-unsignedShort> a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ;
   sx:expression [ a sx:TripleConstraint ;
     sx:predicate <http://a.example/p> ;
-    sx:valueExpr [ a sx:NodeConstraint ; sx:datatype xsd:unsignedShort ] ] .
+    sx:valueExpr [ a sx:NodeConstraint ; sx:datatype xsd:unsignedShort ] ] ] .
 
-<http://a.example/S-unsignedByte> a sx:Shape ;
+<http://a.example/S-unsignedByte> a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ;
   sx:expression [ a sx:TripleConstraint ;
     sx:predicate <http://a.example/p> ;
-    sx:valueExpr [ a sx:NodeConstraint ; sx:datatype xsd:unsignedByte ] ] .
+    sx:valueExpr [ a sx:NodeConstraint ; sx:datatype xsd:unsignedByte ] ] ] .
 
-<http://a.example/S-positiveInteger> a sx:Shape ;
+<http://a.example/S-positiveInteger> a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ;
   sx:expression [ a sx:TripleConstraint ;
     sx:predicate <http://a.example/p> ;
-    sx:valueExpr [ a sx:NodeConstraint ; sx:datatype xsd:positiveInteger ] ] .
+    sx:valueExpr [ a sx:NodeConstraint ; sx:datatype xsd:positiveInteger ] ] ] .
 

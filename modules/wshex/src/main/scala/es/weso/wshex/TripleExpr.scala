@@ -190,10 +190,10 @@ sealed abstract class TripleConstraint extends TripleExpr with Serializable with
   def max: IntOrUnbounded
   def property: PropertyId
   def qs: Option[QualifierSpec]
-  def refs: Option[ListSpec[ReferenceSpec]]
+  def refs: Option[ReferencesSpec]
 
   def withQs(qs: Option[QualifierSpec]): TripleConstraint
-  def withRefs(refs: Option[ListSpec[ReferenceSpec]]): TripleConstraint
+  def withRefs(refs: Option[ReferencesSpec]): TripleConstraint
   def withMin(min: Int): TripleConstraint
   def withMax(max: IntOrUnbounded): TripleConstraint
 
@@ -245,7 +245,7 @@ sealed abstract class TripleConstraint extends TripleExpr with Serializable with
             )
             .collect { case Right(()) => () }
             .size
-        val failed = found.size - matches
+        val failed = found.size - matches 
         if (min <= matches && max >= matches) Right(Right((tl.property, matches, failed)))
         else Reason.cardinalityError.asLeft
       case _ => Reason.notImplemented.asLeft
@@ -259,12 +259,12 @@ case class TripleConstraintRef(
     min: Int,
     max: IntOrUnbounded,
     qs: Option[QualifierSpec] = None,
-    refs: Option[ListSpec[ReferenceSpec]] = None
+    refs: Option[ReferencesSpec] = None
 ) extends TripleConstraint {
 
   override def withQs(qs: Option[QualifierSpec]): TripleConstraint = this.copy(qs = qs)
 
-  override def withRefs(refs: Option[ListSpec[ReferenceSpec]]): TripleConstraint = this.copy(refs = refs)
+  override def withRefs(refs: Option[ReferencesSpec]): TripleConstraint = this.copy(refs = refs)
 
   override def withMin(min: Int) = this.copy(min = min)
 
@@ -277,12 +277,12 @@ case class TripleConstraintLocal(
     min: Int,
     max: IntOrUnbounded,
     qs: Option[QualifierSpec] = None,
-    refs: Option[ListSpec[ReferenceSpec]] = None
+    refs: Option[ReferencesSpec] = None
 ) extends TripleConstraint {
 
   override def withQs(qs: Option[QualifierSpec]): TripleConstraint = this.copy(qs = qs)
 
-  override def withRefs(refs: Option[ListSpec[ReferenceSpec]]): TripleConstraint = this.copy(refs = refs)
+  override def withRefs(refs: Option[ReferencesSpec]): TripleConstraint = this.copy(refs = refs)
 
   override def withMin(min: Int) = this.copy(min = min)
 
@@ -295,12 +295,12 @@ case class TripleConstraintGeneral(
     min: Int,
     max: IntOrUnbounded,
     qs: Option[QualifierSpec] = None,
-    refs: Option[ListSpec[ReferenceSpec]] = None
+    refs: Option[ReferencesSpec] = None
 ) extends TripleConstraint {
 
   override def withQs(qs: Option[QualifierSpec]): TripleConstraint = this.copy(qs = qs)
 
-  override def withRefs(refs: Option[ListSpec[ReferenceSpec]]): TripleConstraint = this.copy(refs = refs)
+  override def withRefs(refs: Option[ReferencesSpec]): TripleConstraint = this.copy(refs = refs)
 
   override def withMin(min: Int) = this.copy(min = min)
 

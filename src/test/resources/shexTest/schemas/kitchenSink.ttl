@@ -16,14 +16,14 @@ prefix rdfs: <http://www.w3.org/2000/01/rdf-schem#>
     [ a sx:SemAct ; sx:name ex:foo ; sx:code " initializer for ignored extension " ]
   ) ;
   sx:start <S1> ;
-  sx:shapes
-      <S1> ,
-      UserShape: ,
-      :EmployeeShape ,
-      _:IDshape ,
-      ex:FooID .
+  sx:shapes (
+      <S1> 
+      UserShape: 
+      :EmployeeShape 
+      _:IDshape 
+      ex:FooID) .
 
-<S1> a sx:Shape ;
+<S1> a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ;
   sx:expression [ a sx:EachOf ; sx:expressions (
     [ a sx:TripleConstraint ; sx:predicate rdf:type ;
       sx:max 1 ; sx:min 0 ;
@@ -57,9 +57,9 @@ prefix rdfs: <http://www.w3.org/2000/01/rdf-schem#>
     [ a sx:TripleConstraint ; sx:predicate ex:related ;
       sx:max -1 ; sx:min 0 ;
       sx:valueExpr <S1> ]
-  ) ] .
+  ) ] ] .
 
-ex:UserShape a sx:Shape ;
+ex:UserShape a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ;
   sx:expression [ a sx:EachOf ; sx:expressions (
     [ a sx:OneOf ; sx:expressions (
       [ a sx:TripleConstraint ; sx:predicate foaf:name ;
@@ -79,9 +79,9 @@ ex:UserShape a sx:Shape ;
         [ a sx:NodeConstraint ; sx:nodeKind sx:bnode ]
         _:IDshape
     ) ] ]
-  ) ] .
+  ) ] ] .
 
-ex:EmployeeShape a sx:Shape ;
+ex:EmployeeShape a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ;
   sx:expression [ a sx:EachOf ; sx:expressions (
     [ a sx:TripleConstraint ; sx:predicate foaf:givenName ;
       sx:max -1 ; sx:min 1 ;
@@ -94,10 +94,10 @@ ex:EmployeeShape a sx:Shape ;
     [ a sx:TripleConstraint ; sx:predicate foaf:mbox ;
       sx:max 1 ; sx:min 0 ;
       sx:valueExpr [ a sx:NodeConstraint ; sx:nodeKind sx:iri ] ]
-  ) ] .
+  ) ] ] .
 
-_:IDshape a sx:Shape ;
-    sx:expression _:IDshapeE .
+_:IDshape a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ;
+    sx:expression _:IDshapeE ] .
 
 _:IDshapeE a sx:OneOf ; sx:expressions (
       [ a sx:EachOf ; sx:expressions (
@@ -137,7 +137,7 @@ _:IDshapeE a sx:OneOf ; sx:expressions (
       ) ]
     ) .
 
-ex:FooID a sx:Shape ; sx:closed true ;
+ex:FooID a sx:ShapeDecl ; sx:shapeExpr [ a sx:Shape ; sx:closed true ;
   sx:extra ex:code, ex:system ;
-  sx:expression _:IDshapeE .
+  sx:expression _:IDshapeE ] .
 
