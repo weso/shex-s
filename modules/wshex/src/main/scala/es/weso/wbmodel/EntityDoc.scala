@@ -15,7 +15,6 @@ import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.exc._
 import cats.effect._
 import collection.JavaConverters._
-// import _root_.java.io.ByteArrayOutputStream
 import es.weso.utils.internal.CollectionCompat._
 import org.wikidata.wdtk.wikibaseapi.WikibaseDataFetcher
 import org.wikidata.wdtk.datamodel.helpers.ItemDocumentBuilder
@@ -186,6 +185,23 @@ case class EntityDoc(entityDocument: EntityDocument) extends Serializable {
         EntityDoc(td.withLabel(Datamodel.makeMonolingualTextValue(label, langCode)))
       case _ => throw NotTermedDocument(entityDocument)
     }
+  
+  def withDescription(langCode: String, descr: String): EntityDoc =
+    entityDocument match {
+      case td: TermedDocument =>
+        EntityDoc(td.withDescription(Datamodel.makeMonolingualTextValue(descr, langCode)))
+      case _ => throw NotTermedDocument(entityDocument)
+    }
+
+  def withAliases(langCode: String, aliases: List[String]): EntityDoc =
+    entityDocument match {
+      case td: TermedDocument => {
+        val cnvAliases = aliases.map(Datamodel.makeMonolingualTextValue(_, langCode)).asJava 
+        EntityDoc(td.withAliases(langCode, cnvAliases))
+      }
+      case _ => throw NotTermedDocument(entityDocument)
+    }
+  
 
   def mergeStatements(ss: List[WDTKStatement]): EntityDoc = {
     val ed = ss.foldLeft(entityDocument) { case (c, s) =>

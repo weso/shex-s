@@ -35,6 +35,29 @@ object TermConstraint {
       case Some(sc) => sc.matchMonolingualTextValue(value)
     }
 
+  case class LabelAny(strConstraint: Option[StringConstraint])
+      extends TermConstraint {
+
+    override def matchTerm(
+        ed: EntityDoc,
+        current: EntityDoc
+    ): Either[MatchingError, EntityDoc] = {
+      val labelsMap = ed.getLabels()
+      if (labelsMap.isEmpty) LabelAnyNoLabel(ed).asLeft
+      else labelsMap.toList.foldLeft(current.asRight[MatchingError]) { 
+        case (c, pair) => {
+          val (lang, value) = pair
+          optMatchConstraint(strConstraint, value).flatMap((_:Unit) => c.map(cur => cur.withLabel(lang, value.getText())))
+          /* for {
+           _ <- optMatchConstraint(strConstraint, value)
+           cur <- c
+          } yield cur.withLabel(lang, value.getText()) */ 
+        } 
+      }
+    }
+
+  }
+
   case class LabelConstraint(lang: Lang, strConstraint: Option[StringConstraint])
       extends TermConstraint {
 
@@ -44,16 +67,33 @@ object TermConstraint {
     ): Either[MatchingError, EntityDoc] = {
       val labelsMap = ed.getLabels()
       labelsMap.get(lang.lang) match {
-        case None        => {
-        LabelConstraintNoLang(lang, ed).asLeft
-        }
+        case None        => LabelConstraintNoLang(lang, ed).asLeft
         case Some(value) => 
-          optMatchConstraint(strConstraint, value)
-          .map(_ => 
-            current.withLabel(value.getLanguageCode(), value.getText()))
+         optMatchConstraint(strConstraint, value).map(_ => 
+          current.withLabel(value.getLanguageCode(), value.getText()))
       }
     }
 
+  }
+
+  case class DescriptionAny(strConstraint: Option[StringConstraint])
+      extends TermConstraint {
+    override def matchTerm(
+        ed: EntityDoc,
+        current: EntityDoc
+    ): Either[MatchingError, EntityDoc] = {
+      val descsMap = ed.getDescriptions()
+      if (descsMap.isEmpty) DescrAnyNoDescr(ed).asLeft
+      else descsMap.toList.foldLeft(current.asRight[MatchingError]) { 
+        case (c, pair) => {
+          val (lang, value) = pair
+          for {
+           _ <- optMatchConstraint(strConstraint, value)
+           cur <- c
+          } yield cur.withDescription(lang, value.getText()) 
+        } 
+      }
+    }
   }
 
   case class DescriptionConstraint(lang: Lang, strConstraint: Option[StringConstraint])
@@ -70,6 +110,25 @@ object TermConstraint {
     }
   }
 
+  case class AliasAny(strConstraint: Option[StringConstraint]) extends TermConstraint {
+    override def matchTerm(
+        ed: EntityDoc,
+        current: EntityDoc
+    ): Either[MatchingError, EntityDoc] = {
+      val labelsMap = ed.getAliases()
+      if (labelsMap.isEmpty)
+        AliasAnyNoAlias(ed).asLeft
+      else 
+        labelsMap.toList.foldLeft(current.asRight[MatchingError]) { case (c, pair) => {
+          val (lbl, as) = pair
+          for {
+           _ <- as.asScala.toList.map(optMatchConstraint(strConstraint, _)).sequence
+           cur <- c
+          } yield cur.withAliases(lbl, as.asScala.toList.map(_.getText()))
+        }}
+    }
+  }
+
   case class AliasConstraint(lang: Lang, strConstraint: Option[StringConstraint])
       extends TermConstraint {
     override def matchTerm(
@@ -79,12 +138,12 @@ object TermConstraint {
       val labelsMap = ed.getAliases()
       labelsMap.get(lang.lang) match {
         case None         => AliasConstraintNoLang(lang, ed).asLeft
-        case Some(values) => ??? /* values.asScala.toList
-          .map(v => optMatchConstraint(strConstraint, v))
-          .sequence
-          .map(_ => ()) */
-      }
-    }
+        case Some(values) => 
+         values.asScala.toList.map(optMatchConstraint(strConstraint, _)).sequence.map(_ =>
+          current.withAliases(lang.lang, values.asScala.toList.map(_.getText())) 
+         )
+       }
+     }
   }
 
   case class AndTerms(ts: List[TermConstraint]) extends TermConstraint {
@@ -164,6 +223,7 @@ object TermConstraint {
   }
 
   sealed abstract class StringConstraintMatchError 
+  
   object StringConstraintMatchError {
     import es.weso.shex.validator.FacetChecker.StringFacetError
     case class StringFacetMatchError(err: StringFacetError) extends StringConstraintMatchError
