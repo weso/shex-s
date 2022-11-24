@@ -110,7 +110,7 @@ case class ShapeTyping(
         val s = t.getErrors.map(es =>
           es.map { e =>
             e.showQualified(nodesPrefixMap, shapesPrefixMap)
-            // e.msg
+          // e.msg
           }.mkString("\n")
         )
         s

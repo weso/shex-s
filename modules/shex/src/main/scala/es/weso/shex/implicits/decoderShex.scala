@@ -99,10 +99,10 @@ object decoderShEx {
           id <- fieldDecode[ShapeLabel](c, "id")
           abst <- optFieldDecode[Boolean](c, "abstract")
           se <- fieldDecode[ShapeExpr](c, "shapeExpr")
-        } yield abst match { 
-         case None => ShapeDecl(id, se, false)
-         case Some(false) => ShapeDecl(id, se, false)
-         case Some(true) => ShapeDecl(id, se, true)
+        } yield abst match {
+          case None        => ShapeDecl(id, se, false)
+          case Some(false) => ShapeDecl(id, se, false)
+          case Some(true)  => ShapeDecl(id, se, true)
         }
       case other =>
         Either.left(DecodingFailure(s"Decoding ShapeDecl. Unexpected value $other", Nil))

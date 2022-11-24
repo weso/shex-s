@@ -1052,20 +1052,22 @@ class WSchemaMaker extends WShExDocBaseVisitor[Any] {
 
   override def visitLabelConstraint(ctx: LabelConstraintContext): Builder[Qualifier] =
     visitLangConstraints(ctx.langConstraints()).flatMap { cs =>
-      ok(TermConstraintQ(cs.map { case (lang, cs) => 
-        LabelConstraint(Map(lang -> cs)) }))
+      ok(TermConstraintQ(cs.map { case (lang, cs) =>
+        LabelConstraint(Map(lang -> cs))
+      }))
     }
 
   override def visitDescriptionConstraint(ctx: DescriptionConstraintContext): Builder[Qualifier] =
     visitLangConstraints(ctx.langConstraints()).flatMap { cs =>
-      ok(TermConstraintQ(cs.map { case (lang, cs) => 
-        DescriptionConstraint(Map(lang -> cs)) }))
+      ok(TermConstraintQ(cs.map { case (lang, cs) =>
+        DescriptionConstraint(Map(lang -> cs))
+      }))
     }
 
   override def visitAliasConstraint(ctx: AliasConstraintContext): Builder[Qualifier] =
     visitLangConstraints(ctx.langConstraints()).flatMap { cs =>
-      ok(TermConstraintQ(cs.map { case (lang, cs) => 
-        AliasConstraint(Map(lang -> cs)) 
+      ok(TermConstraintQ(cs.map { case (lang, cs) =>
+        AliasConstraint(Map(lang -> cs))
       }))
     }
 

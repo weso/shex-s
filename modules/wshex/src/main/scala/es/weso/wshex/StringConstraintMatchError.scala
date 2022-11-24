@@ -13,11 +13,11 @@ import es.weso.wbmodel.EntityDoc
 import es.weso.shex.StringFacet
 import es.weso.utils.internal.CollectionCompat._
 
-sealed abstract class StringConstraintMatchError 
-  
+sealed abstract class StringConstraintMatchError
+
 object StringConstraintMatchError {
   import es.weso.shex.validator.FacetChecker.StringFacetError
-  
+
   case class StringFacetMatchError(err: StringFacetError) extends StringConstraintMatchError
   case class StringSetMatchError(value: String, ss: List[String]) extends StringConstraintMatchError
 }
