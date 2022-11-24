@@ -1,7 +1,11 @@
 package es.weso.wbmodel
 
 import org.wikidata.wdtk.datamodel.implementation._
-import org.wikidata.wdtk.datamodel.interfaces.{Snak => WDTKSnak, Statement => WDTKStatement, _}
+import org.wikidata.wdtk.datamodel.interfaces.{ 
+  Statement => WDTKStatement, 
+  Snak => WDTKSnak,
+  _
+}
 import cats.implicits._
 
 case class Statement(
@@ -15,7 +19,7 @@ case class Statement(
     this.copy(qualifiers = qs)
 
   def withReferences(refs: References): Statement =
-    this.copy(references = refs)
+    this.copy(references = refs)  
 
   override def toString = s"$propertyId - $snak"
 

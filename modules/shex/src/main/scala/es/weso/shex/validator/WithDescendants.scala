@@ -9,11 +9,11 @@ sealed abstract class WithDescendants {
 
   def isFollowDescendants: Boolean = this match {
     case FollowDescendants => true
-    case _                 => false
+    case _ => false
   }
 
   def show: String = this match {
-    case NoDescendants     => s"NoDescendants"
+    case NoDescendants => s"NoDescendants"
     case FollowDescendants => s"Follow"
   }
 
@@ -24,3 +24,4 @@ case object FollowDescendants extends WithDescendants
 object WithDescendants {
   val followDescendants = FollowDescendants
 }
+

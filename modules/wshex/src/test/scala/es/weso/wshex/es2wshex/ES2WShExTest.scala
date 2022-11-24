@@ -143,6 +143,7 @@ class ES2WShExTest extends CatsEffectSuite {
     VerboseLevel.Nothing
   )
 
+
   checkConversion(
     "start OR",
     """|PREFIX wd:  <http://www.wikidata.org/entity/>

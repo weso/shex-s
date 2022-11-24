@@ -7,10 +7,7 @@ import cats.implicits._
 
 object IRIConvert {
 
-  private def parseDirect(
-      pred: IRI,
-      convertOptions: ES2WShExConvertOptions
-  ): Option[DirectProperty] = {
+  private def parseDirect(pred: IRI, convertOptions: ES2WShExConvertOptions): Option[DirectProperty] = {
     val (name, base) = Utils.splitIri(pred)
     val expr = "P(\\d*)".r
     if (IRI(base) == convertOptions.directPropertyIri) {
@@ -64,6 +61,7 @@ object IRIConvert {
     else None
   }
 
+
   private def parseProperty(pred: IRI, convertOptions: ES2WShExConvertOptions): Option[Property] = {
     val (name, base) = Utils.splitIri(pred)
     val expr = "P(\\d*)".r
@@ -77,14 +75,15 @@ object IRIConvert {
 
   def parseIRI(iri: IRI, convertOptions: ES2WShExConvertOptions): Option[IRIParsed] =
     parseDirect(iri, convertOptions)
-      .orElse(parseProperty(iri, convertOptions))
-      .orElse(parsePropertyStatement(iri, convertOptions))
-      .orElse(parsePropertyQualifier(iri, convertOptions))
-      .orElse(parsePropertyReference(iri, convertOptions))
-      .orElse(parseWasDerivedFrom(iri))
+    .orElse(parseProperty(iri, convertOptions))
+    .orElse(parsePropertyStatement(iri, convertOptions))
+    .orElse(parsePropertyQualifier(iri, convertOptions))
+    .orElse(parsePropertyReference(iri, convertOptions))
+    .orElse(parseWasDerivedFrom(iri))
 
-  def parseWasDerivedFrom(iri: IRI): Option[IRIParsed] =
+  def parseWasDerivedFrom(iri: IRI): Option[IRIParsed] = {
     if (iri == `prov:wasDerivedFrom`) WasDerivedFrom.some
     else none
+  }
 
 }

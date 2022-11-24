@@ -3,7 +3,7 @@ import es.weso.utils.VerboseLevel._
 
 class ExtendsTestSingle extends ShouldValidateShapeMap {
 
-  {
+    {
     val rdf =
       """|PREFIX : <http://e/>
          |PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
@@ -42,6 +42,6 @@ class ExtendsTestSingle extends ShouldValidateShapeMap {
     // shouldValidateWithShapeMap(rdf, shex, ":lie@:Posture", ":lie@:Posture, :lie@:ReclinedBP, :lie@:PostureBP", Nothing)
 
     shouldValidateWithShapeMap(rdf, shex, ":lie@:Reclined", ":lie@:Reclined", Debug)
-  }
+  } 
 
 }

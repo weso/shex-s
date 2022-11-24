@@ -18,10 +18,13 @@ sealed abstract class VerboseLevel {
   def infoGreen(msg: String): IO[Unit] =
     if (this >= Info) IO.println(fansi.Color.Green(msg))
     else IO.pure(())
+  
 
   def basic(msg: String): IO[Unit] =
     if (this >= Basic) IO.println(fansi.Color.Black(msg))
     else IO.pure(())
+
+
 
   def debug(msg: String): IO[Unit] =
     if (this >= Debug) IO.println(fansi.Color.Red(msg))
