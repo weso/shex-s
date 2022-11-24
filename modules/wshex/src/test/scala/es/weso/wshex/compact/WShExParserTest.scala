@@ -230,7 +230,7 @@ class WShExParserTest extends CatsEffectSuite {
             false,
             List(),
             None,
-            List(LabelConstraint(Lang("en"), None))
+            List(LabelConstraint(Map(Lang("en") -> None)))
           )
       ),
       prefixes = Some(pm)
@@ -260,7 +260,7 @@ class WShExParserTest extends CatsEffectSuite {
                 None
               )
             ),
-            List(LabelConstraint(Lang("en"), None))
+            List(LabelConstraint(Map(Lang("en") -> None)))
           )
       ),
       prefixes = Some(pm)

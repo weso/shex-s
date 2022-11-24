@@ -11,6 +11,7 @@ import es.weso.wshex.matcher.MatchingError
 import es.weso.wshex.matcher.MatchingError._
 import es.weso.wbmodel.EntityDoc
 import es.weso.shex.StringFacet
+import es.weso.utils.internal.CollectionCompat._
 
 /** TermConstraint describes constraints on terms: labels, descriptions or aliases
   */
@@ -24,14 +25,86 @@ sealed abstract class TermConstraint {
   def matchTerm(ed: EntityDoc, current: EntityDoc): Either[MatchingError, EntityDoc]
 }
 
+sealed abstract class TermMode
+case object LabelMode extends TermMode
+case object DescriptionMode extends TermMode
+case object AliasesMode extends TermMode
+
 object TermConstraint {
+
+  private def matchStrLangsMap(
+    langsMap: Map[String, MonolingualTextValue], 
+    strLang: String, 
+    strConstraint: Option[StringConstraint],
+    termMode: TermMode,
+    ed: EntityDoc
+    ): Either[MatchingError, Option[MonolingualTextValue]] = {
+      langsMap.get(strLang) match {
+        case None => strConstraint match {
+          case None => none.asRight 
+          case Some(_) => NoLang(strLang, termMode, ed).asLeft
+        }
+        case Some(txt) => 
+          optMatchConstraint(strConstraint, txt).map(_.some)
+      }
+    }
+
+  private def matchLangsMap(
+    langsMap: Map[String, MonolingualTextValue], 
+    constraintsMap: Map[Lang, Option[StringConstraint]],
+    termMode: TermMode,
+    ed: EntityDoc
+    ): Either[MatchingError, Map[String, MonolingualTextValue]] = {
+      val zero:Either[MatchingError, Map[String,MonolingualTextValue]] = Map[String, MonolingualTextValue]().asRight
+      def cmb(
+         pair: (Lang, Option[StringConstraint]), 
+         current: Either[MatchingError, Map[String,MonolingualTextValue]]
+         ): Either[MatchingError, Map[String,MonolingualTextValue]] = {
+        val (lang, strConst) = pair
+        val strLang: String = lang.lang
+        for { 
+          maybeStr <- matchStrLangsMap(langsMap, strLang, strConst, termMode, ed)
+          currentMap <- current
+        } yield maybeStr match { 
+          case None => currentMap
+          case Some(txt) => currentMap.updated(strLang, txt)
+        }
+      }
+      constraintsMap.toList.foldRight(zero)(cmb)
+    }
+
+  private def matchLangsMapLs(
+    langsMap: Map[String, java.util.List[MonolingualTextValue]], 
+    constraintsMap: Map[Lang, Option[StringConstraint]]
+    ): Either[MatchingError, Map[String, List[MonolingualTextValue]]] = 
+      Pending(s"Not implemented matchLangsMapLs yet").asLeft
+
+
+  private def addMapValues(
+    c: EntityDoc, 
+    newValues: Map[String, MonolingualTextValue], 
+    updateFn: (EntityDoc, String, MonolingualTextValue
+    ) => EntityDoc): EntityDoc = {
+      def cmb(pair: (String, MonolingualTextValue), c: EntityDoc): EntityDoc = {
+        val (s,txt) = pair
+        updateFn(c,s,txt)
+      }
+      newValues.toList.foldRight(c)(cmb)
+    }
+
+  private def addMapValuesLs(
+    c: EntityDoc, 
+    newValues: Map[String, List[MonolingualTextValue]], 
+    updateFn: (EntityDoc, String, List[MonolingualTextValue]
+    ) => EntityDoc): EntityDoc = ???  
+
 
   private def optMatchConstraint(
       maybesc: Option[StringConstraint],
       value: MonolingualTextValue
-  ): Either[MatchingError, Unit] =
+  ): Either[MatchingError, MonolingualTextValue] =
     maybesc match {
-      case None     => ().asRight
+      case None     => value.asRight
       case Some(sc) => sc.matchMonolingualTextValue(value)
     }
 
@@ -47,18 +120,15 @@ object TermConstraint {
       else labelsMap.toList.foldLeft(current.asRight[MatchingError]) { 
         case (c, pair) => {
           val (lang, value) = pair
-          optMatchConstraint(strConstraint, value).flatMap((_:Unit) => c.map(cur => cur.withLabel(lang, value.getText())))
-          /* for {
-           _ <- optMatchConstraint(strConstraint, value)
-           cur <- c
-          } yield cur.withLabel(lang, value.getText()) */ 
+          optMatchConstraint(strConstraint, value).flatMap(v => 
+            c.map(cur => cur.withLabel(lang, v.getText())))
         } 
       }
     }
 
   }
 
-  case class LabelConstraint(lang: Lang, strConstraint: Option[StringConstraint])
+  case class LabelConstraint(constraintsMap: Map[Lang, Option[StringConstraint]])
       extends TermConstraint {
 
     override def matchTerm(
@@ -66,17 +136,20 @@ object TermConstraint {
         current: EntityDoc
     ): Either[MatchingError, EntityDoc] = {
       val labelsMap = ed.getLabels()
-      labelsMap.get(lang.lang) match {
+      matchLangsMap(labelsMap, constraintsMap, LabelMode, ed).map(
+        addMapValues(current, _, (e,s,v) => e.withLabel(s,v.getText()))
+      )
+/*      labelsMap.get(lang.lang) match {
         case None        => LabelConstraintNoLang(lang, ed).asLeft
         case Some(value) => 
          optMatchConstraint(strConstraint, value).map(_ => 
           current.withLabel(value.getLanguageCode(), value.getText()))
-      }
-    }
+      } */
+    } 
 
-  }
+ }
 
-  case class DescriptionAny(strConstraint: Option[StringConstraint])
+ case class DescriptionAny(strConstraint: Option[StringConstraint])
       extends TermConstraint {
     override def matchTerm(
         ed: EntityDoc,
@@ -96,18 +169,21 @@ object TermConstraint {
     }
   }
 
-  case class DescriptionConstraint(lang: Lang, strConstraint: Option[StringConstraint])
+ case class DescriptionConstraint(constraintsMap: Map[Lang, Option[StringConstraint]])
       extends TermConstraint {
     override def matchTerm(
         ed: EntityDoc,
         current: EntityDoc
     ): Either[MatchingError, EntityDoc] = {
-      val labelsMap = ed.getDescriptions()
-      labelsMap.get(lang.lang) match {
+      val descsMap = ed.getDescriptions()
+      matchLangsMap(descsMap, constraintsMap, DescriptionMode, ed).map(
+        addMapValues(current, _, (e,s,v) => e.withDescription(s,v.getText()))
+      )
+/*      labelsMap.get(lang.lang) match {
         case None        => DescriptionConstraintNoLang(lang, ed).asLeft
         case Some(value) => optMatchConstraint(strConstraint, value).map(_ => current)
-      }
-    }
+      } */
+    } 
   }
 
   case class AliasAny(strConstraint: Option[StringConstraint]) extends TermConstraint {
@@ -129,21 +205,24 @@ object TermConstraint {
     }
   }
 
-  case class AliasConstraint(lang: Lang, strConstraint: Option[StringConstraint])
+  case class AliasConstraint(constraintsMap: Map[Lang, Option[StringConstraint]])
       extends TermConstraint {
     override def matchTerm(
         ed: EntityDoc,
         current: EntityDoc
     ): Either[MatchingError, EntityDoc] = {
-      val labelsMap = ed.getAliases()
-      labelsMap.get(lang.lang) match {
+      val aliasesMap = ed.getAliases()
+      matchLangsMapLs(aliasesMap, constraintsMap).map(
+        addMapValuesLs(current, _, (e,s,vs) => e.withAliases(s,vs.map(_.getText())))
+      )
+/*      labelsMap.get(lang.lang) match {
         case None         => AliasConstraintNoLang(lang, ed).asLeft
         case Some(values) => 
          values.asScala.toList.map(optMatchConstraint(strConstraint, _)).sequence.map(_ =>
           current.withAliases(lang.lang, values.asScala.toList.map(_.getText())) 
          )
-       }
-     }
+       } */
+     } 
   }
 
   case class AndTerms(ts: List[TermConstraint]) extends TermConstraint {
@@ -151,8 +230,8 @@ object TermConstraint {
     override def matchTerm(
         ed: EntityDoc,
         current: EntityDoc
-    ): Either[MatchingError, EntityDoc] = ???
-    // ts.map(_.matchTerm(ed, current)).sequence.map(_ => ())
+    ): Either[MatchingError, EntityDoc] = 
+    Pending(s"Not implemented match AndTerms yet for termConstraints: $ts\nEntityDoc: $ed").asLeft
 
   }
 
@@ -161,73 +240,21 @@ object TermConstraint {
     override def matchTerm(
         ed: EntityDoc,
         current: EntityDoc
-    ): Either[MatchingError, EntityDoc] = ??? 
+    ): Either[MatchingError, EntityDoc] = 
+    Pending(s"Not implemented match OrTerms yet for termConstraints: $ts\nEntityDoc: $ed").asLeft
+
   }
 
   case class NotTerm(t: TermConstraint) extends TermConstraint {
     override def matchTerm(
         ed: EntityDoc,
         current: EntityDoc
-    ): Either[MatchingError, EntityDoc] = ???
+    ): Either[MatchingError, EntityDoc] = 
+      Pending(s"Not implemented match NotTerm yet for termConstraint: $t").asLeft
     /* t.matchTerm(ed, currrent) match {
         case Left(_)  => current.asRight
         case Right(_) => s"NotTerm failed: Term $ed passes constraint $t".asLeft
       } */
-  }
-
-  sealed abstract class StringConstraint {
-    def matchMonolingualTextValue(str: MonolingualTextValue): Either[MatchingError, Unit]
-  }
-
-  /*  case class StrPattern(pattern: String, flags: Option[String]) extends StringConstraint {
-    def matchMonolingualTextValue(value: MonolingualTextValue): Either[MatchingError, Unit] =
-      RegEx(pattern, flags).matches(value.getText()) match {
-        case Right(b) =>
-          if (b) ().asRight
-          else RegexMatchingError(value, pattern, flags).asLeft
-        case Left(s) => RegexMatchingError(value, pattern, flags, msg).asLeft
-
-      }
-  }
-   */
-
-  case class Facet(facet: StringFacet) extends StringConstraint {
-    import es.weso.shex.validator.FacetChecker
-    import StringConstraintMatchError._
-
-    def matchMonolingualTextValue(value: MonolingualTextValue): Either[MatchingError, Unit] = {
-      val s = value.getText()
-      FacetChecker.stringFacetChecker(s, facet).leftMap(err => 
-        StringConstraintError(StringFacetMatchError(err), this, value)
-      )
-    }
-  }   
-
-  case class StringSet(ss: List[String]) extends StringConstraint {
-    import StringConstraintMatchError._
-
-    def matchMonolingualTextValue(value: MonolingualTextValue): Either[MatchingError, Unit] = {
-      val s = value.getText()
-      if (ss.contains(s)) ().asRight
-      else StringConstraintError(StringSetMatchError(s, ss), this, value).asLeft
-    }
-  }   
-
-
-  case class Constant(str: String) extends StringConstraint {
-    def matchMonolingualTextValue(value: MonolingualTextValue): Either[MatchingError, Unit] = {
-      val s = value.getText()
-      if (str == value.getText()) ().asRight
-      else StringConstantMatchingError(s, str).asLeft
-    }
-  }
-
-  sealed abstract class StringConstraintMatchError 
-  
-  object StringConstraintMatchError {
-    import es.weso.shex.validator.FacetChecker.StringFacetError
-    case class StringFacetMatchError(err: StringFacetError) extends StringConstraintMatchError
-    case class StringSetMatchError(value: String, ss: List[String]) extends StringConstraintMatchError
   }
 
 
