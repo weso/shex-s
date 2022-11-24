@@ -231,10 +231,15 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
       case Some(v) => v match {
         case nc: shex.NodeConstraint => nc.values match {
           case None => List(LabelAny(None)).asRight 
-          case Some(vs) => vs.map{ case v => v match {
-            case shex.Language(l) => LabelConstraint(Lang(l.lang),None).asRight
+          case Some(vs) => {
+          val parseLangValues = vs.map{ case v => v match {
+            case shex.Language(l) => Lang(l.lang).asRight
             case _ => UnsupportedValueSetValue(v).asLeft
-          }}.sequence
+           }}.sequence 
+          val noConstraint = none[StringConstraint]
+          parseLangValues.map(vs => 
+            List(LabelConstraint(vs.map(v => (v,noConstraint)).toMap)))
+          }
         } 
       } 
     }
@@ -244,10 +249,15 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
       case Some(v) => v match {
         case nc: shex.NodeConstraint => nc.values match {
           case None => List(DescriptionAny(None)).asRight 
-          case Some(vs) => vs.map{ case v => v match {
-            case shex.Language(l) => DescriptionConstraint(Lang(l.lang),None).asRight
+          case Some(vs) => {
+          val parsedLangValues = vs.map{ case v => v match {
+            case shex.Language(l) => Lang(l.lang).asRight
             case _ => UnsupportedValueSetValue(v).asLeft
           }}.sequence
+          val noConstraint = none[StringConstraint]
+          parsedLangValues.map(vs => 
+            List(DescriptionConstraint(vs.map(v => (v,noConstraint)).toMap)))
+         }
         } 
       } 
     }
@@ -257,10 +267,15 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
       case Some(v) => v match {
         case nc: shex.NodeConstraint => nc.values match {
           case None => List(AliasAny(None)).asRight 
-          case Some(vs) => vs.map{ case v => v match {
-            case shex.Language(l) => AliasConstraint(Lang(l.lang),None).asRight
+          case Some(vs) => { 
+           val parsedValues = vs.map{ case v => v match {
+            case shex.Language(l) => Lang(l.lang).asRight
             case _ => UnsupportedValueSetValue(v).asLeft
-          }}.sequence
+           }}.sequence
+           val noConstraint = none[StringConstraint]
+           parsedValues.map(vs => 
+            List(AliasConstraint(vs.map(v => (v,noConstraint)).toMap)))
+          }
         } 
       } 
     }

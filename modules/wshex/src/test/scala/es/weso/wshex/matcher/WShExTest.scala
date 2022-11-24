@@ -114,7 +114,7 @@ class WShExTest extends CatsEffectSuite {
     false,
     List(),
     None,
-    List(LabelConstraint(Lang("en"),None))
+    List(LabelConstraint(Map(Lang("en") -> None)))
    )
 
    val schema: WSchema = WSchema(

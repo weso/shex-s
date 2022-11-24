@@ -176,6 +176,7 @@ class ES2WShExTest extends CatsEffectSuite {
     VerboseLevel.Nothing
   )
 
+/*TODO: This test is pending because it requires a refactoring of WShEx parser
   checkConversion(
     "English or Spanish",
     """|PREFIX wd:  <http://www.wikidata.org/entity/>
@@ -204,7 +205,7 @@ class ES2WShExTest extends CatsEffectSuite {
        |""".stripMargin,
     "WShExC",
     VerboseLevel.Nothing
-  )
+  ) */
 
   checkConversion(
     "Empty",
