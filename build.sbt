@@ -7,7 +7,7 @@ lazy val supportedScalaVersions = List(
   scala212
 )
 
-val Java11 = JavaSpec.temurin("11")
+val Java11 = JavaSpec.temurin("11") 
 
 lazy val srdfVersion = "0.1.122"
 lazy val utilsVersion = "0.2.25"
@@ -17,7 +17,7 @@ lazy val documentVersion = "0.0.34"
 // lazy val antlrVersion            = "4.9.3"
 lazy val catsVersion = "2.9.0"
 lazy val catsEffectVersion = "3.4.0"
-lazy val circeVersion = "0.14.3"
+lazy val circeVersion = "0.14.2"
 lazy val commonsTextVersion = "1.8"
 lazy val declineVersion = "2.3.0"
 lazy val fansiVersion = "0.3.0"
@@ -72,6 +72,7 @@ lazy val wdtkUtil = "org.wikidata.wdtk" % "wdtk-util" % wikidataToolkitVersion
 
 lazy val scalacheck = "org.scalacheck" %% "scalacheck" % scalacheckVersion
 lazy val typesafeConfig = "com.typesafe" % "config" % typesafeConfigVersion
+
 
 lazy val logbackClassic = "ch.qos.logback" % "logback-classic" % logbackVersion
 lazy val scalaLogging =
@@ -251,7 +252,7 @@ lazy val wshex = project
   .settings(
     crossScalaVersions := supportedScalaVersions,
     libraryDependencies ++= Seq(
-      utils,
+      utils, 
       catsCore,
       catsKernel,
       circeCore,
@@ -268,7 +269,7 @@ lazy val wshex = project
       scalaCollCompat,
       srdfJena,
       munit % Test,
-      munitEffect % Test
+      munitEffect % Test,
     ),
     testFrameworks += new TestFramework("munit.Framework")
   )
