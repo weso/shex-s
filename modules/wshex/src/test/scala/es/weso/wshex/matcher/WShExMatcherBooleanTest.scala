@@ -3,6 +3,7 @@ import munit._
 import es.weso.wshex.WShExFormat._
 import org.wikidata.wdtk.datamodel.helpers
 import es.weso.utils.VerboseLevel
+import es.weso.wshex.WShExFormat
 
 /** Test matcher using Entity Schemas as input
   */
@@ -35,7 +36,7 @@ class WShExMatcherBooleanTest extends FunSuite {
     checkMatch("Label en and human", schemaStr, q42Str, true)                       
   }
 
-  {
+  { // TODO: Maybe we should revisit this test...
     val schemaStr = """|prefix :  <http://www.wikidata.org/entity/>
                        |
                        |start = @<Human>
@@ -44,7 +45,7 @@ class WShExMatcherBooleanTest extends FunSuite {
                        |  :P31 [ :Q5 ]
                        |}""".stripMargin
 
-    checkMatch("Label es and human", schemaStr, q42Str, false)                       
+    checkMatch(name = "Label es and human", schemaStr = schemaStr, jsonStr = q42Str, expected = true) 
   }
 
   def checkMatch(
@@ -52,7 +53,8 @@ class WShExMatcherBooleanTest extends FunSuite {
       schemaStr: String,
       jsonStr: String,
       expected: Boolean, 
-      verboseLevel: VerboseLevel = VerboseLevel.Nothing
+      verboseLevel: VerboseLevel = VerboseLevel.Nothing,
+      schemaFormat: WShExFormat = WShExFormat.CompactWShExFormat
   )(implicit loc: munit.Location): Unit =
     test(name) {
      Matcher.unsafeFromString(

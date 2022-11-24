@@ -11,8 +11,6 @@ import org.wikidata.wdtk.datamodel.interfaces.{
 }
 import es.weso.rdf.nodes._
 import es.weso.wshex._
-import es.weso.wshex.TermConstraint.StringConstraint
-import es.weso.wshex.TermConstraint.StringConstraintMatchError
 import es.weso.rbe.interval.IntOrUnbounded
 import es.weso.utils.internal.CollectionCompat._
 import es.weso.wshex.ReferencesSpec._
@@ -177,6 +175,12 @@ object MatchingError {
 
   case class LabelAnyNoLabel(entity: EntityDoc)
       extends MatchingError(s"""|LabelAny, no label
+                              |Entity ${entity.show()}
+                              |""".stripMargin)
+
+  case class NoLang(lang: String, mode: TermMode, entity: EntityDoc)
+      extends MatchingError(s"""|
+                                |No value for lang: ${lang}
                               |Entity ${entity.show()}
                               |""".stripMargin)
 

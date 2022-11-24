@@ -32,7 +32,7 @@ class TermConstraintTest extends CatsEffectSuite {
     checkTerm(
       "Basic label Q42",
       itemDocument,
-      LabelConstraint(Lang("en"), Some(Constant("Douglas Adams"))),
+      LabelConstraint(Map(Lang("en") -> Some(Constant("Douglas Adams")))),
       EntityDoc(itemDocument).asRight
     )
   }
@@ -47,8 +47,8 @@ class TermConstraintTest extends CatsEffectSuite {
     checkTerm(
       "Q42 with lang es should fail",
       itemDocument,
-      LabelConstraint(Lang("es"), Some(Constant("Douglas Adams"))),
-      LabelConstraintNoLang(lang = Lang("es"), EntityDoc(itemDocument)).asLeft
+      LabelConstraint(Map(Lang("es") -> Some(Constant("Douglas Adams")))),
+      NoLang(lang = "es", mode = LabelMode, entity = EntityDoc(itemDocument)).asLeft
     )
   }
 
@@ -68,7 +68,7 @@ class TermConstraintTest extends CatsEffectSuite {
     checkTerm(
       "Q5 with lang es should pass",
       itemDocument,
-      LabelConstraint(Lang("es"), None),
+      LabelConstraint(Map(Lang("es") -> None)),
       expected.asRight
     )
   }
@@ -83,7 +83,7 @@ class TermConstraintTest extends CatsEffectSuite {
     checkTerm(
       "Q42 with constant string Doug should fail",
       itemDocument,
-      LabelConstraint(Lang("en"), Some(Constant("Doug"))),
+      LabelConstraint(Map(Lang("en") -> Some(Constant("Doug")))),
       StringConstantMatchingError(s = "Douglas Adams", expected = "Doug").asLeft
     )
   }
