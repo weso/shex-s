@@ -232,7 +232,7 @@ object CompactShow {
         literalStemRangeValueDoc(stem) :: space ::
           optListDocSep(excls, literalExclusionDoc, space)
       case Language(lang) => langDoc(lang)
-      case _              => str(s"Unimplemented show of $v")
+      // Unreachable: case _              => str(s"Unimplemented show of $v")
     }
 
   private def iriStemDoc(pm: PrefixMap)(i: IRIStem): Doc =

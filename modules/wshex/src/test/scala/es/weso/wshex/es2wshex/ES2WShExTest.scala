@@ -143,7 +143,6 @@ class ES2WShExTest extends CatsEffectSuite {
     VerboseLevel.Nothing
   )
 
-
   checkConversion(
     "start OR",
     """|PREFIX wd:  <http://www.wikidata.org/entity/>
@@ -175,6 +174,41 @@ class ES2WShExTest extends CatsEffectSuite {
     "WShExC",
     VerboseLevel.Nothing
   )
+
+  checkConversion(
+    "descriptions and aliases",
+    """|PREFIX wd:  <http://www.wikidata.org/entity/>
+       |PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+       |prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+       |prefix schema: <http://schema.org/>
+       |prefix skos: <http://www.w3.org/2004/02/skos/core#>
+       |                       
+       |
+       |start = @<S> 
+       |    
+       |<S> { 
+       | rdfs:label [ @en ] ;
+       | schema:description [ @en ] ;
+       | skos:altLabel [ @en ] ; 
+       | wdt:P31 [ wd:Q5 ] 
+       |}
+       |""".stripMargin,
+    "ShExC",
+    """|PREFIX :  <http://www.wikidata.org/entity/>
+       |
+       |start = @<S>
+       |
+       |<S> 
+       |  Label (en -> .) 
+       |  Description (en -> .)
+       |  Alias (en -> .) {
+       |  :P31 [ :Q5 ]
+       |}
+       |""".stripMargin,
+    "WShExC",
+    VerboseLevel.Nothing
+  )
+
 
 /*TODO: This test is pending because it requires a refactoring of WShEx parser
   checkConversion(

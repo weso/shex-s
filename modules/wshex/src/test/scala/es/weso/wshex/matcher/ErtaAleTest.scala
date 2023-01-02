@@ -28,11 +28,11 @@ class ErtaAleTest extends FunSuite {
   test("Q903_Volcano part of") {
     val schemaStr = """|prefix : <http://www.wikidata.org/entity/>
                        |
-                       |start = @<Human>
+                       |start = @<Volcano>
                        |
                        |<Volcano> {
-                       |  :P31 [ :Q212057 ] ; # instance of Volcano
-                       |  :P361 .            # part of 
+                       |  :P31  [ :Q212057 ] ; # instance of Volcano
+                       |  :P361 .              # part of 
                        |}""".stripMargin
     val eitherMatcher = Matcher.unsafeFromString(schemaStr)
     eitherMatcher.fold(

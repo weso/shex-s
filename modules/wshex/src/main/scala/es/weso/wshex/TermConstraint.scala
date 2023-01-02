@@ -6,7 +6,7 @@ import org.wikidata.wdtk.datamodel.interfaces.MonolingualTextValue
 import es.weso.utils.RegEx
 import cats._
 import cats.implicits._
-import collection.JavaConverters._
+// import collection.JavaConverters._
 import es.weso.wshex.matcher.MatchingError
 import es.weso.wshex.matcher.MatchingError._
 import es.weso.wbmodel.EntityDoc
@@ -49,6 +49,24 @@ object TermConstraint {
       }
     }
 
+    private def matchStrLangsMapLs(
+    langsMap: Map[String, List[MonolingualTextValue]], 
+    strLang: String, 
+    strConstraint: Option[StringConstraint],
+    termMode: TermMode,
+    ed: EntityDoc
+    ): Either[MatchingError, Option[List[MonolingualTextValue]]] = {
+      langsMap.get(strLang) match {
+        case None => strConstraint match {
+          case None => none.asRight 
+          case Some(_) => NoLang(strLang, termMode, ed).asLeft
+        }
+        case Some(txts) => 
+          optMatchConstraints(strConstraint, txts).map(_.some)
+      }
+    }
+  
+
   private def matchLangsMap(
     langsMap: Map[String, MonolingualTextValue], 
     constraintsMap: Map[Lang, Option[StringConstraint]],
@@ -74,10 +92,28 @@ object TermConstraint {
     }
 
   private def matchLangsMapLs(
-    langsMap: Map[String, java.util.List[MonolingualTextValue]], 
-    constraintsMap: Map[Lang, Option[StringConstraint]]
-    ): Either[MatchingError, Map[String, List[MonolingualTextValue]]] = 
-      Pending(s"Not implemented matchLangsMapLs yet").asLeft
+    langsMapLs: Map[String, List[MonolingualTextValue]], 
+    constraintsMap: Map[Lang, Option[StringConstraint]],
+    termMode: TermMode,
+    ed: EntityDoc
+    ): Either[MatchingError, Map[String, List[MonolingualTextValue]]] = {
+      val zero: Either[MatchingError, Map[String, List[MonolingualTextValue]]] = Map[String, List[MonolingualTextValue]]().asRight
+      def cmb(
+         pair: (Lang, Option[StringConstraint]), 
+         current: Either[MatchingError, Map[String,List[MonolingualTextValue]]]
+         ): Either[MatchingError, Map[String,List[MonolingualTextValue]]] = {
+        val (lang, strConst) = pair
+        val strLang: String = lang.lang
+        for { 
+          maybeStr <- matchStrLangsMapLs(langsMapLs, strLang, strConst, termMode, ed)
+          currentMap <- current
+        } yield maybeStr match { 
+          case None => currentMap
+          case Some(txt) => currentMap.updated(strLang, txt)
+        }
+      }
+      constraintsMap.toList.foldRight(zero)(cmb)
+  }
 
 
   private def addMapValues(
@@ -96,8 +132,13 @@ object TermConstraint {
     c: EntityDoc, 
     newValues: Map[String, List[MonolingualTextValue]], 
     updateFn: (EntityDoc, String, List[MonolingualTextValue]
-    ) => EntityDoc): EntityDoc = ???  
-
+    ) => EntityDoc): EntityDoc = {
+      def cmb(pair: (String, List[MonolingualTextValue]), c: EntityDoc): EntityDoc = {
+        val (s,txts) = pair
+        updateFn(c,s,txts)
+      }
+      newValues.toList.foldRight(c)(cmb)
+    }
 
   private def optMatchConstraint(
       maybesc: Option[StringConstraint],
@@ -107,6 +148,21 @@ object TermConstraint {
       case None     => value.asRight
       case Some(sc) => sc.matchMonolingualTextValue(value)
     }
+
+  private def optMatchConstraints(
+      maybesc: Option[StringConstraint],
+      values: List[MonolingualTextValue]
+  ): Either[MatchingError, List[MonolingualTextValue]] =
+    maybesc match {
+      case None     => values.asRight
+      case Some(sc) => values.foldRight(List[MonolingualTextValue]().asRight[MatchingError]){
+        case (v, current) => for {
+          v1 <- sc.matchMonolingualTextValue(v)
+          vs <- current
+        } yield v1 +: vs
+      }
+    }
+  
 
   case class LabelAny(strConstraint: Option[StringConstraint])
       extends TermConstraint {
@@ -198,9 +254,9 @@ object TermConstraint {
         labelsMap.toList.foldLeft(current.asRight[MatchingError]) { case (c, pair) => {
           val (lbl, as) = pair
           for {
-           _ <- as.asScala.toList.map(optMatchConstraint(strConstraint, _)).sequence
+           _ <- as.map(optMatchConstraint(strConstraint, _)).sequence
            cur <- c
-          } yield cur.withAliases(lbl, as.asScala.toList.map(_.getText()))
+          } yield cur.withAliases(lbl, as.map(_.getText()))
         }}
     }
   }
@@ -212,16 +268,9 @@ object TermConstraint {
         current: EntityDoc
     ): Either[MatchingError, EntityDoc] = {
       val aliasesMap = ed.getAliases()
-      matchLangsMapLs(aliasesMap, constraintsMap).map(
+      matchLangsMapLs(aliasesMap, constraintsMap, AliasesMode, ed).map(
         addMapValuesLs(current, _, (e,s,vs) => e.withAliases(s,vs.map(_.getText())))
       )
-/*      labelsMap.get(lang.lang) match {
-        case None         => AliasConstraintNoLang(lang, ed).asLeft
-        case Some(values) => 
-         values.asScala.toList.map(optMatchConstraint(strConstraint, _)).sequence.map(_ =>
-          current.withAliases(lang.lang, values.asScala.toList.map(_.getText())) 
-         )
-       } */
      } 
   }
 
