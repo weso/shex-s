@@ -52,7 +52,7 @@ class TermConstraintTest extends CatsEffectSuite {
     )
   }
 
-  {
+    {
     val q5 = new ItemIdValueImpl("Q42", "http://www.wikidata.org/entity/")
     val itemDocument =
       ItemDocumentBuilder
@@ -60,13 +60,11 @@ class TermConstraintTest extends CatsEffectSuite {
         .withLabel(Datamodel.makeMonolingualTextValue("Human", "en"))
         .withLabel(Datamodel.makeMonolingualTextValue("Humano", "es"))
         .build()
-    val expected =
-      EntityDoc(
-        ItemDocumentBuilder
-          .forItemId(q5)
-          .withLabel(Datamodel.makeMonolingualTextValue("Humano", "es"))
-          .build()
-      )
+    val expected = 
+      EntityDoc(ItemDocumentBuilder
+        .forItemId(q5)
+        .withLabel(Datamodel.makeMonolingualTextValue("Humano", "es"))
+        .build())   
     checkTerm(
       "Q5 with lang es should pass",
       itemDocument,
@@ -97,6 +95,6 @@ class TermConstraintTest extends CatsEffectSuite {
       expected: Either[MatchingError, EntityDoc]
   )(implicit loc: munit.Location): Unit =
     test(name) {
-      assertEquals(tc.matchTerm(EntityDoc(td), EntityDoc.emptyFrom(td)), expected)
+      assertEquals(tc.matchTerm(EntityDoc(td), EntityDoc.emptyFrom(td)), expected) 
     }
 }

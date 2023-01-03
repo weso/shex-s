@@ -245,7 +245,7 @@ sealed abstract class TripleConstraint extends TripleExpr with Serializable with
             )
             .collect { case Right(()) => () }
             .size
-        val failed = found.size - matches
+        val failed = found.size - matches 
         if (min <= matches && max >= matches) Right(Right((tl.property, matches, failed)))
         else Reason.cardinalityError.asLeft
       case _ => Reason.notImplemented.asLeft

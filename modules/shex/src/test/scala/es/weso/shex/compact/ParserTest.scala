@@ -14,11 +14,10 @@ class ParserTest extends FunSuite {
     Schema.empty
       .addShape(
         ShapeDecl(
-          lbl = IRILabel(IRI("S")),
-          shapeExpr = Shape.empty,
+          lbl = IRILabel(IRI("S")), 
+          shapeExpr = Shape.empty, 
           _abstract = false
-        )
-      )
+          ))
       .withLabelLocationMap(
         Some(Map(IRILabel(IRI("S")) -> Location(line = 1, col = 0, tokenType = "label")))
       )
@@ -33,8 +32,8 @@ class ParserTest extends FunSuite {
           lbl = IRILabel(IRI("S")),
           shapeExpr = Shape.empty.copy(
             closed = Some(false),
-            _extends = Some(List(IRILabel(IRI("T"))))
-          ),
+           _extends = Some(List(IRILabel(IRI("T"))))
+           ),
           _abstract = false
         )
       )
