@@ -9,9 +9,28 @@ import es.weso.utils.VerboseLevel
 class ESMatcherTest extends FunSuite {
 
   val q42Str =
-      """|{"type":"item","aliases":{},"labels":{"en":{"language":"en","value":"Douglas Adams"}},"descriptions":{},"sitelinks":{},"id":"Q42","claims":{"P31":[{"rank":"normal","references":[{"snaks":{"P214":[{"snaktype":"value","property":"P214","datavalue":{"type":"string","value":"113230702"}}],"P248":[{"snaktype":"value","property":"P248","datavalue":{"type":"wikibase-entityid","value":{"entity-type":"item","numeric-id":54919}},"datatype":"wikibase-item"}],"P813":[{"snaktype":"value","property":"P813","datavalue":{"type":"time","value":{"time":"+00000002013-12-07T00:00:00Z","timezone":0,"before":0,"after":0,"precision":11,"calendarmodel":"http://www.wikidata.org/entity/Q1985727"}},"datatype":"time"}]},"allSnaks":[{"property":"P248","datavalue":{"type":"wikibase-entityid","value":{"entity-type":"item","numeric-id":54919}},"datatype":"wikibase-item"},{"property":"P214","datavalue":{"type":"string","value":"113230702"}},{"property":"P813","datavalue":{"type":"time","value":{"time":"+00000002013-12-07T00:00:00Z","timezone":0,"before":0,"after":0,"precision":11,"calendarmodel":"http://www.wikidata.org/entity/Q1985727"}},"datatype":"time"}],"snaks-order":["P248","P214","P813"]}],"mainsnak":{"snaktype":"value","property":"P31","datavalue":{"type":"wikibase-entityid","value":{"entity-type":"item","numeric-id":5}},"datatype":"wikibase-item"},"id":"Q42$F078E5B3-F9A8-480E-B7AC-D97778CBBEF9","type":"statement"}]}}""".stripMargin
+      """|{"type":"item",
+         | "labels":{"en":{"language":"en","value":"Douglas Adams"}},
+         | "descriptions":{"en":{"language":"en","value":"Writer"}},
+         | "aliases":{"en":[{"language":"en","value":"Dou"},{"language":"en","value":"Sir Dou"}],
+         |            "ca":[{"language":"ca","value":"DouDou"}]
+         |           },
+         | "sitelinks":{},
+         | "id":"Q42",
+         | "claims":{"P31":[
+         |   {"rank":"normal","references":[{"snaks":{
+         |       "P214":[{"snaktype":"value","property":"P214","datavalue":{"type":"string","value":"113230702"}}],
+         |       "P248":[{"snaktype":"value","property":"P248","datavalue":{"type":"wikibase-entityid","value":{"entity-type":"item","numeric-id":54919}},"datatype":"wikibase-item"}],
+         |       "P813":[{"snaktype":"value","property":"P813","datavalue":{"type":"time","value":{"time":"+00000002013-12-07T00:00:00Z","timezone":0,"before":0,"after":0,"precision":11,"calendarmodel":"http://www.wikidata.org/entity/Q1985727"}},"datatype":"time"}]},
+         |       "allSnaks":[{"property":"P248","datavalue":{"type":"wikibase-entityid","value":{"entity-type":"item","numeric-id":54919}},"datatype":"wikibase-item"},{"property":"P214","datavalue":{"type":"string","value":"113230702"}},{"property":"P813","datavalue":{"type":"time","value":{"time":"+00000002013-12-07T00:00:00Z","timezone":0,"before":0,"after":0,"precision":11,"calendarmodel":"http://www.wikidata.org/entity/Q1985727"}},"datatype":"time"}],"snaks-order":["P248","P214","P813"]}],
+         |       "mainsnak":{"snaktype":"value","property":"P31","datavalue":{"type":"wikibase-entityid","value":{"entity-type":"item","numeric-id":5}},"datatype":"wikibase-item"},
+         |    "id":"Q42$F078E5B3-F9A8-480E-B7AC-D97778CBBEF9",
+         |    "type":"statement"
+         |   }
+         |  ]}
+         |}""".stripMargin.replaceAll("\n","")
 
-  {
+ {
     val schemaStr = """|prefix wd:  <http://www.wikidata.org/entity/>
                        |prefix wdt: <http://www.wikidata.org/prop/direct/>
                        |
@@ -110,6 +129,29 @@ class ESMatcherTest extends FunSuite {
                        |}
                        |""".stripMargin
     checkMatch("Q42 with OR", schemaStr, q42Str, true, VerboseLevel.Nothing)                   
+  } 
+
+  {
+    val schemaStr = """|prefix wd:  <http://www.wikidata.org/entity/>
+                       |prefix wdt: <http://www.wikidata.org/prop/direct/>
+                       |prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+                       |prefix p:    <http://www.wikidata.org/prop/>
+                       |prefix pr:   <http://www.wikidata.org/prop/reference/>
+                       |prefix ps:   <http://www.wikidata.org/prop/statement/>
+                       |prefix prov: <http://www.w3.org/ns/prov#>  
+                       |PREFIX schema: <http://schema.org/>
+                       |PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+                       |
+                       |start = @<Human> 
+                       |
+                       |<Human> EXTRA wdt:P31 {
+                       |  rdfs:label [ @en ]         ;
+                       |  schema:description [ @en ] ;
+                       |  skos:altLabel [ @en ] *    ;
+                       |  wdt:P31 [ wd:Q5 ]
+                       |}
+                       |""".stripMargin
+    checkMatch("Q42 with labels", schemaStr, q42Str, true, VerboseLevel.Nothing)                   
   }
 
 

@@ -1,6 +1,6 @@
-lazy val scala212 = "2.12.16"
+lazy val scala212 = "2.12.17"
 lazy val scala213 = "2.13.10"
-lazy val scala3 = "3.2.0"
+lazy val scala3 = "3.2.1"
 lazy val supportedScalaVersions = List(
   scala3,
   scala213,
@@ -16,10 +16,10 @@ lazy val documentVersion = "0.0.34"
 // Dependency versions
 // lazy val antlrVersion            = "4.9.3"
 lazy val catsVersion = "2.9.0"
-lazy val catsEffectVersion = "3.4.1"
+lazy val catsEffectVersion = "3.4.4"
 lazy val circeVersion = "0.14.2"
 lazy val commonsTextVersion = "1.8"
-lazy val declineVersion = "2.3.0"
+lazy val declineVersion = "2.4.1"
 lazy val fansiVersion = "0.3.0"
 lazy val fs2Version = "3.4.0"
 lazy val jenaVersion = "4.3.2"
@@ -579,5 +579,6 @@ lazy val commonSettings = compilationSettings ++ sharedDependencies ++ Seq(
       email = "jelabra@gmail.com",
       url = url("https://weso.labra.es")
     )
-  )
+  ),
+  libraryDependencies += compilerPlugin("com.github.ghik" % "zerowaste" % "0.2.1" cross CrossVersion.full)
 ) ++ warnUnusedImport

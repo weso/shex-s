@@ -78,10 +78,10 @@ case class EntityDoc(entityDocument: EntityDocument) extends Serializable {
       case pd: PropertyDocument => pd.getDescriptions().asScala.toMap
     }
 
-  def getAliases(): Map[String, java.util.List[MonolingualTextValue]] =
+  def getAliases(): Map[String, List[MonolingualTextValue]] =
     entityDocument match {
-      case id: ItemDocument     => id.getAliases().asScala.toMap
-      case pd: PropertyDocument => pd.getAliases().asScala.toMap
+      case id: ItemDocument     => id.getAliases().asScala.mapValues(_.asScala.toList).toMap
+      case pd: PropertyDocument => pd.getAliases().asScala.mapValues(_.asScala.toList).toMap
     }
 
   def getValues(property: PropertyIdValue): LazyList[WDTKValue] =
@@ -191,8 +191,8 @@ case class EntityDoc(entityDocument: EntityDocument) extends Serializable {
       case td: TermedDocument =>
         EntityDoc(td.withDescription(Datamodel.makeMonolingualTextValue(descr, langCode)))
       case _ => throw NotTermedDocument(entityDocument)
-    }
 
+    }
   def withAliases(langCode: String, aliases: List[String]): EntityDoc =
     entityDocument match {
       case td: TermedDocument => {
