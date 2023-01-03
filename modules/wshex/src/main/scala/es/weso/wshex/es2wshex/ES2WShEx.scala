@@ -299,6 +299,7 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
           .map(_.flatten)
           .map(_ match {
             case Nil => none[TripleExpr]
+            case te :: Nil => te.some
             case tes => EachOf(exprs = tes).some
           })
 

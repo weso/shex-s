@@ -10,8 +10,7 @@ import org.wikidata.wdtk.datamodel.implementation._
 import es.weso.wbmodel._
 import cats.implicits._
 
-/** Test matcher using Entity Schemas as input
-  */
+/** Test matcher using WShEx as input */
 class WShExMatcherFullTest extends CheckMatchWShEx {
 
   val dataObjectFactory = new DataObjectFactoryImpl();
@@ -457,6 +456,96 @@ class WShExMatcherFullTest extends CheckMatchWShEx {
                        |}""".stripMargin
     val expected: Option[EntityDoc] = EntityDoc(q42_expected).some
     checkMatch(label, schemaStr, q42_full, expected)
-  }
+  } 
 
+  {
+    val q42_raw = Q(42).withLabel("Douglas", "es").withLabel("Douglas", "en").build()
+    val q5 = Q(5).build()
+    val p31_q5 =
+      StatementBuilder
+        .forSubjectAndProperty(q42_raw.getEntityId(), new PropertyIdValueImpl("P31", defaultSite))
+        .withValue(q5.getEntityId())
+        .build()
+    val q42 = q42_raw.withStatement(p31_q5)
+    val q42_onlyEnglish = Q(42).withLabel("Douglas", "en").build().withStatement(p31_q5)
+    
+    val schemaStr = """|prefix :  <http://www.wikidata.org/entity/>
+                       |
+                       |start = @<S>
+                       |
+                       |<S> Label (en -> .) {
+                       |  :P31 [ :Q5 ] ;
+                       |}
+                       |""".stripMargin
+    val expected: Option[EntityDoc] = EntityDoc(q42_onlyEnglish).some
+    
+    checkMatch(
+      ":Q42 Label \"Douglas\"; :P31 q5 . == <S> Label (en -> .) { :P31 [ :Q5 ] }",
+      schemaStr,
+      q42,
+      expected,
+      VerboseLevel.Nothing
+    )
+  }  
+
+  {
+    val q42_raw = Q(42).withDescription("Escritor", "es").withDescription("Writer", "en").build()
+    val q5 = Q(5).build()
+    val p31_q5 =
+      StatementBuilder
+        .forSubjectAndProperty(q42_raw.getEntityId(), new PropertyIdValueImpl("P31", defaultSite))
+        .withValue(q5.getEntityId())
+        .build()
+    val q42 = q42_raw.withStatement(p31_q5)
+    val q42_onlyEnglish = Q(42).withDescription("Writer", "en").build().withStatement(p31_q5)
+    
+    val schemaStr = """|prefix :  <http://www.wikidata.org/entity/>
+                       |
+                       |start = @<S>
+                       |
+                       |<S> Description (en -> .) {
+                       |  :P31 [ :Q5 ] ;
+                       |}
+                       |""".stripMargin
+    val expected: Option[EntityDoc] = EntityDoc(q42_onlyEnglish).some
+    
+    checkMatch(
+      ":Q42 Description \"Writer\"; :P31 q5 . == <S> Description (en -> .) { :P31 [ :Q5 ] }",
+      schemaStr,
+      q42,
+      expected,
+      VerboseLevel.Nothing
+    )
+  }  
+
+
+  {
+    val q42_raw = Q(42).withAlias("Dug", "es").withAlias("Dou", "en").build()
+    val q5 = Q(5).build()
+    val p31_q5 =
+      StatementBuilder
+        .forSubjectAndProperty(q42_raw.getEntityId(), new PropertyIdValueImpl("P31", defaultSite))
+        .withValue(q5.getEntityId())
+        .build()
+    val q42 = q42_raw.withStatement(p31_q5)
+    val q42_onlyEnglish = Q(42).withAlias("Dou", "en").build().withStatement(p31_q5)
+    
+    val schemaStr = """|prefix :  <http://www.wikidata.org/entity/>
+                       |
+                       |start = @<S>
+                       |
+                       |<S> Alias (en -> .) {
+                       |  :P31 [ :Q5 ] ;
+                       |}
+                       |""".stripMargin
+    val expected: Option[EntityDoc] = EntityDoc(q42_onlyEnglish).some
+    
+    checkMatch(
+      ":Q42 Alias \"Dou\"@en; :P31 q5 . == <S> Alias (en -> .) { :P31 [ :Q5 ] }",
+      schemaStr,
+      q42,
+      expected,
+      VerboseLevel.Nothing
+    )
+  }  
 }
