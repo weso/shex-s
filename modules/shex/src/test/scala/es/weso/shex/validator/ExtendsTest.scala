@@ -15,9 +15,9 @@ class ExtendsTest extends ShouldValidateShapeMap {
          |:D extends @:B extends @:C { :p [ 4 ] }
          |""".stripMargin
     shouldValidateWithShapeMap(rdf, shex, ":x@:D", ":x@:D", Nothing)
-  }
+  } 
 
-  {
+    {
     val rdf =
       """|prefix : <http://e#>
            |:x :p 1 .""".stripMargin
@@ -26,7 +26,7 @@ class ExtendsTest extends ShouldValidateShapeMap {
            |:A { :p [ 1 ] }
            |""".stripMargin
     shouldValidateWithShapeMap(rdf, shex, ":x@:A", ":x@:A", Nothing)
-  }
+  } 
 
   {
     val rdf =
@@ -39,7 +39,7 @@ class ExtendsTest extends ShouldValidateShapeMap {
            | :p [ 3 ]
            |}""".stripMargin
     shouldValidateWithShapeMap(rdf, shex, ":x@:A", ":x@:A", Nothing)
-  }
+  } 
 
   {
     val rdf =
@@ -342,17 +342,17 @@ class ExtendsTest extends ShouldValidateShapeMap {
   }
 
   {
-    val rdf =
-      """|prefix : <http://e#>
+      val rdf =
+        """|prefix : <http://e#>
            |:ok1 :p 1 .
            |""".stripMargin
-    val shex =
-      """|prefix : <http://e#>
+      val shex =
+        """|prefix : <http://e#>
            |:B { :p [ 1 ] }
            |:A extends @:B CLOSED {
            |}""".stripMargin
-    shouldValidateWithShapeMap(rdf, shex, ":ok1@:A", ":ok1@:A", Nothing)
-  }
+      shouldValidateWithShapeMap(rdf, shex, ":ok1@:A", ":ok1@:A", Nothing)
+  } 
 
   {
     val rdf =
@@ -395,7 +395,7 @@ class ExtendsTest extends ShouldValidateShapeMap {
     shouldValidateWithShapeMap(rdf, shex, ":x@:S", ":x@!:S", Nothing)
   }
 
-  /*  {
+/*  {
     val rdf =
       """|prefix : <http:e/>
            |PREFIX foaf: <http://xmlns.com/foaf/>
@@ -452,10 +452,10 @@ class ExtendsTest extends ShouldValidateShapeMap {
       ":issue1@:IssueShape",
       ":issue1@:IssueShape, :bob@:PersonShape, :bob@:UserShape, :joe@:EmployeeShape",
       Debug
-    )
+    ) 
   } */
 
-  /*  {
+/*  {
     val rdf =
       """|prefix : <http:e/>
            |
@@ -537,7 +537,7 @@ class ExtendsTest extends ShouldValidateShapeMap {
     shouldValidateWithShapeMap(rdf, shex, ":issue1@:IssueShape", ":issue1@!:IssueShape", Debug)
 
   } */
-
+  
   /* Old examples...
 
   describe(s"Users example") {

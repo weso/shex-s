@@ -456,7 +456,7 @@ class WShExMatcherFullTest extends CheckMatchWShEx {
                        |}""".stripMargin
     val expected: Option[EntityDoc] = EntityDoc(q42_expected).some
     checkMatch(label, schemaStr, q42_full, expected)
-  }
+  } 
 
   {
     val q42_raw = Q(42).withLabel("Douglas", "es").withLabel("Douglas", "en").build()
@@ -468,7 +468,7 @@ class WShExMatcherFullTest extends CheckMatchWShEx {
         .build()
     val q42 = q42_raw.withStatement(p31_q5)
     val q42_onlyEnglish = Q(42).withLabel("Douglas", "en").build().withStatement(p31_q5)
-
+    
     val schemaStr = """|prefix :  <http://www.wikidata.org/entity/>
                        |
                        |start = @<S>
@@ -478,7 +478,7 @@ class WShExMatcherFullTest extends CheckMatchWShEx {
                        |}
                        |""".stripMargin
     val expected: Option[EntityDoc] = EntityDoc(q42_onlyEnglish).some
-
+    
     checkMatch(
       ":Q42 Label \"Douglas\"; :P31 q5 . == <S> Label (en -> .) { :P31 [ :Q5 ] }",
       schemaStr,
@@ -486,7 +486,7 @@ class WShExMatcherFullTest extends CheckMatchWShEx {
       expected,
       VerboseLevel.Nothing
     )
-  }
+  }  
 
   {
     val q42_raw = Q(42).withDescription("Escritor", "es").withDescription("Writer", "en").build()
@@ -498,7 +498,7 @@ class WShExMatcherFullTest extends CheckMatchWShEx {
         .build()
     val q42 = q42_raw.withStatement(p31_q5)
     val q42_onlyEnglish = Q(42).withDescription("Writer", "en").build().withStatement(p31_q5)
-
+    
     val schemaStr = """|prefix :  <http://www.wikidata.org/entity/>
                        |
                        |start = @<S>
@@ -508,7 +508,7 @@ class WShExMatcherFullTest extends CheckMatchWShEx {
                        |}
                        |""".stripMargin
     val expected: Option[EntityDoc] = EntityDoc(q42_onlyEnglish).some
-
+    
     checkMatch(
       ":Q42 Description \"Writer\"; :P31 q5 . == <S> Description (en -> .) { :P31 [ :Q5 ] }",
       schemaStr,
@@ -516,7 +516,8 @@ class WShExMatcherFullTest extends CheckMatchWShEx {
       expected,
       VerboseLevel.Nothing
     )
-  }
+  }  
+
 
   {
     val q42_raw = Q(42).withAlias("Dug", "es").withAlias("Dou", "en").build()
@@ -528,7 +529,7 @@ class WShExMatcherFullTest extends CheckMatchWShEx {
         .build()
     val q42 = q42_raw.withStatement(p31_q5)
     val q42_onlyEnglish = Q(42).withAlias("Dou", "en").build().withStatement(p31_q5)
-
+    
     val schemaStr = """|prefix :  <http://www.wikidata.org/entity/>
                        |
                        |start = @<S>
@@ -538,7 +539,7 @@ class WShExMatcherFullTest extends CheckMatchWShEx {
                        |}
                        |""".stripMargin
     val expected: Option[EntityDoc] = EntityDoc(q42_onlyEnglish).some
-
+    
     checkMatch(
       ":Q42 Alias \"Dou\"@en; :P31 q5 . == <S> Alias (en -> .) { :P31 [ :Q5 ] }",
       schemaStr,
@@ -546,5 +547,5 @@ class WShExMatcherFullTest extends CheckMatchWShEx {
       expected,
       VerboseLevel.Nothing
     )
-  }
+  }  
 }

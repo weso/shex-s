@@ -30,8 +30,7 @@ class ActiveSiteTest extends FunSuite {
                        |  wdt:P527 @:anatomical_structure *
                        |}
                        |""".stripMargin
-    val eitherMatcher =
-      Matcher.unsafeFromString(str = schemaStr, format = WShExFormat.ESCompactFormat)
+    val eitherMatcher = Matcher.unsafeFromString(str = schemaStr, format = WShExFormat.ESCompactFormat)
     eitherMatcher.fold(
       parseError => fail(s"Error parsing schema: $parseError"),
       matcher => {
