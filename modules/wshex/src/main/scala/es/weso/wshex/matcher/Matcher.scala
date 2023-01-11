@@ -55,14 +55,15 @@ case class Matcher(
     * @param entityDocument
     * @return a matching report
     */
-  def matchStart(entityDocument: EntityDocument): MatchingStatus =
+  def matchStart(entityDocument: EntityDocument, opts: MatchOptions = MatchOptions.default): MatchingStatus =
     wShEx.startShapeExpr match {
       case None => NoMatching(List(NoShapeExprs(wShEx)))
       case Some(se) =>
         matchShapeExpr(
           se,
           EntityDoc(entityDocument),
-          EntityDoc.emptyFrom(entityDocument)
+          EntityDoc.emptyFrom(entityDocument),
+          opts
         )
     }
 
@@ -71,33 +72,34 @@ case class Matcher(
     * @param jsonStr
     * @return a matching stsatus
     */
-  def matchJsonStart(jsonStr: String): MatchingStatus = {
+  def matchJsonStart(jsonStr: String, opts: MatchOptions = MatchOptions.default): MatchingStatus = {
     val entityDocument = jsonDeserializer.deserializeEntityDocument(jsonStr)
-    matchStart(entityDocument)
+    matchStart(entityDocument, opts)
   }
 
   private def matchShapeExpr(
       shapeExpr: WShapeExpr,
       entity: EntityDoc,
-      current: EntityDoc
+      current: EntityDoc,
+      opts: MatchOptions
   ): MatchingStatus =
     shapeExpr match {
 
       case s: WShape =>
-        matchWShape(s, entity, current)
+        matchWShape(s, entity, current,opts)
 
       case sand: WShapeAnd =>
         val ls: LazyList[MatchingStatus] =
-          sand.exprs.toLazyList.map(matchShapeExpr(_, entity, current))
+          sand.exprs.toLazyList.map(matchShapeExpr(_, entity, current, opts))
         MatchingStatus.combineAnds(current, ls)
 
       case sor: WShapeOr =>
         val ls: LazyList[MatchingStatus] =
-          sor.exprs.toLazyList.map(matchShapeExpr(_, entity, current))
-        MatchingStatus.combineOrs(ls)
+          sor.exprs.toLazyList.map(matchShapeExpr(_, entity, current, opts))
+        MatchingStatus.combineOrs(ls, opts.mergeOrs)
 
       case snot: WShapeNot =>
-        val ms = matchShapeExpr(snot.shapeExpr, entity, current)
+        val ms = matchShapeExpr(snot.shapeExpr, entity, current, opts)
         if (ms.matches) NoMatching(List(NotShapeFail(snot.shapeExpr, entity)))
         else
           Matching(shapeExprs = List(shapeExpr), entity = current, dependencies = ms.dependencies)
@@ -105,7 +107,7 @@ case class Matcher(
       case sref: WShapeRef =>
         wShEx.getShape(sref.label) match {
           case None     => NoMatching(List(ShapeNotFound(sref.label, wShEx)))
-          case Some(se) => matchShapeExpr(se, entity, current)
+          case Some(se) => matchShapeExpr(se, entity, current, opts)
         }
 
       case _ =>
@@ -115,9 +117,9 @@ case class Matcher(
 
     }
 
-  private def matchWShape(s: WShape, entity: EntityDoc, current: EntityDoc): MatchingStatus = {
+  private def matchWShape(s: WShape, entity: EntityDoc, current: EntityDoc, opts: MatchOptions): MatchingStatus = {
     val matchExpr = s.expression match {
-      case Some(te) => matchTripleExpr(te, entity, s, current)
+      case Some(te) => matchTripleExpr(te, entity, s, current, opts)
       case None     => MatchingStatus.matchEmpty(current)
     }
     s.termConstraints.foldLeft(matchExpr) { case (current, tc) =>
@@ -144,7 +146,8 @@ case class Matcher(
       te: TripleExpr,
       entity: EntityDoc,
       se: WShape,
-      current: EntityDoc
+      current: EntityDoc,
+      opts: MatchOptions
   ): MatchingStatus =
     te match {
       case tc: TripleConstraint =>
@@ -166,7 +169,8 @@ case class Matcher(
         val tcs: LazyList[TripleConstraint] =
           oo.exprs.map(_.asInstanceOf[TripleConstraint]).toLazyList
         MatchingStatus.combineOrs(
-          tcs.map(tc => matchTripleConstraint(tc, entity, se, current))
+          tcs.map(tc => matchTripleConstraint(tc, entity, se, current)),
+          opts.mergeOrs
         )
       case oo: OneOf =>
         err(

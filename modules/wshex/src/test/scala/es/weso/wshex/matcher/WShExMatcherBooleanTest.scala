@@ -63,7 +63,7 @@ class WShExMatcherBooleanTest extends FunSuite {
        verbose = verboseLevel).fold(
       parseError => fail(s"Error matching schema: $parseError"),
       matcher => {
-        val matchStatus = matcher.matchJsonStart(jsonStr)
+        val matchStatus = matcher.matchJsonStart(jsonStr, MatchOptions.default)
         if (verboseLevel.asBoolean) {
          println(s"Matcher schema = ${matcher.wShEx}") 
          val site: String = "http://www.wikidata.org/entity/" 

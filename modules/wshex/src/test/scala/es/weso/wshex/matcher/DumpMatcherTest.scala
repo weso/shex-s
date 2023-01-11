@@ -74,7 +74,7 @@ class DumpMatcherTest extends CatsEffectSuite {
 
   private def entityMatch(matcher: Matcher)(e: EntityDoc): IO[Entities] =
     // IO.println(s"Trying to match...${e.getID()}...") >>
-    matcher.matchStart(e.entityDocument) match {
+    matcher.matchStart(e.entityDocument, MatchOptions.default) match {
       case nm: NoMatching =>
         if (e.getID() == "Q633")
           /* IO.println(

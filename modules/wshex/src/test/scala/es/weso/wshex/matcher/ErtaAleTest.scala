@@ -38,7 +38,7 @@ class ErtaAleTest extends FunSuite {
     eitherMatcher.fold(
       parseError => fail(s"Error parsing schema: $parseError"),
       matcher => {
-        val matchStatus = matcher.matchJsonStart(ertaStr)
+        val matchStatus = matcher.matchJsonStart(ertaStr, MatchOptions.default)
         assert(matchStatus.matches, s"Doesn't match Q903\nMatchStatus=${matchStatus})")
       }
     )

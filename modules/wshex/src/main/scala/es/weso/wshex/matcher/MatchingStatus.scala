@@ -12,7 +12,15 @@ abstract class MatchingStatus {
   def matches: Boolean
   def dependencies: List[Dependency]
   def and(other: => MatchingStatus): MatchingStatus
-  def or(other: => MatchingStatus): MatchingStatus
+
+  /**
+    * Defines a disjunction between one matching status and another
+    * 
+    * @param other the other matching status
+    * @param mergeOrs if true, it merges the values of the matchings when both conform (it can have a bad performance, but can be useful to generate subsets)
+    * @return
+    */
+  def or(other: => MatchingStatus, mergeOrs: Boolean): MatchingStatus
 }
 
 /** Represents a valid matching of an entity with a list of shape expressions
@@ -34,7 +42,9 @@ case class Matching(
     case nm: NoMatching => nm
   }
 
-  override def or(other: => MatchingStatus): MatchingStatus = other match {
+  override def or(other: => MatchingStatus, mergeOrs: Boolean): MatchingStatus = 
+    if (!mergeOrs) this 
+    else other match {
     case ms: Matching => Matching(
       shapeExprs = this.shapeExprs ++ ms.shapeExprs,
       entity = merge(this.entity, ms.entity),
@@ -56,9 +66,10 @@ case class NoMatching(
   override def matches: Boolean = false
 
   override def and(other: => MatchingStatus): MatchingStatus = this
-  override def or(other: => MatchingStatus): MatchingStatus = other match {
-    case m: Matching => m
-    case nm: NoMatching =>
+  override def or(other: => MatchingStatus, mergeOrs: Boolean): MatchingStatus =  
+    other match {
+     case m: Matching => m
+     case nm: NoMatching =>
       NoMatching(
         matchingErrors = this.matchingErrors ++ nm.matchingErrors,
         dependencies = this.dependencies ++ nm.dependencies
@@ -78,7 +89,7 @@ object MatchingStatus {
   def combineAnds(e: EntityDoc, ls: LazyList[MatchingStatus]): MatchingStatus =
     ls.foldLeft(matchEmpty(e))(_.and(_))
 
-  def combineOrs(ls: LazyList[MatchingStatus]): MatchingStatus =
-    ls.foldLeft(noMatchingEmpty)(_.or(_))
+  def combineOrs(ls: LazyList[MatchingStatus], mergeOrs: Boolean): MatchingStatus =
+    ls.foldLeft(noMatchingEmpty)(_.or(_, mergeOrs))
 
 }
