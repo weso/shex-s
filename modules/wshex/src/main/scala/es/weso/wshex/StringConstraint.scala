@@ -14,42 +14,48 @@ import es.weso.shex.StringFacet
 import es.weso.utils.internal.CollectionCompat._
 
 sealed abstract class StringConstraint {
-    def matchMonolingualTextValue(str: MonolingualTextValue): Either[MatchingError, MonolingualTextValue]
+  def matchMonolingualTextValue(
+      str: MonolingualTextValue
+  ): Either[MatchingError, MonolingualTextValue]
 }
 
 case class Facet(facet: StringFacet) extends StringConstraint {
-    import es.weso.shex.validator.FacetChecker
-    import StringConstraintMatchError._
+  import es.weso.shex.validator.FacetChecker
+  import StringConstraintMatchError._
 
-    override def matchMonolingualTextValue(
+  override def matchMonolingualTextValue(
       value: MonolingualTextValue
-    ): Either[MatchingError, MonolingualTextValue] = {
-      val s = value.getText()
-      FacetChecker.stringFacetChecker(s, facet).bimap(
+  ): Either[MatchingError, MonolingualTextValue] = {
+    val s = value.getText()
+    FacetChecker
+      .stringFacetChecker(s, facet)
+      .bimap(
         err => StringConstraintError(StringFacetMatchError(err), this, value),
         _ => value
       )
-/*      leftMap(
+    /*      leftMap(
       ).map(_ => value) */
-    }
-  }   
-
- case class StringSet(ss: List[String]) extends StringConstraint {
-    import StringConstraintMatchError._
-
-    def matchMonolingualTextValue(value: MonolingualTextValue): Either[MatchingError, MonolingualTextValue] = {
-      val s = value.getText()
-      if (ss.contains(s)) value.asRight
-      else StringConstraintError(StringSetMatchError(s, ss), this, value).asLeft
-    }
-  }   
-
-
- case class Constant(str: String) extends StringConstraint {
-    def matchMonolingualTextValue(value: MonolingualTextValue): Either[MatchingError, MonolingualTextValue] = {
-      val s = value.getText()
-      if (str == value.getText()) value.asRight
-      else StringConstantMatchingError(s, str).asLeft
-    }
   }
+}
 
+case class StringSet(ss: List[String]) extends StringConstraint {
+  import StringConstraintMatchError._
+
+  def matchMonolingualTextValue(
+      value: MonolingualTextValue
+  ): Either[MatchingError, MonolingualTextValue] = {
+    val s = value.getText()
+    if (ss.contains(s)) value.asRight
+    else StringConstraintError(StringSetMatchError(s, ss), this, value).asLeft
+  }
+}
+
+case class Constant(str: String) extends StringConstraint {
+  def matchMonolingualTextValue(
+      value: MonolingualTextValue
+  ): Either[MatchingError, MonolingualTextValue] = {
+    val s = value.getText()
+    if (str == value.getText()) value.asRight
+    else StringConstantMatchingError(s, str).asLeft
+  }
+}

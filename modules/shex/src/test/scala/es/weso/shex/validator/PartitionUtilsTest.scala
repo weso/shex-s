@@ -80,11 +80,10 @@ class PartitionUtilsTest extends FunSuite {
     val ns: Set[Entry[String, Int]] = Set(E("p", 1), E("p", 2))
     val ls: List[Available[String]] = List(Available(Set()), Available(Set("p")))
     val expected: LazyList[List[Set[Entry[String, Int]]]] = LazyList(
-      List(Set(), Set(E("p",1), E("p",2)))
+      List(Set(), Set(E("p", 1), E("p", 2)))
     )
     testPartsOver(ns, ls, expected)
   }
-
 
   def testPartsOver(
       set: Set[Entry[String, Int]],

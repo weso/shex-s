@@ -13,9 +13,8 @@ abstract class MatchingStatus {
   def dependencies: List[Dependency]
   def and(other: => MatchingStatus): MatchingStatus
 
-  /**
-    * Defines a disjunction between one matching status and another
-    * 
+  /** Defines a disjunction between one matching status and another
+    *
     * @param other the other matching status
     * @param mergeOrs if true, it merges the values of the matchings when both conform (it can have a bad performance, but can be useful to generate subsets)
     * @return
@@ -42,16 +41,18 @@ case class Matching(
     case nm: NoMatching => nm
   }
 
-  override def or(other: => MatchingStatus, mergeOrs: Boolean): MatchingStatus = 
-    if (!mergeOrs) this 
-    else other match {
-    case ms: Matching => Matching(
-      shapeExprs = this.shapeExprs ++ ms.shapeExprs,
-      entity = merge(this.entity, ms.entity),
-      dependencies = this.dependencies ++ ms.dependencies
-    )
-    case _ => this
-  }
+  override def or(other: => MatchingStatus, mergeOrs: Boolean): MatchingStatus =
+    if (!mergeOrs) this
+    else
+      other match {
+        case ms: Matching =>
+          Matching(
+            shapeExprs = this.shapeExprs ++ ms.shapeExprs,
+            entity = merge(this.entity, ms.entity),
+            dependencies = this.dependencies ++ ms.dependencies
+          )
+        case _ => this
+      }
 
   private def merge(e: EntityDoc, other: EntityDoc): EntityDoc = e.merge(other)
 
@@ -66,15 +67,15 @@ case class NoMatching(
   override def matches: Boolean = false
 
   override def and(other: => MatchingStatus): MatchingStatus = this
-  override def or(other: => MatchingStatus, mergeOrs: Boolean): MatchingStatus =  
+  override def or(other: => MatchingStatus, mergeOrs: Boolean): MatchingStatus =
     other match {
-     case m: Matching => m
-     case nm: NoMatching =>
-      NoMatching(
-        matchingErrors = this.matchingErrors ++ nm.matchingErrors,
-        dependencies = this.dependencies ++ nm.dependencies
-      )
-  }
+      case m: Matching => m
+      case nm: NoMatching =>
+        NoMatching(
+          matchingErrors = this.matchingErrors ++ nm.matchingErrors,
+          dependencies = this.dependencies ++ nm.dependencies
+        )
+    }
 
 }
 

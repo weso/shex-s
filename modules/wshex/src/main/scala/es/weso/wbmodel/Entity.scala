@@ -6,10 +6,10 @@ import es.weso.wshex.ShapeLabel
 import org.wikidata.wdtk.datamodel.interfaces.{
   DatatypeIdValue,
   QuantityValue => WDQuantityValue,
+  SiteLink => WDTKSiteLink,
   Statement => WDStatement,
   StringValue => WDStringValue,
   Value => WDValue,
-  SiteLink => WDTKSiteLink,
   _
 }
 import org.wikidata.wdtk.datamodel.interfaces.EntityDocument

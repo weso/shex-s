@@ -2,10 +2,10 @@ package es.weso.wbmodel
 
 import org.wikidata.wdtk.datamodel.interfaces.{
   QuantityValue => WDTKQuantityValue,
+  Snak => WDTKSnak,
   Statement => WDTKStatement,
   StringValue => WDTKStringValue,
   Value => WDTKValue,
-  Snak => WDTKSnak,
   _
 }
 import org.wikidata.wdtk.datamodel.helpers.JsonDeserializer
@@ -55,16 +55,16 @@ case class EntityDoc(entityDocument: EntityDocument) extends Serializable {
   }
 
   def getStatementsForProperty(
-    prop: PropertyIdValue
-    ): List[WDTKStatement] = entityDocument match {
-   case s: StatementDocument => try { 
-    s.findStatementGroup(prop).getStatements().asScala.toList
-   } catch {
-    case e: Exception => List()
-   }
-   case _ => List() 
+      prop: PropertyIdValue
+  ): List[WDTKStatement] = entityDocument match {
+    case s: StatementDocument =>
+      try
+        s.findStatementGroup(prop).getStatements().asScala.toList
+      catch {
+        case e: Exception => List()
+      }
+    case _ => List()
   }
-    
 
   def getLabels(): Map[String, MonolingualTextValue] =
     entityDocument match {
@@ -142,8 +142,8 @@ case class EntityDoc(entityDocument: EntityDocument) extends Serializable {
     mergeStatements(other.getStatements())
 
   def addPropertyValues(
-     pidValue: PropertyIdValue, 
-     values: LazyList[WDTKValue]
+      pidValue: PropertyIdValue,
+      values: LazyList[WDTKValue]
   ): EntityDoc = {
     val sb: StatementBuilder =
       StatementBuilder.forSubjectAndProperty(entityDocument.getEntityId(), pidValue)
@@ -160,24 +160,24 @@ case class EntityDoc(entityDocument: EntityDocument) extends Serializable {
 
   def addStatement(st: Statement): EntityDoc = {
     val property = st.propertyId
-    val sb: StatementBuilder = 
-        StatementBuilder
+    val sb: StatementBuilder =
+      StatementBuilder
         .forSubjectAndProperty(entityDocument.getEntityId(), property.toWDTKValue)
 
     val sbSnak = st.snak match {
-        case _: Snak.NoValueSnak => sb.withNoValue()
-        case _: Snak.SomeValueSnak => sb.withSomeValue()
-        case vs: Snak.ValueSnak => sb.withValue(vs.value.toWDTKValue)
-      }
+      case _: Snak.NoValueSnak   => sb.withNoValue()
+      case _: Snak.SomeValueSnak => sb.withSomeValue()
+      case vs: Snak.ValueSnak    => sb.withValue(vs.value.toWDTKValue)
+    }
     val sbQs = sbSnak.withQualifiers(st.qualifiers.snakGroups.asJava)
     val sbRefs = sbQs.withReferences(st.references.asWDTKReferences.asJava)
     val wdStatement = sbRefs.build()
 
     EntityDoc(entityDocument match {
-       case id: ItemDocument     => id.withStatement(wdStatement)
-       case pd: PropertyDocument => pd.withStatement(wdStatement)
-      })
-    }
+      case id: ItemDocument     => id.withStatement(wdStatement)
+      case pd: PropertyDocument => pd.withStatement(wdStatement)
+    })
+  }
 
   def withLabel(langCode: String, label: String): EntityDoc =
     entityDocument match {
@@ -185,7 +185,7 @@ case class EntityDoc(entityDocument: EntityDocument) extends Serializable {
         EntityDoc(td.withLabel(Datamodel.makeMonolingualTextValue(label, langCode)))
       case _ => throw NotTermedDocument(entityDocument)
     }
-  
+
   def withDescription(langCode: String, descr: String): EntityDoc =
     entityDocument match {
       case td: TermedDocument =>
@@ -195,13 +195,11 @@ case class EntityDoc(entityDocument: EntityDocument) extends Serializable {
     }
   def withAliases(langCode: String, aliases: List[String]): EntityDoc =
     entityDocument match {
-      case td: TermedDocument => {
-        val cnvAliases = aliases.map(Datamodel.makeMonolingualTextValue(_, langCode)).asJava 
+      case td: TermedDocument =>
+        val cnvAliases = aliases.map(Datamodel.makeMonolingualTextValue(_, langCode)).asJava
         EntityDoc(td.withAliases(langCode, cnvAliases))
-      }
       case _ => throw NotTermedDocument(entityDocument)
     }
-  
 
   def mergeStatements(ss: List[WDTKStatement]): EntityDoc = {
     val ed = ss.foldLeft(entityDocument) { case (c, s) =>

@@ -9,7 +9,7 @@ import es.weso.utils.VerboseLevel
 class ESMatcherTest extends FunSuite {
 
   val q42Str =
-      """|{"type":"item",
+    """|{"type":"item",
          | "labels":{"en":{"language":"en","value":"Douglas Adams"}},
          | "descriptions":{"en":{"language":"en","value":"Writer"}},
          | "aliases":{"en":[{"language":"en","value":"Dou"},{"language":"en","value":"Sir Dou"}],
@@ -28,9 +28,9 @@ class ESMatcherTest extends FunSuite {
          |    "type":"statement"
          |   }
          |  ]}
-         |}""".stripMargin.replaceAll("\n","")
+         |}""".stripMargin.replaceAll("\n", "")
 
- {
+  {
     val schemaStr = """|prefix wd:  <http://www.wikidata.org/entity/>
                        |prefix wdt: <http://www.wikidata.org/prop/direct/>
                        |
@@ -40,7 +40,7 @@ class ESMatcherTest extends FunSuite {
                        |  wdt:P31 [ wd:Q5 ]
                        |}""".stripMargin
 
-    checkMatch("Q42_simple", schemaStr, q42Str, true)                       
+    checkMatch("Q42_simple", schemaStr, q42Str, true)
   }
 
   {
@@ -52,7 +52,7 @@ class ESMatcherTest extends FunSuite {
                        |<Human> EXTRA wdt:P31 {
                        |  wdt:P31 [ wd:Q5 ]
                        |}""".stripMargin
-    checkMatch("Q42 simple with Extra", schemaStr, q42Str, true)                   
+    checkMatch("Q42 simple with Extra", schemaStr, q42Str, true)
   }
 
   {
@@ -66,7 +66,7 @@ class ESMatcherTest extends FunSuite {
                        |  rdfs:label [ @es ] ;
                        |  wdt:P31 [ wd:Q5 ]
                        |}""".stripMargin
-    checkMatch("Q42 with label", schemaStr, q42Str, true, VerboseLevel.Nothing)                   
+    checkMatch("Q42 with label", schemaStr, q42Str, true, VerboseLevel.Nothing)
   }
 
   {
@@ -79,8 +79,8 @@ class ESMatcherTest extends FunSuite {
                        |<S> {
                        |  wdt:P31 [ wd:~ ]
                        |}""".stripMargin
-    checkMatch("Q42 with P31 stem", schemaStr, q42Str, true, VerboseLevel.Nothing)                   
-  } 
+    checkMatch("Q42 with P31 stem", schemaStr, q42Str, true, VerboseLevel.Nothing)
+  }
 
   {
     val schemaStr = """|prefix wd:  <http://www.wikidata.org/entity/>
@@ -106,7 +106,7 @@ class ESMatcherTest extends FunSuite {
                        | pr:P248   [ wd:Q54919 ]
                        |}
                        |""".stripMargin
-    checkMatch("Q42 with P248 reference", schemaStr, q42Str, true, VerboseLevel.Nothing)                   
+    checkMatch("Q42 with P248 reference", schemaStr, q42Str, true, VerboseLevel.Nothing)
   }
 
   {
@@ -128,8 +128,8 @@ class ESMatcherTest extends FunSuite {
                        | wdt:P31 [ wd:Q7187 ] ;
                        |}
                        |""".stripMargin
-    checkMatch("Q42 with OR", schemaStr, q42Str, true, VerboseLevel.Nothing)                   
-  } 
+    checkMatch("Q42 with OR", schemaStr, q42Str, true, VerboseLevel.Nothing)
+  }
 
   {
     val schemaStr = """|prefix wd:  <http://www.wikidata.org/entity/>
@@ -151,33 +151,37 @@ class ESMatcherTest extends FunSuite {
                        |  wdt:P31 [ wd:Q5 ]
                        |}
                        |""".stripMargin
-    checkMatch("Q42 with labels", schemaStr, q42Str, true, VerboseLevel.Nothing)                   
+    checkMatch("Q42 with labels", schemaStr, q42Str, true, VerboseLevel.Nothing)
   }
-
 
   def checkMatch(
       name: String,
       schemaStr: String,
       jsonStr: String,
-      expected: Boolean, 
+      expected: Boolean,
       verboseLevel: VerboseLevel = VerboseLevel.Nothing
   )(implicit loc: munit.Location): Unit =
     test(name) {
-     Matcher.unsafeFromString(schemaStr, format = ESCompactFormat, verbose = verboseLevel).fold(
-      parseError => fail(s"Error matching schema: $parseError"),
-      matcher => {
-        val matchStatus = matcher.matchJsonStart(jsonStr)
-        if (verboseLevel.asBoolean) {
-         println(s"Matcher schema = ${matcher.wShEx}") 
-         val site: String = "http://www.wikidata.org/entity/" 
-         val jsonDeserializer = new helpers.JsonDeserializer(site) 
-         val entityDocument = jsonDeserializer.deserializeEntityDocument(jsonStr)
-         println(s"Entity Document: $entityDocument")
-         println(s"Match status = $matchStatus")
-        }
-        assertEquals(matchStatus.matches, expected, s"Value of matches != expected. Expected: $expected. MatchStatus=${matchStatus})")
-      }
-     )  
+      Matcher
+        .unsafeFromString(schemaStr, format = ESCompactFormat, verbose = verboseLevel)
+        .fold(
+          parseError => fail(s"Error matching schema: $parseError"),
+          matcher => {
+            val matchStatus = matcher.matchJsonStart(jsonStr)
+            if (verboseLevel.asBoolean) {
+              println(s"Matcher schema = ${matcher.wShEx}")
+              val site: String = "http://www.wikidata.org/entity/"
+              val jsonDeserializer = new helpers.JsonDeserializer(site)
+              val entityDocument = jsonDeserializer.deserializeEntityDocument(jsonStr)
+              println(s"Entity Document: $entityDocument")
+              println(s"Match status = $matchStatus")
+            }
+            assertEquals(
+              matchStatus.matches,
+              expected,
+              s"Value of matches != expected. Expected: $expected. MatchStatus=${matchStatus})"
+            )
+          }
+        )
     }
 }
-

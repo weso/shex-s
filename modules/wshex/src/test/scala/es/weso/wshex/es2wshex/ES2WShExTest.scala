@@ -209,8 +209,7 @@ class ES2WShExTest extends CatsEffectSuite {
     VerboseLevel.Nothing
   )
 
-
-/*TODO: This test is pending because it requires a refactoring of WShEx parser
+  /*TODO: This test is pending because it requires a refactoring of WShEx parser
   checkConversion(
     "English or Spanish",
     """|PREFIX wd:  <http://www.wikidata.org/entity/>
@@ -222,10 +221,10 @@ class ES2WShExTest extends CatsEffectSuite {
        |PREFIX pq:   <http://www.wikidata.org/prop/qualifier/>
        |PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
        |
-       |start = @<S> 
-       |    
+       |start = @<S>
+       |
        |<S> {
-       |  rdfs:label [ @en @es ] + 
+       |  rdfs:label [ @en @es ] +
        |}
        |""".stripMargin,
     "ShExC",
