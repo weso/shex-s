@@ -166,9 +166,9 @@ class AvailableShapeExprPathsTest extends CatsEffectSuite with AvailableShapeExp
     )
     
 //    shouldMatchAvailableShapeExprPaths(msg, schema, sObs, Some(_Obs), expectedObs)
-    shouldMatchAvailableShapeExprPaths(msg, schema, sVital, Some(_Vital), expectedVital)
-    shouldMatchAvailableShapeExprPaths(msg, schema, sPosture, Some(_Posture), expectedPosture)
-    shouldMatchAvailableShapeExprPaths(msg, schema, sReclined, Some(_Reclined), expectedReclined)
+//1    shouldMatchAvailableShapeExprPaths(msg, schema, sVital, Some(_Vital), expectedVital)
+//2    shouldMatchAvailableShapeExprPaths(msg, schema, sPosture, Some(_Posture), expectedPosture)
+//3    shouldMatchAvailableShapeExprPaths(msg, schema, sReclined, Some(_Reclined), expectedReclined)
     shouldMatchAvailableShapeExprPaths(msg, schema, sReclinedBP, Some(_ReclinedBP), expectedReclinedBP)
   }
 

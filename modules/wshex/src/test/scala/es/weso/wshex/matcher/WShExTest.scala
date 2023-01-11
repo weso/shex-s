@@ -134,7 +134,7 @@ class WShExTest extends CatsEffectSuite {
    expected: EntityDoc
    )(implicit loc: munit.Location): Unit = {
     val matcher = Matcher(wShEx = schema)
-    matcher.matchStart(entity.entityDocument) match {
+    matcher.matchStart(entity.entityDocument, MatchOptions.default) match {
         case nm: NoMatching => fail(s"No matching: $nm")
         case m: Matching => assertEquals(m.entity, expected)
       }

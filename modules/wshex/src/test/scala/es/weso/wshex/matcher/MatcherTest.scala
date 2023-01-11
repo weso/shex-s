@@ -81,7 +81,7 @@ class MatcherTest extends FunSuite {
       .fold(
         parseError => fail(s"Error parsing schema: $parseError"),
         matcher => {
-          val matchStatus = matcher.matchJsonStart(q42Str)
+          val matchStatus = matcher.matchJsonStart(q42Str, MatchOptions.default)
           assert(
             matchStatus.matches,
             s"Match Q42 should validate with OR\nMatchStatus=${matchStatus})"
@@ -185,7 +185,7 @@ class MatcherTest extends FunSuite {
       .fold(
         parseError => fail(s"Error parsing schema: $parseError"),
         matcher => {
-          val matchStatus = matcher.matchJsonStart(q42Str)
+          val matchStatus = matcher.matchJsonStart(q42Str, MatchOptions.default)
           assert(
             matchStatus.matches,
             s"Match Q42 should pass with internal NOT fails\nMatchStatus=${matchStatus})"
@@ -209,7 +209,7 @@ class MatcherTest extends FunSuite {
       .fold(
         parseError => fail(s"Error parsing schema: $parseError"),
         matcher => {
-          val matchStatus = matcher.matchJsonStart(q42Str)
+          val matchStatus = matcher.matchJsonStart(q42Str, MatchOptions.default)
           assert(
             !matchStatus.matches,
             s"Match Q42 should fail when internal NOT passes\nMatchStatus=${matchStatus})"
@@ -233,7 +233,7 @@ class MatcherTest extends FunSuite {
       .fold(
         parseError => fail(s"Error parsing schema: $parseError"),
         matcher => {
-          val matchStatus = matcher.matchJsonStart(q42Str)
+          val matchStatus = matcher.matchJsonStart(q42Str, MatchOptions.default)
           assert(
             !matchStatus.matches,
             s"Match Q42 should fail when internal NOT passes\nMatchStatus=${matchStatus})"

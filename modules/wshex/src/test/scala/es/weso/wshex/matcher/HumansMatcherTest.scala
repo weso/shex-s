@@ -46,7 +46,7 @@ class HumansMatcherTest extends CatsEffectSuite {
       parseError => fail(s"Error parsing schema: $parseError"),
       matcher => {
         def counterMatch(e: EntityDoc): IO[Counter] =
-          matcher.matchStart(e.entityDocument) match {
+          matcher.matchStart(e.entityDocument, MatchOptions.default) match {
             case _: NoMatching => Counter(0).pure[IO]
             case _: Matching   => Counter(1).pure[IO]
           }
