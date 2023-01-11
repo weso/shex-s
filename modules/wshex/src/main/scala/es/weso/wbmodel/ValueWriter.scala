@@ -3,10 +3,7 @@ package es.weso.wbmodel
 import es.weso.wshex.ShapeLabel
 import org.wikidata.wdtk.datamodel.helpers.JsonSerializer
 import org.wikidata.wdtk.datamodel.implementation._
-import org.wikidata.wdtk.datamodel.interfaces.{
-  SiteLink => WBSiteLink, 
-  _
-}
+import org.wikidata.wdtk.datamodel.interfaces.{SiteLink => WBSiteLink, _}
 import java.io.ByteArrayOutputStream
 import scala.collection.JavaConverters._
 import es.weso.rdf.RDFBuilder

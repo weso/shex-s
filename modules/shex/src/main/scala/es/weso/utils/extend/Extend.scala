@@ -11,15 +11,14 @@ trait Extend {
       extend: S => Option[List[Label]],
       expr: S => Option[E]
   ): Either[Err, Option[E]] = {
-    
+
     type Visited[A] = State[List[S], A]
-    
+
     def getVisited: Visited[List[S]] = State.get
-    
-    def addVisited(x: S): Visited[Unit] = {
-      State.modify[List[S]](x :: _) 
-    }
-    
+
+    def addVisited(x: S): Visited[Unit] =
+      State.modify[List[S]](x :: _)
+
     def ok[A](x: A): Visited[A] = StateT.pure(x)
 
     def err(e: Err): Visited[Either[Err, Option[E]]] = ok(e.asLeft)
@@ -40,23 +39,25 @@ trait Extend {
           for {
             visited <- getVisited
             v <- finder(x).fold(
-                  err(_),
-                  s1 => 
-                    if (visited contains s1) ok(r) // Circular dependency
-                    else for {
-                      _ <- addVisited(s1)
-                      ef <- flattenExprAux(s1)
-                    } yield for {
-                      v1 <- ef
-                      v2 <- r
-                    } yield combine(v1, v2))
+              err(_),
+              s1 =>
+                if (visited contains s1) ok(r) // Circular dependency
+                else
+                  for {
+                    _ <- addVisited(s1)
+                    ef <- flattenExprAux(s1)
+                  } yield for {
+                    v1 <- ef
+                    v2 <- r
+                  } yield combine(v1, v2)
+            )
           } yield v
-        Foldable[List].foldM[Visited, Label, Result](lbls, none.asRight)(comb).map(_.map(combine(expr(s),_)))
+        Foldable[List]
+          .foldM[Visited, Label, Result](lbls, none.asRight)(comb)
+          .map(_.map(combine(expr(s), _)))
     }
     val (visited, e) = flattenExprAux(s).run(List(s)).value
     e
   }
-
-  
 
 }

@@ -55,13 +55,13 @@ trait ShowValidator {
     }
   }
 
-  
   def sh(lbls: Set[ShapeLabel]): String =
     if (lbls.isEmpty) "{}"
     else lbls.map(lbl => schema.prefixMap.qualify(lbl.toRDFNode)).mkString(",")
 
   def showSE(s: ShapeExpr): String =
-    s.id.map(lbl => schema.prefixMap.qualify(lbl.toRDFNode))
+    s.id
+      .map(lbl => schema.prefixMap.qualify(lbl.toRDFNode))
       .getOrElse(s match {
         case sa: ShapeAnd       => s"AND(${sa.shapeExprs.map(showSE(_)).mkString(",")})"
         case so: ShapeOr        => s"OR(@${so.shapeExprs.map(showSE(_)).mkString(",")})"
@@ -69,25 +69,24 @@ trait ShowValidator {
         case sd: ShapeDecl      => s"Decl(${showSE(sd.shapeExpr)})"
         case sr: ShapeRef       => s"@${schema.prefixMap.qualify(sr.reference.toRDFNode)}"
         case nc: NodeConstraint => s"NodeConstraint:${nc.show}"
-        case s: Shape           => showShape(s) 
+        case s: Shape           => showShape(s)
         case se: ShapeExternal  => s"External"
       })
 
   private def showExtends(m: Option[List[ShapeLabel]]) = m match {
-      case None => ""
-      case Some(es) => s"extends ${es.map(_.show).mkString(",")}"
-  }      
+    case None     => ""
+    case Some(es) => s"extends ${es.map(_.show).mkString(",")}"
+  }
 
-  private def showOptTripleExpr(m: Option[TripleExpr]) = { 
+  private def showOptTripleExpr(m: Option[TripleExpr]) = {
     import es.weso.shex.implicits.showShEx._
     m match {
-      case None => ""
+      case None     => ""
       case Some(te) => s"${te.show}"
     }
   }
 
-  def showShape(s: Shape): String = {
+  def showShape(s: Shape): String =
     s"Shape(${showExtends(s._extends)}${showOptTripleExpr(s.expression)}, closed= ${s.closed})"
-  }
 
 }

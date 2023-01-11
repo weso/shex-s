@@ -27,7 +27,7 @@ class RDF2ManifestTest extends CatsEffectSuite {
       )
     )
 
- /* test("RDF2Manifest schemas") {
+  /* test("RDF2Manifest schemas") {
     checkResults(
       parseManifest(
         "manifest",
@@ -84,14 +84,14 @@ class RDF2ManifestTest extends CatsEffectSuite {
       )
     )
   }
-  */
+   */
   test("RDF2Manifest validating") {
     checkResults(
       parseManifest(
         "manifest",
         "validation",
         validationFolder,
-        // Only("vitals-RESTRICTS-pass_lie-ReclinedVital"), 
+        // Only("vitals-RESTRICTS-pass_lie-ReclinedVital"),
         All,
         List(),
         Validator.apply,
@@ -101,7 +101,7 @@ class RDF2ManifestTest extends CatsEffectSuite {
       ),
       false
     )
-  } 
+  }
 
   def checkResults(process: IO[List[Result]], verbose: Boolean = false): IO[Unit] = for {
     results <- process
