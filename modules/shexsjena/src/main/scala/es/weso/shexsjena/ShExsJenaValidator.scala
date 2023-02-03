@@ -1,4 +1,4 @@
-package es.weso.shex.validator
+package es.weso.shexsjena
 
 import es.weso.shex.Schema
 import es.weso.rdf.nodes.RDFNode
@@ -21,24 +21,19 @@ import es.weso.utils.IOUtils._
 import es.weso.shapemaps._
 import cats.data.NonEmptyList
 import es.weso.utils.VerboseLevel
+import java.io.InputStream
 
-/*case class ValidatingNodeShapeException(
- schema: Schema,
- node: RDFNode,
- shape: String,
- e: Throwable
-) extends RuntimeException(s"Error validating node $node as $shape: ${e.getMessage()}\nSchema: ${schema}") */
 
-case class ShExsValidator(schema: Schema) {
+case class ShExsJenaValidator(schema: Schema) {
 
   /** Validates a node with a shape label in the schema
     */
   def validateNodeShapeSync(
       model: Model,
       node: String,
-      shape: String,
-      verbose: VerboseLevel
+      shape: String
   ): ResultShapeMap = {
+    val verbose = VerboseLevel.Nothing
     val cmp: IO[ResultShapeMap] = RDFAsJenaModel.empty.flatMap(
       _.use(builder =>
         for {
@@ -56,9 +51,9 @@ case class ShExsValidator(schema: Schema) {
 
   def validateShapeMapSync(
       model: Model,
-      shapeMap: String,
-      verbose: VerboseLevel
+      shapeMap: String
   ): ResultShapeMap = {
+    val verbose = VerboseLevel.Nothing 
     val cmp: IO[ResultShapeMap] = RDFAsJenaModel.empty.flatMap(
       _.use(builder =>
         for {
@@ -81,3 +76,5 @@ case class ShExsValidator(schema: Schema) {
   def fromESNel[A](e: Either[NonEmptyList[String], A]): IO[A] =
     fromES(e.leftMap(es => es.toList.mkString(",")))
 }
+
+

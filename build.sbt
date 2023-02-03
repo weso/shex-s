@@ -415,7 +415,8 @@ lazy val shexsjena = project
       catsKernel,
       srdfJena,
       catsEffect,
-      utils
+      utils,
+      junitInterface % Test
     ) ++ macroDependencies(scalaVersion.value)
   )
 
