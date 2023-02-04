@@ -1,0 +1,24 @@
+package es.weso.shexsrdf4j
+
+import es.weso.shex.Schema
+import cats.effect.IO
+import cats.effect.unsafe.implicits.global
+import java.io.InputStream
+
+object ShExsRDF4jValidatorBuilder {
+
+  def fromStringSync(schemaStr: String, format: String = "SHEXC"): ShExsRDF4jValidator = {
+    val cmp: IO[ShExsRDF4jValidator] = for {
+      schema <- Schema.fromString(schemaStr, format, None, None)
+    } yield ShExsRDF4jValidator(schema)
+    cmp.unsafeRunSync()
+  }
+
+  def fromInputStreamSync(is: InputStream, format: String = "SHEXC"): ShExsRDf4jValidator = {
+    val cmp: IO[ShExsRDF4jValidator] = for {
+      schema <- Schema.fromInputStream(is, format, None, None)
+    } yield ShExsRDF4jValidator(schema)
+    cmp.unsafeRunSync()
+  }
+
+}
