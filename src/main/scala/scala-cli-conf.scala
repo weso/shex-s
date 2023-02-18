@@ -9,7 +9,7 @@
 //> using lib "es.weso::wikibaserdf::0.2.2"
 //> using lib "es.weso::shapepath::0.2.2"
 //> using lib "es.weso::shapemap::0.2.2"
-//> using lib "es.weso::shexsjena::0.2.0"
+//> using lib "es.weso::shexsjena::0.2.32"
 
 //> using lib "org.apache.jena:jena-shex:4.3.2"
 //> using lib "org.http4s::http4s-ember-client::1.0.0-M31"
