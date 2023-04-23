@@ -11,7 +11,7 @@
 //> using lib "es.weso::shapemap::0.2.2"
 //> using lib "es.weso::shexsjena::0.2.0"
 
-//> using lib "org.apache.jena:jena-shex:4.3.2"
+//> using lib "org.apache.jena:jena-shex:4.8.0"
 //> using lib "org.http4s::http4s-ember-client::1.0.0-M31"
 //> using lib "org.http4s::http4s-circe::1.0.0-M31"
 //> using lib "org.slf4j:slf4j-api:1.7.3"
