@@ -21,5 +21,5 @@
 
 // Some libraries that could probably be ignored if modules were not compiled
 
-//> using lib "com.typesafe:config:1.4.2"
+//> using lib "com.typesafe:config:1.4.3"
 //> using lib "org.scalacheck::scalacheck:1.15.4"
