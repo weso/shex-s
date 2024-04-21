@@ -1,0 +1,28 @@
+prefix :       <http://example.org/>
+prefix xsd:    <http://www.w3.org/2001/XMLSchema#>
+
+:origin :component 
+    [ :type :Label; :value "Origin" ] ,
+    [ :type :Coord; :value 0; :axis :X ] ,
+    [ :type :Coord; :value 0; :axis :Y ] .
+
+:01 :component 
+    [ :type :Label; :value "Origin" ] ,
+    [ :type :Coord; :value 0; :axis :X ] ,
+    [ :type :Coord; :value 1; :axis :Y ] .
+
+:bad1 :component 
+    [ :type :Label; :value "Origin" ] ,
+    [ :type :Coord; :value 0; :axis :X ] ,
+    [ :type :Coord; :value 1; :axis :X ] ,
+    [ :type :Coord; :value 0; :axis :Y ] .
+
+:bad2 :component     
+    [ :type :Label; :value "Unspecified" ] .
+    
+:redCircle :component 
+    [ :type :Label; :value "Red circle" ] ,
+    [ :type :Coord; :value 3; :axis :X ] ,
+    [ :type :Coord; :value 4; :axis :Y ] ,
+    [ :type :Color; :value :Red ] ;
+    :radius 4 .

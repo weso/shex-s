@@ -1,0 +1,48 @@
+prefix :       <http://example.org/>
+prefix xsd:    <http://www.w3.org/2001/XMLSchema#>
+prefix schema: <http://schema.org/>
+
+abstract <Figure> {
+ :component @<Label>
+}
+
+<Label> {
+  :type [ :Label ] ;
+  :value xsd:string ;
+}
+
+<Figure2D> extends @<Figure> {
+  :component @<PosX> ;
+  :component @<PosY>
+}
+
+<PosX> {
+  :type [ :Coord ] ;
+  :axis [ :X ] ;
+  :value xsd:integer
+}
+
+<PosY> {
+  :type [ :Coord ] ;
+  :axis [ :Y ] ;
+  :value xsd:integer
+}
+
+<ColoredFigure> extends @<Figure> {
+  :component @<Color>
+}
+
+<Color> {
+  :type [ :Color ];
+  :value [:Red :Green :Blue ]
+}
+
+<CenteredFigure> @<Figure2D> AND {
+  :component @<PosX> AND { :value [ 0 ]};
+  :component @<PosY> AND { :value [ 0 ]};
+  :component . *
+}
+
+<Circle> extends @<Figure2D> extends @<ColoredFigure> {
+  :radius xsd:integer
+}
