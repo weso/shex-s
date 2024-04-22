@@ -16,27 +16,26 @@ import es.weso.rdf.nodes._
 
 object TimeConverter {
 
-  /**
-	 * Returns the RDF literal to encode the time component of a given time
-	 * value.
-	 * <p>
-	 * Times with limited precision are encoded using limited-precision XML
-	 * Schema datatypes, such as gYear, if available. Wikidata encodes the year
-	 * 1BCE as 0000, while XML Schema, even in version 2, does not allow 0000
-	 * and interprets -0001 as 1BCE. Thus all negative years must be shifted by
-	 * 1, but we only do this if the year is precise.
-	 *
-	 * @param value
-	 *            the value to convert
-	 * @param rdfWriter
-	 *            the object to use for creating the literal
-	 * @return the RDF literal
-	 */
+  /** Returns the RDF literal to encode the time component of a given time
+    * value.
+    * <p>
+    * Times with limited precision are encoded using limited-precision XML
+    * Schema datatypes, such as gYear, if available. Wikidata encodes the year
+    * 1BCE as 0000, while XML Schema, even in version 2, does not allow 0000
+    * and interprets -0001 as 1BCE. Thus all negative years must be shifted by
+    * 1, but we only do this if the year is precise.
+    *
+    * @param value
+    *            the value to convert
+    * @param rdfWriter
+    *            the object to use for creating the literal
+    * @return the RDF literal
+    */
   def getTimeLiteral(originalValue: TimeValue): Literal = {
 
     /* we need to check for year zero before julian date conversion,
 		 since that can change the year (if the date is 1 Jan 1 for example)
-		*/
+     */
     val yearZero: Boolean = originalValue.getYear() == 0
 
     val gregorian: TimeValue = originalValue.toGregorian();
@@ -56,7 +55,7 @@ object TimeConverter {
 		  In contrast, the RDF mapping relies on XSD 1.1 (ISO 8601:2004) dates that use the proleptic Gregorian calendar
 		  and astronomical year numbering, where the year 1 BCE is represented as +0000 and the year 44 BCE
 		  is represented as -0043.
-		*/
+     */
     // map negative dates from historical numbering to XSD 1.1
 
     val year: Long = if (valueYear < 0 && value.getPrecision() >= TimeValue.PREC_YEAR) {

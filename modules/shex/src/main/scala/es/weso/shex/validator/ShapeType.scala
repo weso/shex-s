@@ -29,7 +29,7 @@ object ShapeType {
 
   private def optAdd[A](opt: Option[A], obj: JsonObject, label: String, f: A => Json) =
     opt match {
-      case None => obj
+      case None    => obj
       case Some(x) =>
         // println(s"Adding label: ${label} to ${obj}")
         obj.add(label, f(x))
@@ -56,7 +56,7 @@ object ShapeType {
       // println(s"@@@@@@###### ShapeTypeEncoder!!: ${v}")
       val obj = JsonObject(("type", "Shape".asJson))
       val extended = v.label match {
-        case None => obj
+        case None      => obj
         case Some(lbl) =>
           // println(s"@@@ Label: ${lbl}. LocationMap: ${v.schema.labelLocationMap} " )
           optAdd(

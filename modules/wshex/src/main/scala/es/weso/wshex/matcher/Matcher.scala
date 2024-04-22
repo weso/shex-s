@@ -55,7 +55,10 @@ case class Matcher(
     * @param entityDocument
     * @return a matching report
     */
-  def matchStart(entityDocument: EntityDocument, opts: MatchOptions = MatchOptions.default): MatchingStatus =
+  def matchStart(
+      entityDocument: EntityDocument,
+      opts: MatchOptions = MatchOptions.default
+  ): MatchingStatus =
     wShEx.startShapeExpr match {
       case None => NoMatching(List(NoShapeExprs(wShEx)))
       case Some(se) =>
@@ -86,7 +89,7 @@ case class Matcher(
     shapeExpr match {
 
       case s: WShape =>
-        matchWShape(s, entity, current,opts)
+        matchWShape(s, entity, current, opts)
 
       case sand: WShapeAnd =>
         val ls: LazyList[MatchingStatus] =
@@ -117,7 +120,12 @@ case class Matcher(
 
     }
 
-  private def matchWShape(s: WShape, entity: EntityDoc, current: EntityDoc, opts: MatchOptions): MatchingStatus = {
+  private def matchWShape(
+      s: WShape,
+      entity: EntityDoc,
+      current: EntityDoc,
+      opts: MatchOptions
+  ): MatchingStatus = {
     val matchExpr = s.expression match {
       case Some(te) => matchTripleExpr(te, entity, s, current, opts)
       case None     => MatchingStatus.matchEmpty(current)

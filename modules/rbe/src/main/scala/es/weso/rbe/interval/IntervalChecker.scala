@@ -39,7 +39,7 @@ case class IntervalChecker[A: Show](rbe: Rbe[A]) extends BagChecker[A] {
               // In case of fail, check using derivatives to obtain better error messages
               // TODO: Could it be optimized knowing that it will fail?
               derivChecker.check(bag, open)
-            // NonEmptyList.one(IntervalError(interval,rbe,bag,open)).asLeft
+          // NonEmptyList.one(IntervalError(interval,rbe,bag,open)).asLeft
         } yield v
     }
 
