@@ -16,8 +16,7 @@ import org.wikidata.wdtk.datamodel.interfaces.QuantityValue
 
 object QuantityConverter {
 
-  def getQuantityLiteral(value: QuantityValue): Literal = {
+  def getQuantityLiteral(value: QuantityValue): Literal =
     DecimalLiteral(value.getNumericValue())
-  }
 
 }

@@ -23,7 +23,6 @@ import cats.data.NonEmptyList
 import es.weso.utils.VerboseLevel
 import java.io.InputStream
 
-
 case class ShExsJenaValidator(schema: Schema) {
 
   /** Validates a node with a shape label in the schema
@@ -53,7 +52,7 @@ case class ShExsJenaValidator(schema: Schema) {
       model: Model,
       shapeMap: String
   ): ResultShapeMap = {
-    val verbose = VerboseLevel.Nothing 
+    val verbose = VerboseLevel.Nothing
     val cmp: IO[ResultShapeMap] = RDFAsJenaModel.empty.flatMap(
       _.use(builder =>
         for {
@@ -76,5 +75,3 @@ case class ShExsJenaValidator(schema: Schema) {
   def fromESNel[A](e: Either[NonEmptyList[String], A]): IO[A] =
     fromES(e.leftMap(es => es.toList.mkString(",")))
 }
-
-

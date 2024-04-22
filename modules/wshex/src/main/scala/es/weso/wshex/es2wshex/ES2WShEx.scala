@@ -6,7 +6,7 @@ import com.typesafe.scalalogging.LazyLogging
 import es.weso._
 import es.weso.rbe.interval.{IntLimit, Unbounded}
 import es.weso.rdf.nodes._
-import es.weso.rdf.{PrefixMap, Prefix}
+import es.weso.rdf.{Prefix, PrefixMap}
 import es.weso.wbmodel.{Property => _, _}
 import es.weso.rbe.interval.IntOrUnbounded
 import scala.collection.compat._ // Required for partitionMap
@@ -18,17 +18,16 @@ import es.weso.wshex.ReferencesSpec._
 import es.weso.wshex.PropertySpec._
 import es.weso.wshex.PropertySpec.PropertyConstraint._
 
-
 case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging {
 
   type Convert[A] = Either[ES2WShExConvertError, A]
-  private def ok[A](x:A): Convert[A] = x.asRight
-  private def err[A](x:ES2WShExConvertError): Convert[A] = x.asLeft
+  private def ok[A](x: A): Convert[A] = x.asRight
+  private def err[A](x: ES2WShExConvertError): Convert[A] = x.asLeft
 
   // Properties for labels
   private lazy val rdfs = IRI("http://www.w3.org/2000/01/rdf-schema#")
   private lazy val schema = IRI("http://schema.org/")
-  private lazy val skos = IRI("http://www.w3.org/2004/02/skos/core#") 
+  private lazy val skos = IRI("http://www.w3.org/2004/02/skos/core#")
   private lazy val rdfsLabel = rdfs + "label"
   private lazy val schemaName = schema + "name"
   private lazy val skosPrefLabel = skos + "prefLabel"
@@ -74,8 +73,8 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
 
   private def removeKnownPrefixes(pm: PrefixMap): PrefixMap = {
     def knownIris = List(
-      convertOptions.entityIri, 
-      convertOptions.directPropertyIri, 
+      convertOptions.entityIri,
+      convertOptions.directPropertyIri,
       convertOptions.propIri,
       convertOptions.propStatementIri,
       convertOptions.propQualifierIri,
@@ -84,12 +83,12 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
       rdfs,
       schema
     )
-    def notKnown(alias: Prefix, iri: IRI): Boolean = 
-      ! knownIris.contains(iri)
-    
-    PrefixMap(pm.pm.filter{ case (alias, iri) => notKnown(alias, iri) }).addPrefix("", convertOptions.entityIri)
-  }
+    def notKnown(alias: Prefix, iri: IRI): Boolean =
+      !knownIris.contains(iri)
 
+    PrefixMap(pm.pm.filter { case (alias, iri) => notKnown(alias, iri) })
+      .addPrefix("", convertOptions.entityIri)
+  }
 
   private def convertLabelShapeExpr(
       label: shex.ShapeLabel,
@@ -122,7 +121,7 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
         WShapeRef(convertId(sref.id), convertShapeLabel(sref.reference)).asRight
       case sd: shex.ShapeDecl =>
         convertShapeExpr(sd.shapeExpr, schema).map(_.withLabel(convertShapeLabel(sd.lbl)))
-      case _ => 
+      case _ =>
         err(UnsupportedShapeExpr(se))
     }
 
@@ -133,11 +132,11 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
       nc: shex.NodeConstraint
   ): Convert[WNodeConstraint] =
     nc match {
-      case shex.NodeConstraint(id,None, None, List(), None, None, None) =>
+      case shex.NodeConstraint(id, None, None, List(), None, None, None) =>
         ok(WNodeConstraint.emptyExpr)
       case shex.NodeConstraint(id, None, None, List(), Some(values), None, None) =>
         convertValueSet(convertId(id), values)
-      case _ => 
+      case _ =>
         println(s"Node constraint: $nc")
         err(UnsupportedNodeConstraint(nc))
     }
@@ -174,8 +173,8 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
         } else {
           IRIValueSetValue(i).asRight
         }
-      case shex.IRIStem(s) => IRIStem(s).asRight 
-      case _ => UnsupportedValueSetValue(value).asLeft
+      case shex.IRIStem(s) => IRIStem(s).asRight
+      case _               => UnsupportedValueSetValue(value).asLeft
     }
 
   private def convertShape(
@@ -226,59 +225,74 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
       tc: shex.TripleConstraint
   ): Convert[List[TermConstraint]] = tc.predicate match {
 
-    case `rdfsLabel` => tc.valueExpr match {
-      case None => List(LabelAny(None)).asRight 
-      case Some(v) => v match {
-        case nc: shex.NodeConstraint => nc.values match {
-          case None => List(LabelAny(None)).asRight 
-          case Some(vs) => {
-          val parseLangValues = vs.map{ case v => v match {
-            case shex.Language(l) => Lang(l.lang).asRight
-            case _ => UnsupportedValueSetValue(v).asLeft
-           }}.sequence 
-          val noConstraint = none[StringConstraint]
-          parseLangValues.map(vs => 
-            List(LabelConstraint(vs.map(v => (v,noConstraint)).toMap)))
+    case `rdfsLabel` =>
+      tc.valueExpr match {
+        case None => List(LabelAny(None)).asRight
+        case Some(v) =>
+          v match {
+            case nc: shex.NodeConstraint =>
+              nc.values match {
+                case None => List(LabelAny(None)).asRight
+                case Some(vs) =>
+                  val parseLangValues = vs.map { case v =>
+                    v match {
+                      case shex.Language(l) => Lang(l.lang).asRight
+                      case _                => UnsupportedValueSetValue(v).asLeft
+                    }
+                  }.sequence
+                  val noConstraint = none[StringConstraint]
+                  parseLangValues.map(vs =>
+                    List(LabelConstraint(vs.map(v => (v, noConstraint)).toMap))
+                  )
+              }
           }
-        } 
-      } 
-    }
-    
-    case `schemaDescription` => tc.valueExpr match {
-      case None => List(DescriptionAny(None)).asRight
-      case Some(v) => v match {
-        case nc: shex.NodeConstraint => nc.values match {
-          case None => List(DescriptionAny(None)).asRight 
-          case Some(vs) => {
-          val parsedLangValues = vs.map{ case v => v match {
-            case shex.Language(l) => Lang(l.lang).asRight
-            case _ => UnsupportedValueSetValue(v).asLeft
-          }}.sequence
-          val noConstraint = none[StringConstraint]
-          parsedLangValues.map(vs => 
-            List(DescriptionConstraint(vs.map(v => (v,noConstraint)).toMap)))
-         }
-        } 
-      } 
-    }
+      }
 
-    case `skosAltLabel` => tc.valueExpr match {
-      case None => List(AliasAny(None)).asRight 
-      case Some(v) => v match {
-        case nc: shex.NodeConstraint => nc.values match {
-          case None => List(AliasAny(None)).asRight 
-          case Some(vs) => { 
-           val parsedValues = vs.map{ case v => v match {
-            case shex.Language(l) => Lang(l.lang).asRight
-            case _ => UnsupportedValueSetValue(v).asLeft
-           }}.sequence
-           val noConstraint = none[StringConstraint]
-           parsedValues.map(vs => 
-            List(AliasConstraint(vs.map(v => (v,noConstraint)).toMap)))
+    case `schemaDescription` =>
+      tc.valueExpr match {
+        case None => List(DescriptionAny(None)).asRight
+        case Some(v) =>
+          v match {
+            case nc: shex.NodeConstraint =>
+              nc.values match {
+                case None => List(DescriptionAny(None)).asRight
+                case Some(vs) =>
+                  val parsedLangValues = vs.map { case v =>
+                    v match {
+                      case shex.Language(l) => Lang(l.lang).asRight
+                      case _                => UnsupportedValueSetValue(v).asLeft
+                    }
+                  }.sequence
+                  val noConstraint = none[StringConstraint]
+                  parsedLangValues.map(vs =>
+                    List(DescriptionConstraint(vs.map(v => (v, noConstraint)).toMap))
+                  )
+              }
           }
-        } 
-      } 
-    }
+      }
+
+    case `skosAltLabel` =>
+      tc.valueExpr match {
+        case None => List(AliasAny(None)).asRight
+        case Some(v) =>
+          v match {
+            case nc: shex.NodeConstraint =>
+              nc.values match {
+                case None => List(AliasAny(None)).asRight
+                case Some(vs) =>
+                  val parsedValues = vs.map { case v =>
+                    v match {
+                      case shex.Language(l) => Lang(l.lang).asRight
+                      case _                => UnsupportedValueSetValue(v).asLeft
+                    }
+                  }.sequence
+                  val noConstraint = none[StringConstraint]
+                  parsedValues.map(vs =>
+                    List(AliasConstraint(vs.map(v => (v, noConstraint)).toMap))
+                  )
+              }
+          }
+      }
     case _ => List().asRight
   }
 
@@ -298,9 +312,9 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
           .sequence
           .map(_.flatten)
           .map(_ match {
-            case Nil => none[TripleExpr]
+            case Nil       => none[TripleExpr]
             case te :: Nil => te.some
-            case tes => EachOf(exprs = tes).some
+            case tes       => EachOf(exprs = tes).some
           })
 
       case oo: shex.OneOf =>
@@ -311,7 +325,7 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
           .map(_ match {
             case Nil => none[TripleExpr]
             case tes => OneOf(exprs = tes).some
-           })
+          })
       case tc: shex.TripleConstraint =>
         convertTripleConstraint(tc, schema)
       case _ =>
@@ -319,14 +333,13 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
         Left(UnsupportedTripleExpr(te))
     }
 
-
   private def makeTripleConstraint(
       pred: PropertyId,
       min: Int,
       max: IntOrUnbounded,
       se: Option[shex.ShapeExpr],
       schema: shex.AbstractSchema
-  ): Convert[TripleConstraint] = {
+  ): Convert[TripleConstraint] =
     se match {
       case None =>
         TripleConstraintLocal(pred, WNodeConstraint.emptyExpr, min, max).asRight
@@ -342,7 +355,6 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
           }
         )
     }
-  }
 
   private def convertTripleConstraint(
       tc: shex.TripleConstraint,
@@ -373,21 +385,19 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
         // makeTripleConstraint(pred, min, max, tc.valueExpr, schema).map(_.some)
         ok(none)
 
-      case Some(WasDerivedFrom) => {
+      case Some(WasDerivedFrom) =>
         ok(none)
-      }  
 
-      case Some(PropertyReference(n)) => {
+      case Some(PropertyReference(n)) =>
         // val pred = PropertyId.fromNumber(n, convertOptions.entityIri)
         // val (min, max) = convertMinMax(tc)
         // makeTripleConstraint(pred, min, max, tc.valueExpr, schema).map(_.some)
         ok(none)
-      }
 
       case _ =>
-        if (termPredicates.contains(tc.predicate)) 
+        if (termPredicates.contains(tc.predicate))
           ok(none)
-        else 
+        else
           err(UnsupportedPredicate(tc.predicate, s"Parsing direct tripleConstraint $tc"))
     }
   }
@@ -409,23 +419,24 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
       schema: shex.AbstractSchema
   ): Convert[Option[TripleConstraint]] =
     shapeExpr match {
-      case s: shex.Shape => 
+      case s: shex.Shape =>
         convertTripleConstraintPropertyShape(n, s, schema)
       case sd: shex.ShapeDecl =>
-        convertTripleConstraintProperty(n, sd.shapeExpr, schema)  
+        convertTripleConstraintProperty(n, sd.shapeExpr, schema)
       case ref: shex.ShapeRef =>
         schema.getShape(ref.reference) match {
           case Left(msg) => NotFoundShape(ref.reference, msg).asLeft
           case Right(se) =>
             se match {
-              case s: shex.Shape => {
+              case s: shex.Shape =>
                 convertTripleConstraintPropertyShape(n, s, schema)
-              }
-              case s: shex.ShapeDecl => {
+              case s: shex.ShapeDecl =>
                 convertTripleConstraintProperty(n, s.shapeExpr, schema)
-              }
               case _ =>
-                UnsupportedShapeExpr(se, s"Parsing property $n with ref ${ref.reference} and se= $se").asLeft
+                UnsupportedShapeExpr(
+                  se,
+                  s"Parsing property $n with ref ${ref.reference} and se= $se"
+                ).asLeft
             }
         }
       case _ => UnsupportedShapeExpr(shapeExpr, s"Parsing property $n").asLeft
@@ -448,17 +459,17 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
               case Some(PropertyStatement(ns)) =>
                 if (n == ns) {
                   makeTripleConstraint(pred, min, max, tc.valueExpr, schema)
-                  .map(_.some)
-                } else 
+                    .map(_.some)
+                } else
                   DifferentPropertyPropertyStatement(n, ns).asLeft
-              case Some(PropertyReference(n)) => 
+              case Some(PropertyReference(n)) =>
                 makeTripleConstraint(pred, min, max, shex.NodeConstraint.empty.some, schema)
-                .map(_.some)
-                // none.asRight // NoExprForTripleConstraintProperty(n, s).asLeft
-              case Some(WasDerivedFrom) => 
+                  .map(_.some)
+              // none.asRight // NoExprForTripleConstraintProperty(n, s).asLeft
+              case Some(WasDerivedFrom) =>
                 makeTripleConstraint(pred, min, max, shex.NodeConstraint.empty.some, schema)
-                .map(_.some)
-                // none.asRight // NoExprForTripleConstraintProperty(n, s).asLeft
+                  .map(_.some)
+              // none.asRight // NoExprForTripleConstraintProperty(n, s).asLeft
               case _ =>
                 UnsupportedPredicate(
                   tc.predicate,
@@ -467,8 +478,8 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
             }
           case s: shex.EachOf =>
             parseEachOfForProperty(n, s, schema)
-            .map(_.some)
-          case _ => 
+              .map(_.some)
+          case _ =>
             UnsupportedTripleExpr(te, s"Parsing property $n").asLeft
         }
     }
@@ -486,10 +497,12 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
       schema: shex.AbstractSchema
   ): Convert[TripleConstraint] =
     getPropertyStatement(n, s.expressions, schema).flatMap(tc =>
-    getQualifiers(s.expressions, n, schema).flatMap(qs => 
-    getReferencesFromWasDerivedFrom(s.expressions, n, schema).flatMap(refs =>   
-        tc.withQs(qs).withRefs(refs).asRight)
-    ))
+      getQualifiers(s.expressions, n, schema).flatMap(qs =>
+        getReferencesFromWasDerivedFrom(s.expressions, n, schema).flatMap(refs =>
+          tc.withQs(qs).withRefs(refs).asRight
+        )
+      )
+    )
 
   private def getPropertyStatement(
       n: Int,
@@ -541,120 +554,129 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
       schema: shex.AbstractSchema
   ): Convert[Option[ReferencesSpec]] = {
     println(s"getReferences of property $n, es = $es")
-    val refs: Convert[List[ReferencesSpec]] = es.collect { 
-      case tc: shex.TripleConstraint if tc.predicate == `prov:wasDerivedFrom` => 
+    val refs: Convert[List[ReferencesSpec]] = es.collect {
+      case tc: shex.TripleConstraint if tc.predicate == `prov:wasDerivedFrom` =>
         getReferences(tc.valueExpr, tc.optMin, tc.optMax, n, schema)
     }.sequence
-    
+
     refs.flatMap(_ match {
-      case Nil => ok(none[ReferencesSpec])
+      case Nil        => ok(none[ReferencesSpec])
       case ref :: Nil => ok(ref.some)
-      case refs => ok(ReferencesEachOf(refs).some)
+      case refs       => ok(ReferencesEachOf(refs).some)
     })
   }
 
   private def getReferences(
-    optSe: Option[shex.ShapeExpr], 
-    optMin: Option[Int], 
-    optMax: Option[shex.Max],
-    n: Int,
-    schema: shex.AbstractSchema
-    ):  Convert[ReferencesSpecSingle] = {
-   val min = optMin.getOrElse(defaultMin)
-   val max = optMax.map(convertMax).getOrElse(defaultMax)
-   optSe match {
-    case None => ok(ReferencesSpecSingle(PropertySpec.EmptySpec, min, max,false))
-    case Some(se) => getReferencesShapeExpr(se, min, max, n, schema) 
-   } 
+      optSe: Option[shex.ShapeExpr],
+      optMin: Option[Int],
+      optMax: Option[shex.Max],
+      n: Int,
+      schema: shex.AbstractSchema
+  ): Convert[ReferencesSpecSingle] = {
+    val min = optMin.getOrElse(defaultMin)
+    val max = optMax.map(convertMax).getOrElse(defaultMax)
+    optSe match {
+      case None     => ok(ReferencesSpecSingle(PropertySpec.EmptySpec, min, max, false))
+      case Some(se) => getReferencesShapeExpr(se, min, max, n, schema)
+    }
   }
 
   private def getReferencesShapeExpr(
-    se: shex.ShapeExpr, 
-    min: Int, 
-    max: IntOrUnbounded, 
-    n: Int, 
-    schema: shex.AbstractSchema): Convert[ReferencesSpecSingle] = se match {
-      case ref: shex.ShapeRef => {
-        schema.getShape(ref.reference) match {
-          case Left(msg) => NotFoundShape(ref.reference, msg).asLeft
-          case Right(se) =>
-            se match {
-              case s: shex.Shape => {
-                convertPropertySpecFromShape(n, s, schema).flatMap(ps => 
-                  ok(ReferencesSpecSingle(ps, min, max, false)))
-              }
-              case s: shex.ShapeDecl => 
-                getReferencesShapeExpr(se,min,max,n,schema)
-              case _ =>
-                err(UnsupportedShapeExpr(se, s"Parsing wasDerivedFrom $n with ref ${ref.reference} and se= $se"))
-            }
-        }
+      se: shex.ShapeExpr,
+      min: Int,
+      max: IntOrUnbounded,
+      n: Int,
+      schema: shex.AbstractSchema
+  ): Convert[ReferencesSpecSingle] = se match {
+    case ref: shex.ShapeRef =>
+      schema.getShape(ref.reference) match {
+        case Left(msg) => NotFoundShape(ref.reference, msg).asLeft
+        case Right(se) =>
+          se match {
+            case s: shex.Shape =>
+              convertPropertySpecFromShape(n, s, schema).flatMap(ps =>
+                ok(ReferencesSpecSingle(ps, min, max, false))
+              )
+            case s: shex.ShapeDecl =>
+              getReferencesShapeExpr(se, min, max, n, schema)
+            case _ =>
+              err(
+                UnsupportedShapeExpr(
+                  se,
+                  s"Parsing wasDerivedFrom $n with ref ${ref.reference} and se= $se"
+                )
+              )
+          }
       }
-      case sd: shex.ShapeDecl => getReferencesShapeExpr(sd.shapeExpr, min, max, n, schema)
-      case s: shex.Shape => {
-        convertPropertySpecFromShape(n, s, schema).flatMap(ps => 
-        ok(ReferencesSpecSingle(ps, min, max, false)))
-      }
-      case _ => err(UnsupportedShapeExprWasDerivedFrom(n, se))
-    }
-
-  private def convertPropertySpecFromShape(
-    n: Int, shape: shex.Shape, schema: shex.AbstractSchema): Convert[PropertySpec] = {
-     shape.expression match {
-      case None => ok(PropertySpec.EmptySpec)
-      case Some(te) => getPropertySpec(n ,schema)(te).map(_.getOrElse(PropertySpec.EmptySpec))
-     }
+    case sd: shex.ShapeDecl => getReferencesShapeExpr(sd.shapeExpr, min, max, n, schema)
+    case s: shex.Shape =>
+      convertPropertySpecFromShape(n, s, schema).flatMap(ps =>
+        ok(ReferencesSpecSingle(ps, min, max, false))
+      )
+    case _ => err(UnsupportedShapeExprWasDerivedFrom(n, se))
   }
 
-  private def checkAllSome[A](ls: List[Option[A]])(e: ES2WShExConvertError): Convert[List[A]] = 
+  private def convertPropertySpecFromShape(
+      n: Int,
+      shape: shex.Shape,
+      schema: shex.AbstractSchema
+  ): Convert[PropertySpec] =
+    shape.expression match {
+      case None     => ok(PropertySpec.EmptySpec)
+      case Some(te) => getPropertySpec(n, schema)(te).map(_.getOrElse(PropertySpec.EmptySpec))
+    }
+
+  private def checkAllSome[A](ls: List[Option[A]])(e: ES2WShExConvertError): Convert[List[A]] =
     ls.sequence match {
-      case None => err(e)
+      case None     => err(e)
       case Some(ls) => ok(ls)
     }
 
   private def getPropertySpec(n: Int, schema: shex.AbstractSchema)(
       te: shex.TripleExpr
   ): Convert[Option[PropertySpec]] = te match {
-      case tc: shex.TripleConstraint =>
-        convertTripleConstraintPropertySpec(n, schema, tc)
-      case eo: shex.EachOf => for {
-       maybeExprs <- eo.expressions.map(getPropertySpec(n, schema)(_)).sequence
-       exprs <- checkAllSome(maybeExprs)(ErrorParsingPropretySpecNone(n, te, maybeExprs))
+    case tc: shex.TripleConstraint =>
+      convertTripleConstraintPropertySpec(n, schema, tc)
+    case eo: shex.EachOf =>
+      for {
+        maybeExprs <- eo.expressions.map(getPropertySpec(n, schema)(_)).sequence
+        exprs <- checkAllSome(maybeExprs)(ErrorParsingPropretySpecNone(n, te, maybeExprs))
       } yield EachOfPs(exprs, eo.min, convertMax(eo.max)).some
 
-      case oo: shex.OneOf => for {
-       maybeExprs <- oo.expressions.map(getPropertySpec(n, schema)(_)).sequence
-       exprs <- checkAllSome(maybeExprs)(ErrorParsingPropretySpecNone(n, te, maybeExprs))
+    case oo: shex.OneOf =>
+      for {
+        maybeExprs <- oo.expressions.map(getPropertySpec(n, schema)(_)).sequence
+        exprs <- checkAllSome(maybeExprs)(ErrorParsingPropretySpecNone(n, te, maybeExprs))
       } yield OneOfPs(exprs, oo.min, convertMax(oo.max)).some
 
-      case _ => UnsupportedTripleExpr(te, s"Parsing propertySpec for property $n").asLeft
+    case _ => UnsupportedTripleExpr(te, s"Parsing propertySpec for property $n").asLeft
   }
 
   private def convertTripleConstraintPropertySpec(
-    n: Int, 
-    schema: shex.AbstractSchema, 
-    tc: shex.TripleConstraint): Convert[Option[PropertyConstraint]] = {
+      n: Int,
+      schema: shex.AbstractSchema,
+      tc: shex.TripleConstraint
+  ): Convert[Option[PropertyConstraint]] = {
     val iriParsed = IRIConvert.parseIRI(tc.predicate, convertOptions)
-        iriParsed match {
-          case Some(PropertyReference(nr)) =>
-            val pr = PropertyId.fromNumber(nr, convertOptions.propReferenceIri)
-            val (min, max) = convertMinMax(tc)
-            tc.valueExpr match {
-              case None => PropertyLocal(pr, WNodeConstraint.emptyExpr, min, max).some.asRight
-              case Some(se) =>
-                convertShapeExpr(se, schema).flatMap(s =>
-                  s match {
-                    case s @ WShapeRef(_, lbl)   => PropertyRef(pr, s, min, max).some.asRight
-                    case wnc: WNodeConstraint => PropertyLocal(pr, wnc, min, max).some.asRight
-                    case _ =>
-                      UnsupportedShapeExpr(se, s"Parsing property references for property $n").asLeft
-                  }
-                )
-            }
-          case _ => UnsupportedPredicate(tc.predicate, s"Parsing references for property $n").asLeft
+    iriParsed match {
+      case Some(PropertyReference(nr)) =>
+        val pr = PropertyId.fromNumber(nr, convertOptions.propReferenceIri)
+        val (min, max) = convertMinMax(tc)
+        tc.valueExpr match {
+          case None => PropertyLocal(pr, WNodeConstraint.emptyExpr, min, max).some.asRight
+          case Some(se) =>
+            convertShapeExpr(se, schema).flatMap(s =>
+              s match {
+                case s @ WShapeRef(_, lbl) => PropertyRef(pr, s, min, max).some.asRight
+                case wnc: WNodeConstraint  => PropertyLocal(pr, wnc, min, max).some.asRight
+                case _ =>
+                  UnsupportedShapeExpr(se, s"Parsing property references for property $n").asLeft
+              }
+            )
         }
+      case _ => UnsupportedPredicate(tc.predicate, s"Parsing references for property $n").asLeft
+    }
   }
-  
 
   private def getQualifier(n: Int, schema: shex.AbstractSchema)(
       te: shex.TripleExpr
@@ -674,8 +696,8 @@ case class ES2WShEx(convertOptions: ES2WShExConvertOptions) extends LazyLogging 
               case Some(se) =>
                 convertShapeExpr(se, schema).flatMap(s =>
                   s match {
-                    case s @ WShapeRef(_, lbl)   => PropertyRef(pq, s, min, max).some.asRight
-                    case wnc: WNodeConstraint => PropertyLocal(pq, wnc, min, max).some.asRight
+                    case s @ WShapeRef(_, lbl) => PropertyRef(pq, s, min, max).some.asRight
+                    case wnc: WNodeConstraint  => PropertyLocal(pq, wnc, min, max).some.asRight
                     case _ =>
                       UnsupportedShapeExpr(se, s"Parsing qualifiers for property $n").asLeft
                   }

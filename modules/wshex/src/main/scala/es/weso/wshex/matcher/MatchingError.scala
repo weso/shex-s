@@ -173,13 +173,11 @@ object MatchingError {
                               |Entity ${entity.show()}
                               |""".stripMargin)
 
-  case class LabelAnyNoLabel(entity: EntityDoc)
-      extends MatchingError(s"""|LabelAny, no label
+  case class LabelAnyNoLabel(entity: EntityDoc) extends MatchingError(s"""|LabelAny, no label
                               |Entity ${entity.show()}
                               |""".stripMargin)
 
-  case class NoLang(lang: String, mode: TermMode, entity: EntityDoc)
-      extends MatchingError(s"""|
+  case class NoLang(lang: String, mode: TermMode, entity: EntityDoc) extends MatchingError(s"""|
                                 |No value for lang: ${lang}
                               |Entity ${entity.show()}
                               |""".stripMargin)
@@ -189,8 +187,7 @@ object MatchingError {
                               |Entity ${entity.show()}
                               |""".stripMargin)
 
-  case class DescrAnyNoDescr(entity: EntityDoc)
-      extends MatchingError(s"""|DescrAny, no description
+  case class DescrAnyNoDescr(entity: EntityDoc) extends MatchingError(s"""|DescrAny, no description
                               |Entity ${entity.show()}
                               |""".stripMargin)
 

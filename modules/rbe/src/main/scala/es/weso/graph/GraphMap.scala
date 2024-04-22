@@ -3,8 +3,8 @@ package es.weso.graph
 /** Implementation of graph as a map
   */
 case class GraphMap[Edge, Node](
-  m: Map[Node, Seq[(Edge, Node)]]
-  ) extends Graph[Edge, Node] {
+    m: Map[Node, Seq[(Edge, Node)]]
+) extends Graph[Edge, Node] {
   def nodes = m.keys.toSeq
   def triples =
     m.map { case (x, out) => out.map { case (e, o) => (x, e, o) } }.flatten.toSeq

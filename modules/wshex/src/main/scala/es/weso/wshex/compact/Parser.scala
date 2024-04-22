@@ -24,7 +24,7 @@ object Parser {
   )
 
   type S[A] = State[BuilderState, A]
-  type R[A] = ReaderT[S, ParserOptions,A]
+  type R[A] = ReaderT[S, ParserOptions, A]
   type Builder[A] = EitherT[R, String, A]
 
   // type PrefixMap = Map[Prefix,IRI]
@@ -35,9 +35,8 @@ object Parser {
   def ok[A](x: A): Builder[A] =
     x.pure[Builder] // EitherT.pure(x)
 
-  def err[A](msg: String): Builder[A] = {
+  def err[A](msg: String): Builder[A] =
     EitherT.left[A](msg.pure[R])
-  }
 
   def info(msg: String): Builder[Unit] = {
     println(msg)
@@ -57,20 +56,19 @@ object Parser {
     getState.map(_.shapesMap)
 
   def getOptions: Builder[ParserOptions] =
-    EitherT.liftF(ReaderT.ask)  
+    EitherT.liftF(ReaderT.ask)
 
   def getEntityIRI: Builder[IRI] =
     getOptions.map(_.entityIRI)
 
-/*  def getTripleExprMap: Builder[TripleExprMap] =
+  /*  def getTripleExprMap: Builder[TripleExprMap] =
     getState.map(_.tripleExprMap) */
 
   def getLabelLocationMap: Builder[Map[ShapeLabel, Location]] =
     getState.map(_.labelLocationMap)
 
-  def getState: Builder[BuilderState] = {
+  def getState: Builder[BuilderState] =
     EitherT.liftF(ReaderT.liftF(StateT.inspect(identity)))
-  }
 
   def getBase: Builder[Option[IRI]] =
     getState.map(_.base)
@@ -102,7 +100,7 @@ object Parser {
       newS
     }
 
-/*  def addTripleExprLabel(label: ShapeLabel, te: TripleExpr): Builder[TripleExpr] = for {
+  /*  def addTripleExprLabel(label: ShapeLabel, te: TripleExpr): Builder[TripleExpr] = for {
     s <- getState
     _ <- s.tripleExprMap.get(label) match {
       case None => ok(())
@@ -112,7 +110,11 @@ object Parser {
     _ <- updateState(s => s.copy(tripleExprMap = s.tripleExprMap + (label -> te)))
   } yield te.addId(label) */
 
-  def parseSchema(str: String, base: Option[IRI], options: ParserOptions): Either[String, WSchema] = {
+  def parseSchema(
+      str: String,
+      base: Option[IRI],
+      options: ParserOptions
+  ): Either[String, WSchema] = {
     val UTF8_BOM = "\uFEFF"
     val s =
       if (str.startsWith(UTF8_BOM)) {
@@ -125,12 +127,20 @@ object Parser {
     parseSchemaReader(reader, base, options)
   }
 
-  def parseSchemaFromFile(fileName: String, base: Option[IRI], options: ParserOptions): Either[String, WSchema] = for {
+  def parseSchemaFromFile(
+      fileName: String,
+      base: Option[IRI],
+      options: ParserOptions
+  ): Either[String, WSchema] = for {
     reader <- FileUtils.getStream(fileName)
     schema <- parseSchemaReader(reader, base, options)
   } yield schema
 
-  def parseSchemaReader(reader: JavaReader, base: Option[IRI], options: ParserOptions): Either[String, WSchema] = {
+  def parseSchemaReader(
+      reader: JavaReader,
+      base: Option[IRI],
+      options: ParserOptions
+  ): Either[String, WSchema] = {
     val input: CharStream = CharStreams.fromReader(reader)
     val lexer: WShExDocLexer = new WShExDocLexer(input)
     val tokens: CommonTokenStream = new CommonTokenStream(lexer)
@@ -140,7 +150,7 @@ object Parser {
     lexer.addErrorListener(errorListener)
     parser.addErrorListener(errorListener)
 
-    val maker = new WSchemaMaker() 
+    val maker = new WSchemaMaker()
     val builder = maker.visit(parser.wShExDoc()).asInstanceOf[Builder[WSchema]]
     val errors = errorListener.getErrors()
     if (errors.length > 0) {
@@ -151,7 +161,11 @@ object Parser {
     }
   }
 
-  def run[A](c: Builder[A], base: Option[IRI], options: ParserOptions): (BuilderState, Either[String, A]) =
+  def run[A](
+      c: Builder[A],
+      base: Option[IRI],
+      options: ParserOptions
+  ): (BuilderState, Either[String, A]) =
     c.value.run(options).run(initialState(base)).value
 
   def initialState(base: Option[IRI]) =
