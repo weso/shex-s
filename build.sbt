@@ -7,7 +7,7 @@ lazy val supportedScalaVersions = List(
   scala212
 )
 
-val Java11 = JavaSpec.temurin("11") 
+val Java11 = JavaSpec.temurin("11")
 
 lazy val srdfVersion = "0.1.125"
 lazy val utilsVersion = "0.2.25"
@@ -28,7 +28,7 @@ lazy val junitInterfaceVersion = "0.13.3"
 lazy val jgraphtVersion = "1.4.0"
 lazy val logbackVersion = "1.2.11"
 lazy val munitVersion = "0.7.29" // "1.0.0-M6"
-lazy val munitEffectVersion = "1.0.7"
+lazy val munitEffectVersion = "2.0.0"
 lazy val pprintVersion = "0.7.3"
 lazy val rdf4jVersion = "3.4.2"
 lazy val scalaCollCompatVersion = "2.8.1"
@@ -58,7 +58,7 @@ lazy val jenaFuseki = "org.apache.jena" % "jena-fuseki-main" % jenaVersion
 lazy val junit = "junit" % "junit" % junitVersion
 lazy val junitInterface = "com.github.sbt" % "junit-interface" % junitInterfaceVersion
 lazy val munit = "org.scalameta" %% "munit" % munitVersion
-lazy val munitEffect = "org.typelevel" %% "munit-cats-effect-3" % munitEffectVersion
+lazy val munitEffect = "org.typelevel" %% "munit-cats-effect" % munitEffectVersion
 lazy val pprint = "com.lihaoyi" %% "pprint" % pprintVersion
 lazy val slf4jAPI = "org.slf4j" % "slf4j-api" % slf4jVersion
 lazy val slf4jSimple = "org.slf4j" % "slf4j-simple" % slf4jVersion
@@ -72,7 +72,6 @@ lazy val wdtkUtil = "org.wikidata.wdtk" % "wdtk-util" % wikidataToolkitVersion
 
 lazy val scalacheck = "org.scalacheck" %% "scalacheck" % scalacheckVersion
 lazy val typesafeConfig = "com.typesafe" % "config" % typesafeConfigVersion
-
 
 lazy val logbackClassic = "ch.qos.logback" % "logback-classic" % logbackVersion
 lazy val scalaLogging =
@@ -252,7 +251,7 @@ lazy val wshex = project
   .settings(
     crossScalaVersions := supportedScalaVersions,
     libraryDependencies ++= Seq(
-      utils, 
+      utils,
       catsCore,
       catsKernel,
       circeCore,
@@ -269,7 +268,7 @@ lazy val wshex = project
       scalaCollCompat,
       srdfJena,
       munit % Test,
-      munitEffect % Test,
+      munitEffect % Test
     ),
     testFrameworks += new TestFramework("munit.Framework")
   )
@@ -581,5 +580,7 @@ lazy val commonSettings = compilationSettings ++ sharedDependencies ++ Seq(
       url = url("https://weso.labra.es")
     )
   ),
-  libraryDependencies += compilerPlugin("com.github.ghik" % "zerowaste" % "0.2.1" cross CrossVersion.full)
+  libraryDependencies += compilerPlugin(
+    ("com.github.ghik" % "zerowaste" % "0.2.1").cross(CrossVersion.full)
+  )
 ) ++ warnUnusedImport
