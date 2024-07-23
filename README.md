@@ -11,14 +11,13 @@ This project contains an implementation of [Shape Expressions (ShEx)](http://www
 
 ## Introduction
 
-This project contains a Scala implementation of [ShEx](http://shex.io/). 
-The library handles RDF using a 
+This project contains a Scala implementation of [ShEx](http://shex.io/).
+The library handles RDF using a
 [simple RDF library](https://github.com/weso/srdf), which at this moment has 2 implementations,
 one using [Apache Jena](https://jena.apache.org/)
 and another one using [RDF4j](http://rdf4j.org/).
 This means that it is possible to use this library to validate RDF models from either Jena or RDF4J models,
 as well as from external SPARQL endpoints.
-
 
 ## Installation and compilation
 
@@ -28,15 +27,15 @@ The project uses [sbt](http://www.scala-sbt.org/) for compilation as well as Jav
 
 ## Command line usage
 
-It is possible to run `shex-s` as a command line tool. 
+It is possible to run `shex-s` as a command line tool.
 
-To create the executable you have to install [scala-cli](https://scala-cli.virtuslab.org/) and once it is installed run the following command in the folder with the shexs repository:
+To create the executable you can use the following command:
 
 ```
-$ scala-cli package . -o shexs -f
+sbt universal:packageBin
 ```
 
-which will create an executable called `shexs`
+and it will generate a zip file in the folder: `target/universal` which contains an executable called `shexs`
 
 ```
 Usage:
@@ -70,7 +69,7 @@ Subcommands:
         Schema processing actions
 ```
 
-It is possible to create binaries for different platforms like Linux, Windows, MacOS, etc. 
+It is possible to create binaries for different platforms like Linux, Windows, MacOS, etc.
 We would like to publish those binaries with each release as discribed [in this issue](https://github.com/weso/shex-s/issues/344).
 
 ### Validate option
@@ -148,16 +147,16 @@ sbt:shex> test
 
 ## Generating docs page
 
-
-
 ## Publishing to OSS-Sonatype
 
 This project uses [the sbt ci release](https://github.com/olafurpg/sbt-ci-release) plugin for publishing to [OSS Sonatype](https://oss.sonatype.org/).
 
 ##### SNAPSHOT Releases
+
 Open a PR and merge it to watch the CI release a -SNAPSHOT version
 
 ##### Full Library Releases
+
 1. Push a tag and watch the CI do a regular release
 2. `git tag -a v0.1.0 -m "v0.1.0"`
 3. `git push origin v0.1.0`
@@ -191,7 +190,6 @@ Contributors:
 Contributions are greatly appreciated.
 Please fork this repository and open a
 pull request to add more features or [submit issues](https://github.com/labra/shaclex/issues)
-
 
 <a href="https://github.com/weso/shex-s/graphs/contributors">
   <img src="https://contributors-img.web.app/image?repo=weso/shex-s" />
