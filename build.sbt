@@ -7,7 +7,7 @@ lazy val supportedScalaVersions = List(
   scala212
 )
 
-val Java11 = JavaSpec.temurin("11") 
+val Java11 = JavaSpec.temurin("11")
 
 lazy val srdfVersion = "0.1.125"
 lazy val utilsVersion = "0.2.25"
@@ -72,7 +72,6 @@ lazy val wdtkUtil = "org.wikidata.wdtk" % "wdtk-util" % wikidataToolkitVersion
 
 lazy val scalacheck = "org.scalacheck" %% "scalacheck" % scalacheckVersion
 lazy val typesafeConfig = "com.typesafe" % "config" % typesafeConfigVersion
-
 
 lazy val logbackClassic = "ch.qos.logback" % "logback-classic" % logbackVersion
 lazy val scalaLogging =
@@ -252,7 +251,7 @@ lazy val wshex = project
   .settings(
     crossScalaVersions := supportedScalaVersions,
     libraryDependencies ++= Seq(
-      utils, 
+      utils,
       catsCore,
       catsKernel,
       circeCore,
@@ -269,7 +268,7 @@ lazy val wshex = project
       scalaCollCompat,
       srdfJena,
       munit % Test,
-      munitEffect % Test,
+      munitEffect % Test
     ),
     testFrameworks += new TestFramework("munit.Framework")
   )
@@ -581,5 +580,7 @@ lazy val commonSettings = compilationSettings ++ sharedDependencies ++ Seq(
       url = url("https://weso.labra.es")
     )
   ),
-  libraryDependencies += compilerPlugin("com.github.ghik" % "zerowaste" % "0.2.1" cross CrossVersion.full)
+  libraryDependencies += compilerPlugin(
+    ("com.github.ghik" % "zerowaste" % "0.2.29").cross(CrossVersion.full)
+  )
 ) ++ warnUnusedImport
