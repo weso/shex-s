@@ -547,7 +547,7 @@ lazy val wixSettings = Seq(
 )
 
 def antlrSettings(packageName: String) = Seq(
-  Antlr4 / antlr4Version := "4.9.3",
+  Antlr4 / antlr4Version := "4.13.2",
   Antlr4 / antlr4GenListener := true,
   Antlr4 / antlr4GenVisitor := true,
   Antlr4 / antlr4PackageName := Some(packageName)
