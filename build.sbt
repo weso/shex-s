@@ -35,7 +35,7 @@ lazy val scalaCollCompatVersion = "2.8.1"
 lazy val scalacheckVersion = "1.15.4"
 lazy val scalaLoggingVersion = "3.9.4"
 lazy val typesafeConfigVersion = "1.4.2"
-lazy val wikidataToolkitVersion = "0.14.0"
+lazy val wikidataToolkitVersion = "0.14.7"
 lazy val slf4jVersion = "1.7.36"
 
 // Dependency modules
