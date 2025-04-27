@@ -33,7 +33,8 @@ case class ValidatorEitherT1(
     builder: RDFBuilder
 ) extends Validator
     with ShExChecker
-    with ShowValidator with AllPaths {
+    with ShowValidator
+    with AllPaths {
 
   type ShapeChecker = ShapeExpr => CheckTyping
   type NodeShapeChecker = (RDFNode, Shape) => CheckTyping
@@ -151,7 +152,7 @@ case class ValidatorEitherT1(
               s"checkNodeLabelSafe(${node.show}@${schema.qualify(label)} failed. Checking if there are descendants with ${withDescendants.show}"
             ) *>
               (withDescendants match {
-                case NoDescendants => err(e)
+                case NoDescendants     => err(e)
                 case FollowDescendants => checkDescendants(attempt, node, se, ext, visited)(e)
               })
           )
@@ -192,8 +193,17 @@ case class ValidatorEitherT1(
              ) *>
                ok(typing)
            else {
-             cond(getShape(label), (se: ShapeExpr) =>
-               checkNodeLabelSafe(node,label,se,ext,visited.add(node, label),withDescendants),
+             cond(
+               getShape(label),
+               (se: ShapeExpr) =>
+                 checkNodeLabelSafe(
+                   node,
+                   label,
+                   se,
+                   ext,
+                   visited.add(node, label),
+                   withDescendants
+                 ),
                addNot(node, label, typing)
              )
            }).flatMap(newTyping =>
@@ -215,8 +225,11 @@ case class ValidatorEitherT1(
       withDescendants: WithDescendants,
       attempt: Attempt
   ): CheckTyping =
-    info(s"satisfies(${node.show}@${showSE(s)}, ${showVisited(visited)}, withDescendants: ${withDescendants.show})") *>
-      getNodesPrefixMap.flatMap(nodesPrefixMap =>
+    info(
+      s"satisfies(${node.show}@${showSE(s)}, ${showVisited(visited)}, withDescendants: ${withDescendants.show})"
+    ) *>
+      getNodesPrefixMap
+        .flatMap(nodesPrefixMap =>
           s match {
             case so: ShapeOr => checkOr(node, so.shapeExprs, ext, visited, withDescendants, attempt)
             case sa: ShapeAnd =>
@@ -229,10 +242,10 @@ case class ValidatorEitherT1(
               checkRef(node, sr.reference, ext, visited, withDescendants, attempt)
             case se: ShapeExternal =>
               checkExternal(node, se, ext, visited, withDescendants, attempt)
-            case sd: ShapeDecl => 
-              if (sd._abstract) 
+            case sd: ShapeDecl =>
+              if (sd._abstract)
                 checkShapeDeclAbstract(node, sd, ext, visited, withDescendants, attempt)
-              else 
+              else
                 satisfies(node, sd.shapeExpr, ext, visited, withDescendants, attempt)
           }
         )
@@ -341,7 +354,7 @@ case class ValidatorEitherT1(
 
   private def checkShapeDeclAbstract(
       node: RDFNode,
-      sd: ShapeDecl, 
+      sd: ShapeDecl,
       ext: Option[Neighs],
       visited: Visited,
       withDescendants: WithDescendants,
@@ -350,15 +363,15 @@ case class ValidatorEitherT1(
     info(
       s"ShapeDeclAbstract(${node.show}, ${showSE(sd)}, withDescendants: [${withDescendants.show}], visited: ${showVisited(visited)})"
     ) *>
-    ( withDescendants match {
+      (withDescendants match {
         case NoDescendants => satisfies(node, sd.shapeExpr, ext, visited, NoDescendants, attempt)
-        case FollowDescendants => checkDescendants(attempt, node, sd, ext, visited)(
+        case FollowDescendants =>
+          checkDescendants(attempt, node, sd, ext, visited)(
             StringError(
               s"Abstract shape ${showSE(sd)} is not satisfied by any descendant for node ${node.show}"
             )
           )
-      }
-    )
+      })
 
   private def checkNonAbstractsInTyping(
       node: RDFNode,
@@ -474,40 +487,51 @@ case class ValidatorEitherT1(
             } else {
               val entries = getEntries(neighsInPaths)
               getAvailableShapeExprs(s).flatMap(ses =>
-              getAvailablePaths(ses).flatMap(availablePaths =>
-              getNodesPrefixMap.flatMap(nodesPrefixMap => {  
-                  val ps = partsOver(entries, availablePaths)
-                  info(s"Available ShapeExprs for shape ${showShape(s)} = ${showSEs(ses)}") *>
-                  info(s"Available paths: ${availablePaths.map(_.values.map(_.show).mkString(",")).mkString("|")}") *>
+                getAvailablePaths(ses).flatMap(availablePaths =>
+                  getNodesPrefixMap.flatMap { nodesPrefixMap =>
+                    val ps = partsOver(entries, availablePaths)
+                    info(s"Available ShapeExprs for shape ${showShape(s)} = ${showSEs(ses)}") *>
+                      info(
+                        s"Available paths: ${availablePaths.map(_.values.map(_.show).mkString(",")).mkString("|")}"
+                      ) *>
                       (ps match {
                         case p #:: rs if rs.isEmpty =>
-                          debug(s"One single line---") *> 
-                          processLine(node, s, ses, visited, attempt, nodesPrefixMap)(p)
+                          debug(s"One single line---") *>
+                            processLine(node, s, ses, visited, attempt, nodesPrefixMap)(p)
                         case _ =>
-                          checkSomeLazyList(ps.map(processLine(node, s, ses, visited, attempt, nodesPrefixMap)),
-                           StringError(s"""|Node: ${node.show}
+                          checkSomeLazyList(
+                            ps.map(processLine(node, s, ses, visited, attempt, nodesPrefixMap)),
+                            StringError(s"""|Node: ${node.show}
                                            |Shape: ${showShape(s)}
                                            |Attempt: ${attempt.show}
                                            |No partition conforms to list of ShapeExprs
                                            |ShapeExprs: ${showSEs(ses)}
                                            |Available lines:
                                            |${showPartitions(ps, nodesPrefixMap)}
-                                           |""".stripMargin))
+                                           |""".stripMargin)
+                          )
                       })
-                    }
-              )))
+                  }
+                )
+              )
             }
           }
       )
 
-  def processLine(node: RDFNode, s: Shape, ses: List[ShapeExpr], visited: Visited, attempt: Attempt, prefixMap: PrefixMap)(line: List[Set[Entry[Path, RDFNode]]]): CheckTyping = {
+  def processLine(
+      node: RDFNode,
+      s: Shape,
+      ses: List[ShapeExpr],
+      visited: Visited,
+      attempt: Attempt,
+      prefixMap: PrefixMap
+  )(line: List[Set[Entry[Path, RDFNode]]]): CheckTyping = {
     val neighsShape = entries2Neighs(line.head)
     val extended = line.zip(ses).tail.map { case (ns, se) => (se, entries2Neighs(ns)) }
     val r = checkPartitionNeighs(attempt, node, s, neighsShape, extended, visited)
     info(s"ProcessLine ses=${showSEs(ses)}, line: ${showLine(prefixMap)(line)}")
     r
   }
-
 
   def checkPartitionNeighs(
       attempt: Attempt,
@@ -826,7 +850,9 @@ case class ValidatorEitherT1(
       visited: Visited
   )(cl: CandidateLine): CheckTyping = {
     val bag = cl.mkBag
-    bagChecker.check(bag, false).fold(
+    bagChecker
+      .check(bag, false)
+      .fold(
         e =>
           getRDF.flatMap(rdf =>
             err(ErrRBEMatch(attempt, cl, table, bag, bagChecker.rbe, e.head, node, rdf))
@@ -907,11 +933,16 @@ case class ValidatorEitherT1(
   private def showLs[A: Show](ls: Iterable[A]): String = ls.map(_.show).mkString(",")
   private def showLabels(ls: Set[ShapeLabel]): String =
     s"[${ls.map(schema.qualify(_)).mkString(",")}]"
-  private def showEntry(prefixMap: PrefixMap)(e: Entry[Path,RDFNode]): String = s"${e.key.showQualified(prefixMap)}-${e.value.show}"
-  private def showEntrySet(prefixMap: PrefixMap)(s: Set[Entry[Path,RDFNode]]): String = s"{${s.map(showEntry(prefixMap)).mkString(",")}}"
-  private def showLine(prefixMap: PrefixMap)(lines: List[Set[Entry[Path,RDFNode]]]): String = lines.map(showEntrySet(prefixMap)).mkString("|")  
-  private def showPartitions(ps: LazyList[List[Set[Entry[Path,RDFNode]]]], prefixMap: PrefixMap): String = {
+  private def showEntry(prefixMap: PrefixMap)(e: Entry[Path, RDFNode]): String =
+    s"${e.key.showQualified(prefixMap)}-${e.value.show}"
+  private def showEntrySet(prefixMap: PrefixMap)(s: Set[Entry[Path, RDFNode]]): String =
+    s"{${s.map(showEntry(prefixMap)).mkString(",")}}"
+  private def showLine(prefixMap: PrefixMap)(lines: List[Set[Entry[Path, RDFNode]]]): String =
+    lines.map(showEntrySet(prefixMap)).mkString("|")
+  private def showPartitions(
+      ps: LazyList[List[Set[Entry[Path, RDFNode]]]],
+      prefixMap: PrefixMap
+  ): String =
     ps.map(showLine(prefixMap)).mkString("\n")
-  }
 
 }

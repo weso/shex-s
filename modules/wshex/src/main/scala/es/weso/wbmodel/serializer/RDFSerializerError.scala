@@ -6,4 +6,6 @@ sealed abstract class RDFSerializerError(msg: String) extends RuntimeException(m
 case class RDFSerializerErrorUnknownEntity(ed: EntityDoc)
     extends RDFSerializerError(s"Unexpected entitydoc: $ed. Should be item or property")
 case class RDFSerializerErrorUnknownEntityIdValue(ed: EntityIdValue)
-    extends RDFSerializerError(s"Unexpected entityIdValue: $ed. with class name: ${ed.getClass.getCanonicalName()}")
+    extends RDFSerializerError(
+      s"Unexpected entityIdValue: $ed. with class name: ${ed.getClass.getCanonicalName()}"
+    )

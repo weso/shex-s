@@ -12,10 +12,11 @@ case class JSONSerializer() extends Serializer {
   private val mapper = new ObjectMapper()
   mapper.configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false)
 
-  def serialize(entityDoc: EntityDocument): IO[String] = (mapper.writeValueAsString(entityDoc) + sep).pure[IO]
+  def serialize(entityDoc: EntityDocument): IO[String] =
+    (mapper.writeValueAsString(entityDoc) + sep).pure[IO]
 
   def start = "[\n".pure[IO]
-  def sep   = ",\n"
+  def sep = ",\n"
 
   def end = "]".pure[IO]
 }

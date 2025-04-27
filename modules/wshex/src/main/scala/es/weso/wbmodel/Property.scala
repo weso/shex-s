@@ -7,16 +7,15 @@ import es.weso.wshex.ShapeLabel
 import org.wikidata.wdtk.datamodel.interfaces.{
   DatatypeIdValue,
   QuantityValue => WDQuantityValue,
+  SiteLink => WDTKSiteLink,
   Statement => WDStatement,
   StringValue => WDStringValue,
   Value => WDTKValue,
-  SiteLink => WDTKSiteLink,
   _
 }
 import org.wikidata.wdtk.datamodel.interfaces.EntityDocument
 import org.wikidata.wdtk.datamodel.interfaces.ItemDocument
 import org.wikidata.wdtk.datamodel.interfaces.PropertyDocument
-
 
 case class Property(
     propertyId: PropertyId,

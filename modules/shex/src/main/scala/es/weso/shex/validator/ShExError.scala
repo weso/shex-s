@@ -25,9 +25,9 @@ sealed abstract class ShExError protected (val msg: String)
     with NoStackTrace
     with Product
     with Serializable {
-  
+
   def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String
-  
+
   def toJson: Json
 
   override def toString: String = s"err: $msg"
@@ -173,7 +173,9 @@ object ShExError {
       values: Int,
       card: Cardinality,
       rdf: RDFReader
-  ) extends ShExError(s"Cardinality error. Node: $node. Path: $path values: $values Cardinality: ${card.show}") {
+  ) extends ShExError(
+        s"Cardinality error. Node: $node. Path: $path values: $values Cardinality: ${card.show}"
+      ) {
     override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String =
       s"""${attempt.showQualified(nodesPrefixMap, shapesPrefixMap)}: # of values for ${path
           .showQualified(shapesPrefixMap)}=$values doesn't match ${card.show}"""
@@ -772,7 +774,9 @@ object ShExError {
       ds: Set[ShapeLabel],
       schema: ResolvedSchema
   ) extends ShExError(
-        s"ShapeExpr ${showSE(se, schema)} failed: ${err.msg} and no descendants pass. List of descendants: ${ds.map(_.toRDFNode.show).mkString(",")}"
+        s"ShapeExpr ${showSE(se, schema)} failed: ${err.msg} and no descendants pass. List of descendants: ${ds
+            .map(_.toRDFNode.show)
+            .mkString(",")}"
       ) {
 
     override def showQualified(nodesPrefixMap: PrefixMap, shapesPrefixMap: PrefixMap): String =

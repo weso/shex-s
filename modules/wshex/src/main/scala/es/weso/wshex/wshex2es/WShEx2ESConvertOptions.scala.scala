@@ -6,7 +6,7 @@ import com.typesafe.scalalogging.LazyLogging
 import es.weso._
 import es.weso.rbe.interval.{IntLimit, Unbounded}
 import es.weso.rdf.nodes._
-import es.weso.wbmodel.{WBLang => _, Property => _, _}
+import es.weso.wbmodel.{Property => _, WBLang => _, _}
 import es.weso.rbe.interval.IntOrUnbounded
 import scala.collection.compat._ // Required for partitionMap
 import es.weso.rdf.nodes._
@@ -19,10 +19,10 @@ case class WShEx2ESConvertOptions(
     propIri: IRI,
     propStatementIri: IRI,
     propQualifierIri: IRI,
-    entityAlias: String, 
-    directPropertyAlias: String, 
+    entityAlias: String,
+    directPropertyAlias: String,
     propAlias: String,
-    propStatementAlias: String, 
+    propStatementAlias: String,
     propQualifierAlias: String
 )
 
@@ -40,4 +40,3 @@ object WShEx2ESConvertOptions {
     propQualifierAlias = "pq"
   )
 }
-
