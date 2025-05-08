@@ -1,4 +1,4 @@
-//> using scala "3.1.1"
+//> using scala "3.1.3"
 //> using lib "com.monovore::decline-effect::2.2.0"
 
 //> using lib "es.weso::shex::0.2.2"
